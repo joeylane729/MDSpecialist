@@ -1,11 +1,13 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 import os
 from dotenv import load_dotenv
 
 from app.database import create_tables, get_db
-from app.api.endpoints import health, match, doctors
+from app.api.endpoints import health, match, doctors, npi
 from app.services.mock_data_service import MockDataService
 
 # Load environment variables
@@ -34,6 +36,7 @@ app.add_middleware(
 app.include_router(health.router, tags=["Health"])
 app.include_router(match.router, prefix="/api/v1", tags=["Matching"])
 app.include_router(doctors.router, prefix="/api/v1", tags=["Doctors"])
+app.include_router(npi.router, prefix="/api/v1/npi", tags=["NPI Providers"])
 
 @app.on_event("startup")
 async def startup_event():
@@ -41,18 +44,7 @@ async def startup_event():
     try:
         create_tables()
         print("Database tables created successfully")
-        
-        # Initialize with mock data if database is empty
-        from sqlalchemy.orm import Session
-        db = next(get_db())
-        try:
-            mock_service = MockDataService(db)
-            result = mock_service.populate_database()
-            print(f"Mock data populated: {result}")
-        except Exception as e:
-            print(f"Warning: Could not populate mock data: {e}")
-        finally:
-            db.close()
+        print("Using PostgreSQL with NPI data - no mock data needed")
             
     except Exception as e:
         print(f"Error during startup: {e}")
@@ -81,6 +73,30 @@ async def api_info():
             "docs": "/docs"
         }
     }
+
+@app.get("/test-db")
+async def test_database_connection():
+    """Test database connection directly."""
+    try:
+        from app.database import get_db
+        db = next(get_db())
+        
+        # Test a simple query
+        result = db.execute(text("SELECT COUNT(*) FROM npi_providers"))
+        count = result.scalar()
+        
+        return {
+            "status": "success",
+            "message": "Connected to PostgreSQL successfully",
+            "total_providers": count,
+            "database_type": "PostgreSQL"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Database connection failed: {str(e)}",
+            "error_type": type(e).__name__
+        }
 
 if __name__ == "__main__":
     import uvicorn

@@ -5,6 +5,7 @@ from .talk import Talk
 from .doctor_diag_cache import DoctorDiagCache
 from .diag_snapshot import DiagSnapshot
 from .raw_source import RawSource
+from .npi_provider import NPIProvider
 
 __all__ = [
     "Base",
@@ -13,5 +14,6 @@ __all__ = [
     "Talk",
     "DoctorDiagCache",
     "DiagSnapshot",
-    "RawSource"
+    "RawSource",
+    "NPIProvider"
 ]

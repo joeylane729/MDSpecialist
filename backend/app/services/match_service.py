@@ -4,6 +4,8 @@ from ..models.doctor import Doctor
 from ..schemas.match import MatchRequest, MatchResponse
 from ..schemas.doctor import DoctorResponse
 from .doctor_service import DoctorService
+# Temporarily disabled NPI service import
+# from .npi_service import NPIService
 import time
 
 class MatchService:
@@ -12,17 +14,16 @@ class MatchService:
     def __init__(self, db: Session):
         self.db = db
         self.doctor_service = DoctorService(db)
+        # self.npi_service = NPIService(db)  # Temporarily disabled
     
     def match_doctors(self, match_request: MatchRequest) -> MatchResponse:
         """Match patients with doctors based on diagnosis and location."""
         start_time = time.time()
         
-        # Search for matching doctors
-        doctors = self.doctor_service.search_doctors_by_diagnosis(
+        # Search for matching providers using NPI data
+        providers = self.npi_service.search_providers_by_diagnosis_and_location(
             diagnosis=match_request.diagnosis,
             metro_area=match_request.metro_area,
-            location_radius=match_request.location_radius,
-            specialty=match_request.specialty,
             max_results=match_request.max_results
         )
         
@@ -119,28 +120,13 @@ class MatchService:
     
     def get_metro_suggestions(self, metro_input: str) -> List[str]:
         """Get suggested metro areas based on partial input."""
-        # This could be enhanced with a geographic database
+        # Temporarily using hardcoded suggestions until NPI service is fixed
         common_metros = [
-            "New York, NY",
-            "Los Angeles, CA",
-            "Chicago, IL",
-            "Houston, TX",
-            "Phoenix, AZ",
-            "Philadelphia, PA",
-            "San Antonio, TX",
-            "San Diego, CA",
-            "Dallas, TX",
-            "San Jose, CA",
-            "Austin, TX",
-            "Jacksonville, FL",
-            "Fort Worth, TX",
-            "Columbus, OH",
-            "Charlotte, NC",
-            "San Francisco, CA",
-            "Indianapolis, IN",
-            "Seattle, WA",
-            "Denver, CO",
-            "Washington, DC"
+            "New York, NY", "Los Angeles, CA", "Chicago, IL", "Houston, TX",
+            "Phoenix, AZ", "Philadelphia, PA", "San Antonio, TX", "San Diego, CA",
+            "Dallas, TX", "San Jose, CA", "Austin, TX", "Jacksonville, FL",
+            "Fort Worth, TX", "Columbus, OH", "Charlotte, NC", "San Francisco, CA",
+            "Indianapolis, IN", "Seattle, WA", "Denver, CO", "Washington, DC"
         ]
         
         suggestions = []
@@ -150,4 +136,4 @@ class MatchService:
             if metro_input_lower in metro.lower():
                 suggestions.append(metro)
         
-        return suggestions[:5]  # Return top 5 suggestions
+        return suggestions[:5]
