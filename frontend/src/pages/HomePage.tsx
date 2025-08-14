@@ -13,7 +13,10 @@ import {
   Heart,
   Zap,
   ArrowRight,
-  CheckCircle
+  CheckCircle,
+  FileText,
+  Upload,
+  X
 } from 'lucide-react';
 
 interface State {
@@ -36,6 +39,8 @@ const HomePage: React.FC = () => {
   const [selectedState, setSelectedState] = useState<string>('');
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedTaxonomy, setSelectedTaxonomy] = useState<string>('');
+  const [diagnosis, setDiagnosis] = useState<string>('');
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [states, setStates] = useState<State[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [taxonomies, setTaxonomies] = useState<Taxonomy[]>([]);
@@ -504,11 +509,20 @@ const HomePage: React.FC = () => {
     }
   }, [selectedState]);
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setUploadedFiles(prev => [...prev, ...files]);
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedState || !selectedCity || !selectedTaxonomy) {
-      alert('Please select all fields before searching');
+    if (!selectedState || !selectedCity || !selectedTaxonomy || !diagnosis.trim()) {
+      alert('Please fill in all required fields before searching');
       return;
     }
 
@@ -571,52 +585,20 @@ const HomePage: React.FC = () => {
 
       <div className="relative z-10 w-full px-4 pt-8">
         <div className="max-w-6xl mx-auto">
-          {/* Hero Section */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl mb-6 shadow-lg">
-              <Stethoscope className="w-10 h-10 text-white" />
-            </div>
-            <h1 className="text-6xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-6 animate-fade-in leading-tight py-2">
-              ConciergeMD
-            </h1>
-            <p className="text-2xl text-gray-700 max-w-4xl mx-auto leading-relaxed mb-8">
-              Find the <span className="font-semibold text-blue-600">best subspecialist</span> for your specific diagnosis. 
-              Our AI-powered algorithm evaluates expertise, experience, and outcomes to match you with the right specialist.
-            </p>
-            
-            {/* Stats */}
-            <div className="flex justify-center items-center space-x-12 mb-12">
-              <div className="flex items-center space-x-3">
-                <Users className="w-6 h-6 text-blue-600" />
-                <span className="text-lg font-semibold text-gray-700">AI-Powered Matching</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Shield className="w-6 h-6 text-green-600" />
-                <span className="text-lg font-semibold text-gray-700">Expert Evaluated</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Clock className="w-6 h-6 text-purple-600" />
-                <span className="text-lg font-semibold text-gray-700">Appointment Booking</span>
-              </div>
-            </div>
-          </div>
-
           {/* Search Form */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-10 border border-white/20">
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/20">
             <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-2xl mb-4 shadow-lg">
-                <Search className="w-8 h-8 text-white" />
-              </div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">
-                Find Your Expert Subspecialist
-              </h2>
-              <p className="text-gray-600 text-lg">
-                Enter your diagnosis and location to find the best specialist for your specific condition
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-2 animate-fade-in leading-tight py-2">
+                ConciergeMD
+              </h1>
+              <p className="text-lg text-gray-700 max-w-2xl mx-auto leading-relaxed mb-2">
+                Find the <span className="font-semibold text-blue-600">best subspecialist</span> for your specific diagnosis.
               </p>
             </div>
             
-            <form onSubmit={handleSearch} className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <form onSubmit={handleSearch} className="space-y-6">
+              {/* Location and Specialty - Top Priority */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* State Selection */}
                 <div className="group">
                   <label htmlFor="state" className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
@@ -685,11 +667,76 @@ const HomePage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Diagnosis and File Upload - Side by Side */}
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+                {/* Diagnosis Input */}
+                <div className="group lg:col-span-3 flex flex-col pr-2">
+                  <label htmlFor="diagnosis" className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <FileText className="w-4 h-4 mr-2 text-red-600" />
+                    Diagnosis Description *
+                  </label>
+                  <textarea
+                    id="diagnosis"
+                    value={diagnosis}
+                    onChange={(e) => setDiagnosis(e.target.value)}
+                    placeholder="Please provide a detailed description of your diagnosis, symptoms, and any relevant medical history..."
+                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-red-100 focus:border-red-500 transition-all duration-300 bg-white/50 backdrop-blur-sm group-hover:border-red-300 resize-none flex-1"
+                    rows={4}
+                    required
+                  />
+                </div>
+
+                {/* File Upload */}
+                <div className="group lg:col-span-1 flex flex-col">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <Upload className="w-4 h-4 mr-2 text-orange-600" />
+                    Upload Medical Documents
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-3 text-center hover:border-orange-400 transition-colors flex-1 flex flex-col justify-center">
+                    <input
+                      type="file"
+                      multiple
+                      accept=".pdf"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="file-upload"
+                    />
+                    <label htmlFor="file-upload" className="cursor-pointer">
+                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-600 mb-1">Click to upload PDF files</p>
+                      <p className="text-sm text-gray-500">Laboratory tests, imaging reports, doctors' notes</p>
+                    </label>
+                  </div>
+                  
+                  {/* Uploaded Files List */}
+                  {uploadedFiles.length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <p className="text-sm font-medium text-gray-700">Uploaded Files:</p>
+                      {uploadedFiles.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
+                          <div className="flex items-center space-x-2">
+                            <FileText className="w-4 h-4 text-gray-500" />
+                            <span className="text-sm text-gray-700">{file.name}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => removeFile(index)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Search Button */}
               <div className="text-center">
                 <button
                   type="submit"
-                  disabled={isLoading || !selectedState || !selectedCity || !selectedTaxonomy}
+                  disabled={isLoading || !selectedState || !selectedCity || !selectedTaxonomy || !diagnosis.trim()}
                   className="group relative inline-flex items-center justify-center w-full max-w-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                 >
                   {isLoading ? (
@@ -711,12 +758,7 @@ const HomePage: React.FC = () => {
 
           </div>
 
-          {/* Bottom CTA */}
-          <div className="text-center mt-8">
-            <p className="text-gray-600 text-lg">
-              Join patients who found the right subspecialist for their specific diagnosis through ConciergeMD
-            </p>
-          </div>
+
         </div>
       </div>
 

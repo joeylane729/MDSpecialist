@@ -350,8 +350,11 @@ const ResultsPage: React.FC = () => {
       
       switch (sortBy) {
         case 'name':
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
+          // Extract last name for sorting
+          const aLastName = a.name.split(' ').pop()?.toLowerCase() || '';
+          const bLastName = b.name.split(' ').pop()?.toLowerCase() || '';
+          aValue = aLastName;
+          bValue = bLastName;
           break;
         case 'specialty':
           aValue = a.specialty.toLowerCase();
@@ -601,7 +604,7 @@ const ResultsPage: React.FC = () => {
                 }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="name">Name</option>
+                <option value="name">Last Name</option>
                 <option value="specialty">Specialty</option>
                 <option value="rating">Rating</option>
                 <option value="experience">Experience</option>
