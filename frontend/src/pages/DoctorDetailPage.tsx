@@ -169,8 +169,8 @@ const DoctorDetailPage: React.FC = () => {
                 <div className="flex items-center">
                   <Building className="h-5 w-5 text-gray-500 mr-3" />
                   <div>
-                    <p className="text-gray-900 font-medium">{provider.education.medicalSchool}</p>
-                    <p className="text-gray-600">Graduated {provider.education.graduationYear}</p>
+                    <p className="text-gray-900 font-medium">{provider.education.medicalSchool || 'No medical school listed'}</p>
+                    <p className="text-gray-600">{provider.education.graduationYear ? `Graduated ${provider.education.graduationYear}` : 'No graduation year listed'}</p>
                   </div>
                 </div>
               </div>
@@ -179,7 +179,7 @@ const DoctorDetailPage: React.FC = () => {
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">Residency</h3>
                 <div className="flex items-center">
                   <Building className="h-5 w-5 text-gray-500 mr-3" />
-                  <p className="text-gray-900">{provider.education.residency}</p>
+                  <p className="text-gray-900">{provider.education.residency || 'No residency listed'}</p>
                 </div>
               </div>
 
@@ -187,7 +187,7 @@ const DoctorDetailPage: React.FC = () => {
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">Experience</h3>
                 <div className="flex items-center">
                   <Calendar className="h-5 w-5 text-gray-500 mr-3" />
-                  <p className="text-gray-900">{provider.yearsExperience} years of clinical practice</p>
+                  <p className="text-gray-900">{provider.yearsExperience ? `${provider.yearsExperience} years of clinical practice` : 'No experience information available'}</p>
                 </div>
               </div>
             </div>
@@ -200,33 +200,184 @@ const DoctorDetailPage: React.FC = () => {
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">Languages Spoken</h3>
-                <div className="flex flex-wrap gap-2">
-                  {provider.languages.map((language, index) => (
-                    <span
-                      key={index}
-                      className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
-                    >
-                      {language}
-                    </span>
-                  ))}
-                </div>
+                {provider.languages && provider.languages.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {provider.languages.map((language, index) => (
+                      <span
+                        key={index}
+                        className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
+                      >
+                        {language}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 italic">No languages listed</p>
+                )}
               </div>
 
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">Insurance Accepted</h3>
-                <div className="flex flex-wrap gap-2">
-                  {provider.insurance.map((ins, index) => (
-                    <span
-                      key={index}
-                      className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium"
-                    >
-                      {ins}
-                    </span>
-                  ))}
-                </div>
+                {provider.insurance && provider.insurance.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {provider.insurance.map((ins, index) => (
+                      <span
+                        key={index}
+                        className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium"
+                      >
+                        {ins}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 italic">No insurance information available</p>
+                )}
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Professional Achievements */}
+        <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Professional Achievements</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Publications */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Publications</h3>
+              {provider.publications && provider.publications.length > 0 ? (
+                <ul className="space-y-2">
+                  {provider.publications.map((pub, index) => (
+                    <li key={index} className="text-gray-600 text-sm">• {pub}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500 italic">No publications listed</p>
+              )}
+            </div>
+
+            {/* Books & Book Chapters */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Books & Book Chapters</h3>
+              {provider.books && provider.books.length > 0 ? (
+                <ul className="space-y-2">
+                  {provider.books.map((book, index) => (
+                    <li key={index} className="text-gray-600 text-sm">• {book}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500 italic">No books listed</p>
+              )}
+            </div>
+
+            {/* Lectures & Courses */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Lectures & Courses Taught</h3>
+              {provider.lectures && provider.lectures.length > 0 ? (
+                <ul className="space-y-2">
+                  {provider.lectures.map((lecture, index) => (
+                    <li key={index} className="text-gray-600 text-sm">• {lecture}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500 italic">No lectures listed</p>
+              )}
+            </div>
+
+            {/* Specializations */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Specializations</h3>
+              {provider.specializations && provider.specializations.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {provider.specializations.map((spec, index) => (
+                    <span
+                      key={index}
+                      className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium"
+                    >
+                      {spec}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 italic">No specializations listed</p>
+              )}
+            </div>
+
+            {/* Fellowships */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Relevant Fellowships</h3>
+              {provider.fellowships && provider.fellowships.length > 0 ? (
+                <ul className="space-y-2">
+                  {provider.fellowships.map((fellowship, index) => (
+                    <li key={index} className="text-gray-600 text-sm">• {fellowship}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500 italic">No fellowships listed</p>
+              )}
+            </div>
+
+            {/* Years of Experience */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Years of Experience</h3>
+              <p className="text-gray-600">{provider.yearsExperience || '--'} years of clinical practice</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Patient Reviews */}
+        <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Patient Reviews</h2>
+          
+          {provider.patientReviews && provider.patientReviews.length > 0 ? (
+            <div className="space-y-4">
+              {provider.patientReviews.map((review, index) => (
+                <div key={index} className="border-l-4 border-blue-500 pl-4 py-2">
+                  <div className="flex items-center mb-2">
+                    <div className="flex items-center">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${
+                            i < review.rating
+                              ? 'text-yellow-400 fill-current'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="ml-2 text-sm text-gray-500">{review.date}</span>
+                  </div>
+                  <p className="text-gray-700">{review.comment}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">No patient reviews available</p>
+          )}
+        </div>
+
+        {/* Websites */}
+        <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Websites</h2>
+          
+          {provider.websites && provider.websites.length > 0 ? (
+            <div className="space-y-2">
+              {provider.websites.map((website, index) => (
+                <a
+                  key={index}
+                  href={website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  {website}
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">No websites listed</p>
+          )}
         </div>
 
         {/* Additional Information */}

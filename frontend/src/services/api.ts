@@ -188,6 +188,18 @@ export interface NPIProvider {
     graduationYear: number;
     residency: string;
   };
+  // Additional professional information
+  publications?: string[];
+  books?: string[];
+  lectures?: string[];
+  specializations?: string[];
+  fellowships?: string[];
+  patientReviews?: Array<{
+    rating: number;
+    comment: string;
+    date: string;
+  }>;
+  websites?: string[];
 }
 
 export interface NPISearchRequest {

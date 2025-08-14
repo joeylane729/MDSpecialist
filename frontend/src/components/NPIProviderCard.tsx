@@ -28,7 +28,7 @@ export default function NPIProviderCard({ provider, onClick }: NPIProviderCardPr
             </h2>
             <div className="flex items-center">
               <Star className="h-5 w-5 text-yellow-400 fill-current" />
-              <span className="ml-1 text-gray-600">--</span>
+              <span className="ml-1 text-gray-600">5.0</span>
             </div>
             <div className="ml-3 flex items-center">
               <Award className="h-4 w-4 text-gray-400" />
@@ -41,7 +41,7 @@ export default function NPIProviderCard({ provider, onClick }: NPIProviderCardPr
             <span className="font-medium">{provider.specialty}</span>
             <span className="mx-2">•</span>
             <Calendar className="h-4 w-4 mr-1" />
-            <span>--</span>
+            <span>-- years of experience</span>
           </div>
 
           {/* Location */}
@@ -78,8 +78,8 @@ export default function NPIProviderCard({ provider, onClick }: NPIProviderCardPr
 
           {/* Status */}
           <div className="mt-4">
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">
-              --
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+              Accepting Patients
             </span>
           </div>
         </div>

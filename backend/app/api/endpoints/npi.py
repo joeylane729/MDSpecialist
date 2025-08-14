@@ -141,16 +141,16 @@ async def search_providers_by_criteria(
                 "state": provider.provider_business_practice_location_address_state_name or '',
                 "zip": provider.provider_business_practice_location_address_postal_code or '',
                 "phone": provider.provider_business_practice_location_address_telephone_number or '',
-                "rating": 4.5,  # Mock rating for now
-                "yearsExperience": 10,  # Mock experience for now
-                "boardCertified": True,  # Mock certification for now
-                "acceptingPatients": True,  # Mock status for now
-                "languages": ["English"],  # Mock languages for now
-                "insurance": ["Blue Cross", "Aetna", "Cigna"],  # Mock insurance for now
+                "rating": 5.0,  # Default rating
+                "yearsExperience": None,  # No experience data available
+                "boardCertified": None,  # No certification data available
+                "acceptingPatients": True,  # Default to accepting patients
+                "languages": [],  # No language data available
+                "insurance": [],  # No insurance data available
                 "education": {
-                    "medicalSchool": "Medical School",  # Mock education for now
-                    "graduationYear": 2010,  # Mock year for now
-                    "residency": "Residency Program"  # Mock residency for now
+                    "medicalSchool": None,  # No medical school data available
+                    "graduationYear": None,  # No graduation year data available
+                    "residency": None  # No residency data available
                 }
             }
             formatted_providers.append(formatted_provider)

@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { searchNPIProviders } from '../services/api';
+import { 
+  MapPin, 
+  Stethoscope, 
+  Search, 
+  Users, 
+  Shield, 
+  Clock, 
+  Star,
+  Building2,
+  Heart,
+  Zap,
+  ArrowRight,
+  CheckCircle
+} from 'lucide-react';
 
 interface State {
   name: string;
@@ -26,6 +40,27 @@ const HomePage: React.FC = () => {
   const [cities, setCities] = useState<City[]>([]);
   const [taxonomies, setTaxonomies] = useState<Taxonomy[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Debug logging
+  useEffect(() => {
+    console.log('HomePage mounted - checking viewport width:', window.innerWidth);
+    console.log('Document body width:', document.body.offsetWidth);
+    console.log('Document body style:', document.body.style.cssText);
+    console.log('Document html style:', document.documentElement.style.cssText);
+    
+    // Check for parent elements that might have margins/padding
+    const root = document.getElementById('root');
+    if (root) {
+      console.log('Root element:', root);
+      console.log('Root computed style:', window.getComputedStyle(root));
+    }
+    
+    const app = document.querySelector('.App');
+    if (app) {
+      console.log('App element:', app);
+      console.log('App computed style:', window.getComputedStyle(app));
+    }
+  }, []);
 
   // Mock data for now - will be replaced with API calls
   useEffect(() => {
@@ -526,115 +561,191 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-12">
-            <h1 className="text-5xl font-bold text-gray-900 mb-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden w-full">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-indigo-400/20 to-blue-400/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-purple-400/10 to-pink-400/10 rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="relative z-10 w-full px-4 pt-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Hero Section */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl mb-6 shadow-lg">
+              <Stethoscope className="w-10 h-10 text-white" />
+            </div>
+            <h1 className="text-6xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-6 animate-fade-in leading-tight py-2">
               ConciergeMD
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Find the perfect medical specialist for your needs. Search by location and specialty to discover qualified healthcare providers in your area.
+            <p className="text-2xl text-gray-700 max-w-4xl mx-auto leading-relaxed mb-8">
+              Find the <span className="font-semibold text-blue-600">best subspecialist</span> for your specific diagnosis. 
+              Our AI-powered algorithm evaluates expertise, experience, and outcomes to match you with the right specialist.
             </p>
+            
+            {/* Stats */}
+            <div className="flex justify-center items-center space-x-12 mb-12">
+              <div className="flex items-center space-x-3">
+                <Users className="w-6 h-6 text-blue-600" />
+                <span className="text-lg font-semibold text-gray-700">AI-Powered Matching</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Shield className="w-6 h-6 text-green-600" />
+                <span className="text-lg font-semibold text-gray-700">Expert Evaluated</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Clock className="w-6 h-6 text-purple-600" />
+                <span className="text-lg font-semibold text-gray-700">Appointment Booking</span>
+              </div>
+            </div>
           </div>
 
           {/* Search Form */}
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
-              Find Your Specialist
-            </h2>
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-10 border border-white/20">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-2xl mb-4 shadow-lg">
+                <Search className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                Find Your Expert Subspecialist
+              </h2>
+              <p className="text-gray-600 text-lg">
+                Enter your diagnosis and location to find the best specialist for your specific condition
+              </p>
+            </div>
             
-            <form onSubmit={handleSearch} className="space-y-6">
-              {/* State Selection */}
-              <div>
-                <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-2">
-                  State *
-                </label>
-                <select
-                  id="state"
-                  value={selectedState}
-                  onChange={(e) => setSelectedState(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  required
-                >
-                  <option value="">Select a state</option>
-                  {states.map((state) => (
-                    <option key={state.code} value={state.code}>
-                      {state.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <form onSubmit={handleSearch} className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* State Selection */}
+                <div className="group">
+                  <label htmlFor="state" className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <MapPin className="w-4 h-4 mr-2 text-blue-600" />
+                    State *
+                  </label>
+                  <select
+                    id="state"
+                    value={selectedState}
+                    onChange={(e) => setSelectedState(e.target.value)}
+                    className="w-full px-4 py-4 pr-8 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white/50 backdrop-blur-sm group-hover:border-blue-300"
+                    required
+                  >
+                    <option value="">Select a state</option>
+                    {states.map((state) => (
+                      <option key={state.code} value={state.code}>
+                        {state.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* City Selection */}
-              <div>
-                <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
-                  City *
-                </label>
-                <select
-                  id="city"
-                  value={selectedCity}
-                  onChange={(e) => setSelectedCity(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  required
-                  disabled={!selectedState}
-                >
-                  <option value="">Select a city</option>
-                  {cities.map((city) => (
-                    <option key={`${city.state}-${city.name}`} value={city.name}>
-                      {city.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                {/* City Selection */}
+                <div className="group">
+                  <label htmlFor="city" className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <MapPin className="w-4 h-4 mr-2 text-green-600" />
+                    City *
+                  </label>
+                  <select
+                    id="city"
+                    value={selectedCity}
+                    onChange={(e) => setSelectedCity(e.target.value)}
+                    className="w-full px-4 py-4 pr-8 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 bg-white/50 backdrop-blur-sm group-hover:border-green-300 disabled:opacity-50"
+                    required
+                    disabled={!selectedState}
+                  >
+                    <option value="">Select a city</option>
+                    {cities.map((city) => (
+                      <option key={`${city.state}-${city.name}`} value={city.name}>
+                        {city.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* Taxonomy/Specialty Selection */}
-              <div>
-                <label htmlFor="taxonomy" className="block text-sm font-medium text-gray-700 mb-2">
-                  Medical Specialty *
-                </label>
-                <select
-                  id="taxonomy"
-                  value={selectedTaxonomy}
-                  onChange={(e) => setSelectedTaxonomy(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  required
-                >
-                  <option value="">Select a specialty</option>
-                  {taxonomies.map((taxonomy) => (
-                    <option key={taxonomy.code} value={taxonomy.code}>
-                      {taxonomy.description}
-                    </option>
-                  ))}
-                </select>
+                {/* Taxonomy/Specialty Selection */}
+                <div className="group">
+                  <label htmlFor="taxonomy" className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <Stethoscope className="w-4 h-4 mr-2 text-purple-600" />
+                    Medical Subspecialty *
+                  </label>
+                  <select
+                    id="taxonomy"
+                    value={selectedTaxonomy}
+                    onChange={(e) => setSelectedTaxonomy(e.target.value)}
+                    className="w-full px-4 py-4 pr-8 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300 bg-white/50 backdrop-blur-sm group-hover:border-purple-300"
+                    required
+                  >
+                                          <option value="">Select a subspecialty</option>
+                    {taxonomies.map((taxonomy) => (
+                      <option key={taxonomy.code} value={taxonomy.code}>
+                        {taxonomy.description}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* Search Button */}
-              <button
-                type="submit"
-                disabled={isLoading || !selectedState || !selectedCity || !selectedTaxonomy}
-                className="w-full bg-blue-600 text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
-                    Searching...
-                  </div>
-                ) : (
-                  'Search Specialists'
-                )}
-              </button>
+              <div className="text-center">
+                <button
+                  type="submit"
+                  disabled={isLoading || !selectedState || !selectedCity || !selectedTaxonomy}
+                  className="group relative inline-flex items-center justify-center w-full max-w-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                >
+                  {isLoading ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
+                      <span>Searching...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <Zap className="w-6 h-6 mr-3" />
+                      <span>Find Specialists</span>
+                      <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
+                    </>
+                  )}
+                </button>
+              </div>
             </form>
 
-            {/* Info Text */}
-            <div className="mt-6 text-center text-sm text-gray-500">
-              <p>Search through our database of over 9 million healthcare providers</p>
-              <p className="mt-1">Find specialists based on location and medical expertise</p>
-            </div>
+
+          </div>
+
+          {/* Bottom CTA */}
+          <div className="text-center mt-8">
+            <p className="text-gray-600 text-lg">
+              Join patients who found the right subspecialist for their specific diagnosis through ConciergeMD
+            </p>
           </div>
         </div>
       </div>
+
+      {/* Animation styles */}
+      <style>{`
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.8s ease-out;
+        }
+        
+        /* Custom select styling */
+        select {
+          appearance: none;
+          -webkit-appearance: none;
+          -moz-appearance: none;
+          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+          background-repeat: no-repeat;
+          background-position: right 1rem center;
+          background-size: 1em;
+          padding-right: 2.5rem !important;
+        }
+        
+
+        
+
+      `}</style>
     </div>
   );
 };
