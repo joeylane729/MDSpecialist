@@ -28,14 +28,12 @@ export default function NPIProviderCard({ provider, onClick }: NPIProviderCardPr
             </h2>
             <div className="flex items-center">
               <Star className="h-5 w-5 text-yellow-400 fill-current" />
-              <span className="ml-1 text-gray-600">{provider.rating}</span>
+              <span className="ml-1 text-gray-600">--</span>
             </div>
-            {provider.boardCertified && (
-              <div className="ml-3 flex items-center">
-                <Award className="h-4 w-4 text-blue-600" />
-                <span className="ml-1 text-sm text-blue-600 font-medium">Board Certified</span>
-              </div>
-            )}
+            <div className="ml-3 flex items-center">
+              <Award className="h-4 w-4 text-gray-400" />
+              <span className="ml-1 text-sm text-gray-500 font-medium">--</span>
+            </div>
           </div>
 
           {/* Specialty and Experience */}
@@ -43,7 +41,7 @@ export default function NPIProviderCard({ provider, onClick }: NPIProviderCardPr
             <span className="font-medium">{provider.specialty}</span>
             <span className="mx-2">•</span>
             <Calendar className="h-4 w-4 mr-1" />
-            <span>{provider.yearsExperience} years experience</span>
+            <span>--</span>
           </div>
 
           {/* Location */}
@@ -66,26 +64,22 @@ export default function NPIProviderCard({ provider, onClick }: NPIProviderCardPr
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
               <span className="font-medium text-gray-700">Languages:</span>
-              <p className="text-gray-600">{provider.languages.join(', ')}</p>
+              <p className="text-gray-600">--</p>
             </div>
             <div>
               <span className="font-medium text-gray-700">Insurance:</span>
-              <p className="text-gray-600">{provider.insurance.slice(0, 3).join(', ')}</p>
+              <p className="text-gray-600">--</p>
             </div>
             <div>
               <span className="font-medium text-gray-700">Education:</span>
-              <p className="text-gray-600">{provider.education.medicalSchool}</p>
+              <p className="text-gray-600">--</p>
             </div>
           </div>
 
           {/* Status */}
           <div className="mt-4">
-            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-              provider.acceptingPatients 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-red-100 text-red-800'
-            }`}>
-              {provider.acceptingPatients ? 'Accepting Patients' : 'Not Accepting Patients'}
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-600">
+              --
             </span>
           </div>
         </div>
