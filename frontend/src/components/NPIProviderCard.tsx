@@ -32,7 +32,7 @@ export default function NPIProviderCard({ provider, onClick }: NPIProviderCardPr
             </div>
             <div className="ml-3 flex items-center">
               <Award className="h-4 w-4 text-gray-400" />
-              <span className="ml-1 text-sm text-gray-500 font-medium">--</span>
+              <span className="ml-1 text-sm text-gray-500 font-medium">Board Certified</span>
             </div>
           </div>
 
