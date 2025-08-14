@@ -167,4 +167,63 @@ export const getMetroSuggestions = async (query: string): Promise<string[]> => {
   }
 }
 
+export interface NPIProvider {
+  id: string;
+  npi: string;
+  name: string;
+  specialty: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  phone: string;
+  rating: number;
+  yearsExperience: number;
+  boardCertified: boolean;
+  acceptingPatients: boolean;
+  languages: string[];
+  insurance: string[];
+  education: {
+    medicalSchool: string;
+    graduationYear: number;
+    residency: string;
+  };
+}
+
+export interface NPISearchRequest {
+  state: string;
+  city: string;
+  taxonomy: string;
+  limit?: number;
+}
+
+export interface NPISearchResponse {
+  total_providers: number;
+  providers: NPIProvider[];
+  search_criteria: {
+    state: string;
+    city: string;
+    taxonomy: string;
+  };
+}
+
+export const searchNPIProviders = async (request: NPISearchRequest): Promise<NPISearchResponse> => {
+  try {
+    const params = new URLSearchParams({
+      state: request.state,
+      city: request.city,
+      taxonomy: request.taxonomy,
+      ...(request.limit && { limit: request.limit.toString() })
+    });
+    
+    const response = await api.get(`/api/v1/npi/search-providers?${params}`)
+    return response.data
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.error || 'Failed to search NPI providers')
+    }
+    throw error
+  }
+}
+
 export default api
