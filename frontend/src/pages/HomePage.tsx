@@ -588,7 +588,7 @@ const HomePage: React.FC = () => {
           {/* Search Form */}
           <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/20">
             <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-2 animate-fade-in leading-tight py-2">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-2 leading-tight py-2">
                 ConciergeMD
               </h1>
               <p className="text-lg text-gray-700 max-w-2xl mx-auto leading-relaxed mb-2">
@@ -624,14 +624,14 @@ const HomePage: React.FC = () => {
                 {/* City Selection */}
                 <div className="group">
                   <label htmlFor="city" className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    <MapPin className="w-4 h-4 mr-2 text-green-600" />
+                    <MapPin className="w-4 h-4 mr-2 text-blue-600" />
                     City *
                   </label>
                   <select
                     id="city"
                     value={selectedCity}
                     onChange={(e) => setSelectedCity(e.target.value)}
-                    className="w-full px-4 py-4 pr-8 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all duration-300 bg-white/50 backdrop-blur-sm group-hover:border-green-300 disabled:opacity-50"
+                    className="w-full px-4 py-4 pr-8 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white/50 backdrop-blur-sm group-hover:border-blue-300 disabled:opacity-50"
                     required
                     disabled={!selectedState}
                   >
@@ -647,14 +647,14 @@ const HomePage: React.FC = () => {
                 {/* Taxonomy/Specialty Selection */}
                 <div className="group">
                   <label htmlFor="taxonomy" className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    <Stethoscope className="w-4 h-4 mr-2 text-purple-600" />
+                    <Stethoscope className="w-4 h-4 mr-2 text-blue-600" />
                     Medical Subspecialty *
                   </label>
                   <select
                     id="taxonomy"
                     value={selectedTaxonomy}
                     onChange={(e) => setSelectedTaxonomy(e.target.value)}
-                    className="w-full px-4 py-4 pr-8 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all duration-300 bg-white/50 backdrop-blur-sm group-hover:border-purple-300"
+                    className="w-full px-4 py-4 pr-8 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white/50 backdrop-blur-sm group-hover:border-blue-300"
                     required
                   >
                                           <option value="">Select a subspecialty</option>
@@ -672,7 +672,7 @@ const HomePage: React.FC = () => {
                 {/* Diagnosis Input */}
                 <div className="group lg:col-span-3 flex flex-col pr-2">
                   <label htmlFor="diagnosis" className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    <FileText className="w-4 h-4 mr-2 text-red-600" />
+                    <FileText className="w-4 h-4 mr-2 text-blue-600" />
                     Diagnosis Description *
                   </label>
                   <textarea
@@ -680,7 +680,7 @@ const HomePage: React.FC = () => {
                     value={diagnosis}
                     onChange={(e) => setDiagnosis(e.target.value)}
                     placeholder="Please provide a detailed description of your diagnosis, symptoms, and any relevant medical history..."
-                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-red-100 focus:border-red-500 transition-all duration-300 bg-white/50 backdrop-blur-sm group-hover:border-red-300 resize-none flex-1"
+                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white/50 backdrop-blur-sm group-hover:border-blue-300 resize-none flex-1"
                     rows={4}
                     required
                   />
@@ -689,10 +689,10 @@ const HomePage: React.FC = () => {
                 {/* File Upload */}
                 <div className="group lg:col-span-1 flex flex-col">
                   <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    <Upload className="w-4 h-4 mr-2 text-orange-600" />
+                    <Upload className="w-4 h-4 mr-2 text-blue-600" />
                     Upload Medical Documents
                   </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-3 text-center hover:border-orange-400 transition-colors flex-1 flex flex-col justify-center">
+                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-3 text-center hover:border-blue-400 transition-colors flex-1 flex flex-col justify-center">
                     <input
                       type="file"
                       multiple
