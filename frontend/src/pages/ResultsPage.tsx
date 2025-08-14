@@ -29,6 +29,22 @@ const ResultsPage: React.FC = () => {
   const [filterAcceptingPatients, setFilterAcceptingPatients] = useState<boolean | null>(null);
   const [filterBoardCertified, setFilterBoardCertified] = useState<boolean | null>(null);
   const [isBackNavigation, setIsBackNavigation] = useState(false);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
+  // Close filters dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (isFiltersOpen && !target.closest('.filters-dropdown')) {
+        setIsFiltersOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isFiltersOpen]);
 
   useEffect(() => {
     // Try to get data from location.state first (direct navigation)
@@ -546,148 +562,162 @@ const ResultsPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-4">
           <button
             onClick={() => navigate('/')}
-            className="text-blue-600 hover:text-blue-800 mb-4 flex items-center"
+            className="text-gray-900 hover:text-gray-700 mb-2 flex items-center"
           >
             ← Back to Search
           </button>
           
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <div className="text-center mb-4">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-3">
               {getSpecialtyName(searchParams?.taxonomy || '')} Specialists
             </h1>
-            <p className="text-lg text-gray-600">
+            <p className="text-xl text-gray-600 font-medium">
               Found {location.state?.totalProviders || providers.length} providers in {searchParams?.city}, {searchParams?.state}
             </p>
           </div>
         </div>
 
-        {/* Search, Sort, and Filter Controls */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        {/* Search and Filter Controls */}
+        <div className="py-2 mb-3">
+          <div className="flex items-center gap-3 justify-center">
             {/* Search */}
-            <div>
-              <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
-                Search
-              </label>
-              <input
-                type="text"
-                id="search"
-                placeholder="Search by name, specialty, or city..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                  // Save state immediately
-                  saveFilterState();
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+            <div className="flex-1 max-w-md">
+              <div className="relative">
+                <input
+                  type="text"
+                  id="search"
+                  placeholder="Search providers..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                    saveFilterState();
+                  }}
+                  className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/50"
+                />
+                <svg className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
             </div>
 
-            {/* Sort By */}
-            <div>
-              <label htmlFor="sortBy" className="block text-sm font-medium text-gray-700 mb-2">
-                Sort By
-              </label>
-              <select
-                id="sortBy"
-                value={sortBy}
-                onChange={(e) => {
-                  const newSortBy = e.target.value;
-                  setSortBy(newSortBy);
-                  setCurrentPage(1);
-                  // Save with the new value immediately
-                  saveFilterStateWithSortBy(newSortBy);
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="name">Last Name</option>
-                <option value="specialty">Specialty</option>
-                <option value="rating">Rating</option>
-                <option value="experience">Experience</option>
-                <option value="city">City</option>
-              </select>
-            </div>
-
-            {/* Sort Order */}
-            <div>
-              <label htmlFor="sortOrder" className="block text-sm font-medium text-gray-700 mb-2">
-                Order
-              </label>
-              <select
-                id="sortOrder"
-                value={sortOrder}
-                onChange={(e) => {
-                  const newSortOrder = e.target.value as 'asc' | 'desc';
-                  console.log('Sort order changed to:', newSortOrder);
-                  setSortOrder(newSortOrder);
-                  setCurrentPage(1);
-                  // Save with the new value immediately
-                  saveFilterStateWithValue(newSortOrder);
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="asc">A-Z / Low-High</option>
-                <option value="desc">Z-A / High-Low</option>
-              </select>
-            </div>
-
-            {/* Reset Button */}
-            <div className="flex items-end">
+            {/* Filters Dropdown */}
+            <div className="relative filters-dropdown">
               <button
-                onClick={resetFilters}
-                className="w-full px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+                onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors bg-white/50"
               >
-                Reset Filters
+                <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
+                </svg>
+                <span className="text-sm font-medium text-gray-700">Filters</span>
+                <svg className={`h-4 w-4 text-gray-600 transition-transform ${isFiltersOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
-            </div>
-          </div>
 
-          {/* Additional Filters */}
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <div className="flex flex-wrap gap-4">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="acceptingPatients"
-                  checked={filterAcceptingPatients === true}
-                  onChange={(e) => {
-                    setFilterAcceptingPatients(e.target.checked ? true : null);
-                    setCurrentPage(1);
-                    saveFilterState();
-                  }}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="acceptingPatients" className="text-sm font-medium text-gray-700">
-                  Accepting Patients
-                </label>
-              </div>
+              {/* Filters Dropdown Content */}
+              {isFiltersOpen && (
+                <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-4">
+                  <div className="space-y-4">
+                    {/* Sort Controls */}
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900 mb-2">Sort By</h3>
+                      <div className="flex gap-2">
+                        <select
+                          id="sortBy"
+                          value={sortBy}
+                          onChange={(e) => {
+                            const newSortBy = e.target.value;
+                            setSortBy(newSortBy);
+                            setCurrentPage(1);
+                            saveFilterStateWithSortBy(newSortBy);
+                          }}
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none pr-8"
+                        >
+                          <option value="name">Last Name</option>
+                          <option value="specialty">Specialty</option>
+                          <option value="rating">Rating</option>
+                          <option value="experience">Experience</option>
+                          <option value="city">City</option>
+                        </select>
 
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="boardCertified"
-                  checked={filterBoardCertified === true}
-                  onChange={(e) => {
-                    setFilterBoardCertified(e.target.checked ? true : null);
-                    setCurrentPage(1);
-                    saveFilterState();
-                  }}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="boardCertified" className="text-sm font-medium text-gray-700">
-                  Board Certified
-                </label>
-              </div>
+                        <button
+                          onClick={() => {
+                            const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+                            setSortOrder(newSortOrder);
+                            setCurrentPage(1);
+                            saveFilterStateWithValue(newSortOrder);
+                          }}
+                          className="px-1 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-all duration-200 w-8"
+                        >
+                          <svg className={`h-4 w-4 transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19V5M5 12l7-7 7 7" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Filter Toggles */}
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900 mb-2">Filters</h3>
+                      <div className="space-y-2">
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            id="acceptingPatients"
+                            checked={filterAcceptingPatients === true}
+                            onChange={(e) => {
+                              setFilterAcceptingPatients(e.target.checked ? true : null);
+                              setCurrentPage(1);
+                              saveFilterState();
+                            }}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors"
+                          />
+                          <span className="text-sm font-medium text-gray-700">Accepting Patients</span>
+                        </label>
+
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            id="boardCertified"
+                            checked={filterBoardCertified === true}
+                            onChange={(e) => {
+                              setFilterBoardCertified(e.target.checked ? true : null);
+                              setCurrentPage(1);
+                              saveFilterState();
+                            }}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors"
+                          />
+                          <span className="text-sm font-medium text-gray-700">Board Certified</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Reset Button */}
+                    <div className="pt-2 border-t border-gray-200">
+                      <button
+                        onClick={() => {
+                          resetFilters();
+                          setIsFiltersOpen(false);
+                        }}
+                        className="w-full px-3 py-2 text-gray-600 hover:text-gray-800 transition-colors font-medium text-sm"
+                      >
+                        Reset All Filters
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         {/* Results Count */}
-        <div className="mb-4 text-sm text-gray-600">
+        <div className="mb-3 text-sm text-gray-600">
           Showing {filteredAndSortedProviders.length} of {providers.length} providers
           {searchTerm && ` matching "${searchTerm}"`}
         </div>
@@ -782,7 +812,7 @@ const ResultsPage: React.FC = () => {
                 Next
               </button>
             </nav>
-        )}
+          )}
         </div>
 
         {/* Footer Info */}
@@ -793,6 +823,20 @@ const ResultsPage: React.FC = () => {
           </p>
         </div>
       </div>
+      
+      <style>{`
+        /* Custom select styling */
+        select {
+          appearance: none;
+          -webkit-appearance: none;
+          -moz-appearance: none;
+          background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+          background-repeat: no-repeat;
+          background-position: right 0.75rem center;
+          background-size: 0.875em;
+          padding-right: 2rem !important;
+        }
+      `}</style>
     </div>
   );
 };
