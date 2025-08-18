@@ -45,6 +45,8 @@ const HomePage: React.FC = () => {
   const [cities, setCities] = useState<City[]>([]);
   const [taxonomies, setTaxonomies] = useState<Taxonomy[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [patientType, setPatientType] = useState<string>('');
+  const [proximity, setProximity] = useState<string>('');
 
   // Debug logging
   useEffect(() => {
@@ -521,7 +523,7 @@ const HomePage: React.FC = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedState || !selectedCity || !selectedTaxonomy || !diagnosis.trim()) {
+    if (!selectedState || !selectedCity || !selectedTaxonomy || !diagnosis.trim() || !patientType || !proximity) {
       alert('Please fill in all required fields before searching');
       return;
     }
@@ -597,8 +599,41 @@ const HomePage: React.FC = () => {
             </div>
             
             <form onSubmit={handleSearch} className="space-y-6">
-              {/* Location and Specialty - Top Priority */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* 2x2 Grid for Selectors */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Patient Type Selection */}
+                <div className="group h-full flex flex-col justify-end">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <Users className="w-4 h-4 mr-2 text-blue-600" />
+                    Patient Type *
+                  </label>
+                  <div className="w-full h-full px-4 py-4 border-2 border-gray-200 rounded-xl focus-within:ring-4 focus-within:ring-blue-100 focus-within:border-blue-500 transition-all duration-300 bg-white/50 backdrop-blur-sm group-hover:border-blue-300 flex items-center gap-6">
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="patientType"
+                        value="adult"
+                        checked={patientType === 'adult'}
+                        onChange={() => setPatientType('adult')}
+                        className="form-radio h-5 w-5 text-blue-600"
+                        required
+                      />
+                      <span className="ml-2 text-base text-gray-800">Adult</span>
+                    </label>
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="patientType"
+                        value="pediatric"
+                        checked={patientType === 'pediatric'}
+                        onChange={() => setPatientType('pediatric')}
+                        className="form-radio h-5 w-5 text-blue-600"
+                        required
+                      />
+                      <span className="ml-2 text-base text-gray-800">Pediatric</span>
+                    </label>
+                  </div>
+                </div>
                 {/* State Selection */}
                 <div className="group">
                   <label htmlFor="state" className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
@@ -620,7 +655,6 @@ const HomePage: React.FC = () => {
                     ))}
                   </select>
                 </div>
-
                 {/* City Selection */}
                 <div className="group">
                   <label htmlFor="city" className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
@@ -643,34 +677,32 @@ const HomePage: React.FC = () => {
                     ))}
                   </select>
                 </div>
-
-                {/* Taxonomy/Specialty Selection */}
+                {/* Proximity Selection */}
                 <div className="group">
-                  <label htmlFor="taxonomy" className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    <Stethoscope className="w-4 h-4 mr-2 text-blue-600" />
-                    Medical Subspecialty *
+                  <label htmlFor="proximity" className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    Proximity *
                   </label>
                   <select
-                    id="taxonomy"
-                    value={selectedTaxonomy}
-                    onChange={(e) => setSelectedTaxonomy(e.target.value)}
+                    id="proximity"
+                    value={proximity}
+                    onChange={(e) => setProximity(e.target.value)}
                     className="w-full px-4 py-4 pr-8 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white/50 backdrop-blur-sm group-hover:border-blue-300"
                     required
                   >
-                                          <option value="">Select a subspecialty</option>
-                    {taxonomies.map((taxonomy) => (
-                      <option key={taxonomy.code} value={taxonomy.code}>
-                        {taxonomy.description}
-                      </option>
-                    ))}
+                    <option value="">Select proximity</option>
+                    <option value="50">Within 50 miles</option>
+                    <option value="100">Within 100 miles</option>
+                    <option value="state">State-wide</option>
+                    <option value="us">US-wide</option>
+                    <option value="world">Worldwide</option>
                   </select>
                 </div>
               </div>
 
-              {/* Diagnosis and File Upload - Side by Side */}
-              <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+              {/* Row 2: Diagnosis and Upload */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6 mt-2">
                 {/* Diagnosis Input */}
-                <div className="group lg:col-span-3 flex flex-col pr-2">
+                <div className="group md:col-span-2 flex flex-col pr-0 md:pr-2">
                   <label htmlFor="diagnosis" className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
                     <FileText className="w-4 h-4 mr-2 text-blue-600" />
                     Diagnosis Description *
@@ -685,9 +717,8 @@ const HomePage: React.FC = () => {
                     required
                   />
                 </div>
-
                 {/* File Upload */}
-                <div className="group lg:col-span-1 flex flex-col">
+                <div className="group md:col-span-2 flex flex-col">
                   <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
                     <Upload className="w-4 h-4 mr-2 text-blue-600" />
                     Upload Medical Documents
@@ -704,7 +735,9 @@ const HomePage: React.FC = () => {
                     <label htmlFor="file-upload" className="cursor-pointer">
                       <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                       <p className="text-gray-600 mb-1">Click to upload PDF files</p>
-                      <p className="text-sm text-gray-500">Laboratory tests, imaging reports, doctors' notes</p>
+                      <p className="text-sm text-gray-500">
+                        Imaging reports, doctors notes, biopsy pathology reports, relevant blood tests...
+                      </p>
                     </label>
                   </div>
                   
@@ -732,11 +765,33 @@ const HomePage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Row 3: Medical Subspecialty */}
+              <div className="group mb-6">
+                <label htmlFor="taxonomy" className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                  <Stethoscope className="w-4 h-4 mr-2 text-blue-600" />
+                  Medical Subspecialty *
+                </label>
+                <select
+                  id="taxonomy"
+                  value={selectedTaxonomy}
+                  onChange={(e) => setSelectedTaxonomy(e.target.value)}
+                  className="w-full px-4 py-4 pr-8 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white/50 backdrop-blur-sm group-hover:border-blue-300"
+                  required
+                >
+                  <option value="">Select a subspecialty</option>
+                  {taxonomies.map((taxonomy) => (
+                    <option key={taxonomy.code} value={taxonomy.code}>
+                      {taxonomy.description}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Search Button */}
               <div className="text-center">
                 <button
                   type="submit"
-                  disabled={isLoading || !selectedState || !selectedCity || !selectedTaxonomy || !diagnosis.trim()}
+                  disabled={isLoading || !selectedState || !selectedCity || !selectedTaxonomy || !diagnosis.trim() || !patientType || !proximity}
                   className="group relative inline-flex items-center justify-center w-full max-w-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                 >
                   {isLoading ? (
