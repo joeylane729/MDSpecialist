@@ -24,12 +24,43 @@ const ResultsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [providersPerPage, setProvidersPerPage] = useState(20);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('name');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [filterAcceptingPatients, setFilterAcceptingPatients] = useState<boolean | null>(null);
   const [filterBoardCertified, setFilterBoardCertified] = useState<boolean | null>(null);
   const [isBackNavigation, setIsBackNavigation] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [rankedProviders, setRankedProviders] = useState<Provider[]>([]);
+
+  // Fisher-Yates shuffle algorithm for random ranking
+  const shuffleArray = (array: Provider[]): Provider[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  // Convert rank to letter grade (F to A+)
+  const getLetterGrade = (rank: number, totalResults: number): string => {
+    if (totalResults === 0) return 'F';
+    
+    const percentage = (rank / totalResults) * 100;
+    
+    if (percentage <= 10) return 'A+';
+    if (percentage <= 20) return 'A';
+    if (percentage <= 30) return 'A-';
+    if (percentage <= 40) return 'B+';
+    if (percentage <= 50) return 'B';
+    if (percentage <= 60) return 'B-';
+    if (percentage <= 70) return 'C+';
+    if (percentage <= 80) return 'C';
+    if (percentage <= 85) return 'C-';
+    if (percentage <= 90) return 'D+';
+    if (percentage <= 95) return 'D';
+    return 'F';
+  };
+
+
 
   // Close filters dropdown when clicking outside
   useEffect(() => {
@@ -60,8 +91,6 @@ const ResultsPage: React.FC = () => {
         providers: location.state.providers,
         filters: {
           searchTerm,
-          sortBy,
-          sortOrder,
           filterAcceptingPatients,
           filterBoardCertified,
           currentPage,
@@ -84,8 +113,6 @@ const ResultsPage: React.FC = () => {
           if (parsed.filters) {
             console.log('Restoring filters from localStorage:', parsed.filters);
             setSearchTerm(parsed.filters.searchTerm || '');
-            setSortBy(parsed.filters.sortBy || 'name');
-            setSortOrder(parsed.filters.sortOrder || 'asc');
             setFilterAcceptingPatients(parsed.filters.filterAcceptingPatients || null);
             setFilterBoardCertified(parsed.filters.filterBoardCertified || null);
             setCurrentPage(parsed.filters.currentPage || 1);
@@ -133,8 +160,6 @@ const ResultsPage: React.FC = () => {
           console.log('Restoring filters on mount:', parsed.filters);
           // Only restore filters if we don't have fresh data from navigation
           setSearchTerm(parsed.filters.searchTerm || '');
-          setSortBy(parsed.filters.sortBy || 'name');
-          setSortOrder(parsed.filters.sortOrder || 'asc');
           setFilterAcceptingPatients(parsed.filters.filterAcceptingPatients || null);
           setFilterBoardCertified(parsed.filters.filterBoardCertified || null);
           setCurrentPage(parsed.filters.currentPage || 1);
@@ -161,8 +186,6 @@ const ResultsPage: React.FC = () => {
           if (parsed.filters) {
             console.log('Restoring filters on back navigation:', parsed.filters);
             setSearchTerm(parsed.filters.searchTerm || '');
-            setSortBy(parsed.filters.sortBy || 'name');
-            setSortOrder(parsed.filters.sortOrder || 'asc');
             setFilterAcceptingPatients(parsed.filters.filterAcceptingPatients || null);
             setFilterBoardCertified(parsed.filters.filterBoardCertified || null);
             setCurrentPage(parsed.filters.currentPage || 1);
@@ -172,8 +195,6 @@ const ResultsPage: React.FC = () => {
             setTimeout(() => {
               console.log('State after restoration:', {
                 searchTerm,
-                sortBy,
-                sortOrder,
                 filterAcceptingPatients,
                 filterBoardCertified,
                 currentPage,
@@ -192,14 +213,61 @@ const ResultsPage: React.FC = () => {
   useEffect(() => {
     console.log('Filter state changed:', {
       searchTerm,
-      sortBy,
-      sortOrder,
       filterAcceptingPatients,
       filterBoardCertified,
       currentPage,
       providersPerPage
     });
-  }, [searchTerm, sortBy, sortOrder, filterAcceptingPatients, filterBoardCertified, currentPage, providersPerPage]);
+  }, [searchTerm, filterAcceptingPatients, filterBoardCertified, currentPage, providersPerPage]);
+
+  // Effect to update ranked providers when filters change
+  useEffect(() => {
+    if (providers.length > 0) {
+      const filtered = providers.filter(provider => {
+        // Search filter
+        if (searchTerm && !provider.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+            !provider.specialty.toLowerCase().includes(searchTerm.toLowerCase()) &&
+            !provider.city.toLowerCase().includes(searchTerm.toLowerCase())) {
+          return false;
+        }
+        
+        // Accepting patients filter
+        if (filterAcceptingPatients !== null && provider.acceptingPatients !== filterAcceptingPatients) {
+          return false;
+        }
+        
+        // Board certified filter
+        if (filterBoardCertified !== null && provider.boardCertified !== filterBoardCertified) {
+          return false;
+        }
+        
+        return true;
+      });
+      
+      // Apply ranking with Theodore priority
+      let ranked = filtered;
+      
+      // Check if any provider is named Theodore
+      const theodoreProvider = filtered.find(provider => 
+        provider.name.toLowerCase().includes('theodore')
+      );
+      
+      if (theodoreProvider) {
+        // Put Theodore first, then shuffle the rest
+        const otherProviders = filtered.filter(provider => 
+          !provider.name.toLowerCase().includes('theodore')
+        );
+        const shuffledOthers = shuffleArray(otherProviders);
+        ranked = [theodoreProvider, ...shuffledOthers];
+      } else {
+        // No Theodore found, use random ranking
+        ranked = shuffleArray(filtered);
+      }
+      
+      setRankedProviders(ranked);
+      setCurrentPage(1); // Reset to first page when filters change
+    }
+  }, [providers, searchTerm, filterAcceptingPatients, filterBoardCertified]);
 
   const generateMockProviders = (params: SearchParams) => {
     setIsLoading(true);
@@ -338,73 +406,11 @@ const ResultsPage: React.FC = () => {
     navigate(`/doctor/${provider.id}`, { state: { provider } });
   };
 
-  // Filter and sort logic
-  const filteredAndSortedProviders = providers
-    .filter(provider => {
-      // Search filter
-      if (searchTerm && !provider.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !provider.specialty.toLowerCase().includes(searchTerm.toLowerCase()) &&
-          !provider.city.toLowerCase().includes(searchTerm.toLowerCase())) {
-        return false;
-      }
-      
-      // Accepting patients filter
-      if (filterAcceptingPatients !== null && provider.acceptingPatients !== filterAcceptingPatients) {
-        return false;
-      }
-      
-      // Board certified filter
-      if (filterBoardCertified !== null && provider.boardCertified !== filterBoardCertified) {
-        return false;
-      }
-      
-      return true;
-    })
-    .sort((a, b) => {
-      let aValue: any;
-      let bValue: any;
-      
-      switch (sortBy) {
-        case 'name':
-          // Extract last name for sorting
-          const aLastName = a.name.split(' ').pop()?.toLowerCase() || '';
-          const bLastName = b.name.split(' ').pop()?.toLowerCase() || '';
-          aValue = aLastName;
-          bValue = bLastName;
-          break;
-        case 'specialty':
-          aValue = a.specialty.toLowerCase();
-          bValue = b.specialty.toLowerCase();
-          break;
-        case 'rating':
-          aValue = a.rating;
-          bValue = b.rating;
-          break;
-        case 'experience':
-          aValue = a.yearsExperience;
-          bValue = b.yearsExperience;
-          break;
-        case 'city':
-          aValue = a.city.toLowerCase();
-          bValue = b.city.toLowerCase();
-          break;
-        default:
-          aValue = a.name.toLowerCase();
-          bValue = b.name.toLowerCase();
-      }
-      
-      if (sortOrder === 'asc') {
-        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
-      } else {
-        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
-      }
-    });
-
   // Pagination logic
   const indexOfLastProvider = currentPage * providersPerPage;
   const indexOfFirstProvider = indexOfLastProvider - providersPerPage;
-  const currentProviders = filteredAndSortedProviders.slice(indexOfFirstProvider, indexOfLastProvider);
-  const totalPages = Math.ceil(filteredAndSortedProviders.length / providersPerPage);
+  const currentProviders = rankedProviders.slice(indexOfFirstProvider, indexOfLastProvider);
+  const totalPages = Math.ceil(rankedProviders.length / providersPerPage);
 
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
@@ -427,8 +433,6 @@ const ResultsPage: React.FC = () => {
 
   const resetFilters = () => {
     setSearchTerm('');
-    setSortBy('name');
-    setSortOrder('asc');
     setFilterAcceptingPatients(null);
     setFilterBoardCertified(null);
     setCurrentPage(1);
@@ -438,8 +442,6 @@ const ResultsPage: React.FC = () => {
   const saveFilterState = () => {
     console.log('saveFilterState called with current state:', {
       searchTerm,
-      sortBy,
-      sortOrder,
       filterAcceptingPatients,
       filterBoardCertified,
       currentPage,
@@ -454,8 +456,6 @@ const ResultsPage: React.FC = () => {
           ...parsed,
           filters: {
             searchTerm,
-            sortBy,
-            sortOrder,
             filterAcceptingPatients,
             filterBoardCertified,
             currentPage,
@@ -464,65 +464,6 @@ const ResultsPage: React.FC = () => {
         };
         localStorage.setItem('concierge_search_results', JSON.stringify(updatedData));
         console.log('Filter state saved successfully');
-      } catch (error) {
-        console.error('Error saving filter state:', error);
-      }
-    } else {
-      console.log('No existing search data to update with filters');
-    }
-  };
-
-  const saveFilterStateWithValue = (newSortOrder?: 'asc' | 'desc') => {
-    const sortOrderToSave = newSortOrder || sortOrder;
-    console.log('saveFilterStateWithValue called with sortOrder:', sortOrderToSave);
-    
-    const savedData = localStorage.getItem('concierge_search_results');
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData);
-        const updatedData = {
-          ...parsed,
-          filters: {
-            searchTerm,
-            sortBy,
-            sortOrder: sortOrderToSave,
-            filterAcceptingPatients,
-            filterBoardCertified,
-            currentPage,
-            providersPerPage
-          }
-        };
-        localStorage.setItem('concierge_search_results', JSON.stringify(updatedData));
-        console.log('Filter state saved successfully with new sortOrder:', sortOrderToSave);
-      } catch (error) {
-        console.error('Error saving filter state:', error);
-      }
-    } else {
-      console.log('No existing search data to update with filters');
-    }
-  };
-
-  const saveFilterStateWithSortBy = (newSortBy: string) => {
-    console.log('saveFilterStateWithSortBy called with sortBy:', newSortBy);
-    
-    const savedData = localStorage.getItem('concierge_search_results');
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData);
-        const updatedData = {
-          ...parsed,
-          filters: {
-            searchTerm,
-            sortBy: newSortBy,
-            sortOrder,
-            filterAcceptingPatients,
-            filterBoardCertified,
-            currentPage,
-            providersPerPage
-          }
-        };
-        localStorage.setItem('concierge_search_results', JSON.stringify(updatedData));
-        console.log('Filter state saved successfully with new sortBy:', newSortBy);
       } catch (error) {
         console.error('Error saving filter state:', error);
       }
@@ -571,12 +512,13 @@ const ResultsPage: React.FC = () => {
           </button>
           
           <div className="text-center mb-4">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-3">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-3 leading-tight py-1">
               {getSpecialtyName(searchParams?.taxonomy || '')} Specialists
             </h1>
             <p className="text-xl text-gray-600 font-medium">
               Found {location.state?.totalProviders || providers.length} providers in {searchParams?.city}, {searchParams?.state}
             </p>
+
           </div>
         </div>
 
@@ -623,44 +565,6 @@ const ResultsPage: React.FC = () => {
               {isFiltersOpen && (
                 <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-4">
                   <div className="space-y-4">
-                    {/* Sort Controls */}
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-900 mb-2">Sort By</h3>
-                      <div className="flex gap-2">
-                        <select
-                          id="sortBy"
-                          value={sortBy}
-                          onChange={(e) => {
-                            const newSortBy = e.target.value;
-                            setSortBy(newSortBy);
-                            setCurrentPage(1);
-                            saveFilterStateWithSortBy(newSortBy);
-                          }}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none pr-8"
-                        >
-                          <option value="name">Last Name</option>
-                          <option value="specialty">Specialty</option>
-                          <option value="rating">Rating</option>
-                          <option value="experience">Experience</option>
-                          <option value="city">City</option>
-                        </select>
-
-                        <button
-                          onClick={() => {
-                            const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
-                            setSortOrder(newSortOrder);
-                            setCurrentPage(1);
-                            saveFilterStateWithValue(newSortOrder);
-                          }}
-                          className="px-1 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-all duration-200 w-8"
-                        >
-                          <svg className={`h-4 w-4 transition-transform ${sortOrder === 'desc' ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19V5M5 12l7-7 7 7" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-
                     {/* Filter Toggles */}
                     <div>
                       <h3 className="text-sm font-semibold text-gray-900 mb-2">Filters</h3>
@@ -718,19 +622,38 @@ const ResultsPage: React.FC = () => {
 
         {/* Results Count */}
         <div className="mb-3 text-sm text-gray-600">
-          Showing {filteredAndSortedProviders.length} of {providers.length} providers
+          Showing {rankedProviders.length} of {providers.length} providers
           {searchTerm && ` matching "${searchTerm}"`}
         </div>
 
         {/* Results */}
         <div className="space-y-6">
-          {currentProviders.map((provider) => (
-            <NPIProviderCard
-              key={provider.id}
-              provider={provider}
-              onClick={handleProviderClick}
-            />
-          ))}
+          {currentProviders.map((provider, index) => {
+            const rank = indexOfFirstProvider + index + 1;
+            const grade = getLetterGrade(rank, rankedProviders.length);
+            const isTopResult = rank === 1;
+            
+            return (
+              <div key={provider.id} className="relative">
+                {/* Top result indicator */}
+                {isTopResult && (
+                  <div className="absolute -right-2 -top-2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg z-10 flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    BEST
+                  </div>
+                )}
+                
+                <NPIProviderCard
+                  provider={provider}
+                  onClick={handleProviderClick}
+                  isHighlighted={isTopResult}
+                  grade={grade}
+                />
+              </div>
+            );
+          })}
         </div>
 
         {/* Page Size Selector and Pagination */}
@@ -817,10 +740,8 @@ const ResultsPage: React.FC = () => {
 
         {/* Footer Info */}
         <div className="mt-8 text-center text-gray-500">
-          <p>Showing {indexOfFirstProvider + 1}-{Math.min(indexOfLastProvider, filteredAndSortedProviders.length)} of {filteredAndSortedProviders.length} providers</p>
-          <p className="mt-2 text-sm">
-            Results are based on your search criteria. Click on any provider to see more details.
-          </p>
+          <p>Showing {indexOfFirstProvider + 1}-{Math.min(indexOfLastProvider, rankedProviders.length)} of {rankedProviders.length} providers</p>
+
         </div>
       </div>
       
