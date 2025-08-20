@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { MapPin, Phone, Mail, Globe, Star, Award, Calendar, Building, ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { MapPin, Phone, Mail, Globe, Star, Award, Calendar, Building, ArrowLeft, CheckCircle, XCircle, FileText, ExternalLink } from 'lucide-react';
 import SchedulingModal from '../components/SchedulingModal';
+import { searchAuthorPublicationsJSON, PubMedPublication } from '../services/pubmed';
 
 interface Provider {
   id: string;
@@ -26,18 +27,76 @@ interface Provider {
     graduationYear: number;
     residency: string;
   };
+  // Additional professional information
+  publications?: string[];
+  books?: string[];
+  lectures?: string[];
+  specializations?: string[];
+  fellowships?: string[];
+  patientReviews?: Array<{
+    rating: number;
+    comment: string;
+    date: string;
+  }>;
+  websites?: string[];
 }
 
 const DoctorDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const navigate = useNavigate();
   const provider = location.state?.provider as Provider;
   const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
+  const [publications, setPublications] = useState<PubMedPublication[]>([]);
+  const [isLoadingPublications, setIsLoadingPublications] = useState(false);
+  const [searchTermsTried, setSearchTermsTried] = useState<string[]>([]);
 
   const openSchedulingModal = () => {
     setIsSchedulingModalOpen(true);
   };
+
+  // Fetch PubMed publications when component loads
+  useEffect(() => {
+    const fetchPublications = async () => {
+      if (!provider?.name) return;
+      
+      setIsLoadingPublications(true);
+      const searchTerms: string[] = [];
+      
+      try {
+        const doctorName = provider.name;
+        let publications: PubMedPublication[] = [];
+        
+        // Strategy 1: Use [Full Author Name] field for most comprehensive search
+        const nameParts = doctorName.split(' ');
+        if (nameParts.length >= 2) {
+          const lastName = nameParts[nameParts.length - 1];
+          const firstName = nameParts[0];
+          const fullAuthorSearch = `${lastName} ${firstName}`;
+          
+          searchTerms.push(`${fullAuthorSearch}[Full Author Name]`);
+          console.log(`Trying search with full author name: ${fullAuthorSearch}[Full Author Name]`);
+          publications = await searchAuthorPublicationsJSON(fullAuthorSearch, 5, true, 'full');
+        }
+        
+        // Strategy 2: If no results, try with [Author] field as fallback
+        if (publications.length === 0) {
+          searchTerms.push(`"${doctorName}"[Author]`);
+          console.log(`Trying fallback search with author field: "${doctorName}"[Author]`);
+          publications = await searchAuthorPublicationsJSON(doctorName, 5, true, 'author');
+        }
+        
+        setPublications(publications);
+        setSearchTermsTried(searchTerms);
+      } catch (error) {
+        console.error('Error fetching publications:', error);
+        setPublications([]);
+      } finally {
+        setIsLoadingPublications(false);
+      }
+    };
+
+    fetchPublications();
+  }, [provider?.name]);
 
   if (!provider) {
     return (
@@ -205,20 +264,98 @@ const DoctorDetailPage: React.FC = () => {
           <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Professional Achievements</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Publications */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">Publications</h3>
-                {provider.publications && provider.publications.length > 0 ? (
-                  <ul className="space-y-2">
-                    {provider.publications.map((pub, index) => (
-                      <li key={index} className="text-gray-600 text-sm">• {pub}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-gray-500 italic">No publications listed</p>
+            {/* PubMed Publications Section */}
+            <div className="mb-8">
+              <div className="flex items-center mb-4">
+                <FileText className="h-6 w-6 text-blue-600 mr-3" />
+                <h3 className="text-xl font-semibold text-gray-800">Recent Publications</h3>
+                <span className="ml-2 text-sm text-gray-500 bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                  PubMed
+                </span>
+                {publications.length > 0 && (
+                  <span className="ml-2 text-sm text-gray-600 bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                    {publications.length} found
+                  </span>
                 )}
               </div>
+              
+              {isLoadingPublications ? (
+                <div className="text-center py-8">
+                  <div className="inline-flex items-center text-gray-500">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
+                    Searching PubMed for "{provider.name}"...
+                  </div>
+                </div>
+              ) : publications.length > 0 ? (
+                <div className="space-y-4">
+                  {publications.map((pub) => (
+                    <div key={pub.id} className="bg-gray-50 rounded-lg p-4 border-l-4 border-blue-500 hover:bg-gray-100 transition-colors">
+                      <h4 className="font-medium text-gray-900 text-sm mb-2 leading-relaxed">
+                        {pub.title}
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-600 mb-2">
+                        <div>
+                          <span className="font-medium">Authors:</span> {pub.authors.join(', ')}
+                        </div>
+                        <div>
+                          <span className="font-medium">Journal:</span> {pub.journal}
+                        </div>
+                        <div>
+                          <span className="font-medium">Published:</span> {pub.publicationDate}
+                        </div>
+                        <div>
+                          <span className="font-medium">PMID:</span> {pub.pmid}
+                        </div>
+                      </div>
+                      <div>
+                        {pub.doi ? (
+                          <a
+                            href={`https://doi.org/${pub.doi}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-blue-600 hover:text-blue-800 hover:underline"
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            View on DOI
+                          </a>
+                        ) : (
+                          <a
+                            href={`https://pubmed.ncbi.nlm.nih.gov/${pub.pmid}/`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center text-blue-600 hover:text-blue-800 hover:underline"
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            View on PubMed
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p>No recent publications found in PubMed</p>
+                  <p className="text-sm mt-1">Searched for: "{provider.name}"</p>
+                  {searchTermsTried.length > 1 && (
+                    <div className="mt-2 text-xs">
+                      <p className="font-medium mb-1">Search terms tried:</p>
+                      <div className="space-y-1">
+                        {searchTermsTried.map((term, index) => (
+                          <code key={index} className="bg-gray-100 px-2 py-1 rounded text-gray-600">
+                            {term}
+                          </code>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <p className="text-sm mt-3">This could mean the doctor hasn't published recently or uses a different name format in PubMed. We tried searching using the Full Author Name field and Author field.</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
               {/* Books & Book Chapters */}
               <div>
@@ -440,5 +577,7 @@ const DoctorDetailPage: React.FC = () => {
     </>
   );
 };
+
+
 
 export default DoctorDetailPage;
