@@ -124,3 +124,8 @@ docker-compose.override.yml
 # Large data files
 npidata.csv
 *.csv
+
+# Vumedi scraping data files
+data/vumedi-scraping/vumedi_content.json
+data/vumedi-scraping/vumedi_content.csv
+data/vumedi-scraping/vumedi_scraper.log
