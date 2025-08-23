@@ -17,13 +17,11 @@ class VumediContent(Base):
     thumbnail = Column(Text, nullable=True)
     featuring = Column(String(500), nullable=True)
     specialty = Column(String(200), nullable=True, index=True)
-    specialty_url = Column(Text, nullable=True)
-    page_number = Column(Integer, nullable=True)
     scraped_at = Column(DateTime, nullable=True)
     
-    # Add unique constraint on title + specialty combination
+    # Add unique constraint on link + specialty combination
     __table_args__ = (
-        UniqueConstraint('title', 'specialty', name='uq_vumedi_title_specialty'),
+        UniqueConstraint('link', 'specialty', name='uq_vumedi_link_specialty'),
     )
     
     # Metadata
