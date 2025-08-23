@@ -108,7 +108,6 @@ def load_vumedi_data(csv_path, batch_size=1000):
                             specialty=row['specialty'],
                             specialty_url=row['specialty_url'],
                             page_number=row['page_number'] if pd.notna(row['page_number']) else None,
-                            source=row['source'],
                             scraped_at=row['scraped_at'] if pd.notna(row['scraped_at']) else None
                         )
                         batch_records.append(vumedi_record)

@@ -19,7 +19,6 @@ class VumediContent(Base):
     specialty = Column(String(200), nullable=True, index=True)
     specialty_url = Column(Text, nullable=True)
     page_number = Column(Integer, nullable=True)
-    source = Column(String(200), nullable=True)
     scraped_at = Column(DateTime, nullable=True)
     
     # Add unique constraint on title + specialty combination
