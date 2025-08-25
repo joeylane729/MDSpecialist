@@ -32,6 +32,7 @@ const ResultsPage: React.FC = () => {
   const [isBackNavigation, setIsBackNavigation] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [rankedProviders, setRankedProviders] = useState<Provider[]>([]);
+  const [activeView, setActiveView] = useState<'assessment' | 'specialists'>('assessment');
 
   // Fisher-Yates shuffle algorithm for random ranking
   const shuffleArray = (array: Provider[]): Provider[] => {
@@ -472,36 +473,167 @@ const ResultsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 pb-8">
         {/* Header */}
-        <div className="mb-4">
+        {/* Secondary Header Bar */}
+        <div className="flex justify-between items-center mb-4 py-4 border-b border-gray-200">
           <button
             onClick={() => navigate('/')}
-            className="text-gray-900 hover:text-gray-700 mb-2 flex items-center"
+            className="text-gray-900 hover:text-gray-700 flex items-center"
           >
             ← Back to Search
           </button>
           
-          <div className="text-center mb-4">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-3 leading-tight py-1">
-              {searchParams?.determined_specialty || 'Medical Specialists'} Specialists
-            </h1>
-            <p className="text-xl text-gray-600 font-medium">
-              Found {location.state?.totalProviders || providers.length} providers in {searchParams?.city}, {searchParams?.state}
-            </p>
-
+          {/* View Toggle */}
+          <div className="flex space-x-8">
+            <button
+              onClick={() => setActiveView('assessment')}
+              className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeView === 'assessment'
+                  ? 'text-primary-600 bg-primary-50'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              </svg>
+              <span>Medical Assessment</span>
+            </button>
+            <button
+              onClick={() => setActiveView('specialists')}
+              className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeView === 'specialists'
+                  ? 'text-primary-600 bg-primary-50'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              <i className="fas fa-user-md h-4 w-4"></i>
+              <span>Specialists</span>
+            </button>
           </div>
         </div>
 
-        {/* ICD-10 and Diagnosis Summary */}
-        <div className="mb-6 flex flex-col items-center">
-          {searchParams?.predicted_icd10 && (
-            <div className="inline-flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-6 py-3 shadow-sm">
-              <span className="font-semibold text-blue-800">ICD-10:</span>
-              <span className="font-mono text-blue-900 text-lg">{searchParams.predicted_icd10}</span>
-              <span className="text-gray-700">— {searchParams.icd10_description || 'Description not available'}</span>
+
+
+                {/* Medical Assessment */}
+        {activeView === 'assessment' && searchParams?.predicted_icd10 && (
+          <>
+            {/* Medical Assessment Header */}
+            <div className="text-center mb-4">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-3 leading-tight py-1">
+                Medical Assessment
+              </h1>
+              <button
+                onClick={() => setActiveView('specialists')}
+                className="inline-flex items-center gap-2 text-gray-900 hover:text-gray-700 transition-colors duration-200 cursor-pointer"
+              >
+                Show me suggested specialists
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              </button>
             </div>
-          )}
+            
+            <div className="max-w-4xl mx-auto space-y-6">
+              {/* Diagnosis */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Diagnosis</h2>
+              
+              {/* Primary Diagnosis */}
+              <div className="mb-4 pb-4 border-b border-gray-100">
+                <h3 className="text-base font-medium text-gray-900 mb-3">Primary</h3>
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <i className="fas fa-star text-gray-700 text-sm"></i>
+                    <span className="font-mono text-sm text-gray-900 font-medium">{searchParams.predicted_icd10}</span>
+                    <span className="text-gray-500">-</span>
+                    <p className="text-gray-700 text-sm">{searchParams.icd10_description || 'Description not available'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Differential Diagnosis */}
+              <div>
+                <h3 className="text-base font-medium text-gray-900 mb-3">Differential</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm text-gray-700 font-bold">1.</span>
+                    <span className="font-mono text-sm text-gray-900 font-medium">I21.9</span>
+                    <span className="text-gray-500">-</span>
+                    <span className="text-gray-700 text-sm">Acute myocardial infarction, unspecified</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm text-gray-700 font-bold">2.</span>
+                    <span className="font-mono text-sm text-gray-900 font-medium">I25.10</span>
+                    <span className="text-gray-500">-</span>
+                    <span className="text-gray-700 text-sm">Atherosclerotic heart disease without angina pectoris</span>
+                  </div>
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm text-gray-700 font-bold">3.</span>
+                    <span className="font-mono text-sm text-gray-900 font-medium">R07.9</span>
+                    <span className="text-gray-500">-</span>
+                    <span className="text-gray-700 text-sm">Chest pain, unspecified</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Treatment Options with Outcomes and Complications */}
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Treatment Options</h2>
+              <div className="space-y-3">
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <span className="text-sm text-gray-700 font-bold">1.</span>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900 text-sm mb-2">Percutaneous Coronary Intervention (PCI)</h4>
+                      <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
+                        <div><span className="font-medium">Outcomes:</span> 90-95% success rate, immediate symptom relief</div>
+                        <div><span className="font-medium">Complications:</span> Bleeding (2-5%), contrast nephropathy (5-10%)</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <span className="text-sm text-gray-700 font-bold">2.</span>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm mb-2">Coronary Artery Bypass Grafting (CABG)</h4>
+                      <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
+                        <div><span className="font-medium">Outcomes:</span> 85-90% patency at 1 year, long-term symptom relief</div>
+                        <div><span className="font-medium">Complications:</span> Stroke (1-3%), sternal infection (1-2%)</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <span className="text-sm text-gray-700 font-bold">3.</span>
+                    <div className="flex-1">
+                      <h4 className="font-medium text-sm mb-2">Medical Management</h4>
+                      <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
+                        <div><span className="font-medium">Outcomes:</span> 70-80% improvement with medication compliance</div>
+                        <div><span className="font-medium">Complications:</span> Side effects (15-20%), treatment failure (10-15%)</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+        )}
+
+        {/* Specialists Section */}
+        {activeView === 'specialists' && (
+          <>
+            {/* Specialists Header */}
+            <div className="text-center mb-4">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-3 leading-tight py-1">
+                {searchParams?.determined_specialty || 'Medical Specialists'} Specialists
+              </h1>
         </div>
 
         {/* Search and Filter Controls */}
@@ -513,7 +645,7 @@ const ResultsPage: React.FC = () => {
                 <input
                   type="text"
                   id="search"
-                  placeholder="Search providers..."
+                      placeholder="Search specialists..."
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value);
@@ -601,14 +733,19 @@ const ResultsPage: React.FC = () => {
             </div>
           </div>
         </div>
+          </>
+        )}
 
         {/* Results Count */}
+        {activeView === 'specialists' && (
         <div className="mb-3 text-sm text-gray-600">
           Showing {rankedProviders.length} of {providers.length} providers
           {searchTerm && ` matching "${searchTerm}"`}
         </div>
+        )}
 
         {/* Results */}
+        {activeView === 'specialists' && (
         <div className="space-y-6">
           {currentProviders.map((provider, index) => {
             const rank = indexOfFirstProvider + index + 1;
@@ -637,8 +774,10 @@ const ResultsPage: React.FC = () => {
             );
           })}
         </div>
+        )}
 
         {/* Page Size Selector and Pagination */}
+        {activeView === 'specialists' && (
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0">
           {/* Page Size Selector */}
           <div className="flex items-center space-x-2">
@@ -719,12 +858,14 @@ const ResultsPage: React.FC = () => {
             </nav>
           )}
         </div>
+        )}
 
         {/* Footer Info */}
-        <div className="mt-8 text-center text-gray-500">
-          <p>Showing {indexOfFirstProvider + 1}-{Math.min(indexOfLastProvider, rankedProviders.length)} of {rankedProviders.length} providers</p>
-
-        </div>
+        {activeView === 'specialists' && (
+          <div className="mt-8 text-center text-gray-500">
+            <p>Showing {indexOfFirstProvider + 1}-{Math.min(indexOfLastProvider, rankedProviders.length)} of {rankedProviders.length} providers</p>
+          </div>
+        )}
       </div>
       
       <style>{`
