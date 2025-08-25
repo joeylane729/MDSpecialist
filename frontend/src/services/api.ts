@@ -205,7 +205,7 @@ export interface NPIProvider {
 export interface NPISearchRequest {
   state: string;
   city: string;
-  taxonomy: string;
+  diagnosis: string; // Changed from taxonomy to diagnosis
   limit?: number;
 }
 
@@ -215,7 +215,8 @@ export interface NPISearchResponse {
   search_criteria: {
     state: string;
     city: string;
-    taxonomy: string;
+    diagnosis: string;
+    determined_specialty: string;
   };
 }
 
@@ -224,7 +225,7 @@ export const searchNPIProviders = async (request: NPISearchRequest): Promise<NPI
     const params = new URLSearchParams({
       state: request.state,
       city: request.city,
-      taxonomy: request.taxonomy,
+      diagnosis: request.diagnosis, // Changed from taxonomy to diagnosis
       ...(request.limit && { limit: request.limit.toString() })
     });
     

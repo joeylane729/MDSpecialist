@@ -12,7 +12,8 @@ interface Provider extends NPIProvider {
 interface SearchParams {
   state: string;
   city: string;
-  taxonomy: string;
+  diagnosis: string;
+  determined_specialty?: string;
 }
 
 const ResultsPage: React.FC = () => {
@@ -142,7 +143,8 @@ const ResultsPage: React.FC = () => {
       generateMockProviders({
         state: 'CA',
         city: 'Los Angeles',
-        taxonomy: '207Q00000X'
+        diagnosis: 'A000',
+        determined_specialty: 'Family Medicine'
       });
       setCurrentPage(1);
     }
@@ -472,22 +474,6 @@ const ResultsPage: React.FC = () => {
     }
   };
 
-  const getSpecialtyName = (taxonomyCode: string) => {
-    const specialtyMap: { [key: string]: string } = {
-      '207Q00000X': 'Family Medicine',
-      '207R00000X': 'Internal Medicine',
-      '207T00000X': 'Neurological Surgery',
-      '207U00000X': 'Nuclear Medicine',
-      '207V00000X': 'Obstetrics & Gynecology',
-      '207W00000X': 'Ophthalmology',
-      '207X00000X': 'Orthopaedic Surgery',
-      '207Y00000X': 'Otolaryngology',
-      '207ZP0102X': 'Pediatric Otolaryngology',
-      '208000000X': 'Pediatrics'
-    };
-    return specialtyMap[taxonomyCode] || 'Medical Specialist';
-  };
-
   // Simulated random ICD-10 code/diagnosis for demo (replace with backend/file logic later)
   const icd10Examples = [
     { code: 'A000', desc: 'Cholera due to Vibrio cholerae 01, biovar cholerae' },
@@ -528,7 +514,7 @@ const ResultsPage: React.FC = () => {
           
           <div className="text-center mb-4">
             <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-3 leading-tight py-1">
-              {getSpecialtyName(searchParams?.taxonomy || '')} Specialists
+              {searchParams?.determined_specialty || 'Medical Specialists'} Specialists
             </h1>
             <p className="text-xl text-gray-600 font-medium">
               Found {location.state?.totalProviders || providers.length} providers in {searchParams?.city}, {searchParams?.state}

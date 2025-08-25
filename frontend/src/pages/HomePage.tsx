@@ -29,21 +29,14 @@ interface City {
   state: string;
 }
 
-interface Taxonomy {
-  code: string;
-  description: string;
-}
-
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [selectedState, setSelectedState] = useState<string>('');
   const [selectedCity, setSelectedCity] = useState<string>('');
-  const [selectedTaxonomy, setSelectedTaxonomy] = useState<string>('');
   const [diagnosis, setDiagnosis] = useState<string>('');
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [states, setStates] = useState<State[]>([]);
   const [cities, setCities] = useState<City[]>([]);
-  const [taxonomies, setTaxonomies] = useState<Taxonomy[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [patientType, setPatientType] = useState<string>('');
   const [proximity, setProximity] = useState<string>('');
@@ -126,18 +119,18 @@ const HomePage: React.FC = () => {
     ]);
 
     // Mock taxonomies
-    setTaxonomies([
-      { code: '207Q00000X', description: 'Family Medicine' },
-      { code: '207R00000X', description: 'Internal Medicine' },
-      { code: '207T00000X', description: 'Neurological Surgery' },
-      { code: '207U00000X', description: 'Nuclear Medicine' },
-      { code: '207V00000X', description: 'Obstetrics & Gynecology' },
-      { code: '207W00000X', description: 'Ophthalmology' },
-      { code: '207X00000X', description: 'Orthopaedic Surgery' },
-      { code: '207Y00000X', description: 'Otolaryngology' },
-      { code: '207ZP0102X', description: 'Pediatric Otolaryngology' },
-      { code: '208000000X', description: 'Pediatrics' }
-    ]);
+    // setTaxonomies([
+    //   { code: '207Q00000X', description: 'Family Medicine' },
+    //   { code: '207R00000X', description: 'Internal Medicine' },
+    //   { code: '207T00000X', description: 'Neurological Surgery' },
+    //   { code: '207U00000X', description: 'Nuclear Medicine' },
+    //   { code: '207V00000X', description: 'Obstetrics & Gynecology' },
+    //   { code: '207W00000X', description: 'Ophthalmology' },
+    //   { code: '207X00000X', description: 'Orthopaedic Surgery' },
+    //   { code: '207Y00000X', description: 'Otolaryngology' },
+    //   { code: '207ZP0102X', description: 'Pediatric Otolaryngology' },
+    //   { code: '208000000X', description: 'Pediatrics' }
+    // ]);
   }, []);
 
   // Update cities when state changes
@@ -523,7 +516,7 @@ const HomePage: React.FC = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedState || !selectedCity || !selectedTaxonomy || !diagnosis.trim() || !patientType || !proximity) {
+    if (!selectedState || !selectedCity || !diagnosis.trim() || !patientType || !proximity) {
       alert('Please fill in all required fields before searching');
       return;
     }
@@ -538,7 +531,7 @@ const HomePage: React.FC = () => {
       const data = await searchNPIProviders({
         state: selectedState,
         city: selectedCity,
-        taxonomy: selectedTaxonomy,
+        diagnosis: diagnosis, // Use diagnosis text
         limit: 500
       });
       
@@ -547,7 +540,8 @@ const HomePage: React.FC = () => {
         searchParams: {
           state: selectedState,
           city: selectedCity,
-          taxonomy: selectedTaxonomy
+          diagnosis: diagnosis,
+          determined_specialty: data.search_criteria?.determined_specialty
         },
         providers: data.providers,
         totalProviders: data.total_providers
@@ -558,11 +552,13 @@ const HomePage: React.FC = () => {
         state: {
           state: selectedState,
           city: selectedCity,
-          taxonomy: selectedTaxonomy,
+          diagnosis: diagnosis,
+          determined_specialty: data.search_criteria?.determined_specialty,
           searchParams: {
             state: selectedState,
             city: selectedCity,
-            taxonomy: selectedTaxonomy
+            diagnosis: diagnosis,
+            determined_specialty: data.search_criteria?.determined_specialty
           },
           providers: data.providers,
           totalProviders: data.total_providers
@@ -766,32 +762,13 @@ const HomePage: React.FC = () => {
               </div>
 
               {/* Row 3: Medical Subspecialty */}
-              <div className="group mb-6">
-                <label htmlFor="taxonomy" className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                  <Stethoscope className="w-4 h-4 mr-2 text-blue-600" />
-                  Medical Subspecialty *
-                </label>
-                <select
-                  id="taxonomy"
-                  value={selectedTaxonomy}
-                  onChange={(e) => setSelectedTaxonomy(e.target.value)}
-                  className="w-full px-4 py-4 pr-8 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white/50 backdrop-blur-sm group-hover:border-blue-300"
-                  required
-                >
-                  <option value="">Select a subspecialty</option>
-                  {taxonomies.map((taxonomy) => (
-                    <option key={taxonomy.code} value={taxonomy.code}>
-                      {taxonomy.description}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Removed Medical Subspecialty dropdown */}
 
               {/* Search Button */}
               <div className="text-center">
                 <button
                   type="submit"
-                  disabled={isLoading || !selectedState || !selectedCity || !selectedTaxonomy || !diagnosis.trim() || !patientType || !proximity}
+                  disabled={isLoading || !selectedState || !selectedCity || !diagnosis.trim() || !patientType || !proximity}
                   className="group relative inline-flex items-center justify-center w-full max-w-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                 >
                   {isLoading ? (

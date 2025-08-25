@@ -1,10 +1,19 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import List, Optional
 from ...database import get_db
+from ...services.gpt_service import GPTService
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# Initialize GPT service
+gpt_service = GPTService()
 
 @router.get("/test")
 async def test_database_connection(db: Session = Depends(get_db)):
@@ -57,13 +66,24 @@ async def get_simple_stats(db: Session = Depends(get_db)):
 async def search_providers_by_criteria(
     state: str = Query(..., description="State code (e.g., NY, CA)"),
     city: str = Query(..., description="City name"),
-    taxonomy: str = Query(..., description="Taxonomy code"),
+    diagnosis: str = Query(..., description="Diagnosis/medical specialty description"),
     limit: int = Query(20, le=500, description="Maximum number of results"),
     db: Session = Depends(get_db)
 ):
-    """Search for providers by city, state, and taxonomy."""
+    """Search for providers by city, state, and diagnosis/specialty."""
     try:
+        # Use GPT to determine the specialty from the diagnosis text
+        print(f"Using GPT to determine specialty for diagnosis: '{diagnosis}'")
+        determined_specialty = gpt_service.determine_specialty(diagnosis)
+        
+        if not determined_specialty:
+            print("GPT failed to determine specialty, using fallback")
+            determined_specialty = "Internal Medicine"  # Fallback specialty
+        
+        print(f"GPT determined specialty: '{determined_specialty}'")
+        
         # Build the SQL query to search the npi_providers table
+        # Now searching by specialty text instead of taxonomy codes
         sql = """
             SELECT 
                 npi,
@@ -88,85 +108,89 @@ async def search_providers_by_criteria(
                 healthcare_provider_taxonomy_code_13,
                 healthcare_provider_taxonomy_code_14,
                 healthcare_provider_taxonomy_code_15,
-
                 provider_first_line_business_practice_location_address,
                 provider_second_line_business_practice_location_address
             FROM npi_providers 
             WHERE provider_business_practice_location_address_state_name = :state
               AND LOWER(provider_business_practice_location_address_city_name) = LOWER(:city)
-              AND (
-                healthcare_provider_taxonomy_code_1 = :taxonomy OR
-                healthcare_provider_taxonomy_code_2 = :taxonomy OR
-                healthcare_provider_taxonomy_code_3 = :taxonomy OR
-                healthcare_provider_taxonomy_code_4 = :taxonomy OR
-                healthcare_provider_taxonomy_code_5 = :taxonomy OR
-                healthcare_provider_taxonomy_code_6 = :taxonomy OR
-                healthcare_provider_taxonomy_code_7 = :taxonomy OR
-                healthcare_provider_taxonomy_code_8 = :taxonomy OR
-                healthcare_provider_taxonomy_code_9 = :taxonomy OR
-                healthcare_provider_taxonomy_code_10 = :taxonomy OR
-                healthcare_provider_taxonomy_code_11 = :taxonomy OR
-                healthcare_provider_taxonomy_code_12 = :taxonomy OR
-                healthcare_provider_taxonomy_code_13 = :taxonomy OR
-                healthcare_provider_taxonomy_code_14 = :taxonomy OR
-                healthcare_provider_taxonomy_code_15 = :taxonomy
-              )
               AND entity_type_code = '1'  -- Individual providers only
             ORDER BY provider_last_name, provider_first_name
-            LIMIT :limit
         """
         
         result = db.execute(text(sql), {
             "state": state,
-            "city": city,
-            "taxonomy": taxonomy,
-            "limit": limit
+            "city": city
         })
         
         providers = result.fetchall()
         
-        # Transform the results into a more user-friendly format
-        formatted_providers = []
+        # Filter providers by specialty text matching the determined specialty
+        specialty_lower = determined_specialty.lower()
+        filtered_providers = []
+        
         for provider in providers:
-            # Get the specialty description from the taxonomy code
-            specialty = get_specialty_description(provider.healthcare_provider_taxonomy_code_1)
+            # Get specialty descriptions from all taxonomy codes
+            specialties = []
+            taxonomy_codes = []
+            for i in range(1, 16):
+                taxonomy_code = getattr(provider, f'healthcare_provider_taxonomy_code_{i}', None)
+                if taxonomy_code:
+                    taxonomy_codes.append(taxonomy_code)
+                    specialty_desc = get_specialty_description(taxonomy_code)
+                    specialties.append(specialty_desc)
             
-            formatted_provider = {
-                "id": provider.npi,  # Use NPI as ID
-                "npi": provider.npi,
-                "name": f"{provider.provider_first_name or ''} {provider.provider_last_name or ''}".strip(),
-                "specialty": specialty,
-                "address": provider.provider_first_line_business_practice_location_address or '',
-                "city": provider.provider_business_practice_location_address_city_name or '',
-                "state": provider.provider_business_practice_location_address_state_name or '',
-                "zip": provider.provider_business_practice_location_address_postal_code or '',
-                "phone": provider.provider_business_practice_location_address_telephone_number or '',
-                "rating": 5.0,  # Default rating
-                "yearsExperience": None,  # No experience data available
-                "boardCertified": None,  # No certification data available
-                "acceptingPatients": True,  # Default to accepting patients
-                "languages": [],  # No language data available
-                "insurance": [],  # No insurance data available
-                "education": {
-                    "medicalSchool": None,  # No medical school data available
-                    "graduationYear": None,  # No graduation year data available
-                    "residency": None  # No residency data available
+            # Check if any specialty matches the determined specialty
+            specialty_matches = any(
+                specialty_lower in specialty.lower() or 
+                specialty.lower() in specialty_lower
+                for specialty in specialties
+            )
+            
+            if specialty_matches:
+                # Get the primary specialty for display
+                primary_specialty = get_specialty_description(provider.healthcare_provider_taxonomy_code_1)
+                
+                formatted_provider = {
+                    "id": provider.npi,  # Use NPI as ID
+                    "npi": provider.npi,
+                    "name": f"{provider.provider_first_name or ''} {provider.provider_last_name or ''}".strip(),
+                    "specialty": primary_specialty,
+                    "address": provider.provider_first_line_business_practice_location_address or '',
+                    "city": provider.provider_business_practice_location_address_city_name or '',
+                    "state": provider.provider_business_practice_location_address_state_name or '',
+                    "zip": provider.provider_business_practice_location_address_postal_code or '',
+                    "phone": provider.provider_business_practice_location_address_telephone_number or '',
+                    "rating": 5.0,  # Default rating
+                    "yearsExperience": None,  # No experience data available
+                    "boardCertified": None,  # No certification data available
+                    "acceptingPatients": True,  # Default to accepting patients
+                    "languages": [],  # No language data available
+                    "insurance": [],  # No insurance data available
+                    "education": {
+                        "medicalSchool": None,  # No medical school data available
+                        "graduationYear": None,  # No graduation year data available
+                        "residency": None  # No residency data available
+                    }
                 }
-            }
-            formatted_providers.append(formatted_provider)
+                filtered_providers.append(formatted_provider)
+        
+        # Apply limit after filtering
+        if limit and len(filtered_providers) > limit:
+            filtered_providers = filtered_providers[:limit]
         
         return {
-            "total_providers": len(formatted_providers),
-            "providers": formatted_providers,
+            "total_providers": len(filtered_providers),
+            "providers": filtered_providers,
             "search_criteria": {
                 "state": state,
                 "city": city,
-                "taxonomy": taxonomy
+                "diagnosis": diagnosis,
+                "determined_specialty": determined_specialty
             }
         }
         
     except Exception as e:
-        print(f"Error searching providers: {e}")
+        logger.error(f"Error searching providers: {e}")
         return {
             "error": str(e),
             "total_providers": 0,
@@ -185,6 +209,34 @@ def get_specialty_description(taxonomy_code: str) -> str:
         '207X00000X': 'Orthopaedic Surgery',
         '207Y00000X': 'Otolaryngology',
         '207ZP0102X': 'Pediatric Otolaryngology',
-        '208000000X': 'Pediatrics'
+        '208000000X': 'Pediatrics',
+        '207K00000X': 'Allergy & Immunology',
+        '207L00000X': 'Anesthesiology',
+        '207M00000X': 'Anatomic Pathology',
+        '207N00000X': 'Clinical Pathology',
+        '207P00000X': 'Emergency Medicine',
+        '207Q00000X': 'Family Medicine',
+        '207R00000X': 'Internal Medicine',
+        '207T00000X': 'Neurological Surgery',
+        '207U00000X': 'Nuclear Medicine',
+        '207V00000X': 'Obstetrics & Gynecology',
+        '207W00000X': 'Ophthalmology',
+        '207X00000X': 'Orthopaedic Surgery',
+        '207Y00000X': 'Otolaryngology',
+        '207ZP0102X': 'Pediatric Otolaryngology',
+        '208000000X': 'Pediatrics',
+        '208C00000X': 'Colon & Rectal Surgery',
+        '208D00000X': 'General Practice',
+        '208G00000X': 'Thoracic Surgery',
+        '208M00000X': 'Hospitalist',
+        '208U00000X': 'Clinical Pharmacology',
+        '208VP0000X': 'Pain Medicine',
+        '208VP0014X': 'Interventional Pain Medicine',
+        '208D00000X': 'General Practice',
+        '208G00000X': 'Thoracic Surgery',
+        '208M00000X': 'Hospitalist',
+        '208U00000X': 'Clinical Pharmacology',
+        '208VP0000X': 'Pain Medicine',
+        '208VP0014X': 'Interventional Pain Medicine'
     }
     return specialty_map.get(taxonomy_code, 'Medical Specialist')
