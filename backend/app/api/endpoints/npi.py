@@ -1,10 +1,12 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, File, UploadFile, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import List, Optional
 from ...database import get_db
 from ...services.gpt_service import GPTService
+import PyPDF2
+import io
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -62,25 +64,87 @@ async def get_simple_stats(db: Session = Depends(get_db)):
             "error_type": type(e).__name__
         }
 
-@router.get("/search-providers")
+@router.post("/search-providers")
 async def search_providers_by_criteria(
-    state: str = Query(..., description="State code (e.g., NY, CA)"),
-    city: str = Query(..., description="City name"),
-    diagnosis: str = Query(..., description="Diagnosis/medical specialty description"),
-    limit: int = Query(20, le=500, description="Maximum number of results"),
+    state: str = Form(...),
+    city: str = Form(...),
+    diagnosis: str = Form(...),
+    limit: int = Form(20),
+    files: List[UploadFile] = File([]),
     db: Session = Depends(get_db)
 ):
-    """Search for providers by city, state, and diagnosis/specialty."""
+    """Search for providers by city, state, and diagnosis/specialty with file analysis."""
     try:
-        # Use GPT to determine the specialty from the diagnosis text
-        print(f"Using GPT to determine specialty for diagnosis: '{diagnosis}'")
-        determined_specialty = gpt_service.determine_specialty(diagnosis)
+        # Set the database session for the GPT service
+        gpt_service.set_db(db)
+        
+        # Process uploaded files to extract text
+        file_contents = []
+        print(f"Processing {len(files)} uploaded files")
+        for file in files:
+            print(f"Processing file: {file.filename}, content_type: {file.content_type}")
+            if file.content_type == "application/pdf":
+                try:
+                    # Read PDF content
+                    pdf_content = await file.read()
+                    print(f"PDF file size: {len(pdf_content)} bytes")
+                    
+                    pdf_reader = PyPDF2.PdfReader(io.BytesIO(pdf_content))
+                    print(f"PDF has {len(pdf_reader.pages)} pages")
+                    
+                    # Extract text from all pages
+                    text_content = ""
+                    for i, page in enumerate(pdf_reader.pages):
+                        page_text = page.extract_text()
+                        print(f"Page {i+1} extracted {len(page_text)} characters: '{page_text[:100]}...'")
+                        text_content += page_text + " "
+                    
+                    file_contents.append(f"File {file.filename}: {text_content.strip()}")
+                    print(f"Successfully processed PDF file: {file.filename}, total text: {len(text_content)} characters")
+                except Exception as e:
+                    print(f"Error processing PDF file {file.filename}: {e}")
+                    import traceback
+                    traceback.print_exc()
+            else:
+                print(f"Skipping non-PDF file: {file.filename}")
+        
+        print(f"Final file_contents: {file_contents}")
+        
+        # Combine diagnosis text with file contents for GPT analysis
+        print(f"Original diagnosis text: '{diagnosis}'")
+        combined_input = diagnosis
+        if file_contents:
+            combined_input += "\n\nAdditional information from uploaded files:\n" + "\n".join(file_contents)
+            print(f"Combined input for GPT: {len(combined_input)} characters")
+            print(f"Combined input preview: '{combined_input[:300]}...'")
+        else:
+            print("No file contents to combine")
+        
+        # Use GPT to determine the specialty from the combined input
+        print(f"Using GPT to determine specialty for combined input: '{combined_input[:200]}...'")
+        determined_specialty = gpt_service.determine_specialty(combined_input)
         
         if not determined_specialty:
             print("GPT failed to determine specialty, using fallback")
             determined_specialty = "Internal Medicine"  # Fallback specialty
         
         print(f"GPT determined specialty: '{determined_specialty}'")
+        
+        # Use GPT to predict the ICD-10 code from the combined input
+        print(f"Using GPT to predict ICD-10 code for combined input: '{combined_input[:200]}...'")
+        predicted_icd10 = gpt_service.predict_icd10_code(combined_input)
+        
+        icd10_description = None
+        if predicted_icd10:
+            print(f"GPT predicted ICD-10 code: '{predicted_icd10}'")
+            # Look up the description from our database
+            icd10_description = gpt_service.lookup_icd10_description(predicted_icd10)
+            if icd10_description:
+                print(f"Found ICD-10 description: '{icd10_description}'")
+            else:
+                print(f"No description found for ICD-10 code: '{predicted_icd10}'")
+        else:
+            print("GPT failed to predict ICD-10 code")
         
         # Build the SQL query to search the npi_providers table
         # Now searching by specialty text instead of taxonomy codes
@@ -185,7 +249,9 @@ async def search_providers_by_criteria(
                 "state": state,
                 "city": city,
                 "diagnosis": diagnosis,
-                "determined_specialty": determined_specialty
+                "determined_specialty": determined_specialty,
+                "predicted_icd10": predicted_icd10,
+                "icd10_description": icd10_description
             }
         }
         

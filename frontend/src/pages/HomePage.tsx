@@ -532,6 +532,7 @@ const HomePage: React.FC = () => {
         state: selectedState,
         city: selectedCity,
         diagnosis: diagnosis, // Use diagnosis text
+        uploadedFiles: uploadedFiles, // Include uploaded files
         limit: 500
       });
       
@@ -541,7 +542,9 @@ const HomePage: React.FC = () => {
           state: selectedState,
           city: selectedCity,
           diagnosis: diagnosis,
-          determined_specialty: data.search_criteria?.determined_specialty
+          determined_specialty: data.search_criteria?.determined_specialty,
+          predicted_icd10: data.search_criteria?.predicted_icd10,
+          icd10_description: data.search_criteria?.icd10_description
         },
         providers: data.providers,
         totalProviders: data.total_providers
@@ -554,11 +557,15 @@ const HomePage: React.FC = () => {
           city: selectedCity,
           diagnosis: diagnosis,
           determined_specialty: data.search_criteria?.determined_specialty,
+          predicted_icd10: data.search_criteria?.predicted_icd10,
+          icd10_description: data.search_criteria?.icd10_description,
           searchParams: {
             state: selectedState,
             city: selectedCity,
             diagnosis: diagnosis,
-            determined_specialty: data.search_criteria?.determined_specialty
+            determined_specialty: data.search_criteria?.determined_specialty,
+            predicted_icd10: data.search_criteria?.predicted_icd10,
+            icd10_description: data.search_criteria?.icd10_description
           },
           providers: data.providers,
           totalProviders: data.total_providers

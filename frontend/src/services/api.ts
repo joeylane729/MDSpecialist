@@ -205,7 +205,8 @@ export interface NPIProvider {
 export interface NPISearchRequest {
   state: string;
   city: string;
-  diagnosis: string; // Changed from taxonomy to diagnosis
+  diagnosis: string;
+  uploadedFiles?: File[];
   limit?: number;
 }
 
@@ -217,19 +218,35 @@ export interface NPISearchResponse {
     city: string;
     diagnosis: string;
     determined_specialty: string;
+    predicted_icd10?: string;
+    icd10_description?: string;
   };
 }
 
 export const searchNPIProviders = async (request: NPISearchRequest): Promise<NPISearchResponse> => {
   try {
-    const params = new URLSearchParams({
-      state: request.state,
-      city: request.city,
-      diagnosis: request.diagnosis, // Changed from taxonomy to diagnosis
-      ...(request.limit && { limit: request.limit.toString() })
-    });
+    // Create FormData for file uploads
+    const formData = new FormData();
+    formData.append('state', request.state);
+    formData.append('city', request.city);
+    formData.append('diagnosis', request.diagnosis);
     
-    const response = await api.get(`/api/v1/npi/search-providers?${params}`)
+    if (request.limit) {
+      formData.append('limit', request.limit.toString());
+    }
+    
+    // Add uploaded files
+    if (request.uploadedFiles) {
+      request.uploadedFiles.forEach((file) => {
+        formData.append('files', file);
+      });
+    }
+    
+    const response = await api.post(`/api/v1/npi/search-providers`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data
   } catch (error) {
     if (axios.isAxiosError(error)) {

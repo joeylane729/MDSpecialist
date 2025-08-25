@@ -14,6 +14,8 @@ interface SearchParams {
   city: string;
   diagnosis: string;
   determined_specialty?: string;
+  predicted_icd10?: string;
+  icd10_description?: string;
 }
 
 const ResultsPage: React.FC = () => {
@@ -246,25 +248,8 @@ const ResultsPage: React.FC = () => {
         return true;
       });
       
-      // Apply ranking with Theodore priority
-      let ranked = filtered;
-      
-      // Check if any provider is named Theodore
-      const theodoreProvider = filtered.find(provider => 
-        provider.name.toLowerCase().includes('theodore')
-      );
-      
-      if (theodoreProvider) {
-        // Put Theodore first, then shuffle the rest
-        const otherProviders = filtered.filter(provider => 
-          !provider.name.toLowerCase().includes('theodore')
-        );
-        const shuffledOthers = shuffleArray(otherProviders);
-        ranked = [theodoreProvider, ...shuffledOthers];
-      } else {
-        // No Theodore found, use random ranking
-        ranked = shuffleArray(filtered);
-      }
+      // Apply random ranking to all providers
+      const ranked = shuffleArray(filtered);
       
       setRankedProviders(ranked);
       setCurrentPage(1); // Reset to first page when filters change
@@ -474,21 +459,6 @@ const ResultsPage: React.FC = () => {
     }
   };
 
-  // Simulated random ICD-10 code/diagnosis for demo (replace with backend/file logic later)
-  const icd10Examples = [
-    { code: 'A000', desc: 'Cholera due to Vibrio cholerae 01, biovar cholerae' },
-    { code: 'A0100', desc: 'Typhoid fever, unspecified' },
-    { code: 'A0221', desc: 'Salmonella meningitis' },
-    { code: 'A041', desc: 'Enterotoxigenic Escherichia coli infection' },
-    { code: 'A070', desc: 'Balantidiasis' },
-    { code: 'A150', desc: 'Tuberculosis of lung' },
-    { code: 'A1811', desc: 'Tuberculosis of kidney and ureter' },
-    { code: 'A0832', desc: 'Astrovirus enteritis' },
-    { code: 'A0105', desc: 'Typhoid osteomyelitis' },
-    { code: 'A0681', desc: 'Amebic cystitis' }
-  ];
-  const randomICD = icd10Examples[Math.floor(Math.random() * icd10Examples.length)];
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -525,11 +495,13 @@ const ResultsPage: React.FC = () => {
 
         {/* ICD-10 and Diagnosis Summary */}
         <div className="mb-6 flex flex-col items-center">
-          <div className="inline-flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-6 py-3 shadow-sm">
-            <span className="font-semibold text-blue-800">ICD-10:</span>
-            <span className="font-mono text-blue-900 text-lg">{randomICD.code}</span>
-            <span className="text-gray-700">— {randomICD.desc}</span>
-          </div>
+          {searchParams?.predicted_icd10 && (
+            <div className="inline-flex items-center gap-3 bg-blue-50 border border-blue-200 rounded-xl px-6 py-3 shadow-sm">
+              <span className="font-semibold text-blue-800">ICD-10:</span>
+              <span className="font-mono text-blue-900 text-lg">{searchParams.predicted_icd10}</span>
+              <span className="text-gray-700">— {searchParams.icd10_description || 'Description not available'}</span>
+            </div>
+          )}
         </div>
 
         {/* Search and Filter Controls */}
