@@ -206,6 +206,7 @@ export interface NPISearchRequest {
   state: string;
   city: string;
   diagnosis: string;
+  symptoms: string;
   uploadedFiles?: File[];
   limit?: number;
 }
@@ -220,6 +221,10 @@ export interface NPISearchResponse {
     determined_specialty: string;
     predicted_icd10?: string;
     icd10_description?: string;
+    differential_diagnoses?: Array<{
+      code: string;
+      description: string;
+    }>;
   };
 }
 
@@ -230,6 +235,7 @@ export const searchNPIProviders = async (request: NPISearchRequest): Promise<NPI
     formData.append('state', request.state);
     formData.append('city', request.city);
     formData.append('diagnosis', request.diagnosis);
+    formData.append('symptoms', request.symptoms);
     
     if (request.limit) {
       formData.append('limit', request.limit.toString());

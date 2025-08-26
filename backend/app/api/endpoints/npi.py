@@ -69,6 +69,7 @@ async def search_providers_by_criteria(
     state: str = Form(...),
     city: str = Form(...),
     diagnosis: str = Form(...),
+    symptoms: str = Form(...),
     limit: int = Form(20),
     files: List[UploadFile] = File([]),
     db: Session = Depends(get_db)
@@ -110,9 +111,10 @@ async def search_providers_by_criteria(
         
         print(f"Final file_contents: {file_contents}")
         
-        # Combine diagnosis text with file contents for GPT analysis
+        # Combine symptoms, diagnosis text, and file contents for GPT analysis
+        print(f"Original symptoms: '{symptoms}'")
         print(f"Original diagnosis text: '{diagnosis}'")
-        combined_input = diagnosis
+        combined_input = f"Symptoms: {symptoms}\n\nDiagnosis: {diagnosis}"
         if file_contents:
             combined_input += "\n\nAdditional information from uploaded files:\n" + "\n".join(file_contents)
             print(f"Combined input for GPT: {len(combined_input)} characters")
@@ -130,21 +132,33 @@ async def search_providers_by_criteria(
         
         print(f"GPT determined specialty: '{determined_specialty}'")
         
-        # Use GPT to predict the ICD-10 code from the combined input
-        print(f"Using GPT to predict ICD-10 code for combined input: '{combined_input[:200]}...'")
-        predicted_icd10 = gpt_service.predict_icd10_code(combined_input)
+        # Use GPT to predict both primary and differential diagnoses from the combined input
+        print(f"Using GPT to predict diagnoses for combined input: '{combined_input[:200]}...'")
+        predicted_diagnoses = gpt_service.predict_diagnoses(combined_input)
         
+        predicted_icd10 = None
         icd10_description = None
-        if predicted_icd10:
-            print(f"GPT predicted ICD-10 code: '{predicted_icd10}'")
-            # Look up the description from our database
-            icd10_description = gpt_service.lookup_icd10_description(predicted_icd10)
-            if icd10_description:
-                print(f"Found ICD-10 description: '{icd10_description}'")
-            else:
-                print(f"No description found for ICD-10 code: '{predicted_icd10}'")
+        differential_diagnoses = []
+        
+        if predicted_diagnoses:
+            print(f"GPT predicted diagnoses: {predicted_diagnoses}")
+            
+            # Extract primary diagnosis
+            if 'primary' in predicted_diagnoses and 'code' in predicted_diagnoses['primary']:
+                predicted_icd10 = predicted_diagnoses['primary']['code']
+                icd10_description = predicted_diagnoses['primary'].get('description', 'Description not available')
+                print(f"Primary diagnosis: {predicted_icd10} - {icd10_description}")
+            
+            # Extract differential diagnoses
+            if 'differential' in predicted_diagnoses:
+                differential_diagnoses = predicted_diagnoses['differential']
+                print(f"Found {len(differential_diagnoses)} differential diagnoses")
         else:
-            print("GPT failed to predict ICD-10 code")
+            print("GPT failed to predict diagnoses, falling back to single code prediction")
+            # Fallback to the old method
+            predicted_icd10 = gpt_service.predict_icd10_code(combined_input)
+            if predicted_icd10:
+                icd10_description = gpt_service.lookup_icd10_description(predicted_icd10)
         
         # Build the SQL query to search the npi_providers table
         # Now searching by specialty text instead of taxonomy codes
@@ -251,7 +265,8 @@ async def search_providers_by_criteria(
                 "diagnosis": diagnosis,
                 "determined_specialty": determined_specialty,
                 "predicted_icd10": predicted_icd10,
-                "icd10_description": icd10_description
+                "icd10_description": icd10_description,
+                "differential_diagnoses": differential_diagnoses
             }
         }
         

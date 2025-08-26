@@ -1,6 +1,6 @@
 import os
 import openai
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict, Any
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -98,8 +98,11 @@ class GPTService:
         """
         try:
             prompt = f"""
-            Diagnosis: {diagnosis_text}
-            Available: {', '.join(self.available_specialties)}
+            {diagnosis_text}
+            Available specialties: {', '.join(self.available_specialties)}
+            
+            Based on the symptoms and diagnosis information above, determine the most appropriate medical specialty.
+            Consider the symptoms carefully when choosing the specialty.
             
             Return ONLY the specialty name. No explanations.
             """
@@ -183,4 +186,90 @@ class GPTService:
                 
         except Exception as e:
             print(f"Error in GPT ICD-10 prediction: {e}")
+            return None
+
+    def predict_diagnoses(self, diagnosis_text: str) -> Dict[str, Any]:
+        """
+        Use GPT to predict both primary and differential diagnoses based on diagnosis text.
+        
+        Args:
+            diagnosis_text: The patient's diagnosis description
+            
+        Returns:
+            Dictionary containing primary diagnosis and differential diagnoses
+        """
+        try:
+            prompt = f"""
+            {diagnosis_text}
+            
+            Analyze the symptoms and diagnosis information above and provide:
+            1. Primary diagnosis (most likely ICD-10 code and description based on symptoms and diagnosis)
+            2. Differential diagnoses (3-5 alternative possibilities with ICD-10 codes that could explain the symptoms)
+            
+            Consider the symptoms carefully when determining the most likely diagnosis and alternatives.
+            
+            Return the response in this exact JSON format:
+            {{
+                "primary": {{
+                    "code": "ICD10_CODE",
+                    "description": "Medical description"
+                }},
+                "differential": [
+                    {{
+                        "code": "ICD10_CODE",
+                        "description": "Medical description"
+                    }}
+                ]
+            }}
+            
+            Only return valid JSON. No other text.
+            """
+            
+            response = self.client.chat.completions.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "Medical coding expert. Return only valid JSON with primary and differential diagnoses."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=500,
+                temperature=0.1
+            )
+            
+            # Extract the JSON response from GPT
+            response_text = response.choices[0].message.content.strip()
+            
+            # Clean up the response (remove markdown formatting if present)
+            if response_text.startswith('```json'):
+                response_text = response_text.replace('```json', '').replace('```', '').strip()
+            elif response_text.startswith('```'):
+                response_text = response_text.replace('```', '').strip()
+            
+            # Parse the JSON response
+            import json
+            diagnoses = json.loads(response_text)
+            
+            # Validate the response structure
+            if 'primary' in diagnoses and 'differential' in diagnoses:
+                # Look up descriptions for all codes from our database
+                if self.db:
+                    # Look up primary diagnosis description
+                    if 'code' in diagnoses['primary']:
+                        primary_desc = self.lookup_icd10_description(diagnoses['primary']['code'])
+                        if primary_desc:
+                            diagnoses['primary']['description'] = primary_desc
+                    
+                    # Look up differential diagnosis descriptions
+                    for diff in diagnoses['differential']:
+                        if 'code' in diff:
+                            diff_desc = self.lookup_icd10_description(diff['code'])
+                            if diff_desc:
+                                diff['description'] = diff_desc
+                
+                return diagnoses
+            else:
+                print(f"Warning: GPT returned invalid response structure: {diagnoses}")
+                return None
+                
+        except Exception as e:
+            print(f"Error in GPT diagnosis prediction: {e}")
             return None

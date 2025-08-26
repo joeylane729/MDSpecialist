@@ -12,11 +12,122 @@ interface Provider extends NPIProvider {
 interface SearchParams {
   state: string;
   city: string;
+  symptoms: string;
   diagnosis: string;
   determined_specialty?: string;
   predicted_icd10?: string;
   icd10_description?: string;
+  differential_diagnoses?: Array<{
+    code: string;
+    description: string;
+  }>;
 }
+
+interface TreatmentOption {
+  name: string;
+  outcomes: string;
+  complications: string;
+}
+
+// Function to get treatment options based on ICD-10 code
+const getTreatmentOptions = (icd10Code: string | undefined): TreatmentOption[] => {
+  if (!icd10Code) {
+    return [
+      {
+        name: "Consultation with Specialist",
+        outcomes: "Proper diagnosis and treatment plan",
+        complications: "Minimal, primarily time and cost"
+      }
+    ];
+  }
+
+  // Brain cancer treatments (C71.x)
+  if (icd10Code.startsWith('C71')) {
+    return [
+      {
+        name: "Surgical Resection (Craniotomy)",
+        outcomes: "60-80% complete resection in accessible tumors, improved survival",
+        complications: "Neurological deficits (15-25%), infection (3-5%), bleeding (2-4%)"
+      },
+      {
+        name: "Radiation Therapy",
+        outcomes: "70-85% local control, median survival 12-18 months",
+        complications: "Cognitive decline (20-30%), radiation necrosis (5-10%)"
+      },
+      {
+        name: "Chemotherapy",
+        outcomes: "40-60% response rate, median survival 14-16 months",
+        complications: "Myelosuppression (25-35%), nausea/vomiting (30-40%)"
+      },
+      {
+        name: "Targeted Therapy",
+        outcomes: "50-70% progression-free survival at 6 months",
+        complications: "Rash (20-30%), diarrhea (15-25%), fatigue (25-35%)"
+      }
+    ];
+  }
+
+  // Heart disease treatments (I20-I25)
+  if (icd10Code.startsWith('I2')) {
+    return [
+      {
+        name: "Percutaneous Coronary Intervention (PCI)",
+        outcomes: "90-95% success rate, immediate symptom relief",
+        complications: "Bleeding (2-5%), contrast nephropathy (5-10%)"
+      },
+      {
+        name: "Coronary Artery Bypass Grafting (CABG)",
+        outcomes: "85-90% patency at 1 year, long-term symptom relief",
+        complications: "Stroke (1-3%), sternal infection (1-2%)"
+      },
+      {
+        name: "Medical Management",
+        outcomes: "70-80% improvement with medication compliance",
+        complications: "Side effects (15-20%), treatment failure (10-15%)"
+      }
+    ];
+  }
+
+  // Diabetes treatments (E10-E11)
+  if (icd10Code.startsWith('E1')) {
+    return [
+      {
+        name: "Lifestyle Modification",
+        outcomes: "30-50% improvement in glycemic control",
+        complications: "Minimal, requires significant commitment"
+      },
+      {
+        name: "Oral Medications",
+        outcomes: "60-80% achieve target HbA1c levels",
+        complications: "GI upset (10-20%), hypoglycemia (5-15%)"
+      },
+      {
+        name: "Insulin Therapy",
+        outcomes: "80-90% achieve target glycemic control",
+        complications: "Hypoglycemia (20-30%), weight gain (15-25%)"
+      }
+    ];
+  }
+
+  // Default treatment options
+  return [
+    {
+      name: "Initial Consultation",
+      outcomes: "Proper diagnosis and treatment plan",
+      complications: "Minimal, primarily time and cost"
+    },
+    {
+      name: "Diagnostic Testing",
+      outcomes: "Accurate diagnosis and staging",
+      complications: "Minimal, primarily cost and time"
+    },
+    {
+      name: "Specialist Referral",
+      outcomes: "Expert opinion and specialized care",
+      complications: "Minimal, primarily time and cost"
+    }
+  ];
+};
 
 const ResultsPage: React.FC = () => {
   const location = useLocation();
@@ -82,6 +193,9 @@ const ResultsPage: React.FC = () => {
   }, [isFiltersOpen]);
 
   useEffect(() => {
+    // Scroll to top when component mounts or location.state changes
+    window.scrollTo(0, 0);
+    
     // Try to get data from location.state first (direct navigation)
     if (location.state?.searchParams && location.state.providers) {
       setSearchParams(location.state.searchParams);
@@ -146,6 +260,7 @@ const ResultsPage: React.FC = () => {
       generateMockProviders({
         state: 'CA',
         city: 'Los Angeles',
+        symptoms: 'Fever, cough',
         diagnosis: 'A000',
         determined_specialty: 'Family Medicine'
       });
@@ -535,6 +650,14 @@ const ResultsPage: React.FC = () => {
             </div>
             
             <div className="max-w-4xl mx-auto space-y-6">
+              {/* Symptoms */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Symptoms</h2>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <p className="text-gray-700 text-sm">{searchParams.symptoms || 'No symptoms provided'}</p>
+                </div>
+              </div>
+
               {/* Diagnosis */}
               <div className="bg-white border border-gray-200 rounded-lg p-6">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">Diagnosis</h2>
@@ -556,24 +679,18 @@ const ResultsPage: React.FC = () => {
               <div>
                 <h3 className="text-base font-medium text-gray-900 mb-3">Differential</h3>
                 <div className="space-y-2">
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm text-gray-700 font-bold">1.</span>
-                    <span className="font-mono text-sm text-gray-900 font-medium">I21.9</span>
-                    <span className="text-gray-500">-</span>
-                    <span className="text-gray-700 text-sm">Acute myocardial infarction, unspecified</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm text-gray-700 font-bold">2.</span>
-                    <span className="font-mono text-sm text-gray-900 font-medium">I25.10</span>
-                    <span className="text-gray-500">-</span>
-                    <span className="text-gray-700 text-sm">Atherosclerotic heart disease without angina pectoris</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <span className="text-sm text-gray-700 font-bold">3.</span>
-                    <span className="font-mono text-sm text-gray-900 font-medium">R07.9</span>
-                    <span className="text-gray-500">-</span>
-                    <span className="text-gray-700 text-sm">Chest pain, unspecified</span>
-                  </div>
+                  {searchParams.differential_diagnoses && searchParams.differential_diagnoses.length > 0 ? (
+                    searchParams.differential_diagnoses.map((diagnosis: any, index: number) => (
+                      <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                        <span className="text-sm text-gray-700 font-bold">{index + 1}.</span>
+                        <span className="font-mono text-sm text-gray-900 font-medium">{diagnosis.code}</span>
+                        <span className="text-gray-500">-</span>
+                        <span className="text-gray-700 text-sm">{diagnosis.description || 'Description not available'}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-gray-500 text-sm italic">No differential diagnoses available</div>
+                  )}
                 </div>
               </div>
             </div>
@@ -582,44 +699,20 @@ const ResultsPage: React.FC = () => {
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Treatment Options</h2>
               <div className="space-y-3">
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <span className="text-sm text-gray-700 font-bold">1.</span>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900 text-sm mb-2">Percutaneous Coronary Intervention (PCI)</h4>
-                      <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
-                        <div><span className="font-medium">Outcomes:</span> 90-95% success rate, immediate symptom relief</div>
-                        <div><span className="font-medium">Complications:</span> Bleeding (2-5%), contrast nephropathy (5-10%)</div>
+                {getTreatmentOptions(searchParams.predicted_icd10).map((treatment, index) => (
+                  <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <span className="text-sm text-gray-700 font-bold">{index + 1}.</span>
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900 text-sm mb-2">{treatment.name}</h4>
+                        <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
+                          <div><span className="font-medium">Outcomes:</span> {treatment.outcomes}</div>
+                          <div><span className="font-medium">Complications:</span> {treatment.complications}</div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-                
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <span className="text-sm text-gray-700 font-bold">2.</span>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-sm mb-2">Coronary Artery Bypass Grafting (CABG)</h4>
-                      <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
-                        <div><span className="font-medium">Outcomes:</span> 85-90% patency at 1 year, long-term symptom relief</div>
-                        <div><span className="font-medium">Complications:</span> Stroke (1-3%), sternal infection (1-2%)</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <span className="text-sm text-gray-700 font-bold">3.</span>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-sm mb-2">Medical Management</h4>
-                      <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
-                        <div><span className="font-medium">Outcomes:</span> 70-80% improvement with medication compliance</div>
-                        <div><span className="font-medium">Complications:</span> Side effects (15-20%), treatment failure (10-15%)</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>

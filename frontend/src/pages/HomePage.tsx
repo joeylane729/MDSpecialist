@@ -40,6 +40,11 @@ const HomePage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [patientType, setPatientType] = useState<string>('');
   const [proximity, setProximity] = useState<string>('');
+  const [gender, setGender] = useState<string>('');
+  const [medications, setMedications] = useState<string>('');
+  const [medicalHistory, setMedicalHistory] = useState<string>('');
+  const [surgicalHistory, setSurgicalHistory] = useState<string>('');
+  const [symptoms, setSymptoms] = useState<string>('');
 
   // Debug logging
   useEffect(() => {
@@ -516,7 +521,7 @@ const HomePage: React.FC = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedState || !selectedCity || !diagnosis.trim() || !patientType || !proximity) {
+    if (!selectedState || !selectedCity || !symptoms.trim() || !diagnosis.trim() || !patientType || !proximity) {
       alert('Please fill in all required fields before searching');
       return;
     }
@@ -532,6 +537,7 @@ const HomePage: React.FC = () => {
         state: selectedState,
         city: selectedCity,
         diagnosis: diagnosis, // Use diagnosis text
+        symptoms: symptoms, // Include symptoms
         uploadedFiles: uploadedFiles, // Include uploaded files
         limit: 500
       });
@@ -541,7 +547,12 @@ const HomePage: React.FC = () => {
         searchParams: {
           state: selectedState,
           city: selectedCity,
+          symptoms: symptoms,
           diagnosis: diagnosis,
+          gender: gender,
+          medications: medications,
+          medicalHistory: medicalHistory,
+          surgicalHistory: surgicalHistory,
           determined_specialty: data.search_criteria?.determined_specialty,
           predicted_icd10: data.search_criteria?.predicted_icd10,
           icd10_description: data.search_criteria?.icd10_description
@@ -555,17 +566,29 @@ const HomePage: React.FC = () => {
         state: {
           state: selectedState,
           city: selectedCity,
+          symptoms: symptoms,
           diagnosis: diagnosis,
+          gender: gender,
+          medications: medications,
+          medicalHistory: medicalHistory,
+          surgicalHistory: surgicalHistory,
           determined_specialty: data.search_criteria?.determined_specialty,
           predicted_icd10: data.search_criteria?.predicted_icd10,
           icd10_description: data.search_criteria?.icd10_description,
+          differential_diagnoses: data.search_criteria?.differential_diagnoses,
           searchParams: {
             state: selectedState,
             city: selectedCity,
+            symptoms: symptoms,
             diagnosis: diagnosis,
+            gender: gender,
+            medications: medications,
+            medicalHistory: medicalHistory,
+            surgicalHistory: surgicalHistory,
             determined_specialty: data.search_criteria?.determined_specialty,
             predicted_icd10: data.search_criteria?.predicted_icd10,
-            icd10_description: data.search_criteria?.icd10_description
+            icd10_description: data.search_criteria?.icd10_description,
+            differential_diagnoses: data.search_criteria?.differential_diagnoses
           },
           providers: data.providers,
           totalProviders: data.total_providers
@@ -601,181 +624,265 @@ const HomePage: React.FC = () => {
               </p>
             </div>
             
-            <form onSubmit={handleSearch} className="space-y-6">
-              {/* 2x2 Grid for Selectors */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {/* Patient Type Selection */}
-                <div className="group h-full flex flex-col justify-end">
-                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    <Users className="w-4 h-4 mr-2 text-blue-600" />
-                    Patient Type *
-                  </label>
-                  <div className="w-full h-full px-4 py-4 border-2 border-gray-200 rounded-xl focus-within:ring-4 focus-within:ring-blue-100 focus-within:border-blue-500 transition-all duration-300 bg-white/50 backdrop-blur-sm group-hover:border-blue-300 flex items-center gap-6">
-                    <label className="inline-flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="patientType"
-                        value="adult"
-                        checked={patientType === 'adult'}
-                        onChange={() => setPatientType('adult')}
-                        className="form-radio h-5 w-5 text-blue-600"
-                        required
-                      />
-                      <span className="ml-2 text-base text-gray-800">Adult</span>
-                    </label>
-                    <label className="inline-flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name="patientType"
-                        value="pediatric"
-                        checked={patientType === 'pediatric'}
-                        onChange={() => setPatientType('pediatric')}
-                        className="form-radio h-5 w-5 text-blue-600"
-                        required
-                      />
-                      <span className="ml-2 text-base text-gray-800">Pediatric</span>
-                    </label>
+            <form onSubmit={handleSearch} className="space-y-8">
+              {/* Section 1: Basic Information */}
+              <div className="bg-gray-100/70 rounded-2xl p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <Users className="w-5 h-5 mr-2 text-blue-600" />
+                  Basic Information
+                </h3>
+                <div className="flex flex-wrap gap-6">
+                  {/* Patient Type */}
+                  <div className="group min-w-[200px]">
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Patient Type *</label>
+                    <div className="h-12 flex items-center space-x-6 px-4 py-3 border-2 border-gray-200 rounded-xl bg-white">
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="patientType"
+                          value="adult"
+                          checked={patientType === 'adult'}
+                          onChange={() => setPatientType('adult')}
+                          className="h-4 w-4 text-blue-600"
+                          required
+                        />
+                        <span className="ml-3 text-gray-700">Adult</span>
+                      </label>
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="patientType"
+                          value="pediatric"
+                          checked={patientType === 'pediatric'}
+                          onChange={() => setPatientType('pediatric')}
+                          className="h-4 w-4 text-blue-600"
+                          required
+                        />
+                        <span className="ml-3 text-gray-700">Pediatric</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Gender */}
+                  <div className="group min-w-[200px]">
+                    <label htmlFor="gender" className="block text-sm font-semibold text-gray-700 mb-3">Gender</label>
+                    <select
+                      id="gender"
+                      value={gender}
+                      onChange={(e) => setGender(e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300"
+                    >
+                      <option value="">Select gender</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                      <option value="prefer-not-to-say">Prefer not to say</option>
+                    </select>
                   </div>
                 </div>
-                {/* State Selection */}
-                <div className="group">
-                  <label htmlFor="state" className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    <MapPin className="w-4 h-4 mr-2 text-blue-600" />
-                    State *
-                  </label>
-                  <select
-                    id="state"
-                    value={selectedState}
-                    onChange={(e) => setSelectedState(e.target.value)}
-                    className="w-full px-4 py-4 pr-8 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white/50 backdrop-blur-sm group-hover:border-blue-300"
-                    required
-                  >
-                    <option value="">Select a state</option>
-                    {states.map((state) => (
-                      <option key={state.code} value={state.code}>
-                        {state.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {/* City Selection */}
-                <div className="group">
-                  <label htmlFor="city" className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    <MapPin className="w-4 h-4 mr-2 text-blue-600" />
-                    City *
-                  </label>
-                  <select
-                    id="city"
-                    value={selectedCity}
-                    onChange={(e) => setSelectedCity(e.target.value)}
-                    className="w-full px-4 py-4 pr-8 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white/50 backdrop-blur-sm group-hover:border-blue-300 disabled:opacity-50"
-                    required
-                    disabled={!selectedState}
-                  >
-                    <option value="">Select a city</option>
-                    {cities.map((city) => (
-                      <option key={`${city.state}-${city.name}`} value={city.name}>
-                        {city.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {/* Proximity Selection */}
-                <div className="group">
-                  <label htmlFor="proximity" className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    Proximity *
-                  </label>
-                  <select
-                    id="proximity"
-                    value={proximity}
-                    onChange={(e) => setProximity(e.target.value)}
-                    className="w-full px-4 py-4 pr-8 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white/50 backdrop-blur-sm group-hover:border-blue-300"
-                    required
-                  >
-                    <option value="">Select proximity</option>
-                    <option value="50">Within 50 miles</option>
-                    <option value="100">Within 100 miles</option>
-                    <option value="state">State-wide</option>
-                    <option value="us">US-wide</option>
-                    <option value="world">Worldwide</option>
-                  </select>
+
+                {/* Location and Search Radius - Second Row */}
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* State */}
+                  <div className="group">
+                    <label htmlFor="state" className="block text-sm font-semibold text-gray-700 mb-3">State *</label>
+                    <select
+                      id="state"
+                      value={selectedState}
+                      onChange={(e) => setSelectedState(e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300"
+                      required
+                    >
+                      <option value="">Select a state</option>
+                      {states.map((state) => (
+                        <option key={state.code} value={state.code}>
+                          {state.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* City */}
+                  <div className="group">
+                    <label htmlFor="city" className="block text-sm font-semibold text-gray-700 mb-3">City *</label>
+                    <select
+                      id="city"
+                      value={selectedCity}
+                      onChange={(e) => setSelectedCity(e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300 disabled:opacity-50"
+                      required
+                      disabled={!selectedState}
+                    >
+                      <option value="">Select a city</option>
+                      {cities.map((city) => (
+                        <option key={`${city.state}-${city.name}`} value={city.name}>
+                          {city.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Search Radius */}
+                  <div className="group">
+                    <label htmlFor="proximity" className="block text-sm font-semibold text-gray-700 mb-3">Search Radius *</label>
+                    <select
+                      id="proximity"
+                      value={proximity}
+                      onChange={(e) => setProximity(e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300"
+                      required
+                    >
+                      <option value="">Select search radius</option>
+                      <option value="50">Within 50 miles</option>
+                      <option value="100">Within 100 miles</option>
+                      <option value="state">State-wide</option>
+                      <option value="us">US-wide</option>
+                      <option value="world">Worldwide</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              {/* Row 2: Diagnosis and Upload */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6 mt-2">
-                {/* Diagnosis Input */}
-                <div className="group md:col-span-2 flex flex-col pr-0 md:pr-2">
-                  <label htmlFor="diagnosis" className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    <FileText className="w-4 h-4 mr-2 text-blue-600" />
-                    Diagnosis Description *
-                  </label>
-                  <textarea
-                    id="diagnosis"
-                    value={diagnosis}
-                    onChange={(e) => setDiagnosis(e.target.value)}
-                    placeholder="Please provide a detailed description of your diagnosis, symptoms, and any relevant medical history..."
-                    className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white/50 backdrop-blur-sm group-hover:border-blue-300 resize-none flex-1"
-                    rows={4}
-                    required
-                  />
-                </div>
-                {/* File Upload */}
-                <div className="group md:col-span-2 flex flex-col">
-                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                    <Upload className="w-4 h-4 mr-2 text-blue-600" />
-                    Upload Medical Documents
-                  </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-3 text-center hover:border-blue-400 transition-colors flex-1 flex flex-col justify-center">
-                    <input
-                      type="file"
-                      multiple
-                      accept=".pdf"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      id="file-upload"
+              {/* Section 2: Current Condition */}
+              <div className="bg-gray-100/70 rounded-2xl p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <Stethoscope className="w-5 h-5 mr-2 text-blue-600" />
+                  Current Condition
+                </h3>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Symptoms */}
+                  <div className="group">
+                    <label htmlFor="symptoms" className="block text-sm font-semibold text-gray-700 mb-3">Symptoms *</label>
+                    <textarea
+                      id="symptoms"
+                      value={symptoms}
+                      onChange={(e) => setSymptoms(e.target.value)}
+                      placeholder="Describe your current symptoms in detail, including when they started, severity, and any triggers..."
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300 resize-none"
+                      rows={5}
+                      required
                     />
-                    <label htmlFor="file-upload" className="cursor-pointer">
-                      <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-600 mb-1">Click to upload PDF files</p>
-                      <p className="text-sm text-gray-500">
-                        Imaging reports, doctors notes, biopsy pathology reports, relevant blood tests...
-                      </p>
-                    </label>
                   </div>
-                  
-                  {/* Uploaded Files List */}
-                  {uploadedFiles.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      <p className="text-sm font-medium text-gray-700">Uploaded Files:</p>
+
+                  {/* Diagnosis Description */}
+                  <div className="group">
+                    <label htmlFor="diagnosis" className="block text-sm font-semibold text-gray-700 mb-3">Diagnosis Description *</label>
+                    <textarea
+                      id="diagnosis"
+                      value={diagnosis}
+                      onChange={(e) => setDiagnosis(e.target.value)}
+                      placeholder="Provide details about your diagnosis, test results, or what your doctor has told you..."
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300 resize-none"
+                      rows={5}
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: Medical History */}
+              <div className="bg-gray-100/70 rounded-2xl p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <FileText className="w-5 h-5 mr-2 text-blue-600" />
+                  Medical History
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Current Medications */}
+                  <div className="group">
+                    <label htmlFor="medications" className="block text-sm font-semibold text-gray-700 mb-3">Current Medications</label>
+                    <textarea
+                      id="medications"
+                      value={medications}
+                      onChange={(e) => setMedications(e.target.value)}
+                      placeholder="List any current medications, dosages, and how long you've been taking them..."
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300 resize-none"
+                      rows={4}
+                    />
+                  </div>
+
+                  {/* Medical History */}
+                  <div className="group">
+                    <label htmlFor="medicalHistory" className="block text-sm font-semibold text-gray-700 mb-3">Relevant Medical History</label>
+                    <textarea
+                      id="medicalHistory"
+                      value={medicalHistory}
+                      onChange={(e) => setMedicalHistory(e.target.value)}
+                      placeholder="Include chronic conditions, previous diagnoses, family history, and any other relevant medical information..."
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300 resize-none"
+                      rows={4}
+                    />
+                  </div>
+
+                  {/* Surgical History */}
+                  <div className="group md:col-span-2">
+                    <label htmlFor="surgicalHistory" className="block text-sm font-semibold text-gray-700 mb-3">Surgical History</label>
+                    <textarea
+                      id="surgicalHistory"
+                      value={surgicalHistory}
+                      onChange={(e) => setSurgicalHistory(e.target.value)}
+                      placeholder="List any previous surgeries, procedures, or hospitalizations with dates if possible..."
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300 resize-none"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 4: Medical Documents */}
+              <div className="bg-gray-100/70 rounded-2xl p-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <Upload className="w-5 h-5 mr-2 text-blue-600" />
+                  Medical Documents
+                </h3>
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition-colors bg-white/50">
+                  <input
+                    type="file"
+                    multiple
+                    accept=".pdf"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label htmlFor="file-upload" className="cursor-pointer">
+                    <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-lg text-gray-700 mb-2 font-medium">Click to upload medical documents</p>
+                    <p className="text-gray-600 mb-1">Upload relevant medical files to help specialists better understand your case</p>
+                    <p className="text-sm text-gray-500">
+                      Accepted: Imaging reports, doctor's notes, biopsy reports, blood tests, etc.
+                    </p>
+                  </label>
+                </div>
+                
+                {/* Uploaded Files List */}
+                {uploadedFiles.length > 0 && (
+                  <div className="mt-6">
+                    <p className="text-sm font-medium text-gray-700 mb-3">Uploaded Files:</p>
+                    <div className="space-y-2">
                       {uploadedFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
-                          <div className="flex items-center space-x-2">
-                            <FileText className="w-4 h-4 text-gray-500" />
-                            <span className="text-sm text-gray-700">{file.name}</span>
+                        <div key={index} className="flex items-center justify-between bg-white rounded-lg px-4 py-3 border border-gray-200">
+                          <div className="flex items-center space-x-3">
+                            <FileText className="w-5 h-5 text-blue-500" />
+                            <span className="text-sm text-gray-700 font-medium">{file.name}</span>
                           </div>
                           <button
                             type="button"
                             onClick={() => removeFile(index)}
-                            className="text-red-500 hover:text-red-700"
+                            className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50"
                           >
                             <X className="w-4 h-4" />
                           </button>
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
-
-              {/* Row 3: Medical Subspecialty */}
-              {/* Removed Medical Subspecialty dropdown */}
 
               {/* Search Button */}
               <div className="text-center">
                 <button
                   type="submit"
-                  disabled={isLoading || !selectedState || !selectedCity || !diagnosis.trim() || !patientType || !proximity}
+                  disabled={isLoading || !selectedState || !selectedCity || !symptoms.trim() || !diagnosis.trim() || !patientType || !proximity}
                   className="group relative inline-flex items-center justify-center w-full max-w-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                 >
                   {isLoading ? (
