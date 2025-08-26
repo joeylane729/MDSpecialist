@@ -206,6 +206,8 @@ async def search_providers_by_criteria(
         specialty_lower = determined_specialty.lower()
         filtered_providers = []
         
+        print(f"Filtering providers by determined specialty: '{determined_specialty}'")
+        
         for provider in providers:
             # Get specialty descriptions from all taxonomy codes
             specialties = []
@@ -220,13 +222,17 @@ async def search_providers_by_criteria(
             # Check if any specialty matches the determined specialty
             specialty_matches = any(
                 specialty_lower in specialty.lower() or 
-                specialty.lower() in specialty_lower
+                specialty.lower() in specialty_lower or
+                specialty.lower().replace(' & ', ' and ').replace('and', '&') in specialty_lower.replace(' & ', ' and ').replace('and', '&')
                 for specialty in specialties
             )
             
             if specialty_matches:
+                print(f"Provider {provider.provider_last_name} matches specialty '{determined_specialty}' with specialties: {specialties}")
                 # Get the primary specialty for display
                 primary_specialty = get_specialty_description(provider.healthcare_provider_taxonomy_code_1)
+            else:
+                print(f"Provider {provider.provider_last_name} does NOT match specialty '{determined_specialty}'. Their specialties: {specialties}")
                 
                 formatted_provider = {
                     "id": provider.npi,  # Use NPI as ID
@@ -255,6 +261,8 @@ async def search_providers_by_criteria(
         # Apply limit after filtering
         if limit and len(filtered_providers) > limit:
             filtered_providers = filtered_providers[:limit]
+        
+        print(f"Specialty filtering results: {len(providers)} total providers, {len(filtered_providers)} match specialty '{determined_specialty}'")
         
         return {
             "total_providers": len(filtered_providers),
