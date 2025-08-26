@@ -614,10 +614,10 @@ const HomePage: React.FC = () => {
       <div className="relative z-10 w-full px-4 pt-8">
         <div className="max-w-6xl mx-auto">
           {/* Search Form */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/20">
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/20 mb-16">
             <div className="text-center mb-8">
               <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-2 leading-tight py-2">
-                ConciergeMD
+                ConciergeMD.ai
               </h1>
               <p className="text-lg text-gray-700 max-w-2xl mx-auto leading-relaxed mb-2">
                 Find the <span className="font-semibold text-blue-600">best subspecialist</span> for your specific diagnosis.
