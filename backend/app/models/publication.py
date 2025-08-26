@@ -28,9 +28,13 @@ class Publication(BaseModel):
     citation_count = Column(Integer, default=0)
     impact_factor = Column(Integer)
     
+    # Journal Reference
+    journal_id = Column(Integer, ForeignKey("journals.id"))
+    
     # Relationships
     doctor_id = Column(Integer, ForeignKey("doctors.id"), nullable=False)
     doctor = relationship("Doctor", back_populates="publications")
+    journal = relationship("Journal", back_populates="publications")
     
     @property
     def citation_display(self):

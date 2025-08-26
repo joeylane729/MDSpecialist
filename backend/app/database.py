@@ -38,7 +38,7 @@ def create_tables():
     # Only create the app-specific tables if they don't exist
     try:
         # Import models to ensure they're registered with Base
-        from .models import Doctor, Publication, Talk, DoctorDiagCache, DiagSnapshot, RawSource, VumediContent
+        from .models import Doctor, Publication, Talk, DoctorDiagCache, DiagSnapshot, RawSource, VumediContent, Journal
         
         # Create only the app-specific tables (exclude NPI table)
         Base.metadata.create_all(bind=engine, tables=[
@@ -48,7 +48,8 @@ def create_tables():
             DoctorDiagCache.__table__,
             DiagSnapshot.__table__,
             RawSource.__table__,
-            VumediContent.__table__
+            VumediContent.__table__,
+            Journal.__table__
         ])
         print("App tables created successfully")
     except Exception as e:

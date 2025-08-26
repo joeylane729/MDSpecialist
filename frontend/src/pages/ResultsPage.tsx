@@ -650,14 +650,6 @@ const ResultsPage: React.FC = () => {
             </div>
             
             <div className="max-w-4xl mx-auto space-y-6">
-              {/* Symptoms */}
-              <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Symptoms</h2>
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <p className="text-gray-700 text-sm">{searchParams.symptoms || 'No symptoms provided'}</p>
-                </div>
-              </div>
-
               {/* Diagnosis */}
               <div className="bg-white border border-gray-200 rounded-lg p-6">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">Diagnosis</h2>

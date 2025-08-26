@@ -7,6 +7,7 @@ from .diag_snapshot import DiagSnapshot
 from .raw_source import RawSource
 from .npi_provider import NPIProvider
 from .vumedi_content import VumediContent
+from .journals import Journal
 
 __all__ = [
     "Base",
