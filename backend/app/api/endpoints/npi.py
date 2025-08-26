@@ -231,8 +231,6 @@ async def search_providers_by_criteria(
                 print(f"Provider {provider.provider_last_name} matches specialty '{determined_specialty}' with specialties: {specialties}")
                 # Get the primary specialty for display
                 primary_specialty = get_specialty_description(provider.healthcare_provider_taxonomy_code_1)
-            else:
-                print(f"Provider {provider.provider_last_name} does NOT match specialty '{determined_specialty}'. Their specialties: {specialties}")
                 
                 formatted_provider = {
                     "id": provider.npi,  # Use NPI as ID
@@ -257,6 +255,8 @@ async def search_providers_by_criteria(
                     }
                 }
                 filtered_providers.append(formatted_provider)
+            else:
+                print(f"Provider {provider.provider_last_name} does NOT match specialty '{determined_specialty}'. Their specialties: {specialties}")
         
         # Apply limit after filtering
         if limit and len(filtered_providers) > limit:
