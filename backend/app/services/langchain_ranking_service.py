@@ -20,7 +20,7 @@ class LangChainRankingService:
         self.llm = OpenAI(temperature=0.1)
         
         self.ranking_prompt = PromptTemplate(
-            input_variables=["patient_profile", "candidates"],
+            input_variables=["symptoms", "specialties", "urgency", "candidates"],
             template="""
             Based on the specialist information below, rank the best specialists for this patient:
             
@@ -37,7 +37,7 @@ class LangChainRankingService:
             2. Expertise in the needed specialties
             3. Quality of the information/content
             
-            Return JSON with ranked recommendations:
+            Return ONLY valid JSON with ranked recommendations:
             {{
                 "recommendations": [
                     {{
@@ -82,8 +82,8 @@ class LangChainRankingService:
             try:
                 data = json.loads(response.strip())
                 llm_recommendations = data.get("recommendations", [])
-            except json.JSONDecodeError:
-                llm_recommendations = []
+            except json.JSONDecodeError as e:
+                raise ValueError(f"LLM returned invalid JSON: {e}")
             
             # Convert to SpecialistRecommendation objects
             recommendations = []
