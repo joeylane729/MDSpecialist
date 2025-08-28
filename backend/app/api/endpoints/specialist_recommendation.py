@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from ...database import get_db
 from ...services.langchain_specialist_recommendation_service import LangChainSpecialistRecommendationService
-from ...schemas.specialist_recommendation import SpecialistRecommendationRequest, SpecialistRecommendationResponse
+from ...schemas.specialist_recommendation import SpecialistRecommendationRequestSchema, RecommendationResponseSchema
 import logging
 
 # Set up logging
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-@router.post("/specialist-recommendations", response_model=SpecialistRecommendationResponse)
+@router.post("/specialist-recommendations", response_model=RecommendationResponseSchema)
 async def get_specialist_recommendations(
     symptoms: str = Form(...),
     diagnosis: str = Form(...),
@@ -57,7 +57,7 @@ async def get_specialist_recommendations(
                         logger.warning(f"Could not process file {file.filename}: {e}")
         
         # Get recommendations
-        recommendations = await langchain_service.get_recommendations(
+        recommendations = await langchain_service.get_specialist_recommendations(
             patient_input=patient_input,
             location_preference=location_preference,
             urgency_level=urgency_level,
