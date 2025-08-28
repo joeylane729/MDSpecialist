@@ -40,12 +40,12 @@ class LangChainRetrievalStrategies:
         self.query_chain = LLMChain(llm=self.llm, prompt=self.query_prompt)
         logger.info("LangChainRetrievalStrategies initialized successfully")
     
-    async def retrieve_specialists(
+    async def retrieve_specialist_information(
         self,
         patient_profile: PatientProfile,
         top_k: int = 50
     ) -> List[Dict[str, Any]]:
-        """Retrieve specialists using LangChain-generated queries."""
+        """Retrieve specialist information from Pinecone using LangChain-generated queries."""
         try:
             # Generate intelligent search queries
             query_input = {
@@ -88,7 +88,7 @@ class LangChainRetrievalStrategies:
                     logger.error(f"Query failed: {query}, error: {str(e)}")
                     raise
             
-            logger.info(f"LangChain retrieval found {len(all_candidates)} candidates using {len(queries)} queries")
+            logger.info(f"LangChain retrieval found {len(all_candidates)} specialist information records using {len(queries)} queries")
             return all_candidates
             
         except Exception as e:

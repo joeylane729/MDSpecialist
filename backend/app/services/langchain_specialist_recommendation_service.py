@@ -43,17 +43,17 @@ class LangChainSpecialistRecommendationService:
                 urgency_level=urgency_level
             )
             
-            # Step 2: LLM-powered retrieval
-            logger.info("Retrieving specialist candidates with LangChain...")
-            candidates = await self.retrieval_strategies.retrieve_specialists(
+            # Step 2: LLM-powered retrieval of specialist information
+            logger.info("Retrieving specialist information with LangChain...")
+            specialist_information = await self.retrieval_strategies.retrieve_specialist_information(
                 patient_profile=patient_profile,
                 top_k=50
             )
             
-            # Step 3: LLM-powered ranking
-            logger.info("Ranking specialists with LangChain...")
-            recommendations = await self.ranking_service.rank_specialists(
-                candidates=candidates,
+            # Step 3: LLM-powered ranking based on specialist information
+            logger.info("Ranking specialists based on information with LangChain...")
+            recommendations = await self.ranking_service.rank_specialists_from_information(
+                specialist_information=specialist_information,
                 patient_profile=patient_profile,
                 top_n=max_recommendations
             )
@@ -64,7 +64,7 @@ class LangChainSpecialistRecommendationService:
             response = RecommendationResponse(
                 patient_profile=patient_profile,
                 recommendations=recommendations,
-                total_candidates_found=len(candidates),
+                total_candidates_found=len(specialist_information),
                 processing_time_ms=int(processing_time),
                 retrieval_strategies_used=["langchain_vector_search"],
                 timestamp=datetime.now()

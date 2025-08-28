@@ -74,35 +74,35 @@ async def test_retrieval_strategies(patient_profile):
         pinecone_service = PineconeService()
         retrieval = LangChainRetrievalStrategies(pinecone_service)
         
-        candidates = await retrieval.retrieve_specialists(
+        specialist_information = await retrieval.retrieve_specialist_information(
             patient_profile=patient_profile,
             top_k=5
         )
         
-        print(f"✅ Retrieved {len(candidates)} candidates")
-        if candidates:
-            first = candidates[0]
-            print(f"   First candidate: {first.get('title', 'Unknown')}")
+        print(f"✅ Retrieved {len(specialist_information)} specialist information records")
+        if specialist_information:
+            first = specialist_information[0]
+            print(f"   First record: {first.get('title', 'Unknown')}")
             print(f"   Specialty: {first.get('specialty', 'Unknown')}")
         
-        return candidates
+        return specialist_information
         
     except Exception as e:
         print(f"❌ Retrieval test failed: {str(e)}")
         return []
 
-async def test_ranking_service(candidates, patient_profile):
+async def test_ranking_service(specialist_information, patient_profile):
     """Test LangChain ranking service."""
     print("🧪 Testing LangChain Ranking Service...")
     
-    if not candidates:
-        print("❌ Skipping ranking test - No candidates available")
+    if not specialist_information:
+        print("❌ Skipping ranking test - No specialist information available")
         return []
     
     try:
         ranking = LangChainRankingService()
-        recommendations = await ranking.rank_specialists(
-            candidates=candidates,
+        recommendations = await ranking.rank_specialists_from_information(
+            specialist_information=specialist_information,
             patient_profile=patient_profile,
             top_n=3
         )
@@ -163,14 +163,14 @@ async def main():
     pinecone_ok = await test_pinecone_connection()
     
     # Test 3: Retrieval Strategies
-    candidates = []
+    specialist_information = []
     if patient_profile and pinecone_ok:
-        candidates = await test_retrieval_strategies(patient_profile)
+        specialist_information = await test_retrieval_strategies(patient_profile)
     
     # Test 4: Ranking Service
     recommendations = []
-    if candidates and patient_profile:
-        recommendations = await test_ranking_service(candidates, patient_profile)
+    if specialist_information and patient_profile:
+        recommendations = await test_ranking_service(specialist_information, patient_profile)
     
     # Test 5: Full Pipeline
     pipeline_ok = await test_full_pipeline()
@@ -182,7 +182,7 @@ async def main():
     tests = [
         ("Patient Data Processor", patient_profile is not None),
         ("Pinecone Connection", pinecone_ok),
-        ("Retrieval Strategies", len(candidates) > 0),
+        ("Retrieval Strategies", len(specialist_information) > 0),
         ("Ranking Service", len(recommendations) > 0),
         ("Full Pipeline", pipeline_ok)
     ]
