@@ -262,4 +262,94 @@ export const searchNPIProviders = async (request: NPISearchRequest): Promise<NPI
   }
 }
 
+// LangChain Specialist Recommendation Types
+export interface SpecialistRecommendation {
+  specialist_id: string;
+  name: string;
+  specialty: string;
+  relevance_score: number;
+  confidence_score: number;
+  reasoning: string;
+  metadata: any;
+}
+
+export interface PatientProfile {
+  symptoms: string[];
+  conditions: string[];
+  specialties_needed: string[];
+  urgency_level: string;
+  location_preference?: string;
+}
+
+export interface SpecialistRecommendationResponse {
+  patient_profile: PatientProfile;
+  recommendations: SpecialistRecommendation[];
+  total_candidates_found: number;
+  processing_time_ms: number;
+  retrieval_strategies_used: string[];
+  timestamp: string;
+}
+
+export interface SpecialistRecommendationRequest {
+  symptoms: string;
+  diagnosis: string;
+  location_preference?: string;
+  urgency_level?: string;
+  medical_history?: string;
+  medications?: string;
+  surgical_history?: string;
+  max_recommendations?: number;
+  files?: File[];
+}
+
+export const getSpecialistRecommendations = async (
+  request: SpecialistRecommendationRequest
+): Promise<SpecialistRecommendationResponse> => {
+  try {
+    // Create FormData for the request
+    const formData = new FormData();
+    formData.append('symptoms', request.symptoms);
+    formData.append('diagnosis', request.diagnosis);
+    
+    if (request.location_preference) {
+      formData.append('location_preference', request.location_preference);
+    }
+    if (request.urgency_level) {
+      formData.append('urgency_level', request.urgency_level);
+    }
+    if (request.medical_history) {
+      formData.append('medical_history', request.medical_history);
+    }
+    if (request.medications) {
+      formData.append('medications', request.medications);
+    }
+    if (request.surgical_history) {
+      formData.append('surgical_history', request.surgical_history);
+    }
+    if (request.max_recommendations) {
+      formData.append('max_recommendations', request.max_recommendations.toString());
+    }
+    
+    // Add files if provided
+    if (request.files) {
+      request.files.forEach((file) => {
+        formData.append('files', file);
+      });
+    }
+    
+    const response = await api.post('/api/v1/specialist-recommendations', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.detail || 'Failed to get specialist recommendations');
+    }
+    throw error;
+  }
+};
+
 export default api
