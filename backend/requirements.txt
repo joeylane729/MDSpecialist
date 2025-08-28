@@ -11,3 +11,6 @@ psycopg2-binary>=2.9.0
 openai>=1.0.0
 PyPDF2>=3.0.0
 pinecone
+langchain>=0.1.0
+langchain-openai>=0.0.5
+langchain-pinecone>=0.0.6
