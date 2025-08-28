@@ -22,32 +22,14 @@ class LangChainRankingService:
         self.ranking_prompt = PromptTemplate(
             input_variables=["symptoms", "specialties", "urgency", "candidates"],
             template="""
-            Based on the specialist information below, rank the best specialists for this patient:
+            Symptoms: {symptoms}
+            Specialties: {specialties}
+            Urgency: {urgency}
             
-            Patient:
-            - Symptoms: {symptoms}
-            - Specialties needed: {specialties}
-            - Urgency: {urgency}
-            
-            Specialist Information:
+            Specialists:
             {candidates}
             
-            Analyze the specialist information and recommend the best specialists based on:
-            1. Relevance to patient's symptoms and conditions
-            2. Expertise in the needed specialties
-            3. Quality of the information/content
-            
-            Return ONLY valid JSON with ranked recommendations:
-            {{
-                "recommendations": [
-                    {{
-                        "name": "specialist name",
-                        "specialty": "specialty",
-                        "confidence": 0.85,
-                        "reasoning": "explanation based on the information"
-                    }}
-                ]
-            }}
+            Return the top 3 specialist names, one per line:
             """
         )
         
@@ -78,12 +60,33 @@ class LangChainRankingService:
                 candidates=information_text
             )
             
-            # Parse LLM response
-            try:
-                data = json.loads(response.strip())
-                llm_recommendations = data.get("recommendations", [])
-            except json.JSONDecodeError as e:
-                raise ValueError(f"LLM returned invalid JSON: {e}")
+            # Parse LLM response - expect simple text with specialist names
+            response_clean = response.strip()
+            specialist_names = []
+            
+            # Split by lines and extract names
+            lines = response_clean.split('\n')
+            for line in lines:
+                line = line.strip()
+                if line and not line.startswith('#') and not line.startswith('*'):
+                    # Extract name from line (remove numbers, bullets, etc.)
+                    name = line
+                    # Remove common prefixes
+                    for prefix in ['1.', '2.', '3.', '-', '*', '•']:
+                        if name.startswith(prefix):
+                            name = name[len(prefix):].strip()
+                    if name:
+                        specialist_names.append(name)
+            
+            # Create simple recommendations from the names
+            llm_recommendations = []
+            for i, name in enumerate(specialist_names[:top_n]):
+                llm_recommendations.append({
+                    "name": name,
+                    "specialty": "Medical Specialist",
+                    "confidence": 0.8 - (i * 0.1),
+                    "reasoning": f"Recommended by AI analysis"
+                })
             
             # Convert to SpecialistRecommendation objects
             recommendations = []

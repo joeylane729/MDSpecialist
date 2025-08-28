@@ -9,7 +9,7 @@ from datetime import datetime
 from ..services.pinecone_service import PineconeService
 from ..services.langchain_patient_processor import LangChainPatientProcessor
 from ..services.langchain_retrieval_strategies import LangChainRetrievalStrategies
-from ..services.langchain_ranking_service import LangChainRankingService
+
 from ..models.specialist_recommendation import PatientProfile, SpecialistRecommendation, RecommendationResponse
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ class LangChainSpecialistRecommendationService:
         self.pinecone_service = PineconeService()
         self.patient_processor = LangChainPatientProcessor()
         self.retrieval_strategies = LangChainRetrievalStrategies(self.pinecone_service)
-        self.ranking_service = LangChainRankingService()
+
         logger.info("LangChainSpecialistRecommendationService initialized successfully")
     
     async def get_specialist_recommendations(
@@ -50,13 +50,24 @@ class LangChainSpecialistRecommendationService:
                 top_k=50
             )
             
-            # Step 3: LLM-powered ranking based on specialist information
-            logger.info("Ranking specialists based on information with LangChain...")
-            recommendations = await self.ranking_service.rank_specialists_from_information(
-                specialist_information=specialist_information,
-                patient_profile=patient_profile,
-                top_n=max_recommendations
-            )
+            # Step 3: Convert specialist information directly to recommendations (skip ranking)
+            logger.info("Converting specialist information to recommendations...")
+            recommendations = []
+            for i, info in enumerate(specialist_information[:max_recommendations]):
+                # Extract specialist name from featuring field
+                featuring = info.get('featuring', '')
+                specialist_name = featuring.split(',')[0].strip() if featuring else f"Specialist {i+1}"
+                
+                recommendation = SpecialistRecommendation(
+                    specialist_id=info.get('id', info.get('_id', f"specialist_{i}")),
+                    name=specialist_name,
+                    specialty=info.get('specialty', 'Medical Specialist'),
+                    relevance_score=0.8 - (i * 0.1),  # Simple decreasing score
+                    confidence_score=0.8 - (i * 0.1),
+                    reasoning=f"Found in medical content: {info.get('title', 'Medical video')}",
+                    metadata=info
+                )
+                recommendations.append(recommendation)
             
             # Step 4: Generate response
             processing_time = (datetime.now() - start_time).total_seconds() * 1000
