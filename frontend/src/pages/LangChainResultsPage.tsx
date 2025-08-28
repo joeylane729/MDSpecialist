@@ -15,6 +15,12 @@ const LangChainResultsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Check if recommendations are already provided in state
+    if (location.state?.recommendations) {
+      setRecommendations(location.state.recommendations);
+      return;
+    }
+
     // Get search parameters from location state
     const searchParams = location.state?.searchParams;
     if (!searchParams) {

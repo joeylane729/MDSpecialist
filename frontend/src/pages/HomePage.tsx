@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { searchNPIProviders } from '../services/api';
+import { searchNPIProviders, getSpecialistRecommendations } from '../services/api';
 import { 
   MapPin, 
   Stethoscope, 
@@ -16,7 +16,8 @@ import {
   CheckCircle,
   FileText,
   Upload,
-  X
+  X,
+  Brain
 } from 'lucide-react';
 
 interface State {
@@ -518,6 +519,47 @@ const HomePage: React.FC = () => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleAIRecs = async () => {
+    if (!symptoms.trim() || !diagnosis.trim()) {
+      alert('Please fill in symptoms and diagnosis before getting AI recommendations');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const request = {
+        symptoms: symptoms,
+        diagnosis: diagnosis,
+        location_preference: null,
+        urgency_level: 'medium',
+        medical_history: '',
+        medications: '',
+        surgical_history: '',
+        max_recommendations: 5,
+        files: []
+      };
+
+      const response = await getSpecialistRecommendations(request);
+      
+      // Navigate to LangChain results page with the response
+      navigate('/langchain-results', {
+        state: {
+          recommendations: response,
+          searchParams: {
+            symptoms: symptoms,
+            diagnosis: diagnosis
+          }
+        }
+      });
+    } catch (error) {
+      console.error('AI Recommendations error:', error);
+      alert(`AI Recommendations failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -878,8 +920,8 @@ const HomePage: React.FC = () => {
                 )}
               </div>
 
-              {/* Search Button */}
-              <div className="text-center">
+              {/* Search Buttons */}
+              <div className="text-center space-y-4">
                 <button
                   type="submit"
                   disabled={isLoading || !selectedState || !selectedCity || !symptoms.trim() || !diagnosis.trim() || !patientType || !proximity}
@@ -898,6 +940,32 @@ const HomePage: React.FC = () => {
                     </>
                   )}
                 </button>
+                
+                {/* AI Recommendations Button */}
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={handleAIRecs}
+                    disabled={isLoading || !symptoms.trim() || !diagnosis.trim()}
+                    className="group relative inline-flex items-center justify-center w-full max-w-md bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 px-8 rounded-2xl font-bold text-lg hover:from-purple-700 hover:to-pink-700 focus:ring-4 focus:ring-purple-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                        <span>AI Analyzing...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Brain className="w-5 h-5 mr-3" />
+                        <span>AI Recommendations</span>
+                        <ArrowRight className="w-4 h-4 ml-3 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
+                  </button>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Get AI-powered specialist recommendations based on your symptoms and diagnosis
+                  </p>
+                </div>
               </div>
             </form>
 
