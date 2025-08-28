@@ -57,9 +57,9 @@ class LangChainRetrievalStrategies:
             queries_response = await self.query_chain.arun(**query_input)
             queries = [q.strip() for q in queries_response.split('\n') if q.strip()]
             
-            # If LLM fails, use fallback
+            # Ensure we have queries
             if not queries:
-                queries = [f"{' '.join(patient_profile.symptoms)} {' '.join(patient_profile.specialties_needed)}"]
+                raise ValueError("Failed to generate search queries from LLM")
             
             # Search with each query and combine results
             all_candidates = []
@@ -85,43 +85,14 @@ class LangChainRetrievalStrategies:
                                 seen_ids.add(candidate_id)
                                 
                 except Exception as e:
-                    logger.warning(f"Query failed: {query}, error: {str(e)}")
-                    continue
+                    logger.error(f"Query failed: {query}, error: {str(e)}")
+                    raise
             
             logger.info(f"LangChain retrieval found {len(all_candidates)} candidates using {len(queries)} queries")
             return all_candidates
             
         except Exception as e:
             logger.error(f"Error in LangChain retrieval: {str(e)}")
-            return self._fallback_retrieval(patient_profile, top_k)
+            raise
     
-    def _fallback_retrieval(
-        self,
-        patient_profile: PatientProfile,
-        top_k: int
-    ) -> List[Dict[str, Any]]:
-        """Fallback simple retrieval if LangChain fails."""
-        try:
-            # Simple search query
-            search_query = " ".join(patient_profile.symptoms + patient_profile.specialties_needed)
-            
-            results = self.index.search(
-                namespace="__default__",
-                query={
-                    "inputs": {"text": search_query},
-                    "top_k": top_k
-                },
-                fields=["*"]
-            )
-            
-            candidates = []
-            if hasattr(results, 'result') and hasattr(results.result, 'hits'):
-                for hit in results.result.hits:
-                    candidates.append(hit.fields)
-            
-            logger.info(f"Fallback retrieval found {len(candidates)} candidates")
-            return candidates
-            
-        except Exception as e:
-            logger.error(f"Fallback retrieval failed: {str(e)}")
-            return []
+

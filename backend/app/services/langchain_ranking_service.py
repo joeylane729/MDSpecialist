@@ -98,16 +98,16 @@ class LangChainRankingService:
                     )
                     recommendations.append(recommendation)
             
-            # If LLM fails, use fallback
+            # Ensure we have recommendations
             if not recommendations:
-                recommendations = self._fallback_ranking(candidates, patient_profile, top_n)
+                raise ValueError("LLM failed to generate any recommendations")
             
             logger.info(f"LangChain ranked {len(recommendations)} recommendations")
             return recommendations
             
         except Exception as e:
             logger.error(f"Error in LangChain ranking: {str(e)}")
-            return self._fallback_ranking(candidates, patient_profile, top_n)
+            raise
     
     def _format_candidates(self, candidates: List[Dict[str, Any]]) -> str:
         """Format candidates for LLM input."""
@@ -135,35 +135,4 @@ class LangChainRankingService:
         # Return first candidate if no match found
         return candidates[0] if candidates else {}
     
-    def _fallback_ranking(
-        self,
-        candidates: List[Dict[str, Any]],
-        patient_profile: PatientProfile,
-        top_n: int
-    ) -> List[SpecialistRecommendation]:
-        """Fallback simple ranking if LangChain fails."""
-        recommendations = []
-        
-        for candidate in candidates[:top_n]:
-            # Simple relevance score
-            relevance_score = 0.5
-            if candidate.get("specialty"):
-                if any(specialty in candidate["specialty"].lower() for specialty in patient_profile.specialties_needed):
-                    relevance_score = 0.8
-            
-            confidence_score = relevance_score * 0.5 + 0.3
-            
-            recommendation = SpecialistRecommendation(
-                specialist_id=candidate.get("id", candidate.get("_id", "")),
-                name=candidate.get("featuring", candidate.get("author", "Unknown")),
-                specialty=candidate.get("specialty", "Unknown"),
-                relevance_score=relevance_score,
-                confidence_score=confidence_score,
-                reasoning="Recommended based on your case.",
-                metadata=candidate
-            )
-            
-            recommendations.append(recommendation)
-        
-        logger.info(f"Fallback ranking created {len(recommendations)} recommendations")
-        return recommendations
+
