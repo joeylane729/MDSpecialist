@@ -16,7 +16,7 @@ class PatientProfileSchema(BaseModel):
     specialties_needed: List[str] = Field(..., description="Required medical specialties")
     urgency_level: str = Field(..., description="Urgency level: low, medium, high, emergency")
     location_preference: Optional[str] = Field(None, description="Preferred location")
-    insurance_preference: Optional[str] = Field(None, description="Insurance requirements")
+
     additional_notes: Optional[str] = Field(None, description="Additional patient notes")
 
 class SpecialistRecommendationSchema(BaseModel):
@@ -42,7 +42,7 @@ class SpecialistRecommendationRequestSchema(BaseModel):
     """Schema for specialist recommendation request."""
     patient_input: str = Field(..., min_length=1, description="Patient description, symptoms, conditions, etc.")
     location_preference: Optional[str] = Field(None, description="Preferred location for specialist")
-    insurance_preference: Optional[str] = Field(None, description="Insurance requirements")
+
     urgency_level: str = Field("medium", description="Urgency level: low, medium, high, emergency")
     max_recommendations: int = Field(10, ge=1, le=50, description="Maximum number of recommendations")
 

@@ -18,7 +18,6 @@ class PatientDataProcessor:
         self,
         patient_input: str,
         location_preference: Optional[str] = None,
-        insurance_preference: Optional[str] = None,
         urgency_level: str = "medium"
     ) -> PatientProfile:
         """Simple patient input processing."""

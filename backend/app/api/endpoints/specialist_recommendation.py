@@ -25,7 +25,7 @@ class SpecialistRecommendationRequest(BaseModel):
     """Request model for specialist recommendations."""
     patient_input: str = Field(..., description="Patient description, symptoms, conditions, etc.")
     location_preference: Optional[str] = Field(None, description="Preferred location for specialist")
-    insurance_preference: Optional[str] = Field(None, description="Insurance requirements")
+
     urgency_level: str = Field("medium", description="Urgency level: low, medium, high, emergency")
     max_recommendations: int = Field(10, ge=1, le=50, description="Maximum number of recommendations")
 
@@ -76,7 +76,7 @@ async def get_specialist_recommendations(
         response = await service.get_specialist_recommendations(
             patient_input=request.patient_input,
             location_preference=request.location_preference,
-            insurance_preference=request.insurance_preference,
+
             urgency_level=request.urgency_level,
             max_recommendations=request.max_recommendations
         )
@@ -89,7 +89,7 @@ async def get_specialist_recommendations(
                 "specialties_needed": response.patient_profile.specialties_needed,
                 "urgency_level": response.patient_profile.urgency_level,
                 "location_preference": response.patient_profile.location_preference,
-                "insurance_preference": response.patient_profile.insurance_preference,
+
                 "additional_notes": response.patient_profile.additional_notes
             },
             recommendations=[

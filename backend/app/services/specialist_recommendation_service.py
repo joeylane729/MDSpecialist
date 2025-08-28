@@ -28,7 +28,6 @@ class SpecialistRecommendationService:
         self,
         patient_input: str,
         location_preference: Optional[str] = None,
-        insurance_preference: Optional[str] = None,
         urgency_level: str = "medium",
         max_recommendations: int = 3
     ) -> RecommendationResponse:
@@ -41,7 +40,6 @@ class SpecialistRecommendationService:
             patient_profile = await self.patient_processor.process_patient_input(
                 patient_input=patient_input,
                 location_preference=location_preference,
-                insurance_preference=insurance_preference,
                 urgency_level=urgency_level
             )
             
