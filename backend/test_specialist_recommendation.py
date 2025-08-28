@@ -121,7 +121,7 @@ async def test_ranking_service(candidates):
         
         # Test ranking
         ranking = SpecialistRankingService()
-        recommendations = await ranking.rank_specialists(candidates, profile, max_recommendations=3)
+        recommendations = await ranking.rank_specialists(candidates, profile, top_n=3)
         
         print(f"✅ Ranked {len(recommendations)} recommendations")
         for i, rec in enumerate(recommendations, 1):
