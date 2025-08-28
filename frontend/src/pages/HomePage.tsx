@@ -16,8 +16,7 @@ import {
   CheckCircle,
   FileText,
   Upload,
-  X,
-  Brain
+  X
 } from 'lucide-react';
 
 interface State {
@@ -519,46 +518,7 @@ const HomePage: React.FC = () => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleAIRecs = async () => {
-    if (!symptoms.trim() || !diagnosis.trim()) {
-      alert('Please fill in symptoms and diagnosis before getting AI recommendations');
-      return;
-    }
 
-    setIsLoading(true);
-    
-    try {
-      const request = {
-        symptoms: symptoms,
-        diagnosis: diagnosis,
-        location_preference: null,
-        urgency_level: 'medium',
-        medical_history: '',
-        medications: '',
-        surgical_history: '',
-        max_recommendations: 5,
-        files: []
-      };
-
-      const response = await getSpecialistRecommendations(request);
-      
-      // Navigate to LangChain results page with the response
-      navigate('/langchain-results', {
-        state: {
-          recommendations: response,
-          searchParams: {
-            symptoms: symptoms,
-            diagnosis: diagnosis
-          }
-        }
-      });
-    } catch (error) {
-      console.error('AI Recommendations error:', error);
-      alert(`AI Recommendations failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -574,15 +534,30 @@ const HomePage: React.FC = () => {
     localStorage.removeItem('concierge_search_results');
     
     try {
-      // Call the backend API to search for providers using the service
-      const data = await searchNPIProviders({
-        state: selectedState,
-        city: selectedCity,
-        diagnosis: diagnosis, // Use diagnosis text
-        symptoms: symptoms, // Include symptoms
-        uploadedFiles: uploadedFiles, // Include uploaded files
-        limit: 500
-      });
+      // Call both APIs in parallel
+      const [npiData, aiRecommendations] = await Promise.all([
+        // NPI search
+        searchNPIProviders({
+          state: selectedState,
+          city: selectedCity,
+          diagnosis: diagnosis,
+          symptoms: symptoms,
+          uploadedFiles: uploadedFiles,
+          limit: 500
+        }),
+        // AI recommendations
+        getSpecialistRecommendations({
+          symptoms: symptoms,
+          diagnosis: diagnosis,
+          location_preference: null,
+          urgency_level: 'medium',
+          medical_history: '',
+          medications: '',
+          surgical_history: '',
+          max_recommendations: 5,
+          files: []
+        })
+      ]);
       
       // Save search results to localStorage for persistence
       localStorage.setItem('concierge_search_results', JSON.stringify({
@@ -595,15 +570,16 @@ const HomePage: React.FC = () => {
           medications: medications,
           medicalHistory: medicalHistory,
           surgicalHistory: surgicalHistory,
-          determined_specialty: data.search_criteria?.determined_specialty,
-          predicted_icd10: data.search_criteria?.predicted_icd10,
-          icd10_description: data.search_criteria?.icd10_description
+          determined_specialty: npiData.search_criteria?.determined_specialty,
+          predicted_icd10: npiData.search_criteria?.predicted_icd10,
+          icd10_description: npiData.search_criteria?.icd10_description
         },
-        providers: data.providers,
-        totalProviders: data.total_providers
+        providers: npiData.providers,
+        totalProviders: npiData.total_providers,
+        aiRecommendations: aiRecommendations
       }));
 
-      // Navigate to results page with the real data
+      // Navigate to results page with both datasets
       navigate('/results', {
         state: {
           state: selectedState,
@@ -614,10 +590,10 @@ const HomePage: React.FC = () => {
           medications: medications,
           medicalHistory: medicalHistory,
           surgicalHistory: surgicalHistory,
-          determined_specialty: data.search_criteria?.determined_specialty,
-          predicted_icd10: data.search_criteria?.predicted_icd10,
-          icd10_description: data.search_criteria?.icd10_description,
-          differential_diagnoses: data.search_criteria?.differential_diagnoses,
+          determined_specialty: npiData.search_criteria?.determined_specialty,
+          predicted_icd10: npiData.search_criteria?.predicted_icd10,
+          icd10_description: npiData.search_criteria?.icd10_description,
+          differential_diagnoses: npiData.search_criteria?.differential_diagnoses,
           searchParams: {
             state: selectedState,
             city: selectedCity,
@@ -627,13 +603,14 @@ const HomePage: React.FC = () => {
             medications: medications,
             medicalHistory: medicalHistory,
             surgicalHistory: surgicalHistory,
-            determined_specialty: data.search_criteria?.determined_specialty,
-            predicted_icd10: data.search_criteria?.predicted_icd10,
-            icd10_description: data.search_criteria?.icd10_description,
-            differential_diagnoses: data.search_criteria?.differential_diagnoses
+            determined_specialty: npiData.search_criteria?.determined_specialty,
+            predicted_icd10: npiData.search_criteria?.predicted_icd10,
+            icd10_description: npiData.search_criteria?.icd10_description,
+            differential_diagnoses: npiData.search_criteria?.differential_diagnoses
           },
-          providers: data.providers,
-          totalProviders: data.total_providers
+          providers: npiData.providers,
+          totalProviders: npiData.total_providers,
+          aiRecommendations: aiRecommendations
         }
       });
     } catch (error) {
@@ -920,8 +897,8 @@ const HomePage: React.FC = () => {
                 )}
               </div>
 
-              {/* Search Buttons */}
-              <div className="text-center space-y-4">
+              {/* Search Button */}
+              <div className="text-center">
                 <button
                   type="submit"
                   disabled={isLoading || !selectedState || !selectedCity || !symptoms.trim() || !diagnosis.trim() || !patientType || !proximity}
@@ -940,32 +917,6 @@ const HomePage: React.FC = () => {
                     </>
                   )}
                 </button>
-                
-                {/* AI Recommendations Button */}
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={handleAIRecs}
-                    disabled={isLoading || !symptoms.trim() || !diagnosis.trim()}
-                    className="group relative inline-flex items-center justify-center w-full max-w-md bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 px-8 rounded-2xl font-bold text-lg hover:from-purple-700 hover:to-pink-700 focus:ring-4 focus:ring-purple-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-                  >
-                    {isLoading ? (
-                      <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                        <span>AI Analyzing...</span>
-                      </div>
-                    ) : (
-                      <>
-                        <Brain className="w-5 h-5 mr-3" />
-                        <span>AI Recommendations</span>
-                        <ArrowRight className="w-4 h-4 ml-3 group-hover:translate-x-1 transition-transform" />
-                      </>
-                    )}
-                  </button>
-                  <p className="text-sm text-gray-600 mt-2">
-                    Get AI-powered specialist recommendations based on your symptoms and diagnosis
-                  </p>
-                </div>
               </div>
             </form>
 
