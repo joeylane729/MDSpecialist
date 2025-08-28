@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel, Field
 from datetime import datetime
 
-from ...services.specialist_recommendation_service import SpecialistRecommendationService
+from ...services.langchain_specialist_recommendation_service import LangChainSpecialistRecommendationService
 from ...models.specialist_recommendation import PatientProfile, SpecialistRecommendation, RecommendationResponse
 
 # Configure logging
@@ -54,14 +54,14 @@ class ServiceStatsResponse(BaseModel):
     last_updated: datetime
 
 # Dependency to get service instance
-def get_specialist_service() -> SpecialistRecommendationService:
+def get_specialist_service() -> LangChainSpecialistRecommendationService:
     """Get specialist recommendation service instance."""
-    return SpecialistRecommendationService()
+    return LangChainSpecialistRecommendationService()
 
 @router.post("/recommendations", response_model=SpecialistRecommendationResponse)
 async def get_specialist_recommendations(
     request: SpecialistRecommendationRequest,
-    service: SpecialistRecommendationService = Depends(get_specialist_service)
+    service: LangChainSpecialistRecommendationService = Depends(get_specialist_service)
 ):
     """
     Get specialist recommendations for a patient.
@@ -117,7 +117,7 @@ async def get_specialist_recommendations(
 @router.get("/specialist/{specialist_id}")
 async def get_specialist_by_id(
     specialist_id: str,
-    service: SpecialistRecommendationService = Depends(get_specialist_service)
+    service: LangChainSpecialistRecommendationService = Depends(get_specialist_service)
 ):
     """
     Get detailed information about a specific specialist.
@@ -145,7 +145,7 @@ async def get_specialist_by_id(
 @router.post("/search")
 async def search_specialists_by_specialty(
     request: SpecialistSearchRequest,
-    service: SpecialistRecommendationService = Depends(get_specialist_service)
+    service: LangChainSpecialistRecommendationService = Depends(get_specialist_service)
 ):
     """
     Search for specialists by specialty and optional location.
@@ -176,7 +176,7 @@ async def search_specialists_by_specialty(
 
 @router.get("/stats", response_model=ServiceStatsResponse)
 async def get_service_stats(
-    service: SpecialistRecommendationService = Depends(get_specialist_service)
+    service: LangChainSpecialistRecommendationService = Depends(get_specialist_service)
 ):
     """
     Get statistics about the specialist recommendation service.
