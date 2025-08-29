@@ -31,13 +31,12 @@ class SpecialistRecommendationSchema(BaseModel):
 
 class RecommendationResponseSchema(BaseModel):
     """Schema for complete recommendation response."""
-    patient_profile: PatientProfileSchema = Field(..., description="Processed patient profile")
+    patient_profile: Dict[str, Any] = Field(..., description="Unified patient profile and medical analysis results")
     recommendations: List[SpecialistRecommendationSchema] = Field(..., description="Ranked specialist recommendations")
     total_candidates_found: int = Field(..., ge=0, description="Total candidates found during retrieval")
     processing_time_ms: int = Field(..., ge=0, description="Processing time in milliseconds")
     retrieval_strategies_used: List[str] = Field(..., description="Retrieval strategies used")
     timestamp: datetime = Field(..., description="Response timestamp")
-    medical_analysis: Optional[Dict[str, Any]] = Field(None, description="Comprehensive medical analysis results")
 
 class SpecialistRecommendationRequestSchema(BaseModel):
     """Schema for specialist recommendation request."""

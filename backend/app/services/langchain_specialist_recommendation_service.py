@@ -33,23 +33,14 @@ class LangChainSpecialistRecommendationService:
         start_time = datetime.now()
         
         try:
-            # Step 1: LLM-powered patient data processing and medical analysis
-            logger.info("Processing patient data and performing medical analysis with LangChain...")
-            patient_profile = await self.medical_analysis.process_patient_input(
-                patient_input=patient_input
-            )
-            
-            # Perform comprehensive medical analysis
-            medical_analysis_results = {
-                "determined_specialty": await self.medical_analysis.determine_specialty(patient_input),
-                "predicted_icd10": await self.medical_analysis.predict_icd10_code(patient_input),
-                "diagnoses": await self.medical_analysis.predict_diagnoses(patient_input)
-            }
+            # Step 1: Comprehensive medical analysis and patient processing
+            logger.info("Performing comprehensive medical analysis with LangChain...")
+            medical_analysis_results = await self.medical_analysis.comprehensive_analysis(patient_input)
             
             # Step 2: LLM-powered retrieval of specialist information
             logger.info("Retrieving specialist information with LangChain...")
             specialist_information = await self.retrieval_strategies.retrieve_specialist_information(
-                patient_profile=patient_profile,
+                patient_profile=medical_analysis_results,
                 top_k=50
             )
             
@@ -76,13 +67,12 @@ class LangChainSpecialistRecommendationService:
             processing_time = (datetime.now() - start_time).total_seconds() * 1000
             
             response = RecommendationResponse(
-                patient_profile=patient_profile,
+                patient_profile=medical_analysis_results,
                 recommendations=recommendations,
                 total_candidates_found=len(specialist_information),
                 processing_time_ms=int(processing_time),
                 retrieval_strategies_used=["langchain_vector_search"],
-                timestamp=datetime.now(),
-                medical_analysis=medical_analysis_results
+                timestamp=datetime.now()
             )
             
             logger.info(f"Generated {len(recommendations)} recommendations in {processing_time:.2f}ms using LangChain")

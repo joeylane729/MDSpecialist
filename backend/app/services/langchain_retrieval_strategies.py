@@ -42,16 +42,16 @@ class LangChainRetrievalStrategies:
     
     async def retrieve_specialist_information(
         self,
-        patient_profile: PatientProfile,
+        patient_profile: Dict[str, Any],
         top_k: int = 50
     ) -> List[Dict[str, Any]]:
         """Retrieve specialist information from Pinecone using LangChain-generated queries."""
         try:
             # Generate intelligent search queries
             query_input = {
-                "symptoms": ", ".join(patient_profile.symptoms),
-                "specialties": ", ".join(patient_profile.specialties_needed),
-                "urgency": patient_profile.urgency_level
+                "symptoms": ", ".join(patient_profile.get("symptoms", [])),
+                "specialties": ", ".join(patient_profile.get("specialties_needed", [])),
+                "urgency": patient_profile.get("urgency_level", "medium")
             }
             
             queries_response = await self.query_chain.arun(**query_input)

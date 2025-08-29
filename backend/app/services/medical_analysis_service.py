@@ -102,6 +102,49 @@ class MedicalAnalysisService:
             logger.error(f"Error processing patient input: {str(e)}")
             raise
     
+    async def comprehensive_analysis(self, patient_input: str) -> Dict[str, Any]:
+        """Perform comprehensive medical analysis including patient processing and medical analysis."""
+        try:
+            # Get patient profile
+            patient_profile = await self.process_patient_input(patient_input)
+            
+            # Perform medical analysis
+            medical_analysis = {
+                "determined_specialty": await self.determine_specialty(patient_input),
+                "predicted_icd10": await self.predict_icd10_code(patient_input),
+                "diagnoses": await self.predict_diagnoses(patient_input)
+            }
+            
+            # Add ICD-10 description if we have the code
+            if medical_analysis["predicted_icd10"] and self.db:
+                icd10_description = self.lookup_icd10_description(medical_analysis["predicted_icd10"])
+                if icd10_description:
+                    medical_analysis["icd10_description"] = icd10_description
+            
+            # Combine patient profile and medical analysis into unified result
+            comprehensive_result = {
+                # Patient profile data
+                "symptoms": patient_profile.symptoms,
+                "conditions": patient_profile.conditions,
+                "specialties_needed": patient_profile.specialties_needed,
+                "urgency_level": patient_profile.urgency_level,
+                "location_preference": patient_profile.location_preference,
+                "additional_notes": patient_profile.additional_notes,
+                
+                # Medical analysis data
+                "determined_specialty": medical_analysis["determined_specialty"],
+                "predicted_icd10": medical_analysis["predicted_icd10"],
+                "diagnoses": medical_analysis["diagnoses"],
+                "icd10_description": medical_analysis.get("icd10_description")
+            }
+            
+            logger.info(f"Comprehensive analysis completed: specialty={comprehensive_result['determined_specialty']}, icd10={comprehensive_result['predicted_icd10']}")
+            return comprehensive_result
+            
+        except Exception as e:
+            logger.error(f"Error in comprehensive analysis: {str(e)}")
+            raise
+    
     def lookup_icd10_description(self, code: str) -> Optional[str]:
         """
         Look up the description for an ICD-10 code from the database.

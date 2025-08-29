@@ -34,10 +34,9 @@ class SpecialistRecommendation:
 @dataclass
 class RecommendationResponse:
     """Complete recommendation response."""
-    patient_profile: PatientProfile
+    patient_profile: Dict[str, Any]  # Now contains both patient profile and medical analysis
     recommendations: List[SpecialistRecommendation]
     total_candidates_found: int
     processing_time_ms: int
     retrieval_strategies_used: List[str]
     timestamp: datetime
-    medical_analysis: Optional[Dict[str, Any]] = None
