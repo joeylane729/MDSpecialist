@@ -166,15 +166,18 @@ class LangChainRankingService:
             
             # Clean the response - remove markdown code blocks if present
             cleaned_response = response.strip()
+            logger.info(f"DEBUG: Original response: {response[:200]}...")
             if cleaned_response.startswith('```json'):
                 cleaned_response = cleaned_response[7:]  # Remove ```json
             if cleaned_response.endswith('```'):
                 cleaned_response = cleaned_response[:-3]  # Remove ```
             cleaned_response = cleaned_response.strip()
+            logger.info(f"DEBUG: Cleaned response: {cleaned_response[:200]}...")
             
             # Try to parse as JSON first
             try:
                 result = json.loads(cleaned_response)
+                logger.info(f"DEBUG: Parsed JSON result: {result}")
                 if isinstance(result, dict) and 'providers' in result and 'explanation' in result:
                     # New format with 'providers' field - now contains doctor names with links
                     providers_data = result['providers']
@@ -183,20 +186,27 @@ class LangChainRankingService:
                     # Extract doctor names and links
                     doctor_names = []
                     doctor_links = {}
-                    for provider_entry in providers_data:
+                    logger.info(f"DEBUG: Processing {len(providers_data)} provider entries")
+                    for i, provider_entry in enumerate(providers_data):
+                        logger.info(f"DEBUG: Entry {i}: {provider_entry}")
                         if isinstance(provider_entry, dict) and 'name' in provider_entry:
                             name = provider_entry['name']
                             link = provider_entry.get('link', '')
                             doctor_names.append(name)
                             doctor_links[name] = link
+                            logger.info(f"DEBUG: Added {name} with link {link}")
                         elif isinstance(provider_entry, str):
                             # Fallback for old format (just names)
                             doctor_names.append(provider_entry)
+                            logger.info(f"DEBUG: Added string name {provider_entry}")
+                    
+                    logger.info(f"DEBUG: Final doctor_links: {doctor_links}")
                     
                     # Convert doctor names back to NPI numbers
                     npi_ranking = self._convert_names_to_npis(doctor_names, providers)
                     logger.info(f"Converted to {len(npi_ranking)} NPI numbers")
                     
+                    logger.info(f"DEBUG: About to return with doctor_links: {doctor_links}")
                     return {
                         'ranking': npi_ranking,
                         'explanation': result['explanation'],
