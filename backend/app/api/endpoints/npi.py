@@ -124,7 +124,7 @@ async def search_providers_by_criteria(
         
         # Use GPT to determine the specialty from the combined input
         print(f"Using GPT to determine specialty for combined input: '{combined_input[:200]}...'")
-        determined_specialty = gpt_service.determine_specialty(combined_input)
+        determined_specialty = await gpt_service.determine_specialty(combined_input)
         
         if not determined_specialty:
             print("GPT failed to determine specialty, using fallback")
@@ -134,7 +134,7 @@ async def search_providers_by_criteria(
         
         # Use GPT to predict both primary and differential diagnoses from the combined input
         print(f"Using GPT to predict diagnoses for combined input: '{combined_input[:200]}...'")
-        predicted_diagnoses = gpt_service.predict_diagnoses(combined_input)
+        predicted_diagnoses = await gpt_service.predict_diagnoses(combined_input)
         
         predicted_icd10 = None
         icd10_description = None
@@ -156,7 +156,7 @@ async def search_providers_by_criteria(
         else:
             print("GPT failed to predict diagnoses, falling back to single code prediction")
             # Fallback to the old method
-            predicted_icd10 = gpt_service.predict_icd10_code(combined_input)
+            predicted_icd10 = await gpt_service.predict_icd10_code(combined_input)
             if predicted_icd10:
                 icd10_description = gpt_service.lookup_icd10_description(predicted_icd10)
         
