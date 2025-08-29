@@ -24,11 +24,12 @@ class LangChainRankingService:
         self.ranking_prompt = PromptTemplate(
             input_variables=["npi_providers", "pinecone_data", "patient_profile"],
             template="""
-            You are a medical specialist ranking expert. Your task is to return doctor names based on the information from Pinecone.
-            Specifically, if you see any of the names from the npi_providers list in the Pinecone data (very slight variation in formatting is fine, such as middle initial, capitalization, nicknames, etc.), you should add that doctor's name to the list you return.
+            You are a medical specialist ranking expert. Your task is to return doctor names with their corresponding Pinecone links based on the information from Pinecone.
+            Specifically, if you see any of the names from the npi_providers list in the Pinecone data (very slight variation in formatting is fine, such as middle initial, capitalization, nicknames, etc.), you should add that doctor's name to the list you return along with the link from the Pinecone record.
             STRICT RULES:
             1. The list you return must only include names from the npi_providers list.
             2. Do not add any names that do not appear in the Pinecone data.
+            3. For each doctor, include the link from the Pinecone record where they appear (either as author or featured).
             
             NPI Providers (NPI: Name):
             {npi_providers}
@@ -39,12 +40,16 @@ class LangChainRankingService:
             
                         
             Return a JSON object with two fields and do not include any other text in your response:
-            1. "providers": An array of the doctor names you identified in ranked order (most relevant first) - format as "FIRST LAST" in all caps
+            1. "providers": An array of objects, each containing "name" (doctor name in "FIRST LAST" format, all caps) and "link" (the URL from the Pinecone record), ranked in order of relevance (most relevant first)
             2. "explanation": An explanation of why you chose each specialist.
             
             Example:
             {{
-                "providers": ["ALBERT SMITH", "JANE DOE", "MICHAEL JOHNSON"],
+                "providers": [
+                    {{"name": "ALBERT SMITH", "link": "https://example.com/video1"}},
+                    {{"name": "JANE DOE", "link": "https://example.com/video2"}},
+                    {{"name": "MICHAEL JOHNSON", "link": "https://example.com/video3"}}
+                ],
                 "explanation": "I saw Albert Smith's name in the Pinecone data (he gave a lecture on cluster headaches), so I ranked him first."
             }}
             
@@ -118,7 +123,8 @@ class LangChainRankingService:
             fallback_ranking = [provider.get('npi', '') for provider in npi_providers[:max_providers] if provider.get('npi')]
             return {
                 'ranking': fallback_ranking,
-                'explanation': 'Ranking failed - showing providers in original order.'
+                'explanation': 'Ranking failed - showing providers in original order.',
+                'provider_links': {}
             }
     
     def _format_npi_providers(self, providers: List[Dict[str, Any]]) -> str:
@@ -131,12 +137,13 @@ class LangChainRankingService:
         return "\n".join(formatted)
     
     def _format_pinecone_data(self, pinecone_data: List[Dict[str, Any]]) -> str:
-        """Format Pinecone data for LLM input - only author and featuring fields."""
+        """Format Pinecone data for LLM input - author, featuring, and link fields."""
         formatted = []
         for i, record in enumerate(pinecone_data, 1):
             author = record.get('author', 'Unknown author')
             featuring = record.get('featuring', 'Unknown specialist')
-            formatted.append(f"{i}. Author: {author}, Featuring: {featuring}")
+            link = record.get('link', 'No link available')
+            formatted.append(f"{i}. Author: {author}, Featuring: {featuring}, Link: {link}")
         return "\n".join(formatted)
     
     def _format_patient_profile(self, patient_profile: Dict[str, Any]) -> str:
@@ -169,9 +176,22 @@ class LangChainRankingService:
             try:
                 result = json.loads(cleaned_response)
                 if isinstance(result, dict) and 'providers' in result and 'explanation' in result:
-                    # New format with 'providers' field - now contains doctor names
-                    doctor_names = result['providers']
-                    logger.info(f"Parsed {len(doctor_names)} doctor names from LLM response")
+                    # New format with 'providers' field - now contains doctor names with links
+                    providers_data = result['providers']
+                    logger.info(f"Parsed {len(providers_data)} provider entries from LLM response")
+                    
+                    # Extract doctor names and links
+                    doctor_names = []
+                    doctor_links = {}
+                    for provider_entry in providers_data:
+                        if isinstance(provider_entry, dict) and 'name' in provider_entry:
+                            name = provider_entry['name']
+                            link = provider_entry.get('link', '')
+                            doctor_names.append(name)
+                            doctor_links[name] = link
+                        elif isinstance(provider_entry, str):
+                            # Fallback for old format (just names)
+                            doctor_names.append(provider_entry)
                     
                     # Convert doctor names back to NPI numbers
                     npi_ranking = self._convert_names_to_npis(doctor_names, providers)
@@ -179,7 +199,8 @@ class LangChainRankingService:
                     
                     return {
                         'ranking': npi_ranking,
-                        'explanation': result['explanation']
+                        'explanation': result['explanation'],
+                        'provider_links': doctor_links  # Include links for UI display
                     }
                 else:
                     logger.warning("JSON response missing 'providers' or 'explanation' fields")
@@ -193,7 +214,8 @@ class LangChainRankingService:
             if found_npis:
                 return {
                     'ranking': found_npis,
-                    'explanation': 'Ranking completed successfully.'
+                    'explanation': 'Ranking completed successfully.',
+                    'provider_links': {}
                 }
             
             # If no NPIs found, return original order
@@ -201,7 +223,8 @@ class LangChainRankingService:
             fallback_ranking = [provider.get('npi', '') for provider in providers if provider.get('npi')]
             return {
                 'ranking': fallback_ranking,
-                'explanation': 'Could not parse ranking response - showing providers in original order.'
+                'explanation': 'Could not parse ranking response - showing providers in original order.',
+                'provider_links': {}
             }
             
         except Exception as e:
@@ -209,7 +232,8 @@ class LangChainRankingService:
             fallback_ranking = [provider.get('npi', '') for provider in providers if provider.get('npi')]
             return {
                 'ranking': fallback_ranking,
-                'explanation': 'Error parsing ranking response - showing providers in original order.'
+                'explanation': 'Error parsing ranking response - showing providers in original order.',
+                'provider_links': {}
             }
     
     def _convert_names_to_npis(self, doctor_names: List[str], providers: List[Dict[str, Any]]) -> List[str]:

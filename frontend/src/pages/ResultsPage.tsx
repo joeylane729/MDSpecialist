@@ -143,6 +143,7 @@ const ResultsPage: React.FC = () => {
   const [isBackNavigation, setIsBackNavigation] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [rankedProviders, setRankedProviders] = useState<Provider[]>([]);
+  const [providerLinks, setProviderLinks] = useState<{ [doctorName: string]: string }>({});
   const [activeView, setActiveView] = useState<'assessment' | 'specialists' | 'ai-recommendations'>('assessment');
   
   // Debug logging
@@ -207,6 +208,7 @@ const ResultsPage: React.FC = () => {
       setSearchParams(location.state.searchParams);
       setProviders(location.state.providers);
       setRankedProviders(location.state.providers); // Set the ranked providers
+      setProviderLinks(location.state.providerLinks || {}); // Set the provider links
       setIsLoading(false);
       setCurrentPage(1);
       
@@ -898,6 +900,7 @@ const ResultsPage: React.FC = () => {
                   onClick={handleProviderClick}
                   isHighlighted={isTopResult}
                   grade={grade}
+                  pineconeLink={providerLinks[provider.name?.toUpperCase()]}
                 />
               </div>
             );

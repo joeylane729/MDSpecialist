@@ -354,6 +354,7 @@ export interface NPIRankingResponse {
   status: string;
   ranked_npis: string[];
   explanation: string;
+  provider_links: { [doctorName: string]: string };
   total_providers: number;
   message: string;
 }

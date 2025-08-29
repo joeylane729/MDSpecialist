@@ -56,11 +56,13 @@ async def rank_npi_providers(
         
         ranked_npis = ranking_result['ranking']
         explanation = ranking_result['explanation']
+        provider_links = ranking_result.get('provider_links', {})
         
         return {
             "status": "success",
             "ranked_npis": ranked_npis,
             "explanation": explanation,
+            "provider_links": provider_links,
             "total_providers": len(ranked_npis),
             "message": f"Successfully ranked {len(ranked_npis)} NPI providers"
         }

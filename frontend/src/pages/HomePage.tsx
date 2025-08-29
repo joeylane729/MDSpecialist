@@ -560,6 +560,7 @@ const HomePage: React.FC = () => {
       // Step 2: Rank NPI providers based on shared Pinecone data
       let rankedNPIProviders = npiData.providers;
       let rankingExplanation = '';
+      let providerLinks: { [doctorName: string]: string } = {};
       try {
         const rankingResponse = await rankNPIProviders({
           npi_providers: npiData.providers,
@@ -573,11 +574,13 @@ const HomePage: React.FC = () => {
           npiData.providers.find(provider => provider.npi === npi)
         ).filter(Boolean);
         
-        // Capture the ranking explanation
+        // Capture the ranking explanation and provider links
         rankingExplanation = rankingResponse.explanation;
+        providerLinks = rankingResponse.provider_links || {};
         
         console.log('NPI providers ranked successfully:', rankingResponse.message);
         console.log('Ranking explanation:', rankingExplanation);
+        console.log('Provider links:', providerLinks);
       } catch (rankingError) {
         console.warn('Failed to rank NPI providers, using original order:', rankingError);
         rankingExplanation = 'Ranking failed - showing providers in original order.';
@@ -637,7 +640,8 @@ const HomePage: React.FC = () => {
           providers: rankedNPIProviders,
           totalProviders: npiData.total_providers,
           aiRecommendations: aiRecommendations,
-          rankingExplanation: rankingExplanation
+          rankingExplanation: rankingExplanation,
+          providerLinks: providerLinks
         }
       });
     } catch (error) {
