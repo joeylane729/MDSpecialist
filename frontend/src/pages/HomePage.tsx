@@ -581,6 +581,7 @@ const HomePage: React.FC = () => {
         console.log('NPI providers ranked successfully:', rankingResponse.message);
         console.log('Ranking explanation:', rankingExplanation);
         console.log('Provider links:', providerLinks);
+        console.log('DEBUG: Full ranking response:', rankingResponse);
       } catch (rankingError) {
         console.warn('Failed to rank NPI providers, using original order:', rankingError);
         rankingExplanation = 'Ranking failed - showing providers in original order.';

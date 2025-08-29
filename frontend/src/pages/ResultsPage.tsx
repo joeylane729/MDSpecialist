@@ -208,7 +208,10 @@ const ResultsPage: React.FC = () => {
       setSearchParams(location.state.searchParams);
       setProviders(location.state.providers);
       setRankedProviders(location.state.providers); // Set the ranked providers
-      setProviderLinks(location.state.providerLinks || {}); // Set the provider links
+      const links = location.state.providerLinks || {};
+      console.log('DEBUG: Setting provider links:', links);
+      console.log('DEBUG: Provider names:', location.state.providers.slice(0, 5).map(p => p.name));
+      setProviderLinks(links); // Set the provider links
       setIsLoading(false);
       setCurrentPage(1);
       
