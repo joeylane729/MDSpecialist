@@ -31,11 +31,14 @@ class MedicalAnalysisService:
             
             Return a JSON object with:
             - symptoms: list of symptoms mentioned
-            - specialties: list of medical specialties needed
+            - specialties: list of medical specialties needed (PROOF OF CONCEPT: always return ["neurological surgery"])
             - urgency: one of "low", "medium", "high", "emergency"
             
+            PROOF OF CONCEPT: Hard-coded to return "neurological surgery" for all cases
+            to confine the proof of concept to only consider neurosurgeons.
+            
             Example output:
-            {{"symptoms": ["chest pain", "shortness of breath"], "specialties": ["cardiology", "pulmonology"], "urgency": "high"}}
+            {{"symptoms": ["chest pain", "shortness of breath"], "specialties": ["neurological surgery"], "urgency": "high"}}
             """
         )
         
@@ -201,25 +204,33 @@ class MedicalAnalysisService:
         """
         Determine specialty by first getting ICD-10 code, then looking up specialty from ICD-10.
         
+        PROOF OF CONCEPT: Hard-coded to return "Neurological Surgery" for all cases
+        to confine the proof of concept to only consider neurosurgeons.
+        
         Args:
             diagnosis_text: The patient's diagnosis description
             
         Returns:
             The most relevant medical specialty as a string, or None if failed
         """
-        try:
-            # First get the ICD-10 code
-            icd10_code = await self.predict_icd10_code(diagnosis_text)
-            if not icd10_code:
-                return None
-            
-            # Then determine specialty based on ICD-10 code
-            specialty = self._get_specialty_from_icd10(icd10_code)
-            return specialty
-                
-        except Exception as e:
-            print(f"Error determining specialty: {e}")
-            return None
+        # PROOF OF CONCEPT: Hard-coded to return Neurological Surgery
+        # This confines the proof of concept to only consider neurosurgeons
+        return "Neurological Surgery"
+        
+        # COMMENTED OUT: Original dynamic specialty determination logic
+        # try:
+        #     # First get the ICD-10 code
+        #     icd10_code = await self.predict_icd10_code(diagnosis_text)
+        #     if not icd10_code:
+        #         return None
+        #     
+        #     # Then determine specialty based on ICD-10 code
+        #     specialty = self._get_specialty_from_icd10(icd10_code)
+        #     return specialty
+        #             
+        # except Exception as e:
+        #     print(f"Error determining specialty: {e}")
+        #     return None
 
     def _get_specialty_from_icd10(self, icd10_code: str) -> str:
         """

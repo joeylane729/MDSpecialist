@@ -39,7 +39,7 @@ class LangChainRankingService:
             
             
                         
-            Return a JSON object with two fields and do not include any other text in your response:
+            Return a JSON object with the fields below and do not include any other text in your response:
             1. "providers": An array of objects, each containing "name" (doctor name in "FIRST LAST" format, all caps) and "link" (the URL from the Pinecone record), ranked in order of relevance (most relevant first)
             2. "explanation": An explanation of why you chose each specialist.
             

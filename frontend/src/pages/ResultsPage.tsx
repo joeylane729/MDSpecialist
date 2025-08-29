@@ -274,7 +274,7 @@ const ResultsPage: React.FC = () => {
         city: 'Los Angeles',
         symptoms: 'Fever, cough',
         diagnosis: 'A000',
-        determined_specialty: 'Family Medicine'
+        determined_specialty: 'Neurological Surgery'  // PROOF OF CONCEPT: Hard-coded to Neurological Surgery
       });
       setCurrentPage(1);
     }
@@ -393,7 +393,7 @@ const ResultsPage: React.FC = () => {
           id: '1',
           npi: '1234567890',
           name: 'Dr. Sarah Johnson',
-          specialty: 'Family Medicine',
+          specialty: 'Neurological Surgery',  // PROOF OF CONCEPT: Hard-coded to Neurological Surgery
           address: '123 Medical Center Dr',
           city: params.city,
           state: params.state,
@@ -417,7 +417,7 @@ const ResultsPage: React.FC = () => {
           id: '2',
           npi: '2345678901',
           name: 'Dr. Michael Chen',
-          specialty: 'Family Medicine',
+          specialty: 'Neurological Surgery',  // PROOF OF CONCEPT: Hard-coded to Neurological Surgery
           address: '456 Health Plaza',
           city: params.city,
           state: params.state,
@@ -441,7 +441,7 @@ const ResultsPage: React.FC = () => {
           id: '3',
           npi: '3456789012',
           name: 'Dr. Emily Rodriguez',
-          specialty: 'Family Medicine',
+          specialty: 'Neurological Surgery',  // PROOF OF CONCEPT: Hard-coded to Neurological Surgery
           address: '789 Wellness Way',
           city: params.city,
           state: params.state,
@@ -465,7 +465,7 @@ const ResultsPage: React.FC = () => {
           id: '4',
           npi: '4567890123',
           name: 'Dr. David Kim',
-          specialty: 'Family Medicine',
+          specialty: 'Neurological Surgery',  // PROOF OF CONCEPT: Hard-coded to Neurological Surgery
           address: '321 Care Circle',
           city: params.city,
           state: params.state,
@@ -489,7 +489,7 @@ const ResultsPage: React.FC = () => {
           id: '5',
           npi: '5678901234',
           name: 'Dr. Lisa Thompson',
-          specialty: 'Family Medicine',
+          specialty: 'Neurological Surgery',  // PROOF OF CONCEPT: Hard-coded to Neurological Surgery
           address: '654 Medical Blvd',
           city: params.city,
           state: params.state,

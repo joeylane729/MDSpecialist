@@ -128,7 +128,7 @@ async def search_providers_by_criteria(
         
         if not determined_specialty:
             print("GPT failed to determine specialty, using fallback")
-            determined_specialty = "Internal Medicine"  # Fallback specialty
+            determined_specialty = "Unknown"  # PROOF OF CONCEPT: Fallback to Neurological Surgery
         
         print(f"GPT determined specialty: '{determined_specialty}'")
         
