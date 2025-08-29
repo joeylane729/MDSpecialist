@@ -133,12 +133,15 @@ class LangChainSpecialistRecommendationService:
             
             ranked_npis = ranking_result['ranking']
             explanation = ranking_result['explanation']
+            provider_links = ranking_result.get('provider_links', {})
             
             logger.info(f"Successfully ranked {len(ranked_npis)} NPI providers")
             logger.info(f"Ranking explanation: {explanation}")
+            logger.info(f"Provider links: {provider_links}")
             return {
                 'ranking': ranked_npis,
-                'explanation': explanation
+                'explanation': explanation,
+                'provider_links': provider_links
             }
             
         except Exception as e:
