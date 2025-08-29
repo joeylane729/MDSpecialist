@@ -903,7 +903,12 @@ const ResultsPage: React.FC = () => {
                   onClick={handleProviderClick}
                   isHighlighted={isTopResult}
                   grade={grade}
-                  pineconeLink={providerLinks[provider.name?.toUpperCase()]}
+                  pineconeLink={(() => {
+                    const link = providerLinks[provider.name?.toUpperCase()];
+                    console.log(`DEBUG: Looking for link for provider "${provider.name}" (uppercase: "${provider.name?.toUpperCase()}") - found:`, link);
+                    console.log('DEBUG: Available provider links:', providerLinks);
+                    return link;
+                  })()}
                 />
               </div>
             );
