@@ -144,6 +144,16 @@ const ResultsPage: React.FC = () => {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [rankedProviders, setRankedProviders] = useState<Provider[]>([]);
   const [activeView, setActiveView] = useState<'assessment' | 'specialists' | 'ai-recommendations'>('assessment');
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('ResultsPage - location.state:', location.state);
+    console.log('ResultsPage - aiRecommendations:', location.state?.aiRecommendations);
+    if (location.state?.aiRecommendations) {
+      console.log('ResultsPage - patient_profile:', location.state.aiRecommendations.patient_profile);
+      console.log('ResultsPage - recommendations:', location.state.aiRecommendations.recommendations);
+    }
+  }, [location.state]);
 
   // Fisher-Yates shuffle algorithm for random ranking
   const shuffleArray = (array: Provider[]): Provider[] => {
