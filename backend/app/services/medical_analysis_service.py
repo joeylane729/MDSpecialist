@@ -75,9 +75,7 @@ class MedicalAnalysisService:
     
     async def process_patient_input(
         self,
-        patient_input: str,
-        location_preference: Optional[str] = None,
-        urgency_level: str = "medium"
+        patient_input: str
     ) -> PatientProfile:
         """Process patient input using LangChain."""
         try:
@@ -92,8 +90,8 @@ class MedicalAnalysisService:
                 symptoms=data.get("symptoms", []),
                 conditions=[],
                 specialties_needed=data.get("specialties", []),
-                urgency_level=data.get("urgency", urgency_level),
-                location_preference=location_preference,
+                urgency_level="medium",  # Default value
+                location_preference=None,
                 additional_notes=patient_input
             )
             

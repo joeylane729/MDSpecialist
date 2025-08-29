@@ -15,8 +15,6 @@ router = APIRouter()
 async def get_specialist_recommendations(
     symptoms: str = Form(...),
     diagnosis: str = Form(...),
-    location_preference: Optional[str] = Form(None),
-    urgency_level: str = Form("medium"),
     medical_history: Optional[str] = Form(None),
     medications: Optional[str] = Form(None),
     surgical_history: Optional[str] = Form(None),
@@ -59,8 +57,6 @@ async def get_specialist_recommendations(
         # Get recommendations
         recommendations = await langchain_service.get_specialist_recommendations(
             patient_input=patient_input,
-            location_preference=location_preference,
-            urgency_level=urgency_level,
             max_recommendations=max_recommendations
         )
         

@@ -27,8 +27,6 @@ class LangChainSpecialistRecommendationService:
     async def get_specialist_recommendations(
         self,
         patient_input: str,
-        location_preference: Optional[str] = None,
-        urgency_level: str = "medium",
         max_recommendations: int = 3
     ) -> RecommendationResponse:
         """Get specialist recommendations using LangChain."""
@@ -38,9 +36,7 @@ class LangChainSpecialistRecommendationService:
             # Step 1: LLM-powered patient data processing and medical analysis
             logger.info("Processing patient data and performing medical analysis with LangChain...")
             patient_profile = await self.medical_analysis.process_patient_input(
-                patient_input=patient_input,
-                location_preference=location_preference,
-                urgency_level=urgency_level
+                patient_input=patient_input
             )
             
             # Perform comprehensive medical analysis
