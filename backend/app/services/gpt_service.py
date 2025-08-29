@@ -1,9 +1,12 @@
 import os
-import openai
+import json
 from typing import List, Optional, Tuple, Dict, Any
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+from langchain_openai import OpenAI
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
 
 # Load environment variables
 load_dotenv()
@@ -12,13 +15,15 @@ class GPTService:
     """Service for using GPT to analyze medical diagnoses and determine subspecialties."""
     
     def __init__(self, db: Session = None):
-        self.client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+        self.llm = OpenAI(temperature=0.1)
         self.db = db
         
         # Available subspecialties for GPT to choose from
         self.available_specialties = [
             "Family Medicine",
             "Internal Medicine", 
+            "Cardiology",
+            "Pulmonology",
             "Neurological Surgery",
             "Nuclear Medicine",
             "Obstetrics & Gynecology",
@@ -86,7 +91,7 @@ class GPTService:
             print(f"Error looking up ICD-10 description: {e}")
             return None
 
-    def determine_specialty(self, diagnosis_text: str) -> Optional[str]:
+    async def determine_specialty(self, diagnosis_text: str) -> Optional[str]:
         """
         Use GPT to determine the most relevant medical specialty based on diagnosis text.
         
@@ -97,28 +102,28 @@ class GPTService:
             The most relevant medical specialty as a string, or None if failed
         """
         try:
-            prompt = f"""
-            {diagnosis_text}
-            Available specialties: {', '.join(self.available_specialties)}
-            
-            Based on the symptoms and diagnosis information above, determine the most appropriate medical specialty.
-            Consider the symptoms carefully when choosing the specialty.
-            
-            Return ONLY the specialty name. No explanations.
-            """
-            
-            response = self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "Medical expert. Respond with ONE specialty name only."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=50,
-                temperature=0.1
+            prompt = PromptTemplate(
+                input_variables=["diagnosis_text", "available_specialties"],
+                template="""
+                {diagnosis_text}
+                Available specialties: {available_specialties}
+                
+                Based on the symptoms and diagnosis information above, determine the most appropriate medical specialty.
+                Consider the symptoms carefully when choosing the specialty.
+                
+                Return ONLY the specialty name. No explanations.
+                """
             )
             
-            # Extract the specialty from GPT's response
-            specialty = response.choices[0].message.content.strip()
+            chain = LLMChain(llm=self.llm, prompt=prompt)
+            
+            response = await chain.arun(
+                diagnosis_text=diagnosis_text,
+                available_specialties=', '.join(self.available_specialties)
+            )
+            
+            # Extract the specialty from the response
+            specialty = response.strip()
             
             # Clean up the response (remove quotes, extra punctuation, etc.)
             specialty = specialty.replace('"', '').replace("'", "").strip()
@@ -141,7 +146,7 @@ class GPTService:
             print(f"Error in GPT service: {e}")
             return None
 
-    def predict_icd10_code(self, diagnosis_text: str) -> Optional[str]:
+    async def predict_icd10_code(self, diagnosis_text: str) -> Optional[str]:
         """
         Use GPT to predict the most accurate ICD-10 code based on diagnosis text.
         
@@ -152,27 +157,24 @@ class GPTService:
             The most relevant ICD-10 code as a string, or None if failed
         """
         try:
-            prompt = f"""
-            Diagnosis: {diagnosis_text}
-            
-            Return ONLY the ICD-10 code.
-            Example: I21.9
-            
-            No other text.
-            """
-            
-            response = self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "Medical coding expert. Return ICD-10 code only."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=20,
-                temperature=0.1
+            prompt = PromptTemplate(
+                input_variables=["diagnosis_text"],
+                template="""
+                Diagnosis: {diagnosis_text}
+                
+                Return ONLY the ICD-10 code.
+                Example: I21.9
+                
+                No other text.
+                """
             )
             
-            # Extract the ICD-10 code from GPT's response
-            icd_code = response.choices[0].message.content.strip()
+            chain = LLMChain(llm=self.llm, prompt=prompt)
+            
+            response = await chain.arun(diagnosis_text=diagnosis_text)
+            
+            # Extract the ICD-10 code from the response
+            icd_code = response.strip()
             
             # Clean up the response (remove quotes, extra punctuation, etc.)
             icd_code = icd_code.replace('"', '').replace("'", "").strip()
@@ -188,7 +190,7 @@ class GPTService:
             print(f"Error in GPT ICD-10 prediction: {e}")
             return None
 
-    def predict_diagnoses(self, diagnosis_text: str) -> Dict[str, Any]:
+    async def predict_diagnoses(self, diagnosis_text: str) -> Dict[str, Any]:
         """
         Use GPT to predict both primary and differential diagnoses based on diagnosis text.
         
@@ -199,44 +201,41 @@ class GPTService:
             Dictionary containing primary diagnosis and differential diagnoses
         """
         try:
-            prompt = f"""
-            {diagnosis_text}
-            
-            Analyze the symptoms and diagnosis information above and provide:
-            1. Primary diagnosis (most likely ICD-10 code and description based on symptoms and diagnosis)
-            2. Differential diagnoses (3-5 alternative possibilities with ICD-10 codes that could explain the symptoms)
-            
-            Consider the symptoms carefully when determining the most likely diagnosis and alternatives.
-            
-            Return the response in this exact JSON format:
-            {{
-                "primary": {{
-                    "code": "ICD10_CODE",
-                    "description": "Medical description"
-                }},
-                "differential": [
-                    {{
+            prompt = PromptTemplate(
+                input_variables=["diagnosis_text"],
+                template="""
+                {diagnosis_text}
+                
+                Analyze the symptoms and diagnosis information above and provide:
+                1. Primary diagnosis (most likely ICD-10 code and description based on symptoms and diagnosis)
+                2. Differential diagnoses (3-5 alternative possibilities with ICD-10 codes that could explain the symptoms)
+                
+                Consider the symptoms carefully when determining the most likely diagnosis and alternatives.
+                
+                Return the response in this exact JSON format:
+                {{
+                    "primary": {{
                         "code": "ICD10_CODE",
                         "description": "Medical description"
-                    }}
-                ]
-            }}
-            
-            Only return valid JSON. No other text.
-            """
-            
-            response = self.client.chat.completions.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "Medical coding expert. Return only valid JSON with primary and differential diagnoses."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=500,
-                temperature=0.1
+                    }},
+                    "differential": [
+                        {{
+                            "code": "ICD10_CODE",
+                            "description": "Medical description"
+                        }}
+                    ]
+                }}
+                
+                Only return valid JSON. No other text.
+                """
             )
             
-            # Extract the JSON response from GPT
-            response_text = response.choices[0].message.content.strip()
+            chain = LLMChain(llm=self.llm, prompt=prompt)
+            
+            response = await chain.arun(diagnosis_text=diagnosis_text)
+            
+            # Extract the JSON response
+            response_text = response.strip()
             
             # Clean up the response (remove markdown formatting if present)
             if response_text.startswith('```json'):
@@ -245,7 +244,6 @@ class GPTService:
                 response_text = response_text.replace('```', '').strip()
             
             # Parse the JSON response
-            import json
             diagnoses = json.loads(response_text)
             
             # Validate the response structure
