@@ -293,8 +293,6 @@ export interface SpecialistRecommendationResponse {
 export interface SpecialistRecommendationRequest {
   symptoms: string;
   diagnosis: string;
-  location_preference?: string;
-  urgency_level?: string;
   medical_history?: string;
   medications?: string;
   surgical_history?: string;
@@ -311,12 +309,6 @@ export const getSpecialistRecommendations = async (
     formData.append('symptoms', request.symptoms);
     formData.append('diagnosis', request.diagnosis);
     
-    if (request.location_preference) {
-      formData.append('location_preference', request.location_preference);
-    }
-    if (request.urgency_level) {
-      formData.append('urgency_level', request.urgency_level);
-    }
     if (request.medical_history) {
       formData.append('medical_history', request.medical_history);
     }

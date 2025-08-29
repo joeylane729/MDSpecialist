@@ -549,11 +549,9 @@ const HomePage: React.FC = () => {
         getSpecialistRecommendations({
           symptoms: symptoms,
           diagnosis: diagnosis,
-          location_preference: null,
-          urgency_level: 'medium',
-          medical_history: '',
-          medications: '',
-          surgical_history: '',
+          medical_history: medicalHistory,
+          medications: medications,
+          surgical_history: surgicalHistory,
           max_recommendations: 5,
           files: []
         })
