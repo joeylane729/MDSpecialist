@@ -31,8 +31,8 @@ async def get_specialist_recommendations(
     specialist recommendations based on Pinecone data analysis.
     """
     try:
-        # Initialize the LangChain service
-        langchain_service = LangChainSpecialistRecommendationService()
+        # Initialize the LangChain service with database session
+        langchain_service = LangChainSpecialistRecommendationService(db)
         
         # Combine all patient information into a single input
         patient_input = f"Symptoms: {symptoms}\n\nDiagnosis: {diagnosis}"

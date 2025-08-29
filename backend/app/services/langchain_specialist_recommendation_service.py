@@ -9,6 +9,7 @@ from datetime import datetime
 from ..services.pinecone_service import PineconeService
 from ..services.langchain_patient_processor import LangChainPatientProcessor
 from ..services.langchain_retrieval_strategies import LangChainRetrievalStrategies
+from ..services.medical_analysis_service import MedicalAnalysisService
 
 from ..models.specialist_recommendation import PatientProfile, SpecialistRecommendation, RecommendationResponse
 
@@ -17,10 +18,11 @@ logger = logging.getLogger(__name__)
 class LangChainSpecialistRecommendationService:
     """LangChain-powered specialist recommendation service."""
     
-    def __init__(self):
+    def __init__(self, db=None):
         self.pinecone_service = PineconeService()
         self.patient_processor = LangChainPatientProcessor()
         self.retrieval_strategies = LangChainRetrievalStrategies(self.pinecone_service)
+        self.medical_analysis = MedicalAnalysisService(db)
 
         logger.info("LangChainSpecialistRecommendationService initialized successfully")
     
@@ -42,6 +44,14 @@ class LangChainSpecialistRecommendationService:
                 location_preference=location_preference,
                 urgency_level=urgency_level
             )
+            
+            # Step 1.5: Comprehensive medical analysis
+            logger.info("Performing comprehensive medical analysis...")
+            medical_analysis_results = {
+                "determined_specialty": await self.medical_analysis.determine_specialty(patient_input),
+                "predicted_icd10": await self.medical_analysis.predict_icd10_code(patient_input),
+                "diagnoses": await self.medical_analysis.predict_diagnoses(patient_input)
+            }
             
             # Step 2: LLM-powered retrieval of specialist information
             logger.info("Retrieving specialist information with LangChain...")
@@ -78,7 +88,8 @@ class LangChainSpecialistRecommendationService:
                 total_candidates_found=len(specialist_information),
                 processing_time_ms=int(processing_time),
                 retrieval_strategies_used=["langchain_vector_search"],
-                timestamp=datetime.now()
+                timestamp=datetime.now(),
+                medical_analysis=medical_analysis_results
             )
             
             logger.info(f"Generated {len(recommendations)} recommendations in {processing_time:.2f}ms using LangChain")
@@ -87,3 +98,5 @@ class LangChainSpecialistRecommendationService:
         except Exception as e:
             logger.error(f"Error generating LangChain recommendations: {str(e)}")
             raise
+    
+

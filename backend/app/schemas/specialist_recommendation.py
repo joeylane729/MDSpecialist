@@ -37,6 +37,7 @@ class RecommendationResponseSchema(BaseModel):
     processing_time_ms: int = Field(..., ge=0, description="Processing time in milliseconds")
     retrieval_strategies_used: List[str] = Field(..., description="Retrieval strategies used")
     timestamp: datetime = Field(..., description="Response timestamp")
+    medical_analysis: Optional[Dict[str, Any]] = Field(None, description="Comprehensive medical analysis results")
 
 class SpecialistRecommendationRequestSchema(BaseModel):
     """Schema for specialist recommendation request."""

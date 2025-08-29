@@ -11,8 +11,8 @@ from langchain.chains import LLMChain
 # Load environment variables
 load_dotenv()
 
-class GPTService:
-    """Service for using GPT to analyze medical diagnoses and determine subspecialties."""
+class MedicalAnalysisService:
+    """Service for comprehensive medical analysis including specialty determination, ICD-10 coding, and diagnosis prediction."""
     
     def __init__(self, db: Session = None):
         self.llm = OpenAI(temperature=0.1)

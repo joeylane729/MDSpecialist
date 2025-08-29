@@ -40,3 +40,4 @@ class RecommendationResponse:
     processing_time_ms: int
     retrieval_strategies_used: List[str]
     timestamp: datetime
+    medical_analysis: Optional[Dict[str, Any]] = None

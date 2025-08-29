@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import List, Optional
 from ...database import get_db
-from ...services.gpt_service import GPTService
+from ...services.medical_analysis_service import MedicalAnalysisService
 import PyPDF2
 import io
 
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 # Initialize GPT service
-gpt_service = GPTService()
+gpt_service = MedicalAnalysisService()
 
 @router.get("/test")
 async def test_database_connection(db: Session = Depends(get_db)):
