@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { searchNPIProviders, getSpecialistRecommendations } from '../services/api';
+import { searchNPIProviders, getSpecialistRecommendations, rankNPIProviders } from '../services/api';
 import { 
   MapPin, 
   Stethoscope, 
@@ -534,7 +534,7 @@ const HomePage: React.FC = () => {
     localStorage.removeItem('concierge_search_results');
     
     try {
-      // Call both APIs in parallel
+      // Step 1: Get NPI data and AI recommendations in parallel
       const [npiData, aiRecommendations] = await Promise.all([
         // NPI search
         searchNPIProviders({
@@ -543,7 +543,7 @@ const HomePage: React.FC = () => {
           diagnosis: diagnosis,
           symptoms: symptoms,
           uploadedFiles: uploadedFiles,
-          limit: 500
+          limit: 1000  // Get 1000 providers for ranking
         }),
         // AI recommendations
         getSpecialistRecommendations({
@@ -552,10 +552,37 @@ const HomePage: React.FC = () => {
           medical_history: medicalHistory,
           medications: medications,
           surgical_history: surgicalHistory,
-          max_recommendations: 5,
+          max_recommendations: 50,
           files: []
         })
       ]);
+      
+      // Step 2: Rank NPI providers based on shared Pinecone data
+      let rankedNPIProviders = npiData.providers;
+      let rankingExplanation = '';
+      try {
+        const rankingResponse = await rankNPIProviders({
+          npi_providers: npiData.providers,
+          patient_input: `Symptoms: ${symptoms}\nDiagnosis: ${diagnosis}`,
+          shared_specialist_information: aiRecommendations.shared_specialist_information
+        });
+        
+        // Reorder providers based on ranking
+        const rankedNPIs = rankingResponse.ranked_npis;
+        rankedNPIProviders = rankedNPIs.map(npi => 
+          npiData.providers.find(provider => provider.npi === npi)
+        ).filter(Boolean);
+        
+        // Capture the ranking explanation
+        rankingExplanation = rankingResponse.explanation;
+        
+        console.log('NPI providers ranked successfully:', rankingResponse.message);
+        console.log('Ranking explanation:', rankingExplanation);
+      } catch (rankingError) {
+        console.warn('Failed to rank NPI providers, using original order:', rankingError);
+        rankingExplanation = 'Ranking failed - showing providers in original order.';
+        // Keep original order if ranking fails
+      }
       
       // Save search results to localStorage for persistence
       localStorage.setItem('concierge_search_results', JSON.stringify({
@@ -572,9 +599,10 @@ const HomePage: React.FC = () => {
           predicted_icd10: npiData.search_criteria?.predicted_icd10,
           icd10_description: npiData.search_criteria?.icd10_description
         },
-        providers: npiData.providers,
+        providers: rankedNPIProviders,
         totalProviders: npiData.total_providers,
-        aiRecommendations: aiRecommendations
+        aiRecommendations: aiRecommendations,
+        rankingExplanation: rankingExplanation
       }));
 
       // Navigate to results page with both datasets
@@ -606,9 +634,10 @@ const HomePage: React.FC = () => {
             icd10_description: npiData.search_criteria?.icd10_description,
             differential_diagnoses: npiData.search_criteria?.differential_diagnoses
           },
-          providers: npiData.providers,
+          providers: rankedNPIProviders,
           totalProviders: npiData.total_providers,
-          aiRecommendations: aiRecommendations
+          aiRecommendations: aiRecommendations,
+          rankingExplanation: rankingExplanation
         }
       });
     } catch (error) {

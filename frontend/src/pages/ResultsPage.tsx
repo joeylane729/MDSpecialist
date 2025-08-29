@@ -153,17 +153,13 @@ const ResultsPage: React.FC = () => {
       console.log('ResultsPage - patient_profile:', location.state.aiRecommendations.patient_profile);
       console.log('ResultsPage - recommendations:', location.state.aiRecommendations.recommendations);
     }
+    if (location.state?.providers) {
+      console.log('ResultsPage - providers received:', location.state.providers.length);
+      console.log('ResultsPage - first 5 provider NPIs:', location.state.providers.slice(0, 5).map(p => p.npi));
+    }
   }, [location.state]);
 
-  // Fisher-Yates shuffle algorithm for random ranking
-  const shuffleArray = (array: Provider[]): Provider[] => {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-  };
+
 
   // Convert rank to letter grade (F to A+)
   const getLetterGrade = (rank: number, totalResults: number): string => {
@@ -210,6 +206,7 @@ const ResultsPage: React.FC = () => {
     if (location.state?.searchParams && location.state.providers) {
       setSearchParams(location.state.searchParams);
       setProviders(location.state.providers);
+      setRankedProviders(location.state.providers); // Set the ranked providers
       setIsLoading(false);
       setCurrentPage(1);
       
@@ -374,10 +371,9 @@ const ResultsPage: React.FC = () => {
         return true;
       });
       
-      // Apply random ranking to all providers
-      const ranked = shuffleArray(filtered);
-      
-      setRankedProviders(ranked);
+      // Use the providers as they are (already ranked from backend)
+      // Don't apply random shuffle - use the ranking from Pinecone
+      setRankedProviders(filtered);
       setCurrentPage(1); // Reset to first page when filters change
     }
   }, [providers, searchTerm, filterAcceptingPatients, filterBoardCertified]);
@@ -746,6 +742,27 @@ const ResultsPage: React.FC = () => {
               <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-3 leading-tight py-1">
                 {searchParams?.determined_specialty || 'Medical Specialists'} Specialists
               </h1>
+              
+              {/* Ranking Explanation */}
+              {location.state?.rankingExplanation && (
+                <div className="max-w-4xl mx-auto mb-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <span className="text-blue-600 text-sm font-semibold">AI</span>
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-sm font-semibold text-blue-900 mb-1">AI Ranking Explanation</h3>
+                        <p className="text-sm text-blue-800 leading-relaxed">
+                          {location.state.rankingExplanation}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
         </div>
 
         {/* Search and Filter Controls */}
@@ -992,6 +1009,21 @@ const ResultsPage: React.FC = () => {
               </p>
             </div>
 
+            {/* Debug Info */}
+            {!location.state?.aiRecommendations && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <h3 className="text-red-800 font-semibold">Debug: No AI Recommendations Data</h3>
+                <p className="text-red-700">location.state: {JSON.stringify(location.state, null, 2)}</p>
+              </div>
+            )}
+
+            {location.state?.aiRecommendations && !location.state.aiRecommendations.recommendations && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <h3 className="text-yellow-800 font-semibold">Debug: No Recommendations Array</h3>
+                <p className="text-yellow-700">aiRecommendations: {JSON.stringify(location.state.aiRecommendations, null, 2)}</p>
+              </div>
+            )}
+
             {/* AI Recommendations Content */}
             {location.state?.aiRecommendations ? (
               <div className="space-y-6">
@@ -1046,7 +1078,9 @@ const ResultsPage: React.FC = () => {
                 {/* Specialist Recommendations */}
                 <div className="space-y-4">
                   <h3 className="text-2xl font-semibold text-gray-800 mb-4">Recommended Specialists</h3>
-                  {location.state.aiRecommendations.recommendations.map((recommendation: any, index: number) => (
+                  
+                  {location.state.aiRecommendations.recommendations && location.state.aiRecommendations.recommendations.length > 0 ? (
+                    location.state.aiRecommendations.recommendations.map((recommendation: any, index: number) => (
                     <div key={index} className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1">
@@ -1095,7 +1129,14 @@ const ResultsPage: React.FC = () => {
                         </div>
                       )}
                     </div>
-                  ))}
+                  ))
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="text-gray-400 text-6xl mb-4">📋</div>
+                      <h3 className="text-xl font-semibold text-gray-700 mb-2">No Specialist Recommendations Found</h3>
+                      <p className="text-gray-500">The AI analysis did not find specific specialist recommendations for your condition.</p>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (

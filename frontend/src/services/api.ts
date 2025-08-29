@@ -344,4 +344,42 @@ export const getSpecialistRecommendations = async (
   }
 };
 
+export interface NPIRankingRequest {
+  npi_providers: any[];
+  patient_input: string;
+  shared_specialist_information?: any[];
+}
+
+export interface NPIRankingResponse {
+  status: string;
+  ranked_npis: string[];
+  explanation: string;
+  total_providers: number;
+  message: string;
+}
+
+export const rankNPIProviders = async (request: NPIRankingRequest): Promise<NPIRankingResponse> => {
+  try {
+    const formData = new FormData();
+    formData.append('npi_providers', JSON.stringify(request.npi_providers));
+    formData.append('patient_input', request.patient_input);
+    
+    // Add shared Pinecone data if provided
+    if (request.shared_specialist_information) {
+      formData.append('shared_specialist_information', JSON.stringify(request.shared_specialist_information));
+    }
+    
+    const response = await api.post(`/api/v1/rank-npi-providers`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error ranking NPI providers:', error);
+    throw error;
+  }
+};
+
 export default api

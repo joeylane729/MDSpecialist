@@ -45,7 +45,7 @@ const LangChainResultsPage: React.FC = () => {
         medical_history: searchParams.medicalHistory || '',
         medications: searchParams.medications || '',
         surgical_history: searchParams.surgicalHistory || '',
-        max_recommendations: 5,
+        max_recommendations: 50,
         files: [] // For now, we'll skip file processing
       };
 

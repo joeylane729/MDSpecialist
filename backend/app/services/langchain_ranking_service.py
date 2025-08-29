@@ -1,150 +1,236 @@
 """
-LangChain Ranking Service
+LangChain-powered ranking service for combining NPI providers with Pinecone data.
+
+This service takes a list of NPI providers and Pinecone specialist information,
+then uses LangChain to rank the NPI providers based on relevance to the Pinecone data.
 """
 
 import logging
-import json
-from typing import List, Dict, Any
-from langchain_openai import OpenAI
+from typing import List, Dict, Any, Optional
+from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
-
-from ..models.specialist_recommendation import PatientProfile, SpecialistRecommendation
+from ..models.specialist_recommendation import SpecialistRecommendation
 
 logger = logging.getLogger(__name__)
 
 class LangChainRankingService:
-    """LangChain-powered specialist ranking service."""
+    """Service for ranking NPI providers based on Pinecone specialist information."""
     
     def __init__(self):
-        self.llm = OpenAI(temperature=0.1)
+        self.llm = ChatOpenAI(model="gpt-4o", temperature=0.1)
         
+        # Prompt for ranking NPI providers based on Pinecone data
         self.ranking_prompt = PromptTemplate(
-            input_variables=["symptoms", "specialties", "urgency", "candidates"],
+            input_variables=["npi_providers", "pinecone_data", "patient_profile"],
             template="""
-            Symptoms: {symptoms}
-            Specialties: {specialties}
-            Urgency: {urgency}
+            You are a medical specialist ranking expert. Your task is to return doctor names based on the information from Pinecone.
+            Specifically, if you see any of the names from the npi_providers list in the Pinecone data (very slight variation in formatting is fine, such as middle initial, capitalization, nicknames, etc.), you should add that doctor's name to the list you return.
+            STRICT RULES:
+            1. The list you return must only include names from the npi_providers list.
+            2. Do not add any names that do not appear in the Pinecone data.
             
-            Specialists:
-            {candidates}
+            NPI Providers (NPI: Name):
+            {npi_providers}
             
-            Return the top 3 specialist names, one per line:
+            Specialist Information from Pinecone:
+            {pinecone_data}
+            
+            
+                        
+            Return a JSON object with two fields and do not include any other text in your response:
+            1. "providers": An array of the doctor names you identified in ranked order (most relevant first) - format as "FIRST LAST" in all caps
+            2. "explanation": An explanation of why you chose each specialist.
+            
+            Example:
+            {{
+                "providers": ["ALBERT SMITH", "JANE DOE", "MICHAEL JOHNSON"],
+                "explanation": "I saw Albert Smith's name in the Pinecone data (he gave a lecture on cluster headaches), so I ranked him first."
+            }}
+            
+           
             """
         )
         
         self.ranking_chain = LLMChain(llm=self.llm, prompt=self.ranking_prompt)
-        logger.info("LangChainRankingService initialized successfully")
     
-    async def rank_specialists_from_information(
-        self,
-        specialist_information: List[Dict[str, Any]],
-        patient_profile: PatientProfile,
-        top_n: int = 3
-    ) -> List[SpecialistRecommendation]:
-        """Rank specialists based on specialist information using LangChain."""
+    async def rank_npi_providers(
+        self, 
+        npi_providers: List[Dict[str, Any]], 
+        pinecone_data: List[Dict[str, Any]], 
+        patient_profile: Dict[str, Any],
+        max_providers: int = 1000
+    ) -> Dict[str, Any]:
+        """
+        Rank NPI providers based on Pinecone specialist information.
+        
+        Args:
+            npi_providers: List of NPI provider dictionaries
+            pinecone_data: List of specialist information from Pinecone
+            patient_profile: Patient profile with symptoms, diagnosis, etc.
+            max_providers: Maximum number of providers to rank (default: 1000)
+            
+        Returns:
+            Dictionary with 'ranking' (list of NPI numbers) and 'explanation' (string)
+        """
         try:
-            # Prepare specialist information for LLM
-            information_text = self._format_specialist_information(specialist_information[:10])  # Limit to top 10 for LLM
+            logger.info(f"=== SINGLE-STAGE RANKING STARTED ===")
+            logger.info(f"Total providers: {len(npi_providers)}")
+            logger.info(f"Max providers to rank: {max_providers}")
+            logger.info(f"Pinecone records: {len(pinecone_data)}")
             
-            # Prepare patient profile for LLM
-            patient_input = {
-                "symptoms": ", ".join(patient_profile.symptoms),
-                "specialties": ", ".join(patient_profile.specialties_needed),
-                "urgency": patient_profile.urgency_level
-            }
+            # Take only the first max_providers for ranking
+            providers_to_rank = npi_providers[:max_providers]
+            logger.info(f"Ranking first {len(providers_to_rank)} providers")
             
-            # Get LLM ranking
+            pinecone_formatted = self._format_pinecone_data(pinecone_data)
+            patient_formatted = self._format_patient_profile(patient_profile)
+            npi_formatted = self._format_npi_providers(providers_to_rank)
+            
+            logger.info(f"Calling LLM for ranking...")
+            logger.info(f"=== DEBUG: NPI Providers being sent to LLM ===")
+            logger.info(f"Formatted NPI providers: {npi_formatted}")
+            logger.info(f"=== DEBUG: Pinecone Data being sent to LLM ===")
+            logger.info(f"Formatted Pinecone data: {pinecone_formatted}")
+            logger.info(f"=== DEBUG: Patient Profile being sent to LLM ===")
+            logger.info(f"Formatted patient profile: {patient_formatted}")
+            
             response = await self.ranking_chain.arun(
-                **patient_input,
-                candidates=information_text
+                npi_providers=npi_formatted,
+                pinecone_data=pinecone_formatted,
+                patient_profile=patient_formatted
             )
             
-            # Parse LLM response - expect simple text with specialist names
-            response_clean = response.strip()
-            specialist_names = []
+            # Debug: Log the raw LLM response
+            logger.info(f"Raw LLM ranking response: '{response}'")
             
-            # Split by lines and extract names
-            lines = response_clean.split('\n')
-            for line in lines:
-                line = line.strip()
-                if line and not line.startswith('#') and not line.startswith('*'):
-                    # Extract name from line (remove numbers, bullets, etc.)
-                    name = line
-                    # Remove common prefixes
-                    for prefix in ['1.', '2.', '3.', '-', '*', '•']:
-                        if name.startswith(prefix):
-                            name = name[len(prefix):].strip()
-                    if name:
-                        specialist_names.append(name)
+            ranking_result = self._parse_ranking_response(response, providers_to_rank)
             
-            # Create simple recommendations from the names
-            llm_recommendations = []
-            for i, name in enumerate(specialist_names[:top_n]):
-                llm_recommendations.append({
-                    "name": name,
-                    "specialty": "Medical Specialist",
-                    "confidence": 0.8 - (i * 0.1),
-                    "reasoning": f"Recommended by AI analysis"
-                })
-            
-            # Convert to SpecialistRecommendation objects
-            recommendations = []
-            for rec in llm_recommendations[:top_n]:
-                # Find matching specialist information
-                matching_info = self._find_matching_specialist_info(rec["name"], specialist_information)
-                
-                if matching_info:
-                    recommendation = SpecialistRecommendation(
-                        specialist_id=matching_info.get("id", matching_info.get("_id", "")),
-                        name=rec["name"],
-                        specialty=rec["specialty"],
-                        relevance_score=rec.get("confidence", 0.5),
-                        confidence_score=rec.get("confidence", 0.5),
-                        reasoning=rec.get("reasoning", "Recommended based on your case."),
-                        metadata=matching_info
-                    )
-                    recommendations.append(recommendation)
-            
-            # Ensure we have recommendations
-            if not recommendations:
-                raise ValueError("LLM failed to generate any recommendations")
-            
-            logger.info(f"LangChain ranked {len(recommendations)} recommendations")
-            return recommendations
+            logger.info(f"=== SINGLE-STAGE RANKING COMPLETED ===")
+            logger.info(f"Successfully ranked {len(ranking_result['ranking'])} providers")
+            logger.info(f"Top 10 ranked NPIs: {ranking_result['ranking'][:10]}")
+            logger.info(f"Ranking explanation: {ranking_result['explanation']}")
+            return ranking_result
             
         except Exception as e:
-            logger.error(f"Error in LangChain ranking: {str(e)}")
-            raise
+            logger.error(f"Error in single-stage ranking: {e}")
+            # Fallback: return original order (first max_providers)
+            fallback_ranking = [provider.get('npi', '') for provider in npi_providers[:max_providers] if provider.get('npi')]
+            return {
+                'ranking': fallback_ranking,
+                'explanation': 'Ranking failed - showing providers in original order.'
+            }
     
-    def _format_specialist_information(self, specialist_info: List[Dict[str, Any]]) -> str:
-        """Format specialist information for LLM input."""
+    def _format_npi_providers(self, providers: List[Dict[str, Any]]) -> str:
+        """Format NPI providers for LLM input."""
         formatted = []
-        for i, info in enumerate(specialist_info, 1):
-            name = info.get("featuring", info.get("author", "Unknown"))
-            specialty = info.get("specialty", "Unknown")
-            title = info.get("title", "")
-            content = info.get("chunk_text", "")[:200]  # First 200 chars of content
-            
-            formatted.append(f"{i}. {name} - {specialty}")
-            formatted.append(f"   Title: {title}")
-            formatted.append(f"   Content: {content}...")
-            formatted.append("")  # Empty line for readability
-        
+        for provider in providers:
+            npi = provider.get('npi', '')
+            name = provider.get('name', '')  # Use the 'name' field from NPI endpoint
+            formatted.append(f"{npi}: {name}")
         return "\n".join(formatted)
     
-    def _find_matching_specialist_info(self, name: str, specialist_info: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Find specialist information that matches the LLM-recommended name."""
-        name_lower = name.lower()
-        
-        for info in specialist_info:
-            featuring = info.get("featuring", "").lower()
-            author = info.get("author", "").lower()
-            
-            if name_lower in featuring or name_lower in author:
-                return info
-        
-        # Return first info if no match found
-        return specialist_info[0] if specialist_info else {}
+    def _format_pinecone_data(self, pinecone_data: List[Dict[str, Any]]) -> str:
+        """Format Pinecone data for LLM input - only author and featuring fields."""
+        formatted = []
+        for i, record in enumerate(pinecone_data, 1):
+            author = record.get('author', 'Unknown author')
+            featuring = record.get('featuring', 'Unknown specialist')
+            formatted.append(f"{i}. Author: {author}, Featuring: {featuring}")
+        return "\n".join(formatted)
     
-
+    def _format_patient_profile(self, patient_profile: Dict[str, Any]) -> str:
+        """Format patient profile for LLM input."""
+        symptoms = patient_profile.get('symptoms', [])
+        specialties = patient_profile.get('specialties_needed', [])
+        urgency = patient_profile.get('urgency_level', 'medium')
+        
+        return f"""
+        Symptoms: {', '.join(symptoms) if symptoms else 'Not specified'}
+        Specialties Needed: {', '.join(specialties) if specialties else 'Not specified'}
+        Urgency: {urgency}
+        """
+    
+    def _parse_ranking_response(self, response: str, providers: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Parse LLM response to extract ranked NPI numbers and explanation."""
+        try:
+            import json
+            import re
+            
+            # Clean the response - remove markdown code blocks if present
+            cleaned_response = response.strip()
+            if cleaned_response.startswith('```json'):
+                cleaned_response = cleaned_response[7:]  # Remove ```json
+            if cleaned_response.endswith('```'):
+                cleaned_response = cleaned_response[:-3]  # Remove ```
+            cleaned_response = cleaned_response.strip()
+            
+            # Try to parse as JSON first
+            try:
+                result = json.loads(cleaned_response)
+                if isinstance(result, dict) and 'providers' in result and 'explanation' in result:
+                    # New format with 'providers' field - now contains doctor names
+                    doctor_names = result['providers']
+                    logger.info(f"Parsed {len(doctor_names)} doctor names from LLM response")
+                    
+                    # Convert doctor names back to NPI numbers
+                    npi_ranking = self._convert_names_to_npis(doctor_names, providers)
+                    logger.info(f"Converted to {len(npi_ranking)} NPI numbers")
+                    
+                    return {
+                        'ranking': npi_ranking,
+                        'explanation': result['explanation']
+                    }
+                else:
+                    logger.warning("JSON response missing 'providers' or 'explanation' fields")
+            except json.JSONDecodeError:
+                pass
+            
+            # If JSON parsing fails, try to extract NPI numbers using regex
+            npi_pattern = r'\b\d{10}\b'  # 10-digit NPI numbers
+            found_npis = re.findall(npi_pattern, cleaned_response)
+            
+            if found_npis:
+                return {
+                    'ranking': found_npis,
+                    'explanation': 'Ranking completed successfully.'
+                }
+            
+            # If no NPIs found, return original order
+            logger.warning("Could not parse ranking response, returning original order")
+            fallback_ranking = [provider.get('npi', '') for provider in providers if provider.get('npi')]
+            return {
+                'ranking': fallback_ranking,
+                'explanation': 'Could not parse ranking response - showing providers in original order.'
+            }
+            
+        except Exception as e:
+            logger.error(f"Error parsing ranking response: {e}")
+            fallback_ranking = [provider.get('npi', '') for provider in providers if provider.get('npi')]
+            return {
+                'ranking': fallback_ranking,
+                'explanation': 'Error parsing ranking response - showing providers in original order.'
+            }
+    
+    def _convert_names_to_npis(self, doctor_names: List[str], providers: List[Dict[str, Any]]) -> List[str]:
+        """Convert doctor names back to NPI numbers."""
+        npi_ranking = []
+        
+        # Create a mapping from names to NPIs
+        name_to_npi = {}
+        for provider in providers:
+            name = provider.get('name', '').strip().upper()
+            npi = provider.get('npi', '')
+            if name and npi:
+                name_to_npi[name] = npi
+        
+        # Convert each doctor name to NPI
+        for doctor_name in doctor_names:
+            doctor_name_clean = doctor_name.strip().upper()
+            if doctor_name_clean in name_to_npi:
+                npi_ranking.append(name_to_npi[doctor_name_clean])
+                logger.info(f"Matched '{doctor_name_clean}' to NPI {name_to_npi[doctor_name_clean]}")
+            else:
+                logger.warning(f"Could not find NPI for doctor name: '{doctor_name_clean}'")
+        
+        return npi_ranking

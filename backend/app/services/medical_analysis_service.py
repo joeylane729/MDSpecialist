@@ -5,7 +5,7 @@ from typing import List, Optional, Tuple, Dict, Any
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from langchain_openai import OpenAI
+from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from ..models.specialist_recommendation import PatientProfile
@@ -19,7 +19,7 @@ class MedicalAnalysisService:
     """Service for comprehensive medical analysis including specialty determination, ICD-10 coding, and diagnosis prediction."""
     
     def __init__(self, db: Session = None):
-        self.llm = OpenAI(temperature=0.1)
+        self.llm = ChatOpenAI(model="gpt-4o", temperature=0.1)
         self.db = db
         
         # Patient processing prompt
@@ -82,8 +82,19 @@ class MedicalAnalysisService:
             # Get LLM response
             response = await self.patient_chain.arun(patient_input=patient_input)
             
+            # Debug: Log the raw response
+            logger.info(f"Raw LLM response: '{response}'")
+            
+            # Clean the response - remove markdown code blocks if present
+            cleaned_response = response.strip()
+            if cleaned_response.startswith('```json'):
+                cleaned_response = cleaned_response[7:]  # Remove ```json
+            if cleaned_response.endswith('```'):
+                cleaned_response = cleaned_response[:-3]  # Remove ```
+            cleaned_response = cleaned_response.strip()
+            
             # Parse JSON response
-            data = json.loads(response.strip())
+            data = json.loads(cleaned_response)
             
             # Create patient profile
             profile = PatientProfile(
@@ -188,7 +199,7 @@ class MedicalAnalysisService:
 
     async def determine_specialty(self, diagnosis_text: str) -> Optional[str]:
         """
-        Use GPT to determine the most relevant medical specialty based on diagnosis text.
+        Determine specialty by first getting ICD-10 code, then looking up specialty from ICD-10.
         
         Args:
             diagnosis_text: The patient's diagnosis description
@@ -197,49 +208,59 @@ class MedicalAnalysisService:
             The most relevant medical specialty as a string, or None if failed
         """
         try:
-            prompt = PromptTemplate(
-                input_variables=["diagnosis_text", "available_specialties"],
-                template="""
-                {diagnosis_text}
-                Available specialties: {available_specialties}
-                
-                Based on the symptoms and diagnosis information above, determine the most appropriate medical specialty.
-                Consider the symptoms carefully when choosing the specialty.
-                
-                Return ONLY the specialty name. No explanations.
-                """
-            )
+            # First get the ICD-10 code
+            icd10_code = await self.predict_icd10_code(diagnosis_text)
+            if not icd10_code:
+                return None
             
-            chain = LLMChain(llm=self.llm, prompt=prompt)
-            
-            response = await chain.arun(
-                diagnosis_text=diagnosis_text,
-                available_specialties=', '.join(self.available_specialties)
-            )
-            
-            # Extract the specialty from the response
-            specialty = response.strip()
-            
-            # Clean up the response (remove quotes, extra punctuation, etc.)
-            specialty = specialty.replace('"', '').replace("'", "").strip()
-            
-            # Validate that the returned specialty is in our list
-            if specialty in self.available_specialties:
-                return specialty
-            else:
-                print(f"Warning: GPT returned '{specialty}' which is not in our specialty list")
-                # Try to find a close match
-                for available in self.available_specialties:
-                    if specialty.lower() in available.lower() or available.lower() in specialty.lower():
-                        return available
-                
-                # If no close match, return the first specialty as fallback
-                print(f"Using fallback specialty: {self.available_specialties[0]}")
-                return self.available_specialties[0]
+            # Then determine specialty based on ICD-10 code
+            specialty = self._get_specialty_from_icd10(icd10_code)
+            return specialty
                 
         except Exception as e:
-            print(f"Error in GPT service: {e}")
+            print(f"Error determining specialty: {e}")
             return None
+
+    def _get_specialty_from_icd10(self, icd10_code: str) -> str:
+        """
+        Map ICD-10 codes to appropriate medical specialties.
+        
+        Args:
+            icd10_code: The ICD-10 code
+            
+        Returns:
+            The appropriate medical specialty
+        """
+        # Normalize the ICD-10 code (remove dots)
+        normalized_code = icd10_code.replace('.', '')
+        
+        # Map ICD-10 code ranges to specialties
+        if normalized_code.startswith(('G')):
+            return "Neurological Surgery"  # Neurological conditions
+        elif normalized_code.startswith(('I')):
+            return "Cardiology"  # Cardiovascular conditions
+        elif normalized_code.startswith(('J')):
+            return "Pulmonology"  # Respiratory conditions
+        elif normalized_code.startswith(('K')):
+            return "Internal Medicine"  # Digestive conditions
+        elif normalized_code.startswith(('M')):
+            return "Orthopaedic Surgery"  # Musculoskeletal conditions
+        elif normalized_code.startswith(('N')):
+            return "Internal Medicine"  # Genitourinary conditions
+        elif normalized_code.startswith(('O')):
+            return "Obstetrics & Gynecology"  # Pregnancy/gynecological
+        elif normalized_code.startswith(('P')):
+            return "Pediatrics"  # Perinatal conditions
+        elif normalized_code.startswith(('Q')):
+            return "Pediatrics"  # Congenital conditions
+        elif normalized_code.startswith(('R')):
+            return "Internal Medicine"  # General symptoms
+        elif normalized_code.startswith(('S', 'T')):
+            return "Emergency Medicine"  # Injuries/poisoning
+        elif normalized_code.startswith(('Z')):
+            return "Family Medicine"  # Health status factors
+        else:
+            return "Family Medicine"  # Default fallback
 
     async def predict_icd10_code(self, diagnosis_text: str) -> Optional[str]:
         """

@@ -18,7 +18,7 @@ async def get_specialist_recommendations(
     medical_history: Optional[str] = Form(None),
     medications: Optional[str] = Form(None),
     surgical_history: Optional[str] = Form(None),
-    max_recommendations: int = Form(5),
+    max_recommendations: int = Form(50),
     files: List[UploadFile] = File([]),
     db: Session = Depends(get_db)
 ):
