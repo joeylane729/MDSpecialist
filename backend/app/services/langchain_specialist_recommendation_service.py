@@ -7,7 +7,6 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 
 from ..services.pinecone_service import PineconeService
-from ..services.langchain_patient_processor import LangChainPatientProcessor
 from ..services.langchain_retrieval_strategies import LangChainRetrievalStrategies
 from ..services.medical_analysis_service import MedicalAnalysisService
 
@@ -20,7 +19,6 @@ class LangChainSpecialistRecommendationService:
     
     def __init__(self, db=None):
         self.pinecone_service = PineconeService()
-        self.patient_processor = LangChainPatientProcessor()
         self.retrieval_strategies = LangChainRetrievalStrategies(self.pinecone_service)
         self.medical_analysis = MedicalAnalysisService(db)
 
@@ -37,16 +35,15 @@ class LangChainSpecialistRecommendationService:
         start_time = datetime.now()
         
         try:
-            # Step 1: LLM-powered patient data processing
-            logger.info("Processing patient data with LangChain...")
-            patient_profile = await self.patient_processor.process_patient_input(
+            # Step 1: LLM-powered patient data processing and medical analysis
+            logger.info("Processing patient data and performing medical analysis with LangChain...")
+            patient_profile = await self.medical_analysis.process_patient_input(
                 patient_input=patient_input,
                 location_preference=location_preference,
                 urgency_level=urgency_level
             )
             
-            # Step 1.5: Comprehensive medical analysis
-            logger.info("Performing comprehensive medical analysis...")
+            # Perform comprehensive medical analysis
             medical_analysis_results = {
                 "determined_specialty": await self.medical_analysis.determine_specialty(patient_input),
                 "predicted_icd10": await self.medical_analysis.predict_icd10_code(patient_input),

@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from typing import List, Optional, Tuple, Dict, Any
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
@@ -7,6 +8,9 @@ from sqlalchemy import text
 from langchain_openai import OpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
+from ..models.specialist_recommendation import PatientProfile
+
+logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
@@ -17,6 +21,25 @@ class MedicalAnalysisService:
     def __init__(self, db: Session = None):
         self.llm = OpenAI(temperature=0.1)
         self.db = db
+        
+        # Patient processing prompt
+        self.patient_prompt = PromptTemplate(
+            input_variables=["patient_input"],
+            template="""
+            Extract medical information from this patient description:
+            "{patient_input}"
+            
+            Return a JSON object with:
+            - symptoms: list of symptoms mentioned
+            - specialties: list of medical specialties needed
+            - urgency: one of "low", "medium", "high", "emergency"
+            
+            Example output:
+            {{"symptoms": ["chest pain", "shortness of breath"], "specialties": ["cardiology", "pulmonology"], "urgency": "high"}}
+            """
+        )
+        
+        self.patient_chain = LLMChain(llm=self.llm, prompt=self.patient_prompt)
         
         # Available subspecialties for GPT to choose from
         self.available_specialties = [
@@ -49,6 +72,37 @@ class MedicalAnalysisService:
     def set_db(self, db: Session):
         """Set the database session for ICD-10 lookups."""
         self.db = db
+    
+    async def process_patient_input(
+        self,
+        patient_input: str,
+        location_preference: Optional[str] = None,
+        urgency_level: str = "medium"
+    ) -> PatientProfile:
+        """Process patient input using LangChain."""
+        try:
+            # Get LLM response
+            response = await self.patient_chain.arun(patient_input=patient_input)
+            
+            # Parse JSON response
+            data = json.loads(response.strip())
+            
+            # Create patient profile
+            profile = PatientProfile(
+                symptoms=data.get("symptoms", []),
+                conditions=[],
+                specialties_needed=data.get("specialties", []),
+                urgency_level=data.get("urgency", urgency_level),
+                location_preference=location_preference,
+                additional_notes=patient_input
+            )
+            
+            logger.info(f"Processed patient input: {len(profile.symptoms)} symptoms, {len(profile.specialties_needed)} specialties")
+            return profile
+            
+        except Exception as e:
+            logger.error(f"Error processing patient input: {str(e)}")
+            raise
     
     def lookup_icd10_description(self, code: str) -> Optional[str]:
         """
