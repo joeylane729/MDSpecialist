@@ -18,7 +18,7 @@ class LangChainRankingService:
     """Service for ranking NPI providers based on Pinecone specialist information."""
     
     def __init__(self):
-        self.llm = ChatOpenAI(model="gpt-4o", temperature=0.1)
+        self.llm = ChatOpenAI(model="gpt-5", temperature=0.1)
         
         # Prompt for ranking NPI providers based on Pinecone data
         self.ranking_prompt = PromptTemplate(
@@ -150,12 +150,12 @@ class LangChainRankingService:
         """Format patient profile for LLM input."""
         symptoms = patient_profile.get('symptoms', [])
         specialties = patient_profile.get('specialties_needed', [])
-        urgency = patient_profile.get('urgency_level', 'medium')
+
         
         return f"""
         Symptoms: {', '.join(symptoms) if symptoms else 'Not specified'}
         Specialties Needed: {', '.join(specialties) if specialties else 'Not specified'}
-        Urgency: {urgency}
+
         """
     
     def _parse_ranking_response(self, response: str, providers: List[Dict[str, Any]]) -> Dict[str, Any]:

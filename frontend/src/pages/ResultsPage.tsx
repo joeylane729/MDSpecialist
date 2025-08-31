@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { MapPin, Phone, Mail, Globe, Star, Award, Calendar, Building } from 'lucide-react';
+// import { MapPin, Phone, Mail, Globe, Star, Award, Calendar, Building } from 'lucide-react';
 import { NPIProvider } from '../services/api';
 import NPIProviderCard from '../components/NPIProviderCard';
 
@@ -156,7 +156,7 @@ const ResultsPage: React.FC = () => {
     }
     if (location.state?.providers) {
       console.log('ResultsPage - providers received:', location.state.providers.length);
-      console.log('ResultsPage - first 5 provider NPIs:', location.state.providers.slice(0, 5).map(p => p.npi));
+      console.log('ResultsPage - first 5 provider NPIs:', location.state.providers.slice(0, 5).map((p: Provider) => p.npi));
     }
   }, [location.state]);
 
@@ -210,7 +210,7 @@ const ResultsPage: React.FC = () => {
       setRankedProviders(location.state.providers); // Set the ranked providers
       const links = location.state.providerLinks || {};
       console.log('DEBUG: Setting provider links:', links);
-      console.log('DEBUG: Provider names:', location.state.providers.slice(0, 5).map(p => p.name));
+      console.log('DEBUG: Provider names:', location.state.providers.slice(0, 5).map((p: Provider) => p.name));
       setProviderLinks(links); // Set the provider links
       setIsLoading(false);
       setCurrentPage(1);

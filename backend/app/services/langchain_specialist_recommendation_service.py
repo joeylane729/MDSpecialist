@@ -28,8 +28,7 @@ class LangChainSpecialistRecommendationService:
     
     async def get_specialist_recommendations(
         self,
-        patient_input: str,
-        max_recommendations: int = 3
+        patient_input: str
     ) -> RecommendationResponse:
         """Get specialist recommendations using LangChain."""
         start_time = datetime.now()

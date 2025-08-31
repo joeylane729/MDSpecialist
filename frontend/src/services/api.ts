@@ -277,7 +277,6 @@ export interface PatientProfile {
   symptoms: string[];
   conditions: string[];
   specialties_needed: string[];
-  urgency_level: string;
   location_preference?: string;
 }
 
@@ -296,7 +295,6 @@ export interface SpecialistRecommendationRequest {
   medical_history?: string;
   medications?: string;
   surgical_history?: string;
-  max_recommendations?: number;
   files?: File[];
 }
 
@@ -318,9 +316,7 @@ export const getSpecialistRecommendations = async (
     if (request.surgical_history) {
       formData.append('surgical_history', request.surgical_history);
     }
-    if (request.max_recommendations) {
-      formData.append('max_recommendations', request.max_recommendations.toString());
-    }
+
     
     // Add files if provided
     if (request.files) {

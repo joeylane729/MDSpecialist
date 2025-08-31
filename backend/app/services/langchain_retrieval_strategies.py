@@ -30,7 +30,7 @@ class LangChainRetrievalStrategies:
             Patient Profile:
             - Symptoms: {symptoms}
             - Specialties needed: {specialties}
-            - Urgency: {urgency}
+
             
             Create diverse search queries that will find relevant medical specialists:
             1. One focused on the specific condition/symptoms
@@ -57,7 +57,7 @@ class LangChainRetrievalStrategies:
             query_input = {
                 "symptoms": ", ".join(patient_profile.get("symptoms", [])),
                 "specialties": ", ".join(patient_profile.get("specialties_needed", [])),
-                "urgency": patient_profile.get("urgency_level", "medium")
+
             }
             
             queries_response = await self.query_chain.arun(**query_input)

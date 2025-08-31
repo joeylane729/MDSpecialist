@@ -14,7 +14,7 @@ class PatientProfileSchema(BaseModel):
     symptoms: List[str] = Field(..., description="List of patient symptoms")
     conditions: List[str] = Field(..., description="List of medical conditions")
     specialties_needed: List[str] = Field(..., description="Required medical specialties")
-    urgency_level: str = Field(..., description="Urgency level: low, medium, high, emergency")
+
     location_preference: Optional[str] = Field(None, description="Preferred location")
 
     additional_notes: Optional[str] = Field(None, description="Additional patient notes")
@@ -44,8 +44,8 @@ class SpecialistRecommendationRequestSchema(BaseModel):
     patient_input: str = Field(..., min_length=1, description="Patient description, symptoms, conditions, etc.")
     location_preference: Optional[str] = Field(None, description="Preferred location for specialist")
 
-    urgency_level: str = Field("medium", description="Urgency level: low, medium, high, emergency")
-    max_recommendations: int = Field(10, ge=1, le=50, description="Maximum number of recommendations")
+
+
 
 class SpecialistSearchRequestSchema(BaseModel):
     """Schema for specialist search request."""
@@ -80,20 +80,7 @@ class SpecialtiesResponseSchema(BaseModel):
     specialties: List[str] = Field(..., description="List of available specialties")
     total_count: int = Field(..., ge=0, description="Total number of specialties")
 
-class UrgencyLevelsResponseSchema(BaseModel):
-    """Schema for urgency levels response."""
-    urgency_levels: List[str] = Field(..., description="List of available urgency levels")
-    descriptions: Dict[str, str] = Field(..., description="Descriptions for each urgency level")
-
 # Validation schemas
-class UrgencyLevelValidator:
-    """Validator for urgency levels."""
-    VALID_LEVELS = ["low", "medium", "high", "emergency"]
-    
-    @classmethod
-    def validate(cls, level: str) -> bool:
-        """Validate urgency level."""
-        return level.lower() in cls.VALID_LEVELS
 
 class SpecialtyValidator:
     """Validator for medical specialties."""

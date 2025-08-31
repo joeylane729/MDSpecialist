@@ -15,7 +15,7 @@ class PatientProfile:
     symptoms: List[str]
     conditions: List[str]
     specialties_needed: List[str]
-    urgency_level: str  # low, medium, high, emergency
+
     location_preference: Optional[str] = None
 
     additional_notes: Optional[str] = None

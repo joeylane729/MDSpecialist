@@ -41,11 +41,11 @@ const LangChainResultsPage: React.FC = () => {
         symptoms: searchParams.symptoms || '',
         diagnosis: searchParams.diagnosis || '',
         location_preference: `${searchParams.city}, ${searchParams.state}`,
-        urgency_level: 'medium',
+
         medical_history: searchParams.medicalHistory || '',
         medications: searchParams.medications || '',
         surgical_history: searchParams.surgicalHistory || '',
-        max_recommendations: 50,
+
         files: [] // For now, we'll skip file processing
       };
 
@@ -183,14 +183,7 @@ const LangChainResultsPage: React.FC = () => {
               </div>
             </div>
             <div>
-              <h3 className="font-medium text-gray-700 mb-2">Urgency Level</h3>
-              <span className={`px-3 py-1 rounded text-sm font-medium ${
-                recommendations.patient_profile.urgency_level === 'high' ? 'bg-red-100 text-red-800' :
-                recommendations.patient_profile.urgency_level === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-green-100 text-green-800'
-              }`}>
-                {recommendations.patient_profile.urgency_level}
-              </span>
+
             </div>
             {recommendations.patient_profile.location_preference && (
               <div>

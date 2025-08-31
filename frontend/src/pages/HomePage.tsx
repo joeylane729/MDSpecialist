@@ -552,7 +552,6 @@ const HomePage: React.FC = () => {
           medical_history: medicalHistory,
           medications: medications,
           surgical_history: surgicalHistory,
-          max_recommendations: 50,
           files: []
         })
       ]);

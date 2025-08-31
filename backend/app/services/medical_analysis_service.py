@@ -32,13 +32,13 @@ class MedicalAnalysisService:
             Return a JSON object with:
             - symptoms: list of symptoms mentioned
             - specialties: list of medical specialties needed (PROOF OF CONCEPT: always return ["neurological surgery"])
-            - urgency: one of "low", "medium", "high", "emergency"
+
             
             PROOF OF CONCEPT: Hard-coded to return "neurological surgery" for all cases
             to confine the proof of concept to only consider neurosurgeons.
             
             Example output:
-            {{"symptoms": ["chest pain", "shortness of breath"], "specialties": ["neurological surgery"], "urgency": "high"}}
+            {{"symptoms": ["chest pain", "shortness of breath"], "specialties": ["neurological surgery"]}}
             """
         )
         
@@ -104,7 +104,7 @@ class MedicalAnalysisService:
                 symptoms=data.get("symptoms", []),
                 conditions=[],
                 specialties_needed=data.get("specialties", []),
-                urgency_level="medium",  # Default value
+
                 location_preference=None,
                 additional_notes=patient_input
             )
@@ -141,7 +141,7 @@ class MedicalAnalysisService:
                 "symptoms": patient_profile.symptoms,
                 "conditions": patient_profile.conditions,
                 "specialties_needed": patient_profile.specialties_needed,
-                "urgency_level": patient_profile.urgency_level,
+
                 "location_preference": patient_profile.location_preference,
                 "additional_notes": patient_profile.additional_notes,
                 
