@@ -38,11 +38,15 @@ async def rank_npi_providers(
         # Parse the JSON strings
         import json
         npi_providers_list = json.loads(npi_providers)
+        logger.info(f"🔍 API ENDPOINT: Received {len(npi_providers_list)} NPI providers")
         
         # Parse shared Pinecone data if provided
         shared_data = None
         if shared_specialist_information:
             shared_data = json.loads(shared_specialist_information)
+            logger.info(f"🔍 API ENDPOINT: Received {len(shared_data)} shared specialist records")
+        else:
+            logger.info("🔍 API ENDPOINT: No shared specialist information provided")
         
         # Initialize the LangChain service
         langchain_service = LangChainSpecialistRecommendationService(db)

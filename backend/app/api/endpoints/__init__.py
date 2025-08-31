@@ -1,9 +1,9 @@
-from . import match, doctors, health, npi, specialist_recommendation
+from . import match, doctors, npi, specialist_recommendation, npi_ranking
 
 __all__ = [
     "match",
     "doctors",
-    "health",
     "npi",
-    "specialist_recommendation"
+    "specialist_recommendation",
+    "npi_ranking"
 ]

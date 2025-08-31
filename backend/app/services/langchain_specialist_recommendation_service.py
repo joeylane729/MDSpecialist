@@ -111,6 +111,8 @@ class LangChainSpecialistRecommendationService:
             List of NPI numbers in ranked order (most relevant first)
         """
         try:
+            logger.info(f"🔍 SPECIALIST SERVICE: Starting NPI ranking with {len(npi_providers)} providers")
+            
             # Step 1: Get medical analysis
             logger.info("Performing medical analysis for NPI ranking...")
             medical_analysis_results = await self.medical_analysis.comprehensive_analysis(patient_input)
@@ -119,7 +121,7 @@ class LangChainSpecialistRecommendationService:
             if not shared_specialist_information:
                 raise ValueError("shared_specialist_information is required for NPI ranking. No fallback Pinecone calls allowed.")
             
-            logger.info("Using shared Pinecone specialist information for ranking...")
+            logger.info(f"🔍 SPECIALIST SERVICE: Using {len(shared_specialist_information)} shared specialist records")
             specialist_information = shared_specialist_information
             
             # Step 3: Use ranking service to rank NPI providers

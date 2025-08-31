@@ -2,18 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { searchNPIProviders, getSpecialistRecommendations, rankNPIProviders } from '../services/api';
 import { 
-  MapPin, 
   Stethoscope, 
-  Search, 
   Users, 
-  Shield, 
-  Clock, 
-  Star,
-  Building2,
-  Heart,
   Zap,
   ArrowRight,
-  CheckCircle,
   FileText,
   Upload,
   X
@@ -543,7 +535,7 @@ const HomePage: React.FC = () => {
           diagnosis: diagnosis,
           symptoms: symptoms,
           uploadedFiles: uploadedFiles,
-          limit: 1000  // Get 1000 providers for ranking
+          limit: 10000  // Get 10000 providers for ranking
         }),
         // AI recommendations
         getSpecialistRecommendations({

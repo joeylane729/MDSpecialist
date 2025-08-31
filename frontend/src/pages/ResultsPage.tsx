@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-// import { MapPin, Phone, Mail, Globe, Star, Award, Calendar, Building } from 'lucide-react';
+
 import { NPIProvider } from '../services/api';
 import NPIProviderCard from '../components/NPIProviderCard';
 
@@ -29,101 +29,22 @@ interface TreatmentOption {
   complications: string;
 }
 
-// Function to get treatment options based on ICD-10 code
-const getTreatmentOptions = (icd10Code: string | undefined): TreatmentOption[] => {
-  if (!icd10Code) {
-    return [
-      {
-        name: "Consultation with Specialist",
-        outcomes: "Proper diagnosis and treatment plan",
-        complications: "Minimal, primarily time and cost"
-      }
-    ];
+// Function to get treatment options from GPT-generated data
+const getTreatmentOptions = (searchParams: any): TreatmentOption[] => {
+  // Use GPT-generated treatment options if available
+  if (searchParams.treatment_options && Array.isArray(searchParams.treatment_options)) {
+    return searchParams.treatment_options.map((option: any) => ({
+      name: option.name || "Treatment Option",
+      outcomes: option.outcomes || "Outcomes not specified",
+      complications: option.complications || "Complications not specified"
+    }));
   }
 
-  // Brain cancer treatments (C71.x)
-  if (icd10Code.startsWith('C71')) {
-    return [
-      {
-        name: "Surgical Resection (Craniotomy)",
-        outcomes: "60-80% complete resection in accessible tumors, improved survival",
-        complications: "Neurological deficits (15-25%), infection (3-5%), bleeding (2-4%)"
-      },
-      {
-        name: "Radiation Therapy",
-        outcomes: "70-85% local control, median survival 12-18 months",
-        complications: "Cognitive decline (20-30%), radiation necrosis (5-10%)"
-      },
-      {
-        name: "Chemotherapy",
-        outcomes: "40-60% response rate, median survival 14-16 months",
-        complications: "Myelosuppression (25-35%), nausea/vomiting (30-40%)"
-      },
-      {
-        name: "Targeted Therapy",
-        outcomes: "50-70% progression-free survival at 6 months",
-        complications: "Rash (20-30%), diarrhea (15-25%), fatigue (25-35%)"
-      }
-    ];
-  }
-
-  // Heart disease treatments (I20-I25)
-  if (icd10Code.startsWith('I2')) {
-    return [
-      {
-        name: "Percutaneous Coronary Intervention (PCI)",
-        outcomes: "90-95% success rate, immediate symptom relief",
-        complications: "Bleeding (2-5%), contrast nephropathy (5-10%)"
-      },
-      {
-        name: "Coronary Artery Bypass Grafting (CABG)",
-        outcomes: "85-90% patency at 1 year, long-term symptom relief",
-        complications: "Stroke (1-3%), sternal infection (1-2%)"
-      },
-      {
-        name: "Medical Management",
-        outcomes: "70-80% improvement with medication compliance",
-        complications: "Side effects (15-20%), treatment failure (10-15%)"
-      }
-    ];
-  }
-
-  // Diabetes treatments (E10-E11)
-  if (icd10Code.startsWith('E1')) {
-    return [
-      {
-        name: "Lifestyle Modification",
-        outcomes: "30-50% improvement in glycemic control",
-        complications: "Minimal, requires significant commitment"
-      },
-      {
-        name: "Oral Medications",
-        outcomes: "60-80% achieve target HbA1c levels",
-        complications: "GI upset (10-20%), hypoglycemia (5-15%)"
-      },
-      {
-        name: "Insulin Therapy",
-        outcomes: "80-90% achieve target glycemic control",
-        complications: "Hypoglycemia (20-30%), weight gain (15-25%)"
-      }
-    ];
-  }
-
-  // Default treatment options
+  // Fallback if no GPT-generated options available
   return [
     {
-      name: "Initial Consultation",
+      name: "Consultation with Specialist",
       outcomes: "Proper diagnosis and treatment plan",
-      complications: "Minimal, primarily time and cost"
-    },
-    {
-      name: "Diagnostic Testing",
-      outcomes: "Accurate diagnosis and staging",
-      complications: "Minimal, primarily cost and time"
-    },
-    {
-      name: "Specialist Referral",
-      outcomes: "Expert opinion and specialized care",
       complications: "Minimal, primarily time and cost"
     }
   ];
@@ -719,7 +640,7 @@ const ResultsPage: React.FC = () => {
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Treatment Options</h2>
               <div className="space-y-3">
-                {getTreatmentOptions(searchParams.predicted_icd10).map((treatment, index) => (
+                {getTreatmentOptions(searchParams).map((treatment, index) => (
                   <div key={index} className="p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-start gap-3">
                       <span className="text-sm text-gray-700 font-bold">{index + 1}.</span>

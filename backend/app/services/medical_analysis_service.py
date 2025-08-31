@@ -23,26 +23,7 @@ class MedicalAnalysisService:
         self.db = db
         
         # Patient processing prompt
-        self.patient_prompt = PromptTemplate(
-            input_variables=["patient_input"],
-            template="""
-            Extract medical information from this patient description:
-            "{patient_input}"
-            
-            Return a JSON object with:
-            - symptoms: list of symptoms mentioned
-            - specialties: list of medical specialties needed (PROOF OF CONCEPT: always return ["neurological surgery"])
-
-            
-            PROOF OF CONCEPT: Hard-coded to return "neurological surgery" for all cases
-            to confine the proof of concept to only consider neurosurgeons.
-            
-            Example output:
-            {{"symptoms": ["chest pain", "shortness of breath"], "specialties": ["neurological surgery"]}}
-            """
-        )
-        
-        self.patient_chain = LLMChain(llm=self.llm, prompt=self.patient_prompt)
+        # No longer need complex patient processing - just pass through the input
         
         # Available subspecialties for GPT to choose from
         self.available_specialties = [
@@ -80,36 +61,19 @@ class MedicalAnalysisService:
         self,
         patient_input: str
     ) -> PatientProfile:
-        """Process patient input using LangChain."""
+        """Process patient input - just pass through the original input."""
         try:
-            # Get LLM response
-            response = await self.patient_chain.arun(patient_input=patient_input)
-            
-            # Debug: Log the raw response
-            logger.info(f"Raw LLM response: '{response}'")
-            
-            # Clean the response - remove markdown code blocks if present
-            cleaned_response = response.strip()
-            if cleaned_response.startswith('```json'):
-                cleaned_response = cleaned_response[7:]  # Remove ```json
-            if cleaned_response.endswith('```'):
-                cleaned_response = cleaned_response[:-3]  # Remove ```
-            cleaned_response = cleaned_response.strip()
-            
-            # Parse JSON response
-            data = json.loads(cleaned_response)
-            
-            # Create patient profile
+            # Simply pass through the patient input without any processing
             profile = PatientProfile(
-                symptoms=data.get("symptoms", []),
+                symptoms=[],  # No longer extracting symptoms
                 conditions=[],
-                specialties_needed=data.get("specialties", []),
+                specialties_needed=[],  # No longer extracting specialties
 
                 location_preference=None,
-                additional_notes=patient_input
+                additional_notes=patient_input  # Pass through the original input directly
             )
             
-            logger.info(f"Processed patient input: {len(profile.symptoms)} symptoms, {len(profile.specialties_needed)} specialties")
+            logger.info(f"Passed through patient input: {len(patient_input)} characters")
             return profile
             
         except Exception as e:
@@ -124,7 +88,6 @@ class MedicalAnalysisService:
             
             # Perform medical analysis
             medical_analysis = {
-                "determined_specialty": await self.determine_specialty(patient_input),
                 "predicted_icd10": await self.predict_icd10_code(patient_input),
                 "diagnoses": await self.predict_diagnoses(patient_input)
             }
@@ -134,6 +97,11 @@ class MedicalAnalysisService:
                 icd10_description = self.lookup_icd10_description(medical_analysis["predicted_icd10"])
                 if icd10_description:
                     medical_analysis["icd10_description"] = icd10_description
+            
+            # Extract treatment options from diagnoses if available
+            treatment_options = []
+            if medical_analysis["diagnoses"] and "treatment_options" in medical_analysis["diagnoses"]:
+                treatment_options = medical_analysis["diagnoses"]["treatment_options"]
             
             # Combine patient profile and medical analysis into unified result
             comprehensive_result = {
@@ -146,13 +114,13 @@ class MedicalAnalysisService:
                 "additional_notes": patient_profile.additional_notes,
                 
                 # Medical analysis data
-                "determined_specialty": medical_analysis["determined_specialty"],
                 "predicted_icd10": medical_analysis["predicted_icd10"],
                 "diagnoses": medical_analysis["diagnoses"],
+                "treatment_options": treatment_options,
                 "icd10_description": medical_analysis.get("icd10_description")
             }
             
-            logger.info(f"Comprehensive analysis completed: specialty={comprehensive_result['determined_specialty']}, icd10={comprehensive_result['predicted_icd10']}")
+            logger.info(f"Comprehensive analysis completed: icd10={comprehensive_result['predicted_icd10']}")
             return comprehensive_result
             
         except Exception as e:
@@ -319,13 +287,13 @@ class MedicalAnalysisService:
 
     async def predict_diagnoses(self, diagnosis_text: str) -> Dict[str, Any]:
         """
-        Use GPT to predict both primary and differential diagnoses based on diagnosis text.
+        Use GPT to predict primary diagnosis, differential diagnoses, and treatment options based on diagnosis text.
         
         Args:
             diagnosis_text: The patient's diagnosis description
             
         Returns:
-            Dictionary containing primary diagnosis and differential diagnoses
+            Dictionary containing primary diagnosis, differential diagnoses, and exactly 3 treatment options
         """
         try:
             prompt = PromptTemplate(
@@ -336,8 +304,10 @@ class MedicalAnalysisService:
                 Analyze the symptoms and diagnosis information above and provide:
                 1. Primary diagnosis (most likely ICD-10 code and description based on symptoms and diagnosis)
                 2. Differential diagnoses (3-5 alternative possibilities with ICD-10 codes that could explain the symptoms)
+                3. Treatment options (EXACTLY 3 treatment options with outcomes and complications)
                 
                 Consider the symptoms carefully when determining the most likely diagnosis and alternatives.
+                For treatment options, provide exactly 3 evidence-based treatment approaches with realistic outcomes and complications.
                 
                 Return the response in this exact JSON format:
                 {{
@@ -350,10 +320,27 @@ class MedicalAnalysisService:
                             "code": "ICD10_CODE",
                             "description": "Medical description"
                         }}
+                    ],
+                    "treatment_options": [
+                        {{
+                            "name": "Treatment name",
+                            "outcomes": "Expected outcomes and success rates",
+                            "complications": "Potential complications and risks"
+                        }},
+                        {{
+                            "name": "Treatment name",
+                            "outcomes": "Expected outcomes and success rates",
+                            "complications": "Potential complications and risks"
+                        }},
+                        {{
+                            "name": "Treatment name",
+                            "outcomes": "Expected outcomes and success rates",
+                            "complications": "Potential complications and risks"
+                        }}
                     ]
                 }}
                 
-                Only return valid JSON. No other text.
+                IMPORTANT: Always provide exactly 3 treatment options. Only return valid JSON. No other text.
                 """
             )
             
