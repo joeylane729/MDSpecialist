@@ -861,14 +861,14 @@ const HomePage: React.FC = () => {
                     />
                   </div>
 
-                  {/* Diagnosis Description */}
+                  {/* Presumed Diagnosis */}
                   <div className="group">
-                    <label htmlFor="diagnosis" className="block text-sm font-semibold text-gray-700 mb-3">Diagnosis Description *</label>
+                    <label htmlFor="diagnosis" className="block text-sm font-semibold text-gray-700 mb-3">Presumed Diagnosis *</label>
                     <textarea
                       id="diagnosis"
                       value={diagnosis}
                       onChange={(e) => setDiagnosis(e.target.value)}
-                      placeholder="Provide details about your diagnosis, test results, or what your doctor has told you..."
+                      placeholder="Provide details about your presumed diagnosis, test results, or what your doctor has told you..."
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300 resize-none"
                       rows={5}
                       required
