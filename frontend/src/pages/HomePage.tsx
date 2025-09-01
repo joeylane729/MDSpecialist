@@ -30,7 +30,7 @@ const HomePage: React.FC = () => {
   const [states, setStates] = useState<State[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [patientType, setPatientType] = useState<string>('');
+  const [patientAge, setPatientAge] = useState<{ month: string; year: string }>({ month: '', year: '' });
   const [proximity, setProximity] = useState<string>('');
   const [gender, setGender] = useState<string>('');
   const [medications, setMedications] = useState<string>('');
@@ -515,7 +515,7 @@ const HomePage: React.FC = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedState || !selectedCity || !symptoms.trim() || !diagnosis.trim() || !patientType || !proximity) {
+    if (!selectedState || !selectedCity || !symptoms.trim() || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity) {
       alert('Please fill in all required fields before searching');
       return;
     }
@@ -601,6 +601,7 @@ const HomePage: React.FC = () => {
           symptoms: symptoms,
           diagnosis: diagnosis,
           gender: gender,
+          patientAge: patientAge,
           medications: medications,
           medicalHistory: medicalHistory,
           surgicalHistory: surgicalHistory,
@@ -624,6 +625,7 @@ const HomePage: React.FC = () => {
           symptoms: symptoms,
           diagnosis: diagnosis,
           gender: gender,
+          patientAge: patientAge,
           medications: medications,
           medicalHistory: medicalHistory,
           surgicalHistory: surgicalHistory,
@@ -637,6 +639,7 @@ const HomePage: React.FC = () => {
             symptoms: symptoms,
             diagnosis: diagnosis,
             gender: gender,
+            patientAge: patientAge,
             medications: medications,
             medicalHistory: medicalHistory,
             surgicalHistory: surgicalHistory,
@@ -691,34 +694,50 @@ const HomePage: React.FC = () => {
                   Basic Information
                 </h3>
                 <div className="flex flex-wrap gap-6">
-                  {/* Patient Type */}
+                  {/* Patient Age */}
                   <div className="group min-w-[200px]">
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">Patient Type *</label>
-                    <div className="h-12 flex items-center space-x-6 px-4 py-3 border-2 border-gray-200 rounded-xl bg-white">
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="patientType"
-                          value="adult"
-                          checked={patientType === 'adult'}
-                          onChange={() => setPatientType('adult')}
-                          className="h-4 w-4 text-blue-600"
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Patient Age *</label>
+                    <div className="flex space-x-3">
+                      <div className="flex-1">
+                        <select
+                          value={patientAge.month}
+                          onChange={(e) => setPatientAge(prev => ({ ...prev, month: e.target.value }))}
+                          className="w-full px-3 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300"
                           required
-                        />
-                        <span className="ml-3 text-gray-700">Adult</span>
-                      </label>
-                      <label className="flex items-center cursor-pointer">
-                        <input
-                          type="radio"
-                          name="patientType"
-                          value="pediatric"
-                          checked={patientType === 'pediatric'}
-                          onChange={() => setPatientType('pediatric')}
-                          className="h-4 w-4 text-blue-600"
+                        >
+                          <option value="">Month</option>
+                          <option value="1">January</option>
+                          <option value="2">February</option>
+                          <option value="3">March</option>
+                          <option value="4">April</option>
+                          <option value="5">May</option>
+                          <option value="6">June</option>
+                          <option value="7">July</option>
+                          <option value="8">August</option>
+                          <option value="9">September</option>
+                          <option value="10">October</option>
+                          <option value="11">November</option>
+                          <option value="12">December</option>
+                        </select>
+                      </div>
+                      <div className="flex-1">
+                        <select
+                          value={patientAge.year}
+                          onChange={(e) => setPatientAge(prev => ({ ...prev, year: e.target.value }))}
+                          className="w-full px-3 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300"
                           required
-                        />
-                        <span className="ml-3 text-gray-700">Pediatric</span>
-                      </label>
+                        >
+                          <option value="">Year</option>
+                          {Array.from({ length: 100 }, (_, i) => {
+                            const year = new Date().getFullYear() - i;
+                            return (
+                              <option key={year} value={year}>
+                                {year}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
                     </div>
                   </div>
 
@@ -941,7 +960,7 @@ const HomePage: React.FC = () => {
               <div className="text-center">
                 <button
                   type="submit"
-                  disabled={isLoading || !selectedState || !selectedCity || !symptoms.trim() || !diagnosis.trim() || !patientType || !proximity}
+                  disabled={isLoading || !selectedState || !selectedCity || !symptoms.trim() || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity}
                   className="group relative inline-flex items-center justify-center w-full max-w-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                 >
                   {isLoading ? (
