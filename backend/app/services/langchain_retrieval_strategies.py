@@ -65,6 +65,11 @@ class LangChainRetrievalStrategies:
             queries_response = await self.query_chain.arun(**query_input)
             queries = [q.strip() for q in queries_response.split('\n') if q.strip()]
             
+            # Log the generated queries
+            logger.info(f"🔍 Generated {len(queries)} Pinecone search queries:")
+            for i, query in enumerate(queries, 1):
+                logger.info(f"  {i}. {query}")
+            
             # Ensure we have queries
             if not queries:
                 raise ValueError("Failed to generate search queries from LLM")
@@ -73,8 +78,9 @@ class LangChainRetrievalStrategies:
             all_candidates = []
             seen_ids = set()
             
-            for query in queries[:5]:  # Use up to 5 queries
+            for i, query in enumerate(queries[:5], 1):  # Use up to 5 queries
                 try:
+                    logger.info(f"🔍 Executing Pinecone query {i}: '{query}'")
                     results = self.index.search(
                         namespace="__default__",
                         query={
@@ -85,12 +91,16 @@ class LangChainRetrievalStrategies:
                     )
                     
                     # Parse results
+                    query_results_count = 0
                     if hasattr(results, 'result') and hasattr(results.result, 'hits'):
                         for hit in results.result.hits:
                             candidate_id = hit.fields.get("link", f"{hit.fields.get('title', '')}_{hit.fields.get('author', '')}")
                             if candidate_id and candidate_id not in seen_ids:
                                 all_candidates.append(hit.fields)
                                 seen_ids.add(candidate_id)
+                                query_results_count += 1
+                    
+                    logger.info(f"✅ Query {i} returned {query_results_count} new results (total unique: {len(all_candidates)})")
                                 
                 except Exception as e:
                     logger.error(f"Query failed: {query}, error: {str(e)}")

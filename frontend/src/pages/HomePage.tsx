@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { searchNPIProviders, getSpecialistRecommendations, rankNPIProviders } from '../services/api';
+import { searchNPIProviders, getSpecialistRecommendations, rankNPIProviders, NPIProvider } from '../services/api';
 import { 
   Stethoscope, 
   Users, 
@@ -526,27 +526,38 @@ const HomePage: React.FC = () => {
     localStorage.removeItem('concierge_search_results');
     
     try {
-      // Step 1: Get NPI data and AI recommendations in parallel
-      const [npiData, aiRecommendations] = await Promise.all([
-        // NPI search
-        searchNPIProviders({
-          state: selectedState,
-          city: selectedCity,
-          diagnosis: diagnosis,
-          symptoms: symptoms,
-          uploadedFiles: uploadedFiles,
-          limit: 10000  // Get 10000 providers for ranking
-        }),
-        // AI recommendations
-        getSpecialistRecommendations({
-          symptoms: symptoms,
-          diagnosis: diagnosis,
-          medical_history: medicalHistory,
-          medications: medications,
-          surgical_history: surgicalHistory,
-          files: []
-        })
-      ]);
+              // Step 1: Get NPI data and AI recommendations in parallel
+        const [npiData, aiRecommendations] = await Promise.all([
+          // NPI search
+          searchNPIProviders({
+            state: selectedState,
+            city: selectedCity,
+            diagnosis: diagnosis,
+            symptoms: symptoms,
+            uploadedFiles: uploadedFiles,
+            limit: 10000  // Get 10000 providers for ranking
+          }),
+          // AI recommendations
+          getSpecialistRecommendations({
+            symptoms: symptoms,
+            diagnosis: diagnosis,
+            medical_history: medicalHistory,
+            medications: medications,
+            surgical_history: surgicalHistory,
+            files: []
+          })
+        ]);
+        
+        // Debug logging for treatment options
+        console.log('🔍 DEBUG: aiRecommendations received:', aiRecommendations);
+        console.log('🔍 DEBUG: patient_profile:', aiRecommendations.patient_profile);
+        console.log('🔍 DEBUG: patient_profile keys:', Object.keys(aiRecommendations.patient_profile || {}));
+        if (aiRecommendations.patient_profile?.treatment_options) {
+          console.log('🔍 DEBUG: Found treatment options:', aiRecommendations.patient_profile.treatment_options);
+        } else {
+          console.log('🔍 DEBUG: No treatment options found in patient_profile');
+          console.log('🔍 DEBUG: Available keys in patient_profile:', Object.keys(aiRecommendations.patient_profile || {}));
+        }
       
       // Step 2: Rank NPI providers based on shared Pinecone data
       let rankedNPIProviders = npiData.providers;
@@ -563,7 +574,7 @@ const HomePage: React.FC = () => {
         const rankedNPIs = rankingResponse.ranked_npis;
         rankedNPIProviders = rankedNPIs.map(npi => 
           npiData.providers.find(provider => provider.npi === npi)
-        ).filter(Boolean);
+        ).filter((provider): provider is NPIProvider => provider !== undefined);
         
         // Capture the ranking explanation and provider links
         rankingExplanation = rankingResponse.explanation;
@@ -579,6 +590,9 @@ const HomePage: React.FC = () => {
         // Keep original order if ranking fails
       }
       
+      // Debug logging for what's being saved
+      console.log('🔍 DEBUG: Saving to localStorage - treatment_options:', aiRecommendations.patient_profile?.treatment_options);
+      
       // Save search results to localStorage for persistence
       localStorage.setItem('concierge_search_results', JSON.stringify({
         searchParams: {
@@ -592,7 +606,9 @@ const HomePage: React.FC = () => {
           surgicalHistory: surgicalHistory,
           determined_specialty: npiData.search_criteria?.determined_specialty,
           predicted_icd10: npiData.search_criteria?.predicted_icd10,
-          icd10_description: npiData.search_criteria?.icd10_description
+          icd10_description: npiData.search_criteria?.icd10_description,
+          differential_diagnoses: npiData.search_criteria?.differential_diagnoses,
+          treatment_options: aiRecommendations.patient_profile?.treatment_options
         },
         providers: rankedNPIProviders,
         totalProviders: npiData.total_providers,
@@ -627,7 +643,8 @@ const HomePage: React.FC = () => {
             determined_specialty: npiData.search_criteria?.determined_specialty,
             predicted_icd10: npiData.search_criteria?.predicted_icd10,
             icd10_description: npiData.search_criteria?.icd10_description,
-            differential_diagnoses: npiData.search_criteria?.differential_diagnoses
+            differential_diagnoses: npiData.search_criteria?.differential_diagnoses,
+            treatment_options: aiRecommendations.patient_profile?.treatment_options
           },
           providers: rankedNPIProviders,
           totalProviders: npiData.total_providers,

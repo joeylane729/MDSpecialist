@@ -8,7 +8,7 @@ interface NPIProviderCardProps {
   onClick?: (provider: NPIProvider) => void;
   isHighlighted?: boolean;
   grade?: string;
-  pineconeLink?: string;
+  pineconeLink?: string | { link: string; title: string };
 }
 
 export default function NPIProviderCard({ provider, onClick, isHighlighted = false, grade, pineconeLink }: NPIProviderCardProps) {
@@ -102,7 +102,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
             {pineconeLink && (
               <div className="mt-4">
                 <a 
-                  href={pineconeLink} 
+                  href={typeof pineconeLink === 'string' ? pineconeLink : pineconeLink.link} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
@@ -111,7 +111,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
-                  View Medical Content
+                  {typeof pineconeLink === 'string' ? 'View Medical Content' : pineconeLink.title}
                 </a>
               </div>
             )}

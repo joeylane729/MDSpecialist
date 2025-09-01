@@ -124,6 +124,12 @@ export interface PatientProfile {
   conditions: string[];
   specialties_needed: string[];
   location_preference?: string;
+  additional_notes?: string;
+  treatment_options?: Array<{
+    name: string;
+    outcomes: string;
+    complications: string;
+  }>;
 }
 
 export interface SpecialistRecommendationResponse {
@@ -133,6 +139,7 @@ export interface SpecialistRecommendationResponse {
   processing_time_ms: number;
   retrieval_strategies_used: string[];
   timestamp: string;
+  shared_specialist_information?: any[];
 }
 
 export interface SpecialistRecommendationRequest {

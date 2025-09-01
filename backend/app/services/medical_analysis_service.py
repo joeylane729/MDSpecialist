@@ -102,6 +102,14 @@ class MedicalAnalysisService:
             treatment_options = []
             if medical_analysis["diagnoses"] and "treatment_options" in medical_analysis["diagnoses"]:
                 treatment_options = medical_analysis["diagnoses"]["treatment_options"]
+                logger.info(f"🔍 DEBUG: Found {len(treatment_options)} treatment options in medical analysis")
+                for i, option in enumerate(treatment_options):
+                    logger.info(f"  {i+1}. {option.get('name', 'Unnamed')}")
+            else:
+                logger.warning("🔍 DEBUG: No treatment options found in medical analysis")
+                logger.info(f"🔍 DEBUG: medical_analysis keys: {list(medical_analysis.keys())}")
+                if "diagnoses" in medical_analysis:
+                    logger.info(f"🔍 DEBUG: diagnoses keys: {list(medical_analysis['diagnoses'].keys())}")
             
             # Combine patient profile and medical analysis into unified result
             comprehensive_result = {
@@ -121,6 +129,8 @@ class MedicalAnalysisService:
             }
             
             logger.info(f"Comprehensive analysis completed: icd10={comprehensive_result['predicted_icd10']}")
+            logger.info(f"🔍 DEBUG: Comprehensive result includes {len(treatment_options)} treatment options")
+            logger.info(f"🔍 DEBUG: Comprehensive result keys: {list(comprehensive_result.keys())}")
             return comprehensive_result
             
         except Exception as e:

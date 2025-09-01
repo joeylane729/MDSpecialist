@@ -21,6 +21,11 @@ interface SearchParams {
     code: string;
     description: string;
   }>;
+  treatment_options?: Array<{
+    name: string;
+    outcomes: string;
+    complications: string;
+  }>;
 }
 
 interface TreatmentOption {
@@ -30,9 +35,9 @@ interface TreatmentOption {
 }
 
 // Function to get treatment options from GPT-generated data
-const getTreatmentOptions = (searchParams: any): TreatmentOption[] => {
+const getTreatmentOptions = (searchParams: any): TreatmentOption[] | null => {
   // Use GPT-generated treatment options if available
-  if (searchParams.treatment_options && Array.isArray(searchParams.treatment_options)) {
+  if (searchParams.treatment_options && Array.isArray(searchParams.treatment_options) && searchParams.treatment_options.length > 0) {
     return searchParams.treatment_options.map((option: any) => ({
       name: option.name || "Treatment Option",
       outcomes: option.outcomes || "Outcomes not specified",
@@ -40,14 +45,8 @@ const getTreatmentOptions = (searchParams: any): TreatmentOption[] => {
     }));
   }
 
-  // Fallback if no GPT-generated options available
-  return [
-    {
-      name: "Consultation with Specialist",
-      outcomes: "Proper diagnosis and treatment plan",
-      complications: "Minimal, primarily time and cost"
-    }
-  ];
+  // Return null if no treatment options found
+  return null;
 };
 
 const ResultsPage: React.FC = () => {
@@ -74,12 +73,27 @@ const ResultsPage: React.FC = () => {
     if (location.state?.aiRecommendations) {
       console.log('ResultsPage - patient_profile:', location.state.aiRecommendations.patient_profile);
       console.log('ResultsPage - recommendations:', location.state.aiRecommendations.recommendations);
+      
+      // Debug treatment options specifically
+      if (location.state.aiRecommendations.patient_profile?.treatment_options) {
+        console.log('🔍 DEBUG: ResultsPage found treatment_options in aiRecommendations:', location.state.aiRecommendations.patient_profile.treatment_options);
+      } else {
+        console.log('🔍 DEBUG: ResultsPage - No treatment_options in aiRecommendations patient_profile');
+      }
     }
     if (location.state?.providers) {
       console.log('ResultsPage - providers received:', location.state.providers.length);
       console.log('ResultsPage - first 5 provider NPIs:', location.state.providers.slice(0, 5).map((p: Provider) => p.npi));
     }
-  }, [location.state]);
+    
+    // Debug searchParams treatment options
+    if (searchParams?.treatment_options) {
+      console.log('🔍 DEBUG: ResultsPage found treatment_options in searchParams:', searchParams.treatment_options);
+    } else {
+      console.log('🔍 DEBUG: ResultsPage - No treatment_options in searchParams');
+      console.log('🔍 DEBUG: searchParams keys:', searchParams ? Object.keys(searchParams) : 'searchParams is null');
+    }
+  }, [location.state, searchParams]);
 
 
 
@@ -156,6 +170,9 @@ const ResultsPage: React.FC = () => {
     if (savedSearchData) {
       try {
         const parsed = JSON.parse(savedSearchData);
+        console.log('🔍 DEBUG: Loading from localStorage - parsed data:', parsed);
+        console.log('🔍 DEBUG: Loading from localStorage - searchParams:', parsed.searchParams);
+        console.log('🔍 DEBUG: Loading from localStorage - treatment_options:', parsed.searchParams?.treatment_options);
         if (parsed.searchParams && parsed.providers && parsed.providers.length > 0) {
           setSearchParams(parsed.searchParams);
           setProviders(parsed.providers);
@@ -639,22 +656,41 @@ const ResultsPage: React.FC = () => {
             {/* Treatment Options with Outcomes and Complications */}
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Treatment Options</h2>
-              <div className="space-y-3">
-                {getTreatmentOptions(searchParams).map((treatment, index) => (
-                  <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <span className="text-sm text-gray-700 font-bold">{index + 1}.</span>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900 text-sm mb-2">{treatment.name}</h4>
-                        <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
-                          <div><span className="font-medium">Outcomes:</span> {treatment.outcomes}</div>
-                          <div><span className="font-medium">Complications:</span> {treatment.complications}</div>
+              {(() => {
+                const treatmentOptions = getTreatmentOptions(searchParams);
+                if (treatmentOptions && treatmentOptions.length > 0) {
+                  return (
+                    <div className="space-y-3">
+                      {treatmentOptions.map((treatment, index) => (
+                        <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <span className="text-sm text-gray-700 font-bold">{index + 1}.</span>
+                            <div className="flex-1">
+                              <h4 className="font-medium text-gray-900 text-sm mb-2">{treatment.name}</h4>
+                              <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
+                                <div><span className="font-medium">Outcomes:</span> {treatment.outcomes}</div>
+                                <div><span className="font-medium">Complications:</span> {treatment.complications}</div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      ))}
                     </div>
-                  </div>
-                ))}
-              </div>
+                  );
+                } else {
+                  return (
+                    <div className="text-center py-8">
+                      <div className="text-gray-500 mb-2">
+                        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <p className="text-gray-500 text-sm">No treatment options were generated for this case.</p>
+                      <p className="text-gray-400 text-xs mt-1">Please consult with a healthcare provider for personalized treatment recommendations.</p>
+                    </div>
+                  );
+                }
+              })()}
             </div>
           </div>
         </>
@@ -825,10 +861,10 @@ const ResultsPage: React.FC = () => {
                   isHighlighted={isTopResult}
                   grade={grade}
                   pineconeLink={(() => {
-                    const link = providerLinks[provider.name?.toUpperCase()];
-                    console.log(`DEBUG: Looking for link for provider "${provider.name}" (uppercase: "${provider.name?.toUpperCase()}") - found:`, link);
+                    const linkData = providerLinks[provider.name?.toUpperCase()];
+                    console.log(`DEBUG: Looking for link for provider "${provider.name}" (uppercase: "${provider.name?.toUpperCase()}") - found:`, linkData);
                     console.log('DEBUG: Available provider links:', providerLinks);
-                    return link;
+                    return linkData;
                   })()}
                 />
               </div>

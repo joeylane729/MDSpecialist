@@ -29,6 +29,9 @@ async def get_specialist_recommendations(
     specialist recommendations based on Pinecone data analysis.
     """
     try:
+        logger.info("🔍 DEBUG: Specialist recommendations endpoint called")
+        logger.info(f"🔍 DEBUG: Symptoms: {symptoms}")
+        logger.info(f"🔍 DEBUG: Diagnosis: {diagnosis}")
         # Initialize the LangChain service with database session
         langchain_service = LangChainSpecialistRecommendationService(db)
         
@@ -58,6 +61,14 @@ async def get_specialist_recommendations(
         recommendations = await langchain_service.get_specialist_recommendations(
             patient_input=patient_input
         )
+        
+        # Debug logging for response
+        logger.info("🔍 DEBUG: Specialist recommendations endpoint returning response")
+        logger.info(f"🔍 DEBUG: Response patient_profile keys: {list(recommendations.patient_profile.keys())}")
+        if "treatment_options" in recommendations.patient_profile:
+            logger.info(f"🔍 DEBUG: Response includes {len(recommendations.patient_profile['treatment_options'])} treatment options")
+        else:
+            logger.warning("🔍 DEBUG: No treatment_options in response")
         
         return recommendations
         

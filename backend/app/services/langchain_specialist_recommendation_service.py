@@ -86,6 +86,15 @@ class LangChainSpecialistRecommendationService:
                 shared_specialist_information=specialist_information
             )
             
+            # Debug logging for treatment options
+            logger.info(f"🔍 DEBUG: Response patient_profile keys: {list(medical_analysis_results.keys())}")
+            if "treatment_options" in medical_analysis_results:
+                logger.info(f"🔍 DEBUG: Response includes {len(medical_analysis_results['treatment_options'])} treatment options")
+                for i, option in enumerate(medical_analysis_results['treatment_options']):
+                    logger.info(f"  {i+1}. {option.get('name', 'Unnamed')}")
+            else:
+                logger.warning("🔍 DEBUG: No treatment_options in response patient_profile")
+            
             logger.info(f"Generated {len(recommendations)} recommendations in {processing_time:.2f}ms using LangChain")
             return response
             

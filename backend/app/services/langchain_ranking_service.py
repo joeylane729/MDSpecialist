@@ -25,12 +25,12 @@ class LangChainRankingService:
         self.ranking_prompt = PromptTemplate(
             input_variables=["npi_providers", "pinecone_data", "patient_profile"],
             template="""
-            You are a medical specialist ranking expert. Your task is to return doctor names with their corresponding Pinecone links based on the information from Pinecone.
-            Specifically, if you see any of the names from the npi_providers list in the Pinecone data (very slight variation in formatting is fine, such as middle initial, capitalization, nicknames, etc.), you should add that doctor's name to the list you return along with the link from the Pinecone record.
+            You are a medical specialist ranking expert. Your task is to return doctor names with their corresponding Pinecone links and titles based on the information from Pinecone.
+            Specifically, if you see any of the names from the npi_providers list in the Pinecone data (very slight variation in formatting is fine, such as middle initial, capitalization, nicknames, etc.), you should add that doctor's name to the list you return along with the link and title from the Pinecone record.
             STRICT RULES:
             1. The list you return must only include names from the npi_providers list.
             2. Do not add any names that do not appear in the Pinecone data.
-            3. For each doctor, include the link from the Pinecone record where they appear (either as author or featured).
+            3. For each doctor, include the link and title from the Pinecone record where they appear (either as author or featured).
             
             NPI Providers (NPI: Name):
             {npi_providers}
@@ -41,15 +41,15 @@ class LangChainRankingService:
             
                         
             Return a JSON object with the fields below and do not include any other text in your response:
-            1. "providers": An array of objects, each containing "name" (doctor name in "FIRST LAST" format, all caps) and "link" (the URL from the Pinecone record), ranked in order of relevance (most relevant first)
+            1. "providers": An array of objects, each containing "name" (doctor name in "FIRST LAST" format, all caps), "link" (the URL from the Pinecone record), and "title" (the title from the Pinecone record), ranked in order of relevance (most relevant first)
             2. "explanation": A 2-sentence explanation of your results.
             
             Example:
             {{
                 "providers": [
-                    {{"name": "ALBERT SMITH", "link": "https://example.com/video1"}},
-                    {{"name": "JANE DOE", "link": "https://example.com/video2"}},
-                    {{"name": "MICHAEL JOHNSON", "link": "https://example.com/video3"}}
+                    {{"name": "ALBERT SMITH", "link": "https://example.com/video1", "title": "Advanced Treatment for Cluster Headaches"}},
+                    {{"name": "JANE DOE", "link": "https://example.com/video2", "title": "Migraine Management Strategies"}},
+                    {{"name": "MICHAEL JOHNSON", "link": "https://example.com/video3", "title": "Neurological Assessment Techniques"}}
                 ],
                 "explanation": "I saw Albert Smith's name in the Pinecone data (he gave a lecture on cluster headaches), so I ranked him first."
             }}
@@ -257,7 +257,7 @@ class LangChainRankingService:
                     providers_data = result['providers']
                     logger.info(f"Parsed {len(providers_data)} provider entries from LLM response")
                     
-                    # Extract doctor names and links
+                    # Extract doctor names, links, and titles
                     doctor_names = []
                     doctor_links = {}
                     logger.info(f"Processing {len(providers_data)} provider entries from LLM response")
@@ -265,8 +265,12 @@ class LangChainRankingService:
                         if isinstance(provider_entry, dict) and 'name' in provider_entry:
                             name = provider_entry['name']
                             link = provider_entry.get('link', '')
+                            title = provider_entry.get('title', 'Medical Content')
                             doctor_names.append(name)
-                            doctor_links[name] = link
+                            doctor_links[name] = {
+                                'link': link,
+                                'title': title
+                            }
                         elif isinstance(provider_entry, str):
                             # Fallback for old format (just names)
                             doctor_names.append(provider_entry)
