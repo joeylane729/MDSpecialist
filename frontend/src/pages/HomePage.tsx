@@ -25,6 +25,7 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [selectedState, setSelectedState] = useState<string>('');
   const [selectedCity, setSelectedCity] = useState<string>('');
+  const [zipCode, setZipCode] = useState<string>('');
   const [diagnosis, setDiagnosis] = useState<string>('');
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [states, setStates] = useState<State[]>([]);
@@ -515,7 +516,7 @@ const HomePage: React.FC = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedState || !selectedCity || !symptoms.trim() || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity) {
+    if (!selectedState || !selectedCity || !zipCode.trim() || !symptoms.trim() || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity) {
       alert('Please fill in all required fields before searching');
       return;
     }
@@ -598,6 +599,7 @@ const HomePage: React.FC = () => {
         searchParams: {
           state: selectedState,
           city: selectedCity,
+          zipCode: zipCode,
           symptoms: symptoms,
           diagnosis: diagnosis,
           gender: gender,
@@ -622,6 +624,7 @@ const HomePage: React.FC = () => {
         state: {
           state: selectedState,
           city: selectedCity,
+          zipCode: zipCode,
           symptoms: symptoms,
           diagnosis: diagnosis,
           gender: gender,
@@ -636,6 +639,7 @@ const HomePage: React.FC = () => {
           searchParams: {
             state: selectedState,
             city: selectedCity,
+            zipCode: zipCode,
             symptoms: symptoms,
             diagnosis: diagnosis,
             gender: gender,
@@ -760,7 +764,7 @@ const HomePage: React.FC = () => {
                 </div>
 
                 {/* Location and Search Radius - Second Row */}
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-6">
                   {/* State */}
                   <div className="group">
                     <label htmlFor="state" className="block text-sm font-semibold text-gray-700 mb-3">State *</label>
@@ -798,6 +802,21 @@ const HomePage: React.FC = () => {
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  {/* Zip Code */}
+                  <div className="group">
+                    <label htmlFor="zipCode" className="block text-sm font-semibold text-gray-700 mb-3">Zip Code *</label>
+                    <input
+                      type="text"
+                      id="zipCode"
+                      value={zipCode}
+                      onChange={(e) => setZipCode(e.target.value)}
+                      placeholder="Enter zip code"
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300"
+                      required
+                      maxLength={10}
+                    />
                   </div>
 
                   {/* Search Radius */}
@@ -960,7 +979,7 @@ const HomePage: React.FC = () => {
               <div className="text-center">
                 <button
                   type="submit"
-                  disabled={isLoading || !selectedState || !selectedCity || !symptoms.trim() || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity}
+                  disabled={isLoading || !selectedState || !selectedCity || !zipCode.trim() || !symptoms.trim() || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity}
                   className="group relative inline-flex items-center justify-center w-full max-w-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                 >
                   {isLoading ? (
