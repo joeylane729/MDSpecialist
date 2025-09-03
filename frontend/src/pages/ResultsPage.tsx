@@ -26,6 +26,10 @@ interface SearchParams {
     outcomes: string;
     complications: string;
   }>;
+  searchOptions?: {
+    diagnosis: boolean;
+    specialists: boolean;
+  };
 }
 
 interface TreatmentOption {
@@ -65,6 +69,19 @@ const ResultsPage: React.FC = () => {
   const [rankedProviders, setRankedProviders] = useState<Provider[]>([]);
   const [providerLinks, setProviderLinks] = useState<{ [doctorName: string]: string }>({});
   const [activeView, setActiveView] = useState<'assessment' | 'specialists' | 'ai-recommendations'>('assessment');
+  
+  // Set initial view based on search options
+  useEffect(() => {
+    if (searchParams?.searchOptions) {
+      if (searchParams.searchOptions.diagnosis) {
+        setActiveView('assessment');
+      } else if (searchParams.searchOptions.specialists) {
+        setActiveView('specialists');
+      } else {
+        setActiveView('ai-recommendations');
+      }
+    }
+  }, [searchParams?.searchOptions]);
   
   // Debug logging
   useEffect(() => {
@@ -554,30 +571,34 @@ const ResultsPage: React.FC = () => {
           
           {/* View Toggle */}
           <div className="flex space-x-8">
-            <button
-              onClick={() => setActiveView('assessment')}
-              className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeView === 'assessment'
-                  ? 'text-primary-600 bg-primary-50'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-              </svg>
-              <span>Medical Assessment</span>
-            </button>
-            <button
-              onClick={() => setActiveView('specialists')}
-              className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeView === 'specialists'
-                  ? 'text-primary-600 bg-primary-50'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <i className="fas fa-user-md h-4 w-4"></i>
-              <span>Specialists</span>
-            </button>
+            {searchParams?.searchOptions?.diagnosis && (
+              <button
+                onClick={() => setActiveView('assessment')}
+                className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeView === 'assessment'
+                    ? 'text-primary-600 bg-primary-50'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+                <span>Medical Assessment</span>
+              </button>
+            )}
+            {searchParams?.searchOptions?.specialists && (
+              <button
+                onClick={() => setActiveView('specialists')}
+                className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeView === 'specialists'
+                    ? 'text-primary-600 bg-primary-50'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <i className="fas fa-user-md h-4 w-4"></i>
+                <span>Specialists</span>
+              </button>
+            )}
             <button
               onClick={() => setActiveView('ai-recommendations')}
               className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -597,22 +618,24 @@ const ResultsPage: React.FC = () => {
 
 
                 {/* Medical Assessment */}
-        {activeView === 'assessment' && searchParams?.predicted_icd10 && (
+        {activeView === 'assessment' && searchParams?.predicted_icd10 && searchParams?.searchOptions?.diagnosis && (
           <>
             {/* Medical Assessment Header */}
             <div className="text-center mb-4">
               <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-3 leading-tight py-1">
                 Medical Assessment
               </h1>
-              <button
-                onClick={() => setActiveView('specialists')}
-                className="inline-flex items-center gap-2 text-gray-900 hover:text-gray-700 transition-colors duration-200 cursor-pointer"
-              >
-                Show me suggested specialists
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </button>
+              {searchParams?.searchOptions?.specialists && (
+                <button
+                  onClick={() => setActiveView('specialists')}
+                  className="inline-flex items-center gap-2 text-gray-900 hover:text-gray-700 transition-colors duration-200 cursor-pointer"
+                >
+                  Show me suggested specialists
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </button>
+              )}
             </div>
             
             <div className="max-w-4xl mx-auto space-y-6">
@@ -697,7 +720,7 @@ const ResultsPage: React.FC = () => {
         )}
 
         {/* Specialists Section */}
-        {activeView === 'specialists' && (
+        {activeView === 'specialists' && searchParams?.searchOptions?.specialists && (
           <>
             {/* Specialists Header */}
             <div className="text-center mb-4">
