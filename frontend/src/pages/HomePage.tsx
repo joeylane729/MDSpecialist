@@ -8,8 +8,7 @@ import {
   ArrowRight,
   FileText,
   Upload,
-  X,
-  Search
+  X
 } from 'lucide-react';
 
 interface State {
@@ -540,72 +539,88 @@ const HomePage: React.FC = () => {
     localStorage.removeItem('concierge_search_results');
     
     try {
-              // Step 1: Get NPI data and AI recommendations in parallel
-        const [npiData, aiRecommendations] = await Promise.all([
-          // NPI search
-          searchNPIProviders({
-            state: selectedState,
-            city: selectedCity,
-            diagnosis: diagnosis,
-            symptoms: symptoms,
-            uploadedFiles: uploadedFiles,
-            limit: 10000  // Get 10000 providers for ranking
-          }),
-          // AI recommendations
-          getSpecialistRecommendations({
-            symptoms: symptoms,
-            diagnosis: diagnosis,
-            medical_history: medicalHistory,
-            medications: medications,
-            surgical_history: surgicalHistory,
-            files: []
-          })
-        ]);
+      // Step 1: Make API calls based on selected options
+      let npiData = null;
+      let aiRecommendations = null;
+      
+      if (searchOptions.specialists) {
+        // Only get NPI data if specialists are requested
+        npiData = await searchNPIProviders({
+          state: selectedState,
+          city: selectedCity,
+          diagnosis: diagnosis,
+          symptoms: symptoms,
+          uploadedFiles: uploadedFiles,
+          limit: 10000  // Get 10000 providers for ranking
+        });
+      }
+      
+      if (searchOptions.diagnosis) {
+        // Only get AI recommendations if diagnosis is requested
+        aiRecommendations = await getSpecialistRecommendations({
+          symptoms: symptoms,
+          diagnosis: diagnosis,
+          medical_history: medicalHistory,
+          medications: medications,
+          surgical_history: surgicalHistory,
+          files: []
+        });
+      }
         
         // Debug logging for treatment options
-        console.log('🔍 DEBUG: aiRecommendations received:', aiRecommendations);
-        console.log('🔍 DEBUG: patient_profile:', aiRecommendations.patient_profile);
-        console.log('🔍 DEBUG: patient_profile keys:', Object.keys(aiRecommendations.patient_profile || {}));
-        if (aiRecommendations.patient_profile?.treatment_options) {
-          console.log('🔍 DEBUG: Found treatment options:', aiRecommendations.patient_profile.treatment_options);
+        if (aiRecommendations) {
+          console.log('🔍 DEBUG: aiRecommendations received:', aiRecommendations);
+          console.log('🔍 DEBUG: patient_profile:', aiRecommendations.patient_profile);
+          console.log('🔍 DEBUG: patient_profile keys:', Object.keys(aiRecommendations.patient_profile || {}));
+          if (aiRecommendations.patient_profile?.treatment_options) {
+            console.log('🔍 DEBUG: Found treatment options:', aiRecommendations.patient_profile.treatment_options);
+          } else {
+            console.log('🔍 DEBUG: No treatment options found in patient_profile');
+            console.log('🔍 DEBUG: Available keys in patient_profile:', Object.keys(aiRecommendations.patient_profile || {}));
+          }
         } else {
-          console.log('🔍 DEBUG: No treatment options found in patient_profile');
-          console.log('🔍 DEBUG: Available keys in patient_profile:', Object.keys(aiRecommendations.patient_profile || {}));
+          console.log('🔍 DEBUG: No aiRecommendations (diagnosis not requested)');
         }
       
-      // Step 2: Rank NPI providers based on shared Pinecone data
-      let rankedNPIProviders = npiData.providers;
+      // Step 2: Rank NPI providers only if specialists are requested
+      let rankedNPIProviders: NPIProvider[] = [];
       let rankingExplanation = '';
       let providerLinks: { [doctorName: string]: string } = {};
-      try {
-        const rankingResponse = await rankNPIProviders({
-          npi_providers: npiData.providers,
-          patient_input: `Symptoms: ${symptoms}\nDiagnosis: ${diagnosis}`,
-          shared_specialist_information: aiRecommendations.shared_specialist_information
-        });
-        
-        // Reorder providers based on ranking
-        const rankedNPIs = rankingResponse.ranked_npis;
-        rankedNPIProviders = rankedNPIs.map(npi => 
-          npiData.providers.find(provider => provider.npi === npi)
-        ).filter((provider): provider is NPIProvider => provider !== undefined);
-        
-        // Capture the ranking explanation and provider links
-        rankingExplanation = rankingResponse.explanation;
-        providerLinks = rankingResponse.provider_links || {};
-        
-        console.log('NPI providers ranked successfully:', rankingResponse.message);
-        console.log('Ranking explanation:', rankingExplanation);
-        console.log('Provider links:', providerLinks);
-        console.log('DEBUG: Full ranking response:', rankingResponse);
-      } catch (rankingError) {
-        console.warn('Failed to rank NPI providers, using original order:', rankingError);
-        rankingExplanation = 'Ranking failed - showing providers in original order.';
-        // Keep original order if ranking fails
+      
+      if (searchOptions.specialists && npiData) {
+        rankedNPIProviders = npiData.providers;
+        try {
+          const rankingResponse = await rankNPIProviders({
+            npi_providers: npiData.providers,
+            patient_input: `Symptoms: ${symptoms}\nDiagnosis: ${diagnosis}`,
+            shared_specialist_information: aiRecommendations?.shared_specialist_information || []
+          });
+          
+          // Reorder providers based on ranking
+          const rankedNPIs = rankingResponse.ranked_npis;
+          if (Array.isArray(rankedNPIs)) {
+            rankedNPIProviders = rankedNPIs.map(npi => 
+              npiData.providers.find(provider => provider.npi === npi)
+            ).filter((provider): provider is NPIProvider => provider !== undefined);
+          }
+          
+          // Capture the ranking explanation and provider links
+          rankingExplanation = rankingResponse.explanation;
+          providerLinks = rankingResponse.provider_links || {};
+          
+          console.log('NPI providers ranked successfully:', rankingResponse.message);
+          console.log('Ranking explanation:', rankingExplanation);
+          console.log('Provider links:', providerLinks);
+          console.log('DEBUG: Full ranking response:', rankingResponse);
+        } catch (rankingError) {
+          console.warn('Failed to rank NPI providers, using original order:', rankingError);
+          rankingExplanation = 'Ranking failed - showing providers in original order.';
+          // Keep original order if ranking fails
+        }
       }
       
       // Debug logging for what's being saved
-      console.log('🔍 DEBUG: Saving to localStorage - treatment_options:', aiRecommendations.patient_profile?.treatment_options);
+      console.log('🔍 DEBUG: Saving to localStorage - treatment_options:', aiRecommendations?.patient_profile?.treatment_options);
       
       // Save search results to localStorage for persistence
       localStorage.setItem('concierge_search_results', JSON.stringify({
@@ -620,20 +635,20 @@ const HomePage: React.FC = () => {
           medications: medications,
           medicalHistory: medicalHistory,
           surgicalHistory: surgicalHistory,
-          determined_specialty: npiData.search_criteria?.determined_specialty,
-          predicted_icd10: npiData.search_criteria?.predicted_icd10,
-          icd10_description: npiData.search_criteria?.icd10_description,
-          differential_diagnoses: npiData.search_criteria?.differential_diagnoses,
-          treatment_options: aiRecommendations.patient_profile?.treatment_options,
+          determined_specialty: npiData?.search_criteria?.determined_specialty,
+          predicted_icd10: npiData?.search_criteria?.predicted_icd10,
+          icd10_description: npiData?.search_criteria?.icd10_description,
+          differential_diagnoses: npiData?.search_criteria?.differential_diagnoses,
+          treatment_options: aiRecommendations?.patient_profile?.treatment_options,
           searchOptions: searchOptions
         },
         providers: rankedNPIProviders,
-        totalProviders: npiData.total_providers,
+        totalProviders: npiData?.total_providers || 0,
         aiRecommendations: aiRecommendations,
         rankingExplanation: rankingExplanation
       }));
 
-      // Navigate to results page with both datasets
+      // Navigate to results page with selected datasets
       navigate('/results', {
         state: {
           state: selectedState,
@@ -646,10 +661,10 @@ const HomePage: React.FC = () => {
           medications: medications,
           medicalHistory: medicalHistory,
           surgicalHistory: surgicalHistory,
-          determined_specialty: npiData.search_criteria?.determined_specialty,
-          predicted_icd10: npiData.search_criteria?.predicted_icd10,
-          icd10_description: npiData.search_criteria?.icd10_description,
-          differential_diagnoses: npiData.search_criteria?.differential_diagnoses,
+          determined_specialty: npiData?.search_criteria?.determined_specialty,
+          predicted_icd10: npiData?.search_criteria?.predicted_icd10,
+          icd10_description: npiData?.search_criteria?.icd10_description,
+          differential_diagnoses: npiData?.search_criteria?.differential_diagnoses,
           searchParams: {
             state: selectedState,
             city: selectedCity,
@@ -661,15 +676,15 @@ const HomePage: React.FC = () => {
             medications: medications,
             medicalHistory: medicalHistory,
             surgicalHistory: surgicalHistory,
-            determined_specialty: npiData.search_criteria?.determined_specialty,
-            predicted_icd10: npiData.search_criteria?.predicted_icd10,
-            icd10_description: npiData.search_criteria?.icd10_description,
-            differential_diagnoses: npiData.search_criteria?.differential_diagnoses,
-            treatment_options: aiRecommendations.patient_profile?.treatment_options,
+            determined_specialty: npiData?.search_criteria?.determined_specialty,
+            predicted_icd10: npiData?.search_criteria?.predicted_icd10,
+            icd10_description: npiData?.search_criteria?.icd10_description,
+            differential_diagnoses: npiData?.search_criteria?.differential_diagnoses,
+            treatment_options: aiRecommendations?.patient_profile?.treatment_options,
             searchOptions: searchOptions
           },
           providers: rankedNPIProviders,
-          totalProviders: npiData.total_providers,
+          totalProviders: npiData?.total_providers || 0,
           aiRecommendations: aiRecommendations,
           rankingExplanation: rankingExplanation,
           providerLinks: providerLinks
@@ -1023,7 +1038,7 @@ const HomePage: React.FC = () => {
                       className="w-4 h-4 text-blue-600 bg-white border border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
                     />
                     <label htmlFor="diagnosis-option" className="cursor-pointer text-gray-700">
-                      Diagnosis & treatment
+                      Diagnosis & Treatment Options
                     </label>
                   </div>
                   
@@ -1036,7 +1051,7 @@ const HomePage: React.FC = () => {
                       className="w-4 h-4 text-blue-600 bg-white border border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
                     />
                     <label htmlFor="specialists-option" className="cursor-pointer text-gray-700">
-                      Specialists
+                      Specialist Recommendations
                     </label>
                   </div>
                 </div>
