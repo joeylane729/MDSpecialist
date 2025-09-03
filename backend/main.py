@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.endpoints import match, doctors, npi, specialist_recommendation, npi_ranking
+from app.api.endpoints import match, doctors, npi, specialist_recommendation, npi_ranking, medical_analysis
 import os
 
 # Create FastAPI app
@@ -26,6 +26,7 @@ app.include_router(doctors.router, prefix="/api/v1", tags=["doctors"])
 app.include_router(npi.router, prefix="/api/v1/npi", tags=["npi"])
 app.include_router(specialist_recommendation.router, prefix="/api/v1", tags=["specialist-recommendations"])
 app.include_router(npi_ranking.router, prefix="/api/v1", tags=["npi-ranking"])
+app.include_router(medical_analysis.router, prefix="/api/v1", tags=["medical-analysis"])
 
 @app.get("/")
 async def root():

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { searchNPIProviders, getSpecialistRecommendations, rankNPIProviders, NPIProvider } from '../services/api';
+import { searchNPIProviders, getSpecialistRecommendations, getMedicalAnalysis, rankNPIProviders, NPIProvider } from '../services/api';
 import { 
   Stethoscope, 
   Users, 
@@ -556,14 +556,27 @@ const HomePage: React.FC = () => {
       
       if (searchOptions.diagnosis) {
         // Only get AI recommendations if diagnosis is requested
-        aiRecommendations = await getSpecialistRecommendations({
-          symptoms: symptoms,
-          diagnosis: diagnosis,
-          medical_history: medicalHistory,
-          medications: medications,
-          surgical_history: surgicalHistory,
-          files: []
-        });
+        if (searchOptions.specialists) {
+          // If both diagnosis and specialists are selected, use the full specialist recommendations API
+          aiRecommendations = await getSpecialistRecommendations({
+            symptoms: symptoms,
+            diagnosis: diagnosis,
+            medical_history: medicalHistory,
+            medications: medications,
+            surgical_history: surgicalHistory,
+            files: []
+          });
+        } else {
+          // If only diagnosis is selected, use the medical analysis API (no specialist retrieval)
+          aiRecommendations = await getMedicalAnalysis({
+            symptoms: symptoms,
+            diagnosis: diagnosis,
+            medical_history: medicalHistory,
+            medications: medications,
+            surgical_history: surgicalHistory,
+            files: []
+          });
+        }
       }
         
         // Debug logging for treatment options
@@ -592,7 +605,7 @@ const HomePage: React.FC = () => {
           const rankingResponse = await rankNPIProviders({
             npi_providers: npiData.providers,
             patient_input: `Symptoms: ${symptoms}\nDiagnosis: ${diagnosis}`,
-            shared_specialist_information: aiRecommendations?.shared_specialist_information || []
+            shared_specialist_information: (aiRecommendations as any)?.shared_specialist_information || []
           });
           
           // Reorder providers based on ranking

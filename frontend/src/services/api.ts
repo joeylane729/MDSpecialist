@@ -193,6 +193,63 @@ export const getSpecialistRecommendations = async (
   }
 };
 
+// Medical Analysis API (without specialist retrieval)
+export interface MedicalAnalysisRequest {
+  symptoms: string;
+  diagnosis: string;
+  medical_history?: string;
+  medications?: string;
+  surgical_history?: string;
+  files?: File[];
+}
+
+export interface MedicalAnalysisResponse {
+  status: string;
+  patient_profile: PatientProfile;
+  message: string;
+}
+
+export const getMedicalAnalysis = async (
+  request: MedicalAnalysisRequest
+): Promise<MedicalAnalysisResponse> => {
+  try {
+    // Create FormData for the request
+    const formData = new FormData();
+    formData.append('symptoms', request.symptoms);
+    formData.append('diagnosis', request.diagnosis);
+    
+    if (request.medical_history) {
+      formData.append('medical_history', request.medical_history);
+    }
+    if (request.medications) {
+      formData.append('medications', request.medications);
+    }
+    if (request.surgical_history) {
+      formData.append('surgical_history', request.surgical_history);
+    }
+    
+    // Add files if provided
+    if (request.files) {
+      request.files.forEach((file) => {
+        formData.append('files', file);
+      });
+    }
+    
+    const response = await api.post('/api/v1/medical-analysis', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.detail || 'Failed to get medical analysis');
+    }
+    throw error;
+  }
+};
+
 export interface NPIRankingRequest {
   npi_providers: any[];
   patient_input: string;
