@@ -129,13 +129,13 @@ def extract_article_data(article: ET.Element) -> Optional[Dict[str, Any]]:
         # Create unique ID for this record
         record_id = f"pubmed_{pmid}"
         
-        # Prepare metadata
+        # Prepare metadata (handle None values safely)
         metadata = {
             "pmid": pmid,
-            "title": title.strip(),
-            "journal_title": journal_title.strip(),
-            "journal_abbreviation": journal_abbrev.strip(),
-            "abstract": abstract.strip(),
+            "title": title.strip() if title else "",
+            "journal_title": journal_title.strip() if journal_title else "",
+            "journal_abbreviation": journal_abbrev.strip() if journal_abbrev else "",
+            "abstract": abstract.strip() if abstract else "",
             "authors": authors,
             "keywords": keywords,
             "mesh_terms": mesh_terms,
@@ -154,7 +154,9 @@ def extract_article_data(article: ET.Element) -> Optional[Dict[str, Any]]:
         }
         
     except Exception as e:
-        print(f"⚠️  Error extracting article data: {e}")
+        # Only log errors for debugging, not every single one
+        if "NoneType" not in str(e):  # Skip common NoneType errors
+            print(f"⚠️  Error extracting article data: {e}")
         return None
 
 
@@ -203,13 +205,11 @@ def process_pubmed_data(xml_file_path: str, max_articles: Optional[int] = None) 
                 
                 # Clear element to free memory
                 elem.clear()
-                
-                # Also clear parent elements to free more memory
-                while elem.getprevious() is not None:
-                    del elem.getparent()[0]
         
         print(f"✅ Processed {len(records)} valid articles from {article_count} total articles")
         print(f"   📊 Articles to be loaded: {medical_articles}")
+        print(f"   📊 Articles with missing data: {article_count - len(records)}")
+        print(f"   📊 Success rate: {(len(records)/article_count)*100:.1f}%")
         
     except Exception as e:
         print(f"❌ Error processing XML file: {e}")
@@ -218,7 +218,7 @@ def process_pubmed_data(xml_file_path: str, max_articles: Optional[int] = None) 
     return records
 
 
-def upload_to_pinecone(pinecone_service: PineconeService, records: List[Dict[str, Any]], batch_size: int = 96):
+def upload_to_pinecone(pinecone_service: PineconeService, records: List[Dict[str, Any]], batch_size: int = 96, index_name: str = "pubmed"):
     """
     Upload PubMed records to Pinecone in batches with real-time monitoring.
     
@@ -226,11 +226,12 @@ def upload_to_pinecone(pinecone_service: PineconeService, records: List[Dict[str
         pinecone_service: Initialized PineconeService
         records: List of prepared records
         batch_size: Number of records to upload per batch
+        index_name: Name of the index to upload to
     """
-    print(f"🚀 Starting upload to Pinecone...")
+    print(f"🚀 Starting upload to Pinecone index: {index_name}")
     
     # Get the index
-    index = pinecone_service.pc.Index(pinecone_service.default_index_name)
+    index = pinecone_service.pc.Index(index_name)
     
     total_records = len(records)
     successful_uploads = 0
@@ -354,13 +355,21 @@ def main():
         pinecone_service = PineconeService()
         print("   ✅ Pinecone service initialized")
         
-        # Check index exists
-        index_info = pinecone_service.get_index_info()
-        if index_info["status"] != "found":
-            print(f"   ❌ Index not found: {index_info['message']}")
-            return
+        # Create or use pubmed index
+        pubmed_index_name = "pubmed"
+        print(f"   📁 Using index: {pubmed_index_name}")
         
-        print(f"   📁 Using index: {index_info['index_name']}")
+        # Check if pubmed index exists, create if it doesn't
+        index_info = pinecone_service.get_index_info(pubmed_index_name)
+        if index_info["status"] != "found":
+            print(f"   🔨 Creating new index: {pubmed_index_name}")
+            create_result = pinecone_service.create_index(pubmed_index_name)
+            if create_result["status"] not in ["created", "exists"]:
+                print(f"   ❌ Failed to create index: {create_result['message']}")
+                return
+            print(f"   ✅ Index ready: {pubmed_index_name}")
+        else:
+            print(f"   ✅ Using existing index: {pubmed_index_name}")
         
         # Show initial index details
         print(f"   📊 Initial index stats:")
@@ -372,6 +381,8 @@ def main():
                 print(f"      📏 Vector dimension: {stats['dimension']}")
             if "index_size" in stats:
                 print(f"      💾 Current size: {stats['index_size']}")
+        else:
+            print(f"      📈 New index - no vectors yet")
         
         # Process the XML data
         print("\n2. Processing PubMed data...")
@@ -384,11 +395,11 @@ def main():
         
         # Upload to Pinecone
         print(f"\n3. Uploading {len(records)} records to Pinecone...")
-        upload_to_pinecone(pinecone_service, records)
+        upload_to_pinecone(pinecone_service, records, index_name=pubmed_index_name)
         
         # Verify upload
         print("\n4. Verifying upload...")
-        final_stats = pinecone_service.get_index_info()
+        final_stats = pinecone_service.get_index_info(pubmed_index_name)
         if final_stats["status"] == "found":
             vector_count = final_stats["stats"].get("total_vector_count", 0)
             print(f"   ✅ Index now contains {vector_count} vectors")
