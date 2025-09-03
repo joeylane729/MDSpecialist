@@ -111,21 +111,36 @@ class MedicalAnalysisService:
                 if "diagnoses" in medical_analysis:
                     logger.info(f"🔍 DEBUG: diagnoses keys: {list(medical_analysis['diagnoses'].keys())}")
             
+            # Extract and flatten diagnosis data for frontend compatibility
+            differential_diagnoses = []
+            if medical_analysis["diagnoses"] and "differential" in medical_analysis["diagnoses"]:
+                differential_diagnoses = medical_analysis["diagnoses"]["differential"]
+            
+            # Use primary diagnosis from the diagnoses structure if available
+            primary_icd10 = medical_analysis["predicted_icd10"]
+            primary_description = medical_analysis.get("icd10_description")
+            
+            if medical_analysis["diagnoses"] and "primary" in medical_analysis["diagnoses"]:
+                primary_icd10 = medical_analysis["diagnoses"]["primary"].get("code", primary_icd10)
+                primary_description = medical_analysis["diagnoses"]["primary"].get("description", primary_description)
+            
             # Combine patient profile and medical analysis into unified result
             comprehensive_result = {
                 # Patient profile data
                 "symptoms": patient_profile.symptoms,
                 "conditions": patient_profile.conditions,
                 "specialties_needed": patient_profile.specialties_needed,
-
                 "location_preference": patient_profile.location_preference,
                 "additional_notes": patient_profile.additional_notes,
                 
-                # Medical analysis data
-                "predicted_icd10": medical_analysis["predicted_icd10"],
-                "diagnoses": medical_analysis["diagnoses"],
+                # Medical analysis data (flattened for frontend compatibility)
+                "predicted_icd10": primary_icd10,
+                "icd10_description": primary_description,
+                "differential_diagnoses": differential_diagnoses,
                 "treatment_options": treatment_options,
-                "icd10_description": medical_analysis.get("icd10_description")
+                
+                # Keep original nested structure for backward compatibility
+                "diagnoses": medical_analysis["diagnoses"]
             }
             
             logger.info(f"Comprehensive analysis completed: icd10={comprehensive_result['predicted_icd10']}")
