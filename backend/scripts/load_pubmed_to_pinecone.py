@@ -27,30 +27,10 @@ def is_medical_article(article: ET.Element) -> bool:
         article: XML element containing article data
         
     Returns:
-        True if medical/scientific, False otherwise
+        True for all articles (no filtering)
     """
-    # Check publication types
-    pub_types = article.findall('.//PublicationType')
-    medical_types = {
-        'Journal Article', 'Research Support', 'Clinical Trial', 'Case Reports',
-        'Review', 'Meta-Analysis', 'Systematic Review', 'Practice Guideline',
-        'Randomized Controlled Trial', 'Observational Study', 'Cohort Study'
-    }
-    
-    for pub_type in pub_types:
-        if pub_type.text in medical_types:
-            return True
-    
-    # Check if it's from a medical journal (basic check)
-    journal_title = article.find('.//Journal/Title')
-    if journal_title is not None:
-        journal_text = journal_title.text.lower()
-        medical_keywords = ['medical', 'health', 'clinical', 'biomedical', 'pharmacology', 
-                           'surgery', 'cardiology', 'oncology', 'neurology', 'psychiatry']
-        if any(keyword in journal_text for keyword in medical_keywords):
-            return True
-    
-    return False
+    # Load all articles - no filtering
+    return True
 
 
 def extract_article_data(article: ET.Element) -> Optional[Dict[str, Any]]:
@@ -228,9 +208,8 @@ def process_pubmed_data(xml_file_path: str, max_articles: Optional[int] = None) 
                 while elem.getprevious() is not None:
                     del elem.getparent()[0]
         
-        print(f"✅ Processed {len(records)} valid medical articles from {article_count} total articles")
-        print(f"   📊 Medical articles: {medical_articles}")
-        print(f"   📊 Non-medical articles: {article_count - medical_articles}")
+        print(f"✅ Processed {len(records)} valid articles from {article_count} total articles")
+        print(f"   📊 Articles to be loaded: {medical_articles}")
         
     except Exception as e:
         print(f"❌ Error processing XML file: {e}")
@@ -241,7 +220,7 @@ def process_pubmed_data(xml_file_path: str, max_articles: Optional[int] = None) 
 
 def upload_to_pinecone(pinecone_service: PineconeService, records: List[Dict[str, Any]], batch_size: int = 96):
     """
-    Upload PubMed records to Pinecone in batches.
+    Upload PubMed records to Pinecone in batches with real-time monitoring.
     
     Args:
         pinecone_service: Initialized PineconeService
@@ -257,13 +236,20 @@ def upload_to_pinecone(pinecone_service: PineconeService, records: List[Dict[str
     successful_uploads = 0
     failed_uploads = 0
     
+    # Get initial stats
+    print("\n📊 Initial Index Stats:")
+    initial_stats = pinecone_service.get_index_info()
+    if initial_stats["status"] == "found":
+        initial_vectors = initial_stats["stats"].get("total_vector_count", 0)
+        print(f"   📈 Starting vector count: {initial_vectors:,}")
+    
     # Process in batches
     for i in range(0, total_records, batch_size):
         batch = records[i:i + batch_size]
         batch_num = (i // batch_size) + 1
         total_batches = (total_records + batch_size - 1) // batch_size
         
-        print(f"📦 Uploading batch {batch_num}/{total_batches} ({len(batch)} records)...")
+        print(f"\n📦 Uploading batch {batch_num}/{total_batches} ({len(batch)} records)...")
         
         try:
             # Prepare batch for Pinecone
@@ -281,6 +267,29 @@ def upload_to_pinecone(pinecone_service: PineconeService, records: List[Dict[str
             successful_uploads += len(batch)
             print(f"   ✅ Batch {batch_num} uploaded successfully")
             
+            # Show progress and current stats every few batches
+            if batch_num % 5 == 0 or batch_num == total_batches:
+                try:
+                    current_stats = pinecone_service.get_index_info()
+                    if current_stats["status"] == "found":
+                        current_vectors = current_stats["stats"].get("total_vector_count", 0)
+                        vectors_added = current_vectors - initial_vectors
+                        print(f"   📊 Progress: {vectors_added:,} vectors added so far")
+                        print(f"   📊 Current total: {current_vectors:,} vectors")
+                        
+                        # Show storage info if available
+                        if "dimension" in current_stats["stats"]:
+                            dimension = current_stats["stats"]["dimension"]
+                            print(f"   📏 Vector dimension: {dimension}")
+                        
+                        # Show index size if available
+                        if "index_size" in current_stats["stats"]:
+                            index_size = current_stats["stats"]["index_size"]
+                            print(f"   💾 Index size: {index_size}")
+                        
+                except Exception as e:
+                    print(f"   ⚠️  Could not fetch current stats: {e}")
+            
         except Exception as e:
             error_message = str(e)
             print(f"   ❌ Batch {batch_num} failed: {error_message}")
@@ -296,11 +305,33 @@ def upload_to_pinecone(pinecone_service: PineconeService, records: List[Dict[str
     print(f"   ✅ Successful: {successful_uploads} records")
     print(f"   ❌ Failed: {failed_uploads} records")
     print(f"   📈 Success Rate: {(successful_uploads/total_records)*100:.1f}%")
+    
+    # Show final stats
+    print(f"\n📊 Final Index Stats:")
+    try:
+        final_stats = pinecone_service.get_index_info()
+        if final_stats["status"] == "found":
+            final_vectors = final_stats["stats"].get("total_vector_count", 0)
+            total_added = final_vectors - initial_vectors
+            print(f"   📈 Final vector count: {final_vectors:,}")
+            print(f"   📈 Vectors added this session: {total_added:,}")
+            
+            # Show additional stats if available
+            if "dimension" in final_stats["stats"]:
+                dimension = final_stats["stats"]["dimension"]
+                print(f"   📏 Vector dimension: {dimension}")
+            
+            if "index_size" in final_stats["stats"]:
+                index_size = final_stats["stats"]["index_size"]
+                print(f"   💾 Final index size: {index_size}")
+                
+    except Exception as e:
+        print(f"   ⚠️  Could not fetch final stats: {e}")
 
 
 def main():
     """Main function to load PubMed data into Pinecone."""
-    print("🏥 Loading PubMed Medical Research to Pinecone")
+    print("🏥 Loading PubMed Research Articles to Pinecone")
     print("=" * 50)
     
     # Load environment variables
@@ -331,6 +362,17 @@ def main():
         
         print(f"   📁 Using index: {index_info['index_name']}")
         
+        # Show initial index details
+        print(f"   📊 Initial index stats:")
+        if "stats" in index_info:
+            stats = index_info["stats"]
+            if "total_vector_count" in stats:
+                print(f"      📈 Current vectors: {stats['total_vector_count']:,}")
+            if "dimension" in stats:
+                print(f"      📏 Vector dimension: {stats['dimension']}")
+            if "index_size" in stats:
+                print(f"      💾 Current size: {stats['index_size']}")
+        
         # Process the XML data
         print("\n2. Processing PubMed data...")
         # You can limit the number of articles for testing by setting max_articles
@@ -353,7 +395,7 @@ def main():
         
         print("\n" + "=" * 50)
         print("🎉 PubMed data loading completed successfully!")
-        print("Your Pinecone index now contains medical research articles for semantic search.")
+        print("Your Pinecone index now contains research articles for semantic search.")
         
     except Exception as e:
         print(f"❌ Unexpected error: {str(e)}")
