@@ -363,11 +363,25 @@ def main():
         index_info = pinecone_service.get_index_info(pubmed_index_name)
         if index_info["status"] != "found":
             print(f"   🔨 Creating new index: {pubmed_index_name}")
-            create_result = pinecone_service.create_index(pubmed_index_name)
-            if create_result["status"] not in ["created", "exists"]:
-                print(f"   ❌ Failed to create index: {create_result['message']}")
+            # Create index with integrated embeddings
+            try:
+                pinecone_service.pc.create_index_for_model(
+                    name=pubmed_index_name,
+                    cloud=pinecone_service.default_cloud,
+                    region=pinecone_service.default_region,
+                    embed={
+                        "model": pinecone_service.default_model,
+                        "field_map": {"text": "chunk_text"}
+                    }
+                )
+                print(f"   ✅ Index created with integrated embeddings: {pubmed_index_name}")
+                # Wait for index to be ready
+                import time
+                print("   ⏳ Waiting for index to be ready...")
+                time.sleep(10)
+            except Exception as e:
+                print(f"   ❌ Failed to create index: {e}")
                 return
-            print(f"   ✅ Index ready: {pubmed_index_name}")
         else:
             print(f"   ✅ Using existing index: {pubmed_index_name}")
         
