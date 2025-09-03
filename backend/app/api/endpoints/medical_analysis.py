@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from ...database import get_db
 from ...services.medical_analysis_service import MedicalAnalysisService
+from ..utils.patient_input_processor import build_patient_input, log_endpoint_call, log_response_info
 import logging
 
 # Set up logging
@@ -33,45 +34,27 @@ async def get_medical_analysis(
     This endpoint provides comprehensive medical analysis without specialist retrieval.
     """
     try:
-        logger.info("🔍 DEBUG: Medical analysis endpoint called")
-        logger.info(f"🔍 DEBUG: Symptoms: {symptoms}")
-        logger.info(f"🔍 DEBUG: Diagnosis: {diagnosis}")
+        # Log endpoint call
+        log_endpoint_call("Medical analysis", symptoms, diagnosis)
         
         # Initialize the medical analysis service with database session
         medical_analysis_service = MedicalAnalysisService(db)
         
-        # Combine all patient information into a single input
-        patient_input = f"Symptoms: {symptoms}\n\nDiagnosis: {diagnosis}"
-        
-        if medical_history:
-            patient_input += f"\n\nMedical History: {medical_history}"
-        if medications:
-            patient_input += f"\n\nCurrent Medications: {medications}"
-        if surgical_history:
-            patient_input += f"\n\nSurgical History: {surgical_history}"
-        
-        # Process uploaded files (if any)
-        if files:
-            patient_input += "\n\nAdditional Information from Files:"
-            for file in files:
-                if file.content_type == "application/pdf":
-                    try:
-                        # For now, just note that files were uploaded
-                        # In a full implementation, you'd extract text from PDFs
-                        patient_input += f"\n- {file.filename} (PDF uploaded)"
-                    except Exception as e:
-                        logger.warning(f"Could not process file {file.filename}: {e}")
+        # Build patient input using shared utility
+        patient_input = build_patient_input(
+            symptoms=symptoms,
+            diagnosis=diagnosis,
+            medical_history=medical_history,
+            medications=medications,
+            surgical_history=surgical_history,
+            files=files
+        )
         
         # Get medical analysis
         analysis_results = await medical_analysis_service.comprehensive_analysis(patient_input)
         
-        # Debug logging for response
-        logger.info("🔍 DEBUG: Medical analysis endpoint returning response")
-        logger.info(f"🔍 DEBUG: Analysis results keys: {list(analysis_results.keys())}")
-        if "treatment_options" in analysis_results:
-            logger.info(f"🔍 DEBUG: Found {len(analysis_results['treatment_options'])} treatment options")
-        else:
-            logger.info("🔍 DEBUG: No treatment options found")
+        # Log response information
+        log_response_info("Medical analysis", analysis_results)
         
         return {
             "status": "success",
