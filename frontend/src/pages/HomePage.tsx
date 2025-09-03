@@ -993,12 +993,9 @@ const HomePage: React.FC = () => {
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-100">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                   <Zap className="w-5 h-5 mr-2 text-blue-600" />
-                  What would you like to receive?
+                  Search Options
                 </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Choose what information you'd like to get from your search:
-                </p>
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div className="flex items-center space-x-3">
                     <input
                       type="checkbox"
@@ -1008,8 +1005,7 @@ const HomePage: React.FC = () => {
                       className="w-5 h-5 text-blue-600 bg-white border-2 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                     />
                     <label htmlFor="diagnosis-option" className="flex-1 cursor-pointer">
-                      <div className="font-medium text-gray-800">Diagnosis & Treatment Options</div>
-                      <div className="text-sm text-gray-600">AI-powered medical assessment with primary diagnosis, differential diagnosis, and 3 treatment options with outcomes and complications</div>
+                      <div className="font-medium text-gray-800">Diagnosis & Treatment</div>
                     </label>
                   </div>
                   
@@ -1023,7 +1019,6 @@ const HomePage: React.FC = () => {
                     />
                     <label htmlFor="specialists-option" className="flex-1 cursor-pointer">
                       <div className="font-medium text-gray-800">Specialist Recommendations</div>
-                      <div className="text-sm text-gray-600">Ranked list of the best specialists in your area for your specific condition, with contact information and relevant medical content</div>
                     </label>
                   </div>
                 </div>
@@ -1052,13 +1047,7 @@ const HomePage: React.FC = () => {
                   ) : (
                     <>
                       <Zap className="w-6 h-6 mr-3" />
-                      <span>
-                        {searchOptions.diagnosis && searchOptions.specialists 
-                          ? "Get Diagnosis & Specialists" 
-                          : searchOptions.diagnosis 
-                            ? "Get Diagnosis & Treatment" 
-                            : "Find Specialists"}
-                      </span>
+                      <span>Search</span>
                       <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
                     </>
                   )}
