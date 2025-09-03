@@ -899,7 +899,7 @@ const HomePage: React.FC = () => {
 
                   {/* Medical History */}
                   <div className="group">
-                    <label htmlFor="medicalHistory" className="block text-sm font-semibold text-gray-700 mb-3">Relevant Medical History</label>
+                    <label htmlFor="medicalHistory" className="block text-sm font-semibold text-gray-700 mb-3">Medical History</label>
                     <textarea
                       id="medicalHistory"
                       value={medicalHistory}
@@ -945,7 +945,7 @@ const HomePage: React.FC = () => {
                     <p className="text-lg text-gray-700 mb-2 font-medium">Click to upload medical documents</p>
                     <p className="text-gray-600 mb-1">Upload relevant medical files to help specialists better understand your case</p>
                     <p className="text-sm text-gray-500">
-                      Accepted: Imaging reports, doctor's notes, biopsy reports, blood tests, etc.
+                      Add imaging reports, doctor's notes, biopsy results, blood tests, etc.
                     </p>
                   </label>
                 </div>
