@@ -70,21 +70,29 @@ def log_endpoint_call(endpoint_name: str, symptoms: str, diagnosis: str):
     logger.info(f"🔍 DEBUG: Symptoms: {symptoms}")
     logger.info(f"🔍 DEBUG: Diagnosis: {diagnosis}")
 
-def log_response_info(endpoint_name: str, response_data: dict, treatment_options_key: str = "treatment_options"):
+def log_response_info(endpoint_name: str, response_data, treatment_options_key: str = "treatment_options"):
     """
     Log response information for an endpoint.
     
     Args:
         endpoint_name: Name of the endpoint
-        response_data: Response data to log
+        response_data: Response data to log (can be dict or Pydantic model)
         treatment_options_key: Key to look for treatment options in response
     """
     logger.info(f"🔍 DEBUG: {endpoint_name} endpoint returning response")
     
+    # Convert Pydantic model to dict if needed
+    if hasattr(response_data, 'dict'):
+        response_dict = response_data.dict()
+    elif hasattr(response_data, 'model_dump'):
+        response_dict = response_data.model_dump()
+    else:
+        response_dict = response_data
+    
     # Handle different response structures
-    if "patient_profile" in response_data:
+    if "patient_profile" in response_dict:
         # Specialist recommendations response structure
-        patient_profile = response_data["patient_profile"]
+        patient_profile = response_dict["patient_profile"]
         logger.info(f"🔍 DEBUG: Response patient_profile keys: {list(patient_profile.keys())}")
         if treatment_options_key in patient_profile:
             logger.info(f"🔍 DEBUG: Response includes {len(patient_profile[treatment_options_key])} treatment options")
@@ -92,8 +100,8 @@ def log_response_info(endpoint_name: str, response_data: dict, treatment_options
             logger.warning(f"🔍 DEBUG: No {treatment_options_key} in response")
     else:
         # Medical analysis response structure
-        logger.info(f"🔍 DEBUG: Analysis results keys: {list(response_data.keys())}")
-        if treatment_options_key in response_data:
-            logger.info(f"🔍 DEBUG: Found {len(response_data[treatment_options_key])} treatment options")
+        logger.info(f"🔍 DEBUG: Analysis results keys: {list(response_dict.keys())}")
+        if treatment_options_key in response_dict:
+            logger.info(f"🔍 DEBUG: Found {len(response_dict[treatment_options_key])} treatment options")
         else:
             logger.info(f"🔍 DEBUG: No {treatment_options_key} found")
