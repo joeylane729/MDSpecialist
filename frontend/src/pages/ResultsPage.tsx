@@ -39,10 +39,19 @@ interface TreatmentOption {
 }
 
 // Function to get treatment options from GPT-generated data
-const getTreatmentOptions = (searchParams: any): TreatmentOption[] | null => {
-  // Use GPT-generated treatment options if available
+const getTreatmentOptions = (searchParams: any, aiRecommendations?: any): TreatmentOption[] | null => {
+  // Use GPT-generated treatment options if available from searchParams
   if (searchParams.treatment_options && Array.isArray(searchParams.treatment_options) && searchParams.treatment_options.length > 0) {
     return searchParams.treatment_options.map((option: any) => ({
+      name: option.name || "Treatment Option",
+      outcomes: option.outcomes || "Outcomes not specified",
+      complications: option.complications || "Complications not specified"
+    }));
+  }
+
+  // Fallback to AI recommendations if searchParams doesn't have treatment options
+  if (aiRecommendations?.patient_profile?.treatment_options && Array.isArray(aiRecommendations.patient_profile.treatment_options) && aiRecommendations.patient_profile.treatment_options.length > 0) {
+    return aiRecommendations.patient_profile.treatment_options.map((option: any) => ({
       name: option.name || "Treatment Option",
       outcomes: option.outcomes || "Outcomes not specified",
       complications: option.complications || "Complications not specified"
@@ -618,7 +627,7 @@ const ResultsPage: React.FC = () => {
 
 
                 {/* Medical Assessment */}
-        {activeView === 'assessment' && searchParams?.predicted_icd10 && searchParams?.searchOptions?.diagnosis && (
+        {activeView === 'assessment' && searchParams?.searchOptions?.diagnosis && (searchParams?.predicted_icd10 || location.state?.aiRecommendations?.patient_profile?.predicted_icd10) && (
           <>
             {/* Medical Assessment Header */}
             <div className="text-center mb-4">
@@ -649,9 +658,9 @@ const ResultsPage: React.FC = () => {
                 <div className="p-3 bg-blue-50 rounded-lg">
                   <div className="flex items-center gap-3">
                     <i className="fas fa-star text-gray-700 text-sm"></i>
-                    <span className="font-mono text-sm text-gray-900 font-medium">{searchParams.predicted_icd10}</span>
+                    <span className="font-mono text-sm text-gray-900 font-medium">{searchParams.predicted_icd10 || location.state?.aiRecommendations?.patient_profile?.predicted_icd10}</span>
                     <span className="text-gray-500">-</span>
-                    <p className="text-gray-700 text-sm">{searchParams.icd10_description || 'Description not available'}</p>
+                    <p className="text-gray-700 text-sm">{searchParams.icd10_description || location.state?.aiRecommendations?.patient_profile?.icd10_description || 'Description not available'}</p>
                   </div>
                 </div>
               </div>
@@ -660,8 +669,8 @@ const ResultsPage: React.FC = () => {
               <div>
                 <h3 className="text-base font-medium text-gray-900 mb-3">Differential</h3>
                 <div className="space-y-2">
-                  {searchParams.differential_diagnoses && searchParams.differential_diagnoses.length > 0 ? (
-                    searchParams.differential_diagnoses.map((diagnosis: any, index: number) => (
+                  {(searchParams.differential_diagnoses || location.state?.aiRecommendations?.patient_profile?.differential_diagnoses) && ((searchParams.differential_diagnoses?.length || 0) > 0 || (location.state?.aiRecommendations?.patient_profile?.differential_diagnoses?.length || 0) > 0) ? (
+                    (searchParams.differential_diagnoses || location.state?.aiRecommendations?.patient_profile?.differential_diagnoses || []).map((diagnosis: any, index: number) => (
                       <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                         <span className="text-sm text-gray-700 font-bold">{index + 1}.</span>
                         <span className="font-mono text-sm text-gray-900 font-medium">{diagnosis.code}</span>
@@ -680,7 +689,7 @@ const ResultsPage: React.FC = () => {
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Treatment Options</h2>
               {(() => {
-                const treatmentOptions = getTreatmentOptions(searchParams);
+                const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
                 if (treatmentOptions && treatmentOptions.length > 0) {
                   return (
                     <div className="space-y-3">
