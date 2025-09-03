@@ -111,10 +111,17 @@ class MedicalAnalysisService:
                 if "diagnoses" in medical_analysis:
                     logger.info(f"🔍 DEBUG: diagnoses keys: {list(medical_analysis['diagnoses'].keys())}")
             
+            # Debug logging for diagnosis structure
+            logger.info(f"🔍 DEBUG: medical_analysis['diagnoses'] type: {type(medical_analysis['diagnoses'])}")
+            logger.info(f"🔍 DEBUG: medical_analysis['diagnoses'] content: {medical_analysis['diagnoses']}")
+            
             # Extract and flatten diagnosis data for frontend compatibility
             differential_diagnoses = []
             if medical_analysis["diagnoses"] and "differential" in medical_analysis["diagnoses"]:
                 differential_diagnoses = medical_analysis["diagnoses"]["differential"]
+                logger.info(f"🔍 DEBUG: Found {len(differential_diagnoses)} differential diagnoses")
+            else:
+                logger.warning(f"🔍 DEBUG: No differential diagnoses found. diagnoses structure: {medical_analysis['diagnoses']}")
             
             # Use primary diagnosis from the diagnoses structure if available
             primary_icd10 = medical_analysis["predicted_icd10"]
@@ -123,6 +130,9 @@ class MedicalAnalysisService:
             if medical_analysis["diagnoses"] and "primary" in medical_analysis["diagnoses"]:
                 primary_icd10 = medical_analysis["diagnoses"]["primary"].get("code", primary_icd10)
                 primary_description = medical_analysis["diagnoses"]["primary"].get("description", primary_description)
+                logger.info(f"🔍 DEBUG: Using primary diagnosis from diagnoses structure: {primary_icd10} - {primary_description}")
+            else:
+                logger.warning(f"🔍 DEBUG: No primary diagnosis in diagnoses structure. Using fallback: {primary_icd10} - {primary_description}")
             
             # Combine patient profile and medical analysis into unified result
             comprehensive_result = {
@@ -146,6 +156,8 @@ class MedicalAnalysisService:
             logger.info(f"Comprehensive analysis completed: icd10={comprehensive_result['predicted_icd10']}")
             logger.info(f"🔍 DEBUG: Comprehensive result includes {len(treatment_options)} treatment options")
             logger.info(f"🔍 DEBUG: Comprehensive result keys: {list(comprehensive_result.keys())}")
+            logger.info(f"🔍 DEBUG: differential_diagnoses count: {len(comprehensive_result.get('differential_diagnoses', []))}")
+            logger.info(f"🔍 DEBUG: primary description: {comprehensive_result.get('icd10_description', 'None')}")
             return comprehensive_result
             
         except Exception as e:
