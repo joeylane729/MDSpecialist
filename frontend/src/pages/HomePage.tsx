@@ -38,6 +38,13 @@ const HomePage: React.FC = () => {
   const [medicalHistory, setMedicalHistory] = useState<string>('');
   const [surgicalHistory, setSurgicalHistory] = useState<string>('');
   const [symptoms, setSymptoms] = useState<string>('');
+  const [searchOptions, setSearchOptions] = useState<{
+    diagnosis: boolean;
+    specialists: boolean;
+  }>({
+    diagnosis: true,
+    specialists: true
+  });
 
   // Debug logging
   useEffect(() => {
@@ -521,6 +528,11 @@ const HomePage: React.FC = () => {
       return;
     }
 
+    if (!searchOptions.diagnosis && !searchOptions.specialists) {
+      alert('Please select at least one search option (Diagnosis & Treatment Options or Specialist Recommendations)');
+      return;
+    }
+
     setIsLoading(true);
     
     // Clear any previous search results
@@ -611,7 +623,8 @@ const HomePage: React.FC = () => {
           predicted_icd10: npiData.search_criteria?.predicted_icd10,
           icd10_description: npiData.search_criteria?.icd10_description,
           differential_diagnoses: npiData.search_criteria?.differential_diagnoses,
-          treatment_options: aiRecommendations.patient_profile?.treatment_options
+          treatment_options: aiRecommendations.patient_profile?.treatment_options,
+          searchOptions: searchOptions
         },
         providers: rankedNPIProviders,
         totalProviders: npiData.total_providers,
@@ -651,7 +664,8 @@ const HomePage: React.FC = () => {
             predicted_icd10: npiData.search_criteria?.predicted_icd10,
             icd10_description: npiData.search_criteria?.icd10_description,
             differential_diagnoses: npiData.search_criteria?.differential_diagnoses,
-            treatment_options: aiRecommendations.patient_profile?.treatment_options
+            treatment_options: aiRecommendations.patient_profile?.treatment_options,
+            searchOptions: searchOptions
           },
           providers: rankedNPIProviders,
           totalProviders: npiData.total_providers,
@@ -975,11 +989,59 @@ const HomePage: React.FC = () => {
                 )}
               </div>
 
+              {/* Search Options */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border-2 border-blue-100">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                  <Zap className="w-5 h-5 mr-2 text-blue-600" />
+                  What would you like to receive?
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Choose what information you'd like to get from your search:
+                </p>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="diagnosis-option"
+                      checked={searchOptions.diagnosis}
+                      onChange={(e) => setSearchOptions(prev => ({ ...prev, diagnosis: e.target.checked }))}
+                      className="w-5 h-5 text-blue-600 bg-white border-2 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                    />
+                    <label htmlFor="diagnosis-option" className="flex-1 cursor-pointer">
+                      <div className="font-medium text-gray-800">Diagnosis & Treatment Options</div>
+                      <div className="text-sm text-gray-600">AI-powered medical assessment with primary diagnosis, differential diagnosis, and 3 treatment options with outcomes and complications</div>
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="specialists-option"
+                      checked={searchOptions.specialists}
+                      onChange={(e) => setSearchOptions(prev => ({ ...prev, specialists: e.target.checked }))}
+                      className="w-5 h-5 text-blue-600 bg-white border-2 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                    />
+                    <label htmlFor="specialists-option" className="flex-1 cursor-pointer">
+                      <div className="font-medium text-gray-800">Specialist Recommendations</div>
+                      <div className="text-sm text-gray-600">Ranked list of the best specialists in your area for your specific condition, with contact information and relevant medical content</div>
+                    </label>
+                  </div>
+                </div>
+                
+                {!searchOptions.diagnosis && !searchOptions.specialists && (
+                  <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      ⚠️ Please select at least one option to continue.
+                    </p>
+                  </div>
+                )}
+              </div>
+
               {/* Search Button */}
               <div className="text-center">
                 <button
                   type="submit"
-                  disabled={isLoading || !selectedState || !selectedCity || !zipCode.trim() || !symptoms.trim() || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity}
+                  disabled={isLoading || !selectedState || !selectedCity || !zipCode.trim() || !symptoms.trim() || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity || (!searchOptions.diagnosis && !searchOptions.specialists)}
                   className="group relative inline-flex items-center justify-center w-full max-w-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                 >
                   {isLoading ? (
@@ -990,7 +1052,13 @@ const HomePage: React.FC = () => {
                   ) : (
                     <>
                       <Zap className="w-6 h-6 mr-3" />
-                      <span>Find Specialists</span>
+                      <span>
+                        {searchOptions.diagnosis && searchOptions.specialists 
+                          ? "Get Diagnosis & Specialists" 
+                          : searchOptions.diagnosis 
+                            ? "Get Diagnosis & Treatment" 
+                            : "Find Specialists"}
+                      </span>
                       <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
                     </>
                   )}
