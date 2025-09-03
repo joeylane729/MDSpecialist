@@ -42,7 +42,7 @@ const HomePage: React.FC = () => {
     diagnosis: boolean;
     specialists: boolean;
   }>({
-    diagnosis: true,
+    diagnosis: true, // Always true, can't be unchecked
     specialists: true
   });
 
@@ -528,10 +528,9 @@ const HomePage: React.FC = () => {
       return;
     }
 
-    if (!searchOptions.diagnosis && !searchOptions.specialists) {
-      alert('Please select at least one search option (Diagnosis & Treatment Options or Specialist Recommendations)');
-      return;
-    }
+    // Diagnosis is always enabled, so we only need to check if specialists is selected
+    // But since diagnosis is always true, this validation is no longer needed
+    // Keeping it for safety in case the logic changes in the future
 
     setIsLoading(true);
     
@@ -1009,7 +1008,7 @@ const HomePage: React.FC = () => {
               <div className="text-center">
                 <button
                   type="submit"
-                  disabled={isLoading || !selectedState || !selectedCity || !zipCode.trim() || !symptoms.trim() || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity || (!searchOptions.diagnosis && !searchOptions.specialists)}
+                  disabled={isLoading || !selectedState || !selectedCity || !zipCode.trim() || !symptoms.trim() || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity}
                   className="group relative inline-flex items-center justify-center w-full max-w-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                 >
                   {isLoading ? (
@@ -1033,11 +1032,11 @@ const HomePage: React.FC = () => {
                     <input
                       type="checkbox"
                       id="diagnosis-option"
-                      checked={searchOptions.diagnosis}
-                      onChange={(e) => setSearchOptions(prev => ({ ...prev, diagnosis: e.target.checked }))}
-                      className="w-4 h-4 text-blue-600 bg-white border border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
+                      checked={true}
+                      disabled={true}
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border border-gray-300 rounded cursor-not-allowed"
                     />
-                    <label htmlFor="diagnosis-option" className="cursor-pointer text-gray-700">
+                    <label htmlFor="diagnosis-option" className="text-gray-700">
                       Diagnosis & Treatment Options
                     </label>
                   </div>
@@ -1056,11 +1055,7 @@ const HomePage: React.FC = () => {
                   </div>
                 </div>
                 
-                {!searchOptions.diagnosis && !searchOptions.specialists && (
-                  <div className="mt-3 text-sm text-yellow-600">
-                    ⚠️ Please select at least one option
-                  </div>
-                )}
+
               </div>
             </form>
 
