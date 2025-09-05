@@ -41,7 +41,7 @@ async def get_medical_analysis(
         medical_analysis_service = MedicalAnalysisService(db)
         
         # Build patient input using shared utility
-        patient_input = build_patient_input(
+        patient_input = await build_patient_input(
             symptoms=symptoms,
             diagnosis=diagnosis,
             medical_history=medical_history,

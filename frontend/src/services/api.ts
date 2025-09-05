@@ -51,6 +51,8 @@ export interface NPIProvider {
 export interface NPISearchRequest {
   state: string;
   city: string;
+  zipCode: string;
+  proximity: string;
   diagnosis: string;
   symptoms: string;
   uploadedFiles?: File[];
@@ -80,6 +82,8 @@ export const searchNPIProviders = async (request: NPISearchRequest): Promise<NPI
     const formData = new FormData();
     formData.append('state', request.state);
     formData.append('city', request.city);
+    formData.append('zipCode', request.zipCode);
+    formData.append('proximity', request.proximity);
     formData.append('diagnosis', request.diagnosis);
     formData.append('symptoms', request.symptoms);
     

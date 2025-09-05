@@ -45,7 +45,7 @@ def test_pubmed_parsing():
             if event == 'end' and elem.tag == 'PubmedArticle':
                 article_count += 1
                 
-                # Check if it's a medical article
+                # Check if it's a medical article (now always True)
                 is_medical = is_medical_article(elem)
                 if is_medical:
                     medical_articles += 1
@@ -71,8 +71,7 @@ def test_pubmed_parsing():
         
         print(f"\n📊 Test Results:")
         print(f"   Total articles processed: {article_count}")
-        print(f"   Medical articles: {medical_articles}")
-        print(f"   Non-medical articles: {article_count - medical_articles}")
+        print(f"   Articles to be loaded: {medical_articles}")
         print(f"   Successfully parsed: {len(test_records)}")
         
         if test_records:

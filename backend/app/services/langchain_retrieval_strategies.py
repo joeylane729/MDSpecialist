@@ -23,14 +23,21 @@ class LangChainRetrievalStrategies:
         self.llm = ChatOpenAI(model="gpt-4o", temperature=0.1)
         
         self.query_prompt = PromptTemplate(
-            input_variables=["symptoms"],
+            input_variables=["symptoms", "diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
             template="""
             Generate 5 diverse and comprehensive search queries for finding medical specialists.
             
             Patient Information:
-            {symptoms}
+            Symptoms: {symptoms}
+            Diagnosis: {diagnosis}
+            Medical History: {medical_history}
+            Current Medications: {medications}
+            Surgical History: {surgical_history}
             
-            Create diverse search queries that will find relevant medical specialists based on ALL the patient information provided (symptoms, diagnosis, medical history, medications, surgical history, etc.):
+            Additional Information from Medical Records/PDFs:
+            {pdf_content}
+            
+            Create diverse search queries that will find relevant medical specialists based on all the patient information provided (symptoms, diagnosis, medical history, medications, surgical history, PDF content, etc.):
             1. One focused on the specific condition/symptoms
             2. One focused on treatment approaches
             3. One focused on related conditions
@@ -43,6 +50,47 @@ class LangChainRetrievalStrategies:
         
         self.query_chain = LLMChain(llm=self.llm, prompt=self.query_prompt)
         logger.info("LangChainRetrievalStrategies initialized successfully")
+    
+    def _parse_patient_input(self, patient_input: str) -> tuple:
+        """
+        Parse the combined patient input string to extract individual fields.
+        
+        Args:
+            patient_input: Combined patient input string
+            
+        Returns:
+            Tuple of (symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content)
+        """
+        # Initialize with empty strings
+        symptoms = ""
+        diagnosis = ""
+        medical_history = ""
+        medications = ""
+        surgical_history = ""
+        pdf_content = ""
+        
+        # Split by sections
+        sections = patient_input.split('\n\n')
+        
+        for section in sections:
+            section = section.strip()
+            if section.startswith('Symptoms:'):
+                symptoms = section.replace('Symptoms:', '').strip()
+            elif section.startswith('Diagnosis:'):
+                diagnosis = section.replace('Diagnosis:', '').strip()
+            elif section.startswith('Medical History:'):
+                medical_history = section.replace('Medical History:', '').strip()
+            elif section.startswith('Current Medications:'):
+                medications = section.replace('Current Medications:', '').strip()
+            elif section.startswith('Surgical History:'):
+                surgical_history = section.replace('Surgical History:', '').strip()
+            elif section.startswith('Additional Information from Files:'):
+                # Extract PDF content from the files section
+                pdf_content = section.replace('Additional Information from Files:', '').strip()
+                # Remove the "(PDF uploaded)" notes and keep only actual content
+                pdf_content = pdf_content.replace('(PDF uploaded)', '').strip()
+        
+        return symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content
     
     async def retrieve_specialist_information(
         self,
@@ -58,8 +106,16 @@ class LangChainRetrievalStrategies:
                 # Fallback to symptoms if additional_notes not available
                 patient_input = ", ".join(patient_profile.get("symptoms", []))
             
+            # Parse patient input to extract individual fields including PDF content
+            symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content = self._parse_patient_input(patient_input)
+            
             query_input = {
-                "symptoms": patient_input,
+                "symptoms": symptoms,
+                "diagnosis": diagnosis,
+                "medical_history": medical_history,
+                "medications": medications,
+                "surgical_history": surgical_history,
+                "pdf_content": pdf_content,
             }
             
             queries_response = await self.query_chain.arun(**query_input)
@@ -113,6 +169,7 @@ class LangChainRetrievalStrategies:
                 # Specialty-based searches removed - using only LLM-generated queries
             
             logger.info(f"LangChain retrieval found {len(all_candidates)} specialist information records using {len(queries)} queries")
+            logger.info(f"🔍 DEBUG: Returning type: {type(all_candidates)}, length: {len(all_candidates)}")
             return all_candidates
             
         except Exception as e:

@@ -43,7 +43,7 @@ const HomePage: React.FC = () => {
     specialists: boolean;
   }>({
     diagnosis: true, // Always true, can't be unchecked
-    specialists: true
+    specialists: false // Always false, never show specialist recommendations
   });
 
   // Debug logging
@@ -534,6 +534,11 @@ const HomePage: React.FC = () => {
 
     setIsLoading(true);
     
+    // Debug logging for search options
+    console.log('🔍 DEBUG: Starting search with searchOptions:', searchOptions);
+    console.log('🔍 DEBUG: searchOptions.specialists =', searchOptions.specialists);
+    console.log('🔍 DEBUG: searchOptions.diagnosis =', searchOptions.diagnosis);
+    
     // Clear any previous search results
     localStorage.removeItem('concierge_search_results');
     
@@ -547,6 +552,8 @@ const HomePage: React.FC = () => {
         npiData = await searchNPIProviders({
           state: selectedState,
           city: selectedCity,
+          zipCode: zipCode,
+          proximity: proximity,
           diagnosis: diagnosis,
           symptoms: symptoms,
           uploadedFiles: uploadedFiles,
@@ -556,8 +563,10 @@ const HomePage: React.FC = () => {
       
       if (searchOptions.diagnosis) {
         // Only get AI recommendations if diagnosis is requested
+        console.log('🔍 DEBUG: searchOptions.specialists =', searchOptions.specialists);
         if (searchOptions.specialists) {
           // If both diagnosis and specialists are selected, use the full specialist recommendations API
+          console.log('🔍 DEBUG: Calling getSpecialistRecommendations');
           aiRecommendations = await getSpecialistRecommendations({
             symptoms: symptoms,
             diagnosis: diagnosis,
@@ -568,13 +577,14 @@ const HomePage: React.FC = () => {
           });
         } else {
           // If only diagnosis is selected, use the medical analysis API (no specialist retrieval)
+          console.log('🔍 DEBUG: Calling getMedicalAnalysis');
           aiRecommendations = await getMedicalAnalysis({
             symptoms: symptoms,
             diagnosis: diagnosis,
             medical_history: medicalHistory,
             medications: medications,
             surgical_history: surgicalHistory,
-            files: []
+            files: uploadedFiles
           });
         }
       }
@@ -710,6 +720,30 @@ const HomePage: React.FC = () => {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-indigo-400/20 to-blue-400/20 rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="relative z-10 text-center max-w-lg mx-auto px-6">
+          {/* Animated loading spinner */}
+          <div className="mb-8">
+            <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-200 border-t-blue-600 mx-auto"></div>
+          </div>
+          
+          {/* Main heading */}
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-6">
+            Analyzing your medical information...
+          </h2>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden w-full">
       {/* Background decorative elements */}
@@ -725,7 +759,7 @@ const HomePage: React.FC = () => {
           <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/20 mb-16">
             <div className="text-center mb-8">
               <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-2 leading-tight py-2">
-                ConciergeMD.ai
+                MDSpecialist.ai
               </h1>
               <p className="text-lg text-gray-700 max-w-2xl mx-auto leading-relaxed mb-2">
                 Find the <span className="font-semibold text-blue-600">best subspecialist</span> for your specific diagnosis.
@@ -863,7 +897,7 @@ const HomePage: React.FC = () => {
 
                   {/* Search Radius */}
                   <div className="group">
-                    <label htmlFor="proximity" className="block text-sm font-semibold text-gray-700 mb-3">Search Radius *</label>
+                    <label htmlFor="proximity" className="block text-sm font-semibold text-gray-700 mb-3">Search Area *</label>
                     <select
                       id="proximity"
                       value={proximity}
@@ -871,12 +905,9 @@ const HomePage: React.FC = () => {
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300"
                       required
                     >
-                      <option value="">Select search radius</option>
-                      <option value="50">Within 50 miles</option>
-                      <option value="100">Within 100 miles</option>
-                      <option value="state">State-wide</option>
-                      <option value="us">US-wide</option>
-                      <option value="world">Worldwide</option>
+                      <option value="">Select search area</option>
+                      <option value="statewide">Statewide</option>
+                      <option value="us-wide">US-wide</option>
                     </select>
                   </div>
                 </div>
@@ -1038,35 +1069,6 @@ const HomePage: React.FC = () => {
                   )}
                 </button>
                 
-                {/* Search Options - Inline */}
-                <div className="mt-4 flex justify-center items-center space-x-4 text-sm">
-                  <span className="text-gray-600 font-medium">Show me:</span>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="diagnosis-option"
-                      checked={true}
-                      disabled={true}
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border border-gray-300 rounded cursor-not-allowed"
-                    />
-                    <label htmlFor="diagnosis-option" className="text-gray-700">
-                      Diagnosis & Treatment Options
-                    </label>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="specialists-option"
-                      checked={searchOptions.specialists}
-                      onChange={(e) => setSearchOptions(prev => ({ ...prev, specialists: e.target.checked }))}
-                      className="w-4 h-4 text-blue-600 bg-white border border-gray-300 rounded focus:ring-blue-500 focus:ring-1"
-                    />
-                    <label htmlFor="specialists-option" className="cursor-pointer text-gray-700">
-                      Specialist Recommendations
-                    </label>
-                  </div>
-                </div>
                 
 
               </div>

@@ -40,14 +40,39 @@ class LangChainSpecialistRecommendationService:
             
             # Step 2: LLM-powered retrieval of specialist information
             logger.info("Retrieving specialist information with LangChain...")
+            logger.info(f"🔍 DEBUG: self.retrieval_strategies type: {type(self.retrieval_strategies)}")
+            logger.info(f"🔍 DEBUG: self.retrieval_strategies: {self.retrieval_strategies}")
+            logger.info(f"🔍 DEBUG: medical_analysis_results type: {type(medical_analysis_results)}")
+            logger.info(f"🔍 DEBUG: medical_analysis_results keys: {list(medical_analysis_results.keys()) if isinstance(medical_analysis_results, dict) else 'Not a dict'}")
+            
             specialist_information = await self.retrieval_strategies.retrieve_specialist_information(
                 patient_profile=medical_analysis_results,
                 top_k=200  # Use same value as NPI ranking
             )
             
+            # Debug logging to see what we actually got
+            logger.info(f"🔍 DEBUG: specialist_information type: {type(specialist_information)}")
+            logger.info(f"🔍 DEBUG: specialist_information: {specialist_information}")
+            
             # Step 3: Convert specialist information directly to recommendations (skip ranking)
             logger.info("Converting specialist information to recommendations...")
             recommendations = []
+            
+            # Ensure specialist_information is a list
+            if isinstance(specialist_information, RecommendationResponse):
+                logger.error("🚨 ERROR: specialist_information is a RecommendationResponse object, not a list!")
+                logger.error("This suggests a recursive call or method name conflict.")
+                # Extract the specialist information from the response if possible
+                if hasattr(specialist_information, 'shared_specialist_information') and specialist_information.shared_specialist_information:
+                    specialist_information = specialist_information.shared_specialist_information
+                    logger.info(f"🔧 FIXED: Extracted specialist information from RecommendationResponse, now have {len(specialist_information)} items")
+                else:
+                    logger.error("🚨 Cannot extract specialist information from RecommendationResponse")
+                    raise ValueError("specialist_information is a RecommendationResponse object instead of a list")
+            elif not isinstance(specialist_information, list):
+                logger.error(f"🚨 ERROR: specialist_information is not a list! Type: {type(specialist_information)}")
+                raise ValueError(f"specialist_information must be a list, got {type(specialist_information)}")
+            
             for i, info in enumerate(specialist_information):
                 # Extract specialist name from featuring field
                 featuring = info.get('featuring', '')

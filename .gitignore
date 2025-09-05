@@ -129,3 +129,5 @@ npidata.csv
 data/vumedi-scraping/vumedi_content.json
 data/vumedi-scraping/vumedi_content.csv
 data/vumedi-scraping/vumedi_scraper.log
+data/pubmed/
+data/pubmed-sample-1256.xml

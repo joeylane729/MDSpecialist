@@ -57,6 +57,47 @@ class MedicalAnalysisService:
         """Set the database session for ICD-10 lookups."""
         self.db = db
     
+    def _parse_patient_input(self, patient_input: str) -> Tuple[str, str, str, str, str, str]:
+        """
+        Parse the combined patient input string to extract individual fields.
+        
+        Args:
+            patient_input: Combined patient input string
+            
+        Returns:
+            Tuple of (symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content)
+        """
+        # Initialize with empty strings
+        symptoms = ""
+        diagnosis = ""
+        medical_history = ""
+        medications = ""
+        surgical_history = ""
+        pdf_content = ""
+        
+        # Split by sections
+        sections = patient_input.split('\n\n')
+        
+        for section in sections:
+            section = section.strip()
+            if section.startswith('Symptoms:'):
+                symptoms = section.replace('Symptoms:', '').strip()
+            elif section.startswith('Diagnosis:'):
+                diagnosis = section.replace('Diagnosis:', '').strip()
+            elif section.startswith('Medical History:'):
+                medical_history = section.replace('Medical History:', '').strip()
+            elif section.startswith('Current Medications:'):
+                medications = section.replace('Current Medications:', '').strip()
+            elif section.startswith('Surgical History:'):
+                surgical_history = section.replace('Surgical History:', '').strip()
+            elif section.startswith('Additional Information from Files:'):
+                # Extract PDF content from the files section
+                pdf_content = section.replace('Additional Information from Files:', '').strip()
+                # Remove the "(PDF uploaded)" notes and keep only actual content
+                pdf_content = pdf_content.replace('(PDF uploaded)', '').strip()
+        
+        return symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content
+    
     async def process_patient_input(
         self,
         patient_input: str
@@ -83,13 +124,16 @@ class MedicalAnalysisService:
     async def comprehensive_analysis(self, patient_input: str) -> Dict[str, Any]:
         """Perform comprehensive medical analysis including patient processing and medical analysis."""
         try:
+            # Parse patient input to extract individual fields
+            symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content = self._parse_patient_input(patient_input)
+            
             # Get patient profile
             patient_profile = await self.process_patient_input(patient_input)
             
-            # Perform medical analysis
+            # Perform medical analysis with individual fields including PDF content
             medical_analysis = {
-                "predicted_icd10": await self.predict_icd10_code(patient_input),
-                "diagnoses": await self.predict_diagnoses(patient_input)
+                "predicted_icd10": await self.predict_icd10_code(symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content),
+                "diagnoses": await self.predict_diagnoses(symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content)
             }
             
             # Add ICD-10 description if we have the code
@@ -278,21 +322,42 @@ class MedicalAnalysisService:
         else:
             return "Family Medicine"  # Default fallback
 
-    async def predict_icd10_code(self, diagnosis_text: str) -> Optional[str]:
+    async def predict_icd10_code(
+        self, 
+        symptoms: str, 
+        diagnosis: str, 
+        medical_history: str = "", 
+        medications: str = "", 
+        surgical_history: str = "",
+        pdf_content: str = ""
+    ) -> Optional[str]:
         """
-        Use GPT to predict the most accurate ICD-10 code based on diagnosis text.
+        Use GPT to predict the most accurate ICD-10 code based on patient information.
         
         Args:
-            diagnosis_text: The patient's diagnosis description
+            symptoms: Patient symptoms
+            diagnosis: Patient diagnosis
+            medical_history: Medical history (optional)
+            medications: Current medications (optional)
+            surgical_history: Surgical history (optional)
+            pdf_content: Extracted content from uploaded PDF files (optional)
             
         Returns:
             The most relevant ICD-10 code as a string, or None if failed
         """
         try:
             prompt = PromptTemplate(
-                input_variables=["diagnosis_text"],
+                input_variables=["symptoms", "diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
                 template="""
-                Diagnosis: {diagnosis_text}
+                Patient Information:
+                Symptoms: {symptoms}
+                Diagnosis: {diagnosis}
+                Medical History: {medical_history}
+                Current Medications: {medications}
+                Surgical History: {surgical_history}
+                
+                Additional Information from Medical Records/PDFs:
+                {pdf_content}
                 
                 Return ONLY the ICD-10 code.
                 Example: I21.9
@@ -303,7 +368,14 @@ class MedicalAnalysisService:
             
             chain = LLMChain(llm=self.llm, prompt=prompt)
             
-            response = await chain.arun(diagnosis_text=diagnosis_text)
+            response = await chain.arun(
+                symptoms=symptoms,
+                diagnosis=diagnosis,
+                medical_history=medical_history,
+                medications=medications,
+                surgical_history=surgical_history,
+                pdf_content=pdf_content
+            )
             
             # Extract the ICD-10 code from the response
             icd_code = response.strip()
@@ -322,21 +394,42 @@ class MedicalAnalysisService:
             print(f"Error in GPT ICD-10 prediction: {e}")
             return None
 
-    async def predict_diagnoses(self, diagnosis_text: str) -> Dict[str, Any]:
+    async def predict_diagnoses(
+        self, 
+        symptoms: str, 
+        diagnosis: str, 
+        medical_history: str = "", 
+        medications: str = "", 
+        surgical_history: str = "",
+        pdf_content: str = ""
+    ) -> Dict[str, Any]:
         """
-        Use GPT to predict primary diagnosis, differential diagnoses, and treatment options based on diagnosis text.
+        Use GPT to predict primary diagnosis, differential diagnoses, and treatment options based on patient information.
         
         Args:
-            diagnosis_text: The patient's diagnosis description
+            symptoms: Patient symptoms
+            diagnosis: Patient diagnosis
+            medical_history: Medical history (optional)
+            medications: Current medications (optional)
+            surgical_history: Surgical history (optional)
+            pdf_content: Extracted content from uploaded PDF files (optional)
             
         Returns:
             Dictionary containing primary diagnosis, differential diagnoses, and exactly 3 treatment options
         """
         try:
             prompt = PromptTemplate(
-                input_variables=["diagnosis_text"],
+                input_variables=["symptoms", "diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
                 template="""
-                {diagnosis_text}
+                Patient Information:
+                Symptoms: {symptoms}
+                Diagnosis: {diagnosis}
+                Medical History: {medical_history}
+                Current Medications: {medications}
+                Surgical History: {surgical_history}
+                
+                Additional Information from Medical Records/PDFs:
+                {pdf_content}
                 
                 Analyze the symptoms and diagnosis information above and provide:
                 1. Primary diagnosis (most likely ICD-10 code and description based on symptoms and diagnosis)
@@ -383,7 +476,14 @@ class MedicalAnalysisService:
             
             chain = LLMChain(llm=self.llm, prompt=prompt)
             
-            response = await chain.arun(diagnosis_text=diagnosis_text)
+            response = await chain.arun(
+                symptoms=symptoms,
+                diagnosis=diagnosis,
+                medical_history=medical_history,
+                medications=medications,
+                surgical_history=surgical_history,
+                pdf_content=pdf_content
+            )
             
             # Extract the JSON response
             response_text = response.strip()

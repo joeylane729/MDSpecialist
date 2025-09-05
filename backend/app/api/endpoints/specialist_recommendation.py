@@ -37,7 +37,7 @@ async def get_specialist_recommendations(
         langchain_service = LangChainSpecialistRecommendationService(db)
         
         # Build patient input using shared utility
-        patient_input = build_patient_input(
+        patient_input = await build_patient_input(
             symptoms=symptoms,
             diagnosis=diagnosis,
             medical_history=medical_history,
@@ -52,6 +52,7 @@ async def get_specialist_recommendations(
         )
         
         # Log response information
+        logger.info("Python type of recommendations: %s", type(recommendations))
         log_response_info("Specialist recommendations", recommendations)
         
         return recommendations

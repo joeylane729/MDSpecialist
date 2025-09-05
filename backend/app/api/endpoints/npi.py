@@ -7,12 +7,43 @@ from ...database import get_db
 from ...services.medical_analysis_service import MedicalAnalysisService
 import PyPDF2
 import io
+import math
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+def convert_state_name_to_abbreviation(state_name: str) -> str:
+    """Convert full state name to abbreviation for database lookup."""
+    state_mapping = {
+        'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+        'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+        'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+        'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+        'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
+        'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+        'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
+        'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+        'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
+        'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY',
+        'District of Columbia': 'DC'
+    }
+    return state_mapping.get(state_name, state_name)
+
+def is_within_search_radius(provider_state: str, search_state: str, proximity: str) -> bool:
+    """
+    Determine if a provider is within the search radius based on proximity setting.
+    Returns True for 'statewide' if same state, True for 'US-wide' always.
+    """
+    if proximity.lower() == 'us-wide':
+        return True
+    elif proximity.lower() == 'statewide':
+        return provider_state.upper() == search_state.upper()
+    else:
+        # Default to statewide if unknown proximity
+        return provider_state.upper() == search_state.upper()
 
 # Initialize GPT service
 gpt_service = MedicalAnalysisService()
@@ -68,9 +99,11 @@ async def get_simple_stats(db: Session = Depends(get_db)):
 async def search_providers_by_criteria(
     state: str = Form(...),
     city: str = Form(...),
+    zipCode: str = Form(...),
+    proximity: str = Form(...),
     diagnosis: str = Form(...),
     symptoms: str = Form(...),
-    limit: int = Form(20),
+    limit: int = Form(10000),
     files: List[UploadFile] = File([]),
     db: Session = Depends(get_db)
 ):
@@ -134,7 +167,7 @@ async def search_providers_by_criteria(
         
         # Use GPT to predict both primary and differential diagnoses from the combined input
         print(f"Using GPT to predict diagnoses for combined input: '{combined_input[:200]}...'")
-        predicted_diagnoses = await gpt_service.predict_diagnoses(combined_input)
+        predicted_diagnoses = await gpt_service.predict_diagnoses(symptoms, diagnosis)
         
         predicted_icd10 = None
         icd10_description = None
@@ -182,6 +215,20 @@ async def search_providers_by_criteria(
                 taxonomy_conditions.append(f"healthcare_provider_taxonomy_code_{i} = '{code}'")
         
         if taxonomy_conditions:
+            # Build location filtering conditions
+            location_conditions = []
+            
+            # Add state filtering based on proximity setting
+            state_abbrev = None
+            if state and proximity and proximity.lower() == 'statewide':
+                state_abbrev = convert_state_name_to_abbreviation(state)
+                location_conditions.append(f"provider_business_practice_location_address_state_name = '{state_abbrev}'")
+            # For US-wide searches, we don't filter by state in SQL - we'll get all providers
+            
+            location_filter = ""
+            if location_conditions:
+                location_filter = f"AND ({' AND '.join(location_conditions)})"
+            
             # Add taxonomy filtering to the SQL query
             sql = f"""
                 SELECT 
@@ -214,8 +261,9 @@ async def search_providers_by_criteria(
                 FROM npi_providers 
                 WHERE entity_type_code = '1'  -- Individual providers only
                   AND ({' OR '.join(taxonomy_conditions)})  -- Match any taxonomy code
+                  {location_filter}
                 ORDER BY provider_last_name, provider_first_name
-                LIMIT {limit}
+                LIMIT {limit * 3}  -- Get more results for distance filtering
             """
             
             result = db.execute(text(sql))
@@ -223,6 +271,15 @@ async def search_providers_by_criteria(
         
         filtered_providers = []
         for provider in providers:
+            # Apply proximity-based filtering
+            if proximity and provider.provider_business_practice_location_address_state_name:
+                # For US-wide searches, we don't need state_abbrev since we accept all states
+                search_state_for_filtering = state_abbrev if proximity.lower() == 'statewide' else state
+                if not is_within_search_radius(provider.provider_business_practice_location_address_state_name, search_state_for_filtering, proximity):
+                    continue  # Skip this provider if it's outside the search area
+                    
+                logger.info(f"Provider {provider.npi} in {provider.provider_business_practice_location_address_state_name} is within {proximity} search area")
+            
             # Get the primary specialty for display
             primary_specialty = get_specialty_description(provider.healthcare_provider_taxonomy_code_1)
             
@@ -262,6 +319,8 @@ async def search_providers_by_criteria(
             "search_criteria": {
                 "state": state,
                 "city": city,
+                "zipCode": zipCode,
+                "proximity": proximity,
                 "diagnosis": diagnosis,
                 "determined_specialty": determined_specialty,
                 "predicted_icd10": predicted_icd10,

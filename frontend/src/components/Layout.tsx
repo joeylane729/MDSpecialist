@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Stethoscope, Home, Search, User } from 'lucide-react'
+import { Home, Search, User } from 'lucide-react'
 
 interface LayoutProps {
   children: ReactNode
@@ -20,9 +20,12 @@ export default function Layout({ children }: LayoutProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2">
-              <Stethoscope className="h-8 w-8 text-primary-600" />
-              <span className="text-xl font-bold text-gray-900">ConciergeMD.ai</span>
+            <Link to="/" className="flex items-center">
+                              <img 
+                  src="/logo-dark.png" 
+                  alt="MDSpecialist.ai Logo" 
+                  className="h-10 w-auto object-contain"
+                />
             </Link>
 
             {/* Navigation */}

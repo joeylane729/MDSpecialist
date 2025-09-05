@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { NPIProvider } from '../services/api';
+import { NPIProvider, getSpecialistRecommendations, SpecialistRecommendationRequest, searchNPIProviders, rankNPIProviders, NPISearchRequest, NPIRankingRequest } from '../services/api';
 import NPIProviderCard from '../components/NPIProviderCard';
 
 interface Provider extends NPIProvider {
@@ -71,8 +71,7 @@ const ResultsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [providersPerPage, setProvidersPerPage] = useState(20);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterAcceptingPatients, setFilterAcceptingPatients] = useState<boolean | null>(null);
-  const [filterBoardCertified, setFilterBoardCertified] = useState<boolean | null>(null);
+  const [selectedTreatmentOptions, setSelectedTreatmentOptions] = useState<string[]>([]);
   const [isBackNavigation, setIsBackNavigation] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [rankedProviders, setRankedProviders] = useState<Provider[]>([]);
@@ -82,10 +81,10 @@ const ResultsPage: React.FC = () => {
   // Set initial view based on search options
   useEffect(() => {
     if (searchParams?.searchOptions) {
-      if (searchParams.searchOptions.diagnosis) {
-        setActiveView('assessment');
-      } else if (searchParams.searchOptions.specialists) {
+      if (searchParams.searchOptions.specialists) {
         setActiveView('specialists');
+      } else if (searchParams.searchOptions.diagnosis) {
+        setActiveView('assessment');
       } else {
         setActiveView('ai-recommendations');
       }
@@ -182,8 +181,6 @@ const ResultsPage: React.FC = () => {
         providers: location.state.providers,
         filters: {
           searchTerm,
-          filterAcceptingPatients,
-          filterBoardCertified,
           currentPage,
           providersPerPage
         }
@@ -207,8 +204,6 @@ const ResultsPage: React.FC = () => {
           if (parsed.filters) {
             console.log('Restoring filters from localStorage:', parsed.filters);
             setSearchTerm(parsed.filters.searchTerm || '');
-            setFilterAcceptingPatients(parsed.filters.filterAcceptingPatients || null);
-            setFilterBoardCertified(parsed.filters.filterBoardCertified || null);
             setCurrentPage(parsed.filters.currentPage || 1);
             setProvidersPerPage(parsed.filters.providersPerPage || 20);
           } else {
@@ -256,8 +251,6 @@ const ResultsPage: React.FC = () => {
           console.log('Restoring filters on mount:', parsed.filters);
           // Only restore filters if we don't have fresh data from navigation
           setSearchTerm(parsed.filters.searchTerm || '');
-          setFilterAcceptingPatients(parsed.filters.filterAcceptingPatients || null);
-          setFilterBoardCertified(parsed.filters.filterBoardCertified || null);
           setCurrentPage(parsed.filters.currentPage || 1);
           setProvidersPerPage(parsed.filters.providersPerPage || 20);
         }
@@ -282,8 +275,6 @@ const ResultsPage: React.FC = () => {
           if (parsed.filters) {
             console.log('Restoring filters on back navigation:', parsed.filters);
             setSearchTerm(parsed.filters.searchTerm || '');
-            setFilterAcceptingPatients(parsed.filters.filterAcceptingPatients || null);
-            setFilterBoardCertified(parsed.filters.filterBoardCertified || null);
             setCurrentPage(parsed.filters.currentPage || 1);
             setProvidersPerPage(parsed.filters.providersPerPage || 20);
             
@@ -291,8 +282,6 @@ const ResultsPage: React.FC = () => {
             setTimeout(() => {
               console.log('State after restoration:', {
                 searchTerm,
-                filterAcceptingPatients,
-                filterBoardCertified,
                 currentPage,
                 providersPerPage
               });
@@ -309,12 +298,10 @@ const ResultsPage: React.FC = () => {
   useEffect(() => {
     console.log('Filter state changed:', {
       searchTerm,
-      filterAcceptingPatients,
-      filterBoardCertified,
       currentPage,
       providersPerPage
     });
-  }, [searchTerm, filterAcceptingPatients, filterBoardCertified, currentPage, providersPerPage]);
+  }, [searchTerm, currentPage, providersPerPage]);
 
   // Effect to update ranked providers when filters change
   useEffect(() => {
@@ -327,15 +314,6 @@ const ResultsPage: React.FC = () => {
           return false;
         }
         
-        // Accepting patients filter
-        if (filterAcceptingPatients !== null && provider.acceptingPatients !== filterAcceptingPatients) {
-          return false;
-        }
-        
-        // Board certified filter
-        if (filterBoardCertified !== null && provider.boardCertified !== filterBoardCertified) {
-          return false;
-        }
         
         return true;
       });
@@ -345,7 +323,7 @@ const ResultsPage: React.FC = () => {
       setRankedProviders(filtered);
       setCurrentPage(1); // Reset to first page when filters change
     }
-  }, [providers, searchTerm, filterAcceptingPatients, filterBoardCertified]);
+  }, [providers, searchTerm]);
 
   const generateMockProviders = (params: SearchParams) => {
     setIsLoading(true);
@@ -497,6 +475,83 @@ const ResultsPage: React.FC = () => {
     saveFilterState();
   };
 
+  const handleShowSpecialists = async () => {
+    // If specialists are already available, just switch to the view
+    if (searchParams?.searchOptions?.specialists && rankedProviders.length > 0) {
+      setActiveView('specialists');
+      return;
+    }
+
+    // If specialists haven't been generated yet, call the APIs
+    try {
+      setIsLoading(true);
+      
+      // Step 1: Get specialist recommendations
+      const specialistRequest: SpecialistRecommendationRequest = {
+        symptoms: searchParams?.symptoms || '',
+        diagnosis: searchParams?.diagnosis || '',
+        medical_history: location.state?.medicalHistory || '',
+        medications: location.state?.medications || '',
+        surgical_history: location.state?.surgicalHistory || '',
+        files: []
+      };
+
+      const specialistResponse = await getSpecialistRecommendations(specialistRequest);
+      
+      // Step 2: Search for NPI providers
+      const npiSearchRequest: NPISearchRequest = {
+        state: searchParams?.state || '',
+        city: searchParams?.city || '',
+        zipCode: location.state?.zipCode || '',
+        proximity: location.state?.proximity || 'statewide',
+        diagnosis: searchParams?.diagnosis || '',
+        symptoms: searchParams?.symptoms || '',
+        uploadedFiles: [],
+        limit: 10000  // Increase limit to get all available providers
+      };
+
+      const npiData = await searchNPIProviders(npiSearchRequest);
+      
+      // Step 3: Rank NPI providers using specialist information
+      const rankingRequest: NPIRankingRequest = {
+        npi_providers: npiData.providers,
+        patient_input: `Symptoms: ${searchParams?.symptoms}\nDiagnosis: ${searchParams?.diagnosis}`,
+        shared_specialist_information: specialistResponse.shared_specialist_information || []
+      };
+
+      const rankingResponse = await rankNPIProviders(rankingRequest);
+      
+      // Reorder providers based on ranking
+      const rankedNPIs = rankingResponse.ranked_npis;
+      let rankedNPIProviders: NPIProvider[] = [];
+      if (Array.isArray(rankedNPIs)) {
+        rankedNPIProviders = rankedNPIs.map(npi => 
+          npiData.providers.find(provider => provider.npi === npi)
+        ).filter((provider): provider is NPIProvider => provider !== undefined);
+      }
+      
+      // Update state with ranked providers
+      setRankedProviders(rankedNPIProviders);
+      setProviderLinks(rankingResponse.provider_links || {});
+      
+      // Update the search params to include specialists
+      // This will trigger the useEffect to switch to specialists view
+      setSearchParams(prev => ({
+        ...prev!,
+        searchOptions: {
+          ...prev!.searchOptions!,
+          specialists: true
+        }
+      }));
+      
+    } catch (error) {
+      console.error('Error fetching specialist recommendations:', error);
+      // You might want to show an error message to the user here
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const goToPreviousPage = () => {
     if (currentPage > 1) {
       handlePageChange(currentPage - 1);
@@ -511,8 +566,7 @@ const ResultsPage: React.FC = () => {
 
   const resetFilters = () => {
     setSearchTerm('');
-    setFilterAcceptingPatients(null);
-    setFilterBoardCertified(null);
+    setSelectedTreatmentOptions([]);
     setCurrentPage(1);
     saveFilterState();
   };
@@ -520,8 +574,6 @@ const ResultsPage: React.FC = () => {
   const saveFilterState = () => {
     console.log('saveFilterState called with current state:', {
       searchTerm,
-      filterAcceptingPatients,
-      filterBoardCertified,
       currentPage,
       providersPerPage
     });
@@ -534,8 +586,6 @@ const ResultsPage: React.FC = () => {
           ...parsed,
           filters: {
             searchTerm,
-            filterAcceptingPatients,
-            filterBoardCertified,
             currentPage,
             providersPerPage
           }
@@ -552,10 +602,49 @@ const ResultsPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-xl text-gray-600">Finding specialists in your area...</p>
+      <div className="fixed inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-indigo-400/20 to-blue-400/20 rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="relative z-10 text-center max-w-lg mx-auto px-6">
+          {/* Animated loading spinner */}
+          <div className="mb-8">
+            <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-200 border-t-blue-600 mx-auto"></div>
+          </div>
+          
+          {/* Main heading */}
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-6">
+            Finding specialists in your area...
+          </h2>
+          
+          {/* Sleek info card */}
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 p-6 mb-6">
+            <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex-1">
+                <p className="text-gray-700 text-sm leading-relaxed">
+                  <span className="font-semibold text-gray-900">Please wait...</span> This process may take 1-2 minutes as we analyze thousands of specialists and match them to your specific needs.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Important notice */}
+          <div className="flex items-center justify-center space-x-2 text-gray-600">
+            <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <span className="text-sm font-medium">Please do not close this browser tab while we search</span>
+          </div>
         </div>
       </div>
     );
@@ -610,7 +699,7 @@ const ResultsPage: React.FC = () => {
             )}
             <button
               onClick={() => setActiveView('ai-recommendations')}
-              className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              className={`hidden flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                 activeView === 'ai-recommendations'
                   ? 'text-primary-600 bg-primary-50'
                   : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
@@ -634,17 +723,25 @@ const ResultsPage: React.FC = () => {
               <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-3 leading-tight py-1">
                 Medical Assessment
               </h1>
-              {searchParams?.searchOptions?.specialists && (
-                <button
-                  onClick={() => setActiveView('specialists')}
-                  className="inline-flex items-center gap-2 text-gray-900 hover:text-gray-700 transition-colors duration-200 cursor-pointer"
-                >
-                  Show me suggested specialists
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </button>
-              )}
+              <button
+                onClick={handleShowSpecialists}
+                disabled={isLoading}
+                className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Generating specialists...
+                  </>
+                ) : (
+                  <>
+                    Show me suggested specialists
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                    </svg>
+                  </>
+                )}
+              </button>
             </div>
             
             <div className="max-w-4xl mx-auto space-y-6">
@@ -734,29 +831,10 @@ const ResultsPage: React.FC = () => {
             {/* Specialists Header */}
             <div className="text-center mb-4">
               <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-3 leading-tight py-1">
-                {searchParams?.determined_specialty || 'Medical Specialists'} Specialists
+                {searchParams?.determined_specialty ? `${searchParams.determined_specialty} Specialists` : 'Specialists'}
               </h1>
               
-              {/* Ranking Explanation */}
-              {location.state?.rankingExplanation && (
-                <div className="max-w-4xl mx-auto mb-4">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <span className="text-blue-600 text-sm font-semibold">AI</span>
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-sm font-semibold text-blue-900 mb-1">AI Ranking Explanation</h3>
-                        <p className="text-sm text-blue-800 leading-relaxed">
-                          {location.state.rankingExplanation}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+
         </div>
 
         {/* Search and Filter Controls */}
@@ -783,16 +861,39 @@ const ResultsPage: React.FC = () => {
               </div>
             </div>
 
+            {/* Compare Outcomes Button */}
+            <button
+              onClick={() => {
+                // TODO: Implement compare outcomes functionality
+                console.log('Compare outcomes clicked');
+              }}
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 bg-white/50 border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-800 transition-colors"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              Compare Outcomes
+            </button>
+
             {/* Filters Dropdown */}
             <div className="relative filters-dropdown">
               <button
                 onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors bg-white/50"
+                className={`flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors bg-white/50 ${
+                  selectedTreatmentOptions.length > 0
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-300'
+                }`}
               >
                 <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
                 </svg>
                 <span className="text-sm font-medium text-gray-700">Filters</span>
+                {selectedTreatmentOptions.length > 0 && (
+                  <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
+                    {selectedTreatmentOptions.length}
+                  </span>
+                )}
                 <svg className={`h-4 w-4 text-gray-600 transition-transform ${isFiltersOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
@@ -802,41 +903,41 @@ const ResultsPage: React.FC = () => {
               {isFiltersOpen && (
                 <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-4">
                   <div className="space-y-4">
-                    {/* Filter Toggles */}
-                    <div>
-                      <h3 className="text-sm font-semibold text-gray-900 mb-2">Filters</h3>
-                      <div className="space-y-2">
-                        <label className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            id="acceptingPatients"
-                            checked={filterAcceptingPatients === true}
-                            onChange={(e) => {
-                              setFilterAcceptingPatients(e.target.checked ? true : null);
-                              setCurrentPage(1);
-                              saveFilterState();
-                            }}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors"
-                          />
-                          <span className="text-sm font-medium text-gray-700">Accepting Patients</span>
-                        </label>
-
-                        <label className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            id="boardCertified"
-                            checked={filterBoardCertified === true}
-                            onChange={(e) => {
-                              setFilterBoardCertified(e.target.checked ? true : null);
-                              setCurrentPage(1);
-                              saveFilterState();
-                            }}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors"
-                          />
-                          <span className="text-sm font-medium text-gray-700">Board Certified</span>
-                        </label>
-                      </div>
-                    </div>
+                    {/* Treatment Options Filter */}
+                    {(() => {
+                      const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
+                      if (treatmentOptions && treatmentOptions.length > 0) {
+                        return (
+                          <div>
+                            <h3 className="text-sm font-semibold text-gray-900 mb-2">Treatment Options</h3>
+                            <div className="space-y-2 max-h-48 overflow-y-auto">
+                              {treatmentOptions.map((option, index) => (
+                                <label key={index} className="flex items-start space-x-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedTreatmentOptions.includes(option.name)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedTreatmentOptions(prev => [...prev, option.name]);
+                                      } else {
+                                        setSelectedTreatmentOptions(prev => prev.filter(name => name !== option.name));
+                                      }
+                                      setCurrentPage(1);
+                                      saveFilterState();
+                                    }}
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors mt-0.5"
+                                  />
+                                  <div className="flex-1">
+                                    <span className="text-sm font-medium text-gray-700">{option.name}</span>
+                                  </div>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
 
                     {/* Reset Button */}
                     <div className="pt-2 border-t border-gray-200">
@@ -864,6 +965,11 @@ const ResultsPage: React.FC = () => {
         <div className="mb-3 text-sm text-gray-600">
           Showing {rankedProviders.length} of {providers.length} providers
           {searchTerm && ` matching "${searchTerm}"`}
+          {selectedTreatmentOptions.length > 0 && (
+            <span className="ml-2">
+              with treatment options: {selectedTreatmentOptions.join(', ')}
+            </span>
+          )}
         </div>
         )}
 
@@ -1147,6 +1253,31 @@ const ResultsPage: React.FC = () => {
               </div>
             )}
           </>
+        )}
+        
+        {/* Bottom Button - Only show in assessment view */}
+        {activeView === 'assessment' && (
+          <div className="text-center mt-8 mb-6">
+            <button
+              onClick={handleShowSpecialists}
+              disabled={isLoading}
+              className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            >
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Generating specialists...
+                </>
+              ) : (
+                <>
+                  Show me suggested specialists
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </>
+              )}
+            </button>
+          </div>
         )}
       </div>
       
