@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 # Database URL from environment variable - default to PostgreSQL
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://joeylane@localhost:5432/concierge_md")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://joeylane@localhost:5432/MDSpecialist")
 print(f"DEBUG: Using DATABASE_URL: {DATABASE_URL}")
 
 # Create engine

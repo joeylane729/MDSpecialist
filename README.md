@@ -1,4 +1,4 @@
-# ConciergeMD
+# MDSpecialist
 
 A web application that matches patients with the best medical subspecialists for their specific diagnosis based on objective criteria (training, experience, publications, talks, website mentions) and location.
 
@@ -62,7 +62,7 @@ npm run dev
 ## Project Structure
 
 ```
-concierge_md/
+MDSpecialist/
 ├── backend/                 # FastAPI backend
 │   ├── app/
 │   │   ├── models/         # SQLAlchemy models

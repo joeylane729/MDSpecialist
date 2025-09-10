@@ -138,26 +138,31 @@ class MedicalAnalysisService:
             
             # Add ICD-10 description if we have the code
             if medical_analysis["predicted_icd10"] and self.db:
+                logger.info(f"🔍 Looking up ICD-10 description for: {medical_analysis['predicted_icd10']}")
                 icd10_description = self.lookup_icd10_description(medical_analysis["predicted_icd10"])
                 if icd10_description:
                     medical_analysis["icd10_description"] = icd10_description
+                    logger.info(f"✅ Added ICD-10 description: {icd10_description[:50]}...")
+                else:
+                    logger.warning(f"⚠️  Could not find ICD-10 description for: {medical_analysis['predicted_icd10']}")
             
             # Extract treatment options from diagnoses if available
             treatment_options = []
             if medical_analysis["diagnoses"] and "treatment_options" in medical_analysis["diagnoses"]:
                 treatment_options = medical_analysis["diagnoses"]["treatment_options"]
-                logger.info(f"🔍 DEBUG: Found {len(treatment_options)} treatment options in medical analysis")
+                logger.info(f"📋 Found {len(treatment_options)} treatment options:")
                 for i, option in enumerate(treatment_options):
-                    logger.info(f"  {i+1}. {option.get('name', 'Unnamed')}")
+                    logger.info(f"   {i+1}. {option.get('name', 'Unnamed')}")
             else:
-                logger.warning("🔍 DEBUG: No treatment options found in medical analysis")
-                logger.info(f"🔍 DEBUG: medical_analysis keys: {list(medical_analysis.keys())}")
+                logger.warning("⚠️  No treatment options found in medical analysis")
+                logger.debug(f"🔍 Available keys: {list(medical_analysis.keys())}")
                 if "diagnoses" in medical_analysis:
-                    logger.info(f"🔍 DEBUG: diagnoses keys: {list(medical_analysis['diagnoses'].keys())}")
+                    logger.debug(f"🔍 Diagnoses keys: {list(medical_analysis['diagnoses'].keys())}")
             
-            # Debug logging for diagnosis structure
-            logger.info(f"🔍 DEBUG: medical_analysis['diagnoses'] type: {type(medical_analysis['diagnoses'])}")
-            logger.info(f"🔍 DEBUG: medical_analysis['diagnoses'] content: {medical_analysis['diagnoses']}")
+            # Log diagnosis structure for debugging
+            logger.debug(f"🔍 Diagnosis structure type: {type(medical_analysis['diagnoses'])}")
+            if medical_analysis.get("diagnoses"):
+                logger.debug(f"🔍 Diagnosis content: {medical_analysis['diagnoses']}")
             
             # Extract and flatten diagnosis data for frontend compatibility
             differential_diagnoses = []
@@ -197,11 +202,11 @@ class MedicalAnalysisService:
                 "diagnoses": medical_analysis["diagnoses"]
             }
             
-            logger.info(f"Comprehensive analysis completed: icd10={comprehensive_result['predicted_icd10']}")
-            logger.info(f"🔍 DEBUG: Comprehensive result includes {len(treatment_options)} treatment options")
-            logger.info(f"🔍 DEBUG: Comprehensive result keys: {list(comprehensive_result.keys())}")
-            logger.info(f"🔍 DEBUG: differential_diagnoses count: {len(comprehensive_result.get('differential_diagnoses', []))}")
-            logger.info(f"🔍 DEBUG: primary description: {comprehensive_result.get('icd10_description', 'None')}")
+            logger.info(f"✅ Comprehensive analysis completed: ICD-10={comprehensive_result['predicted_icd10']}")
+            logger.info(f"📋 Analysis includes {len(treatment_options)} treatment options")
+            logger.debug(f"🔍 Analysis result keys: {list(comprehensive_result.keys())}")
+            logger.debug(f"🔍 Differential diagnoses count: {len(comprehensive_result.get('differential_diagnoses', []))}")
+            logger.debug(f"🔍 Primary description: {comprehensive_result.get('icd10_description', 'None')}")
             return comprehensive_result
             
         except Exception as e:
@@ -219,10 +224,12 @@ class MedicalAnalysisService:
             The description for the code, or None if not found
         """
         if not self.db:
-            print("Warning: No database session available for ICD-10 lookup")
+            logger.warning("⚠️  No database session available for ICD-10 lookup")
             return None
             
         try:
+            logger.debug(f"🔍 Looking up ICD-10 code: {code}")
+            
             # Try the original code first
             result = self.db.execute(
                 text("SELECT description FROM icd10_codes WHERE code = :code"),
@@ -230,23 +237,26 @@ class MedicalAnalysisService:
             )
             row = result.fetchone()
             if row:
+                logger.debug(f"✅ Found description for {code}: {row[0][:50]}...")
                 return row[0]
             
             # If not found, try without the dot (GPT often returns codes with dots like "C71.9")
             code_without_dot = code.replace('.', '')
             if code_without_dot != code:
+                logger.debug(f"🔄 Trying normalized code: {code_without_dot}")
                 result = self.db.execute(
                     text("SELECT description FROM icd10_codes WHERE code = :code"),
                     {"code": code_without_dot}
                 )
                 row = result.fetchone()
                 if row:
-                    print(f"Found description for normalized code '{code_without_dot}' (original: '{code}')")
+                    logger.info(f"✅ Found description for normalized code '{code_without_dot}' (original: '{code}')")
                     return row[0]
             
+            logger.warning(f"❌ No description found for ICD-10 code: {code}")
             return None
         except Exception as e:
-            print(f"Error looking up ICD-10 description: {e}")
+            logger.error(f"❌ Error looking up ICD-10 description for {code}: {e}")
             return None
 
     async def determine_specialty(self, diagnosis_text: str) -> Optional[str]:
@@ -434,10 +444,10 @@ class MedicalAnalysisService:
                 Analyze the symptoms and diagnosis information above and provide:
                 1. Primary diagnosis (most likely ICD-10 code and description based on symptoms and diagnosis)
                 2. Differential diagnoses (3-5 alternative possibilities with ICD-10 codes that could explain the symptoms)
-                3. Treatment options (EXACTLY 3 treatment options with outcomes and complications)
+                3. Treatment options
                 
                 Consider the symptoms carefully when determining the most likely diagnosis and alternatives.
-                For treatment options, provide exactly 3 evidence-based treatment approaches with realistic outcomes and complications.
+                For treatment options, provide evidence-based treatment approaches with realistic outcomes and complications.
                 
                 Return the response in this exact JSON format:
                 {{

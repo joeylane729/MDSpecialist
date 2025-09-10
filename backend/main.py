@@ -5,7 +5,7 @@ import os
 
 # Create FastAPI app
 app = FastAPI(
-    title="ConciergeMD API",
+    title="MDSpecialist API",
     description="AI-powered medical specialist recommendation system",
     version="1.0.0"
 )
@@ -30,7 +30,7 @@ app.include_router(medical_analysis.router, prefix="/api/v1", tags=["medical-ana
 
 @app.get("/")
 async def root():
-    return {"message": "ConciergeMD API is running"}
+    return {"message": "MDSpecialist API is running"}
 
 if __name__ == "__main__":
     import uvicorn

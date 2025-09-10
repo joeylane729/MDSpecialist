@@ -242,7 +242,7 @@ These are actual doctor names from the Vumedi dataset who have created education
 ## Technical Implementation Details
 
 ### Pinecone Integration
-- **Index**: `concierge-md-dev` (86,729 vectors)
+- **Index**: `mdspecialist-dev` (86,729 vectors)
 - **Embedding Model**: `llama-text-embed-v2` (1024 dimensions)
 - **Search Method**: `index.search()` with integrated embeddings
 - **Query Format**: `{"inputs": {"text": "search query"}, "top_k": 50}`

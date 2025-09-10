@@ -38,15 +38,15 @@ async def rank_npi_providers(
         # Parse the JSON strings
         import json
         npi_providers_list = json.loads(npi_providers)
-        logger.info(f"🔍 API ENDPOINT: Received {len(npi_providers_list)} NPI providers")
+        logger.info(f"📥 Received {len(npi_providers_list)} NPI providers")
         
         # Parse shared Pinecone data if provided
         shared_data = None
         if shared_specialist_information:
             shared_data = json.loads(shared_specialist_information)
-            logger.info(f"🔍 API ENDPOINT: Received {len(shared_data)} shared specialist records")
+            logger.info(f"📊 Received {len(shared_data)} shared specialist records")
         else:
-            logger.info("🔍 API ENDPOINT: No shared specialist information provided")
+            logger.info("⚠️  No shared specialist information provided")
         
         # Initialize the LangChain service
         langchain_service = LangChainSpecialistRecommendationService(db)
@@ -58,19 +58,17 @@ async def rank_npi_providers(
             shared_specialist_information=shared_data
         )
         
-        ranked_npis = ranking_result['ranking']
-        explanation = ranking_result['explanation']
-        provider_links = ranking_result.get('provider_links', {})
+        treatment_rankings = ranking_result['treatment_rankings']
+        total_treatments = ranking_result['total_treatments']
         
+        logger.info(f"✅ Successfully ranked NPI providers for {total_treatments} treatments")
         return {
             "status": "success",
-            "ranked_npis": ranked_npis,
-            "explanation": explanation,
-            "provider_links": provider_links,
-            "total_providers": len(ranked_npis),
-            "message": f"Successfully ranked {len(ranked_npis)} NPI providers"
+            "treatment_rankings": treatment_rankings,
+            "total_treatments": total_treatments,
+            "message": f"Successfully ranked NPI providers for {total_treatments} treatments"
         }
         
     except Exception as e:
-        logger.error(f"Error ranking NPI providers: {str(e)}")
+        logger.error(f"❌ Error ranking NPI providers: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error ranking NPI providers: {str(e)}")

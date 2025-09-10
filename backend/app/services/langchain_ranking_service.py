@@ -101,19 +101,19 @@ class LangChainRankingService:
             Dictionary with 'ranking' (list of NPI numbers) and 'explanation' (string)
         """
         try:
-            logger.info(f"=== SINGLE-STAGE RANKING STARTED ===")
-            logger.info(f"🔍 RANKING SERVICE: Total providers received: {len(npi_providers)}")
-            logger.info(f"🔍 RANKING SERVICE: Max providers to rank: {max_providers}")
-            logger.info(f"🔍 RANKING SERVICE: Pinecone records: {len(pinecone_data)}")
+            logger.info(f"🎯 === SINGLE-STAGE RANKING STARTED ===")
+            logger.info(f"📊 Total providers received: {len(npi_providers)}")
+            logger.info(f"📊 Max providers to rank: {max_providers}")
+            logger.info(f"📊 Pinecone records: {len(pinecone_data)}")
             
             # Take only the first max_providers for ranking
             providers_to_rank = npi_providers[:max_providers]
-            logger.info(f"🔍 RANKING SERVICE: Actually ranking {len(providers_to_rank)} providers (limited by max_providers)")
+            logger.info(f"🔍 Actually ranking {len(providers_to_rank)} providers (limited by max_providers)")
             
             if len(npi_providers) > max_providers:
-                logger.warning(f"⚠️ RANKING SERVICE: Provider list truncated from {len(npi_providers)} to {max_providers}")
+                logger.warning(f"⚠️  Provider list truncated from {len(npi_providers)} to {max_providers}")
             else:
-                logger.info(f"✅ RANKING SERVICE: Processing all {len(providers_to_rank)} providers (no truncation needed)")
+                logger.info(f"✅ Processing all {len(providers_to_rank)} providers (no truncation needed)")
             
             # Format data and log sizes
             logger.info("📊 Formatting data for LLM...")
@@ -206,10 +206,10 @@ class LangChainRankingService:
             parse_end = time.time()
             logger.info(f"🔍 Response parsing completed in {parse_end - parse_start:.2f} seconds")
             
-            logger.info(f"=== SINGLE-STAGE RANKING COMPLETED ===")
-            logger.info(f"Successfully ranked {len(ranking_result['ranking'])} providers")
-            logger.info(f"Top 10 ranked NPIs: {ranking_result['ranking'][:10]}")
-            logger.info(f"Ranking explanation: {ranking_result['explanation']}")
+            logger.info(f"✅ === SINGLE-STAGE RANKING COMPLETED ===")
+            logger.info(f"✅ Successfully ranked {len(ranking_result['ranking'])} providers")
+            logger.info(f"🏆 Top 10 ranked NPIs: {ranking_result['ranking'][:10]}")
+            logger.info(f"📝 Ranking explanation: {ranking_result['explanation']}")
             return ranking_result
             
         except Exception as e:
@@ -254,8 +254,15 @@ class LangChainRankingService:
             elif source == 'pubmed':
                 pubmed_count += 1
                 authors = record.get('authors', 'Unknown authors')
-                pmid = record.get('pmid', 'No PMID available')
+                # Get PMID from _id field (stored by retrieval service)
+                pmid = record.get('_id', 'No PMID available')
                 title = record.get('title', 'No title available')
+                
+                # Debug: Log available fields for first few PubMed records
+                if pubmed_count <= 3:
+                    logger.info(f"🔍 PubMed record fields: {list(record.keys())}")
+                    logger.info(f"🔍 PMID value (from '_id' field): {pmid}")
+                
                 formatted.append(f"{i}. [PUBMED] Authors: {authors}, PMID: {pmid}, Title: {title}")
                 
             else:
@@ -327,7 +334,7 @@ class LangChainRankingService:
                             for pubmed_item in pubmed_articles:
                                 if isinstance(pubmed_item, dict):
                                     pubmed_links.append({
-                                        'pmid': pubmed_item.get('pmid', ''),
+                                        'pmid': pubmed_item.get('pmid', pubmed_item.get('_id', '')),
                                         'title': pubmed_item.get('title', 'Research Article')
                                     })
                             
@@ -414,8 +421,82 @@ class LangChainRankingService:
             doctor_name_clean = doctor_name.strip().upper()
             if doctor_name_clean in name_to_npi:
                 npi_ranking.append(name_to_npi[doctor_name_clean])
-                logger.info(f"Matched '{doctor_name_clean}' to NPI {name_to_npi[doctor_name_clean]}")
+                logger.debug(f"✅ Matched '{doctor_name_clean}' to NPI {name_to_npi[doctor_name_clean]}")
             else:
-                logger.warning(f"Could not find NPI for doctor name: '{doctor_name_clean}'")
+                logger.warning(f"⚠️  Could not find NPI for doctor name: '{doctor_name_clean}'")
         
         return npi_ranking
+    
+    async def rank_npi_providers_by_treatment(
+        self,
+        npi_providers: List[Dict[str, Any]],
+        treatment_pinecone_data: Dict[str, Any],
+        patient_profile: Dict[str, Any],
+        max_providers: int = 10000
+    ) -> Dict[str, Any]:
+        """
+        Rank NPI providers for each treatment option based on Pinecone specialist information.
+        
+        Args:
+            npi_providers: List of NPI provider dictionaries
+            treatment_pinecone_data: Dictionary with treatment-specific Pinecone data
+            patient_profile: Patient profile with symptoms, diagnosis, etc.
+            max_providers: Maximum number of providers to rank per treatment (default: 10000)
+            
+        Returns:
+            Dictionary with treatment-specific rankings
+        """
+        try:
+            logger.info(f"🎯 === TREATMENT-SPECIFIC RANKING STARTED ===")
+            logger.info(f"📊 Total providers received: {len(npi_providers)}")
+            logger.info(f"📋 Treatments to rank: {len(treatment_pinecone_data)}")
+            
+            treatment_rankings = {}
+            
+            # Rank providers for each treatment option
+            for treatment_id, treatment_data in treatment_pinecone_data.items():
+                treatment_name = treatment_data.get("name", f"Treatment {treatment_id}")
+                pinecone_data = treatment_data.get("results", [])
+                
+                logger.info(f"🔍 Ranking providers for treatment: {treatment_name}")
+                logger.info(f"📊 Pinecone data for {treatment_name}: {len(pinecone_data)} records")
+                
+                if not pinecone_data:
+                    logger.warning(f"⚠️  No Pinecone data for treatment {treatment_name}, skipping ranking")
+                    treatment_rankings[treatment_id] = {
+                        "name": treatment_name,
+                        "ranked_providers": [],
+                        "explanation": f"No specialist information found for {treatment_name}",
+                        "provider_links": {}
+                    }
+                    continue
+                
+                # Use the existing ranking method for this treatment
+                ranking_result = await self.rank_npi_providers(
+                    npi_providers=npi_providers,
+                    pinecone_data=pinecone_data,
+                    patient_profile=patient_profile,
+                    max_providers=max_providers
+                )
+                
+                # Store the results for this treatment
+                treatment_rankings[treatment_id] = {
+                    "name": treatment_name,
+                    "ranked_providers": ranking_result.get("ranking", []),
+                    "explanation": ranking_result.get("explanation", ""),
+                    "provider_links": ranking_result.get("provider_links", {})
+                }
+                
+                logger.info(f"✅ Completed ranking for {treatment_name}: {len(ranking_result.get('ranking', []))} providers")
+            
+            logger.info(f"✅ === TREATMENT-SPECIFIC RANKING COMPLETED ===")
+            logger.info(f"📊 Total treatments ranked: {len(treatment_rankings)}")
+            
+            return {
+                "treatment_rankings": treatment_rankings,
+                "total_treatments": len(treatment_rankings)
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ Error in treatment-specific ranking: {str(e)}")
+            raise

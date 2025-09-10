@@ -73,9 +73,11 @@ const ResultsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTreatmentOptions, setSelectedTreatmentOptions] = useState<string[]>([]);
   const [isBackNavigation, setIsBackNavigation] = useState(false);
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [rankedProviders, setRankedProviders] = useState<Provider[]>([]);
+  const [filteredProviders, setFilteredProviders] = useState<Provider[]>([]);
   const [providerLinks, setProviderLinks] = useState<{ [doctorName: string]: ProviderContent }>({});
+  const [treatmentRankings, setTreatmentRankings] = useState<{ [treatmentId: string]: any }>({});
+  const [selectedTreatmentId, setSelectedTreatmentId] = useState<string>('');
   const [activeView, setActiveView] = useState<'assessment' | 'specialists' | 'ai-recommendations'>('assessment');
   
   // Set initial view based on search options
@@ -122,42 +124,40 @@ const ResultsPage: React.FC = () => {
 
 
 
-  // Convert rank to letter grade (F to A+)
+  // Convert rank to letter grade (A+ to F)
   const getLetterGrade = (rank: number, totalResults: number): string => {
     if (totalResults === 0) return 'F';
     
-    const percentage = (rank / totalResults) * 100;
+    // New grading scale:
+    // Rank 1: A+
+    // Ranks 2-4: A (next 3)
+    // Ranks 5-9: A- (next 5)
+    // Ranks 10-14: B+ (next 5)
+    // Ranks 15-19: B (next 5)
+    // Ranks 20-24: B- (next 5)
+    // Ranks 25-29: C+ (next 5)
+    // Ranks 30-34: C (next 5)
+    // Ranks 35-39: C- (next 5)
+    // Ranks 40-44: D+ (next 5)
+    // Ranks 45-49: D (next 5)
+    // Ranks 50+: F
     
-    if (percentage <= 10) return 'A+';
-    if (percentage <= 20) return 'A';
-    if (percentage <= 30) return 'A-';
-    if (percentage <= 40) return 'B+';
-    if (percentage <= 50) return 'B';
-    if (percentage <= 60) return 'B-';
-    if (percentage <= 70) return 'C+';
-    if (percentage <= 80) return 'C';
-    if (percentage <= 85) return 'C-';
-    if (percentage <= 90) return 'D+';
-    if (percentage <= 95) return 'D';
+    if (rank === 1) return 'A+';
+    if (rank >= 2 && rank <= 4) return 'A';
+    if (rank >= 5 && rank <= 9) return 'A-';
+    if (rank >= 10 && rank <= 14) return 'B+';
+    if (rank >= 15 && rank <= 19) return 'B';
+    if (rank >= 20 && rank <= 24) return 'B-';
+    if (rank >= 25 && rank <= 29) return 'C+';
+    if (rank >= 30 && rank <= 34) return 'C';
+    if (rank >= 35 && rank <= 39) return 'C-';
+    if (rank >= 40 && rank <= 44) return 'D+';
+    if (rank >= 45 && rank <= 49) return 'D';
     return 'F';
   };
 
 
 
-  // Close filters dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      if (isFiltersOpen && !target.closest('.filters-dropdown')) {
-        setIsFiltersOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isFiltersOpen]);
 
   useEffect(() => {
     // Scroll to top when component mounts or location.state changes
@@ -167,16 +167,43 @@ const ResultsPage: React.FC = () => {
     if (location.state?.searchParams && location.state.providers) {
       setSearchParams(location.state.searchParams);
       setProviders(location.state.providers);
-      setRankedProviders(location.state.providers); // Set the ranked providers
+      
+      // Check if we have treatment rankings data to use for initial display
+      if (location.state.treatmentRankings && Object.keys(location.state.treatmentRankings).length > 0) {
+        console.log('🔍 Initializing with treatment rankings from location.state');
+        setTreatmentRankings(location.state.treatmentRankings);
+        
+        // Use the first treatment's ranking as default
+        const firstTreatmentId = Object.keys(location.state.treatmentRankings)[0];
+        const firstTreatment = location.state.treatmentRankings[firstTreatmentId];
+        setSelectedTreatmentId(firstTreatmentId);
+        
+        // Get ranked providers for the first treatment
+        const rankedNPIs = firstTreatment.ranked_providers;
+        if (Array.isArray(rankedNPIs)) {
+          const rankedNPIProviders = rankedNPIs.map(npi => 
+            location.state.providers.find(provider => provider.npi === npi)
+          ).filter((provider): provider is NPIProvider => provider !== undefined);
+          setRankedProviders(rankedNPIProviders);
+          console.log('🔍 Initial ranked providers from treatment rankings:', rankedNPIProviders.length);
+        }
+        
+        // Set provider links for the first treatment
+        setProviderLinks(firstTreatment.provider_links || {});
+      } else {
+        // Fallback to all providers if no treatment rankings available
+        setRankedProviders(location.state.providers);
+        console.log('🔍 No treatment rankings, using all providers:', location.state.providers.length);
+      }
+      
       const links = location.state.providerLinks || {};
       console.log('DEBUG: Setting provider links:', links);
       console.log('DEBUG: Provider names:', location.state.providers.slice(0, 5).map((p: Provider) => p.name));
-      setProviderLinks(links); // Set the provider links
       setIsLoading(false);
       setCurrentPage(1);
       
       // Save to localStorage for back navigation
-      localStorage.setItem('concierge_search_results', JSON.stringify({
+      localStorage.setItem('mdspecialist_search_results', JSON.stringify({
         searchParams: location.state.searchParams,
         providers: location.state.providers,
         filters: {
@@ -189,7 +216,7 @@ const ResultsPage: React.FC = () => {
     }
     
     // Try to get data from localStorage (back navigation)
-    const savedSearchData = localStorage.getItem('concierge_search_results');
+    const savedSearchData = localStorage.getItem('mdspecialist_search_results');
     if (savedSearchData) {
       try {
         const parsed = JSON.parse(savedSearchData);
@@ -242,7 +269,7 @@ const ResultsPage: React.FC = () => {
   // Separate useEffect to restore filter state from localStorage on component mount
   useEffect(() => {
     console.log('Component mount useEffect running...');
-    const savedSearchData = localStorage.getItem('concierge_search_results');
+    const savedSearchData = localStorage.getItem('mdspecialist_search_results');
     if (savedSearchData) {
       try {
         const parsed = JSON.parse(savedSearchData);
@@ -268,7 +295,7 @@ const ResultsPage: React.FC = () => {
     if (providers.length > 0 && !location.state?.providers && !isBackNavigation) {
       console.log('Detected back navigation, restoring filters...');
       setIsBackNavigation(true);
-      const savedSearchData = localStorage.getItem('concierge_search_results');
+      const savedSearchData = localStorage.getItem('mdspecialist_search_results');
       if (savedSearchData) {
         try {
           const parsed = JSON.parse(savedSearchData);
@@ -303,10 +330,10 @@ const ResultsPage: React.FC = () => {
     });
   }, [searchTerm, currentPage, providersPerPage]);
 
-  // Effect to update ranked providers when filters change
+  // Effect to update filtered providers when ranked providers or search term changes
   useEffect(() => {
-    if (providers.length > 0) {
-      const filtered = providers.filter(provider => {
+    if (rankedProviders.length > 0) {
+      const filtered = rankedProviders.filter(provider => {
         // Search filter
         if (searchTerm && !provider.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
             !provider.specialty.toLowerCase().includes(searchTerm.toLowerCase()) &&
@@ -318,12 +345,23 @@ const ResultsPage: React.FC = () => {
         return true;
       });
       
-      // Use the providers as they are (already ranked from backend)
-      // Don't apply random shuffle - use the ranking from Pinecone
-      setRankedProviders(filtered);
+      // Update filtered providers without affecting the original ranked providers
+      setFilteredProviders(filtered);
       setCurrentPage(1); // Reset to first page when filters change
+    } else {
+      // If no ranked providers, clear filtered providers
+      setFilteredProviders([]);
     }
-  }, [providers, searchTerm]);
+  }, [rankedProviders, searchTerm]);
+
+  // Initialize filtered providers when ranked providers change
+  useEffect(() => {
+    if (rankedProviders.length > 0) {
+      setFilteredProviders(rankedProviders);
+    } else {
+      setFilteredProviders([]);
+    }
+  }, [rankedProviders]);
 
   const generateMockProviders = (params: SearchParams) => {
     setIsLoading(true);
@@ -465,8 +503,8 @@ const ResultsPage: React.FC = () => {
   // Pagination logic
   const indexOfLastProvider = currentPage * providersPerPage;
   const indexOfFirstProvider = indexOfLastProvider - providersPerPage;
-  const currentProviders = rankedProviders.slice(indexOfFirstProvider, indexOfLastProvider);
-  const totalPages = Math.ceil(rankedProviders.length / providersPerPage);
+  const currentProviders = filteredProviders.slice(indexOfFirstProvider, indexOfLastProvider);
+  const totalPages = Math.ceil(filteredProviders.length / providersPerPage);
 
   const handlePageChange = (pageNumber: number) => {
     setCurrentPage(pageNumber);
@@ -477,7 +515,7 @@ const ResultsPage: React.FC = () => {
 
   const handleShowSpecialists = async () => {
     // If specialists are already available, just switch to the view
-    if (searchParams?.searchOptions?.specialists && rankedProviders.length > 0) {
+    if (searchParams?.searchOptions?.specialists && filteredProviders.length > 0) {
       setActiveView('specialists');
       return;
     }
@@ -521,18 +559,44 @@ const ResultsPage: React.FC = () => {
 
       const rankingResponse = await rankNPIProviders(rankingRequest);
       
-      // Reorder providers based on ranking
-      const rankedNPIs = rankingResponse.ranked_npis;
+      // Handle new treatment-specific ranking structure
+      const treatmentRankingsData = rankingResponse.treatment_rankings;
       let rankedNPIProviders: NPIProvider[] = [];
-      if (Array.isArray(rankedNPIs)) {
-        rankedNPIProviders = rankedNPIs.map(npi => 
-          npiData.providers.find(provider => provider.npi === npi)
-        ).filter((provider): provider is NPIProvider => provider !== undefined);
+      let providerLinks: { [doctorName: string]: ProviderContent } = {};
+      
+      if (treatmentRankingsData && Object.keys(treatmentRankingsData).length > 0) {
+        console.log('🔍 Treatment rankings data received:', treatmentRankingsData);
+        
+        // Store treatment rankings for filtering
+        setTreatmentRankings(treatmentRankingsData);
+        
+        // Use the first treatment's ranking as default
+        const firstTreatmentId = Object.keys(treatmentRankingsData)[0];
+        const firstTreatment = treatmentRankingsData[firstTreatmentId];
+        
+        console.log('🔍 First treatment ID:', firstTreatmentId);
+        console.log('🔍 First treatment data:', firstTreatment);
+        
+        // Set the selected treatment
+        setSelectedTreatmentId(firstTreatmentId);
+        
+        const rankedNPIs = firstTreatment.ranked_providers;
+        if (Array.isArray(rankedNPIs)) {
+          rankedNPIProviders = rankedNPIs.map(npi => 
+            npiData.providers.find(provider => provider.npi === npi)
+          ).filter((provider): provider is NPIProvider => provider !== undefined);
+        }
+        
+        console.log('🔍 Initial ranked providers:', rankedNPIProviders.length);
+        
+        // Capture the provider links
+        providerLinks = firstTreatment.provider_links || {};
       }
       
-      // Update state with ranked providers
+      // Update state with ranked providers and original NPI data
+      setProviders(npiData.providers); // Store original NPI providers for filtering
       setRankedProviders(rankedNPIProviders);
-      setProviderLinks(rankingResponse.provider_links || {});
+      setProviderLinks(providerLinks);
       
       // Update the search params to include specialists
       // This will trigger the useEffect to switch to specialists view
@@ -564,9 +628,43 @@ const ResultsPage: React.FC = () => {
     }
   };
 
+  const handleTreatmentFilterChange = (treatmentId: string) => {
+    console.log('🔍 Treatment filter changed to:', treatmentId);
+    console.log('🔍 Available treatment rankings:', treatmentRankings);
+    console.log('🔍 Available providers:', providers.length);
+    
+    setSelectedTreatmentId(treatmentId);
+    
+    // Update ranked providers based on selected treatment
+    if (treatmentRankings[treatmentId]) {
+      const treatment = treatmentRankings[treatmentId];
+      const rankedNPIs = treatment.ranked_providers;
+      
+      console.log('🔍 Treatment data:', treatment);
+      console.log('🔍 Ranked NPIs:', rankedNPIs);
+      
+      // Find the original NPI providers from the current providers state
+      const originalProviders = providers || [];
+      const rankedNPIProviders = rankedNPIs.map(npi => 
+        originalProviders.find(provider => provider.npi === npi)
+      ).filter((provider): provider is NPIProvider => provider !== undefined);
+      
+      console.log('🔍 Filtered providers:', rankedNPIProviders.length);
+      
+      setRankedProviders(rankedNPIProviders);
+      setProviderLinks(treatment.provider_links || {});
+    } else {
+      console.log('🔍 No treatment data found for ID:', treatmentId);
+    }
+    
+    setCurrentPage(1);
+    saveFilterState();
+  };
+
   const resetFilters = () => {
     setSearchTerm('');
     setSelectedTreatmentOptions([]);
+    setSelectedTreatmentId('');
     setCurrentPage(1);
     saveFilterState();
   };
@@ -578,7 +676,7 @@ const ResultsPage: React.FC = () => {
       providersPerPage
     });
     
-    const savedData = localStorage.getItem('concierge_search_results');
+    const savedData = localStorage.getItem('mdspecialist_search_results');
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData);
@@ -590,7 +688,7 @@ const ResultsPage: React.FC = () => {
             providersPerPage
           }
         };
-        localStorage.setItem('concierge_search_results', JSON.stringify(updatedData));
+        localStorage.setItem('mdspecialist_search_results', JSON.stringify(updatedData));
         console.log('Filter state saved successfully');
       } catch (error) {
         console.error('Error saving filter state:', error);
@@ -875,86 +973,53 @@ const ResultsPage: React.FC = () => {
               Compare Outcomes
             </button>
 
-            {/* Filters Dropdown */}
-            <div className="relative filters-dropdown">
-              <button
-                onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-                className={`flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50 transition-colors bg-white/50 ${
-                  selectedTreatmentOptions.length > 0
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-300'
-                }`}
-              >
-                <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
-                </svg>
-                <span className="text-sm font-medium text-gray-700">Filters</span>
-                {selectedTreatmentOptions.length > 0 && (
-                  <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">
-                    {selectedTreatmentOptions.length}
-                  </span>
-                )}
-                <svg className={`h-4 w-4 text-gray-600 transition-transform ${isFiltersOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {/* Filters Dropdown Content */}
-              {isFiltersOpen && (
-                <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-4">
-                  <div className="space-y-4">
-                    {/* Treatment Options Filter */}
-                    {(() => {
-                      const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
-                      if (treatmentOptions && treatmentOptions.length > 0) {
-                        return (
-                          <div>
-                            <h3 className="text-sm font-semibold text-gray-900 mb-2">Treatment Options</h3>
-                            <div className="space-y-2 max-h-48 overflow-y-auto">
-                              {treatmentOptions.map((option, index) => (
-                                <label key={index} className="flex items-start space-x-2 cursor-pointer">
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedTreatmentOptions.includes(option.name)}
-                                    onChange={(e) => {
-                                      if (e.target.checked) {
-                                        setSelectedTreatmentOptions(prev => [...prev, option.name]);
-                                      } else {
-                                        setSelectedTreatmentOptions(prev => prev.filter(name => name !== option.name));
-                                      }
-                                      setCurrentPage(1);
-                                      saveFilterState();
-                                    }}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-colors mt-0.5"
-                                  />
-                                  <div className="flex-1">
-                                    <span className="text-sm font-medium text-gray-700">{option.name}</span>
-                                  </div>
-                                </label>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })()}
-
-                    {/* Reset Button */}
-                    <div className="pt-2 border-t border-gray-200">
-                      <button
-                        onClick={() => {
-                          resetFilters();
-                          setIsFiltersOpen(false);
-                        }}
-                        className="w-full px-3 py-2 text-gray-600 hover:text-gray-800 transition-colors font-medium text-sm"
-                      >
-                        Reset All Filters
-                      </button>
+            {/* Treatment Options Dropdown */}
+            {(() => {
+              const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
+              if (treatmentOptions && treatmentOptions.length > 0 && Object.keys(treatmentRankings).length > 0) {
+                return (
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      <span className="text-sm font-medium text-gray-700">Treatment:</span>
                     </div>
+                    <select
+                      value={selectedTreatmentId}
+                      onChange={(e) => {
+                        setSelectedTreatmentId(e.target.value);
+                        handleTreatmentFilterChange(e.target.value);
+                      }}
+                      className={`px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white/50 ${
+                        selectedTreatmentId
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-300'
+                      }`}
+                    >
+                      <option value="">Select a treatment option</option>
+                      {Object.entries(treatmentRankings).map(([treatmentId, treatment]) => (
+                        <option key={treatmentId} value={treatmentId}>
+                          {treatment.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                </div>
-              )}
-            </div>
+                );
+              }
+              return null;
+            })()}
+
+            {/* Reset Button */}
+            <button
+              onClick={resetFilters}
+              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 transition-colors rounded-lg font-medium text-sm"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Reset
+            </button>
           </div>
         </div>
           </>
@@ -966,7 +1031,7 @@ const ResultsPage: React.FC = () => {
         <div className="space-y-6">
           {currentProviders.map((provider, index) => {
             const rank = indexOfFirstProvider + index + 1;
-            const grade = getLetterGrade(rank, rankedProviders.length);
+            const grade = getLetterGrade(rank, filteredProviders.length);
             const isTopResult = rank === 1;
             
             return (
@@ -1086,7 +1151,7 @@ const ResultsPage: React.FC = () => {
         {/* Footer Info */}
         {activeView === 'specialists' && (
           <div className="mt-8 text-center text-gray-500">
-            <p>Showing {indexOfFirstProvider + 1}-{Math.min(indexOfLastProvider, rankedProviders.length)} of {rankedProviders.length} providers</p>
+            <p>Showing {indexOfFirstProvider + 1}-{Math.min(indexOfLastProvider, filteredProviders.length)} of {filteredProviders.length} providers</p>
           </div>
         )}
 

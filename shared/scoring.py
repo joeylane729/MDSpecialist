@@ -1,5 +1,5 @@
 """
-Shared scoring utilities for ConciergeMD.
+Shared scoring utilities for MDSpecialist.
 Contains functions to calculate doctor grades based on objective criteria.
 """
 

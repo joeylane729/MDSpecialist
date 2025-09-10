@@ -540,7 +540,7 @@ const HomePage: React.FC = () => {
     console.log('🔍 DEBUG: searchOptions.diagnosis =', searchOptions.diagnosis);
     
     // Clear any previous search results
-    localStorage.removeItem('concierge_search_results');
+    localStorage.removeItem('mdspecialist_search_results');
     
     try {
       // Step 1: Make API calls based on selected options
@@ -608,27 +608,35 @@ const HomePage: React.FC = () => {
       let rankedNPIProviders: NPIProvider[] = [];
       let rankingExplanation = '';
       let providerLinks: { [doctorName: string]: ProviderContent } = {};
+      let rankingResponse: any = null;
       
       if (searchOptions.specialists && npiData) {
         rankedNPIProviders = npiData.providers;
         try {
-          const rankingResponse = await rankNPIProviders({
+          rankingResponse = await rankNPIProviders({
             npi_providers: npiData.providers,
             patient_input: `Symptoms: ${symptoms}\nDiagnosis: ${diagnosis}`,
             shared_specialist_information: (aiRecommendations as any)?.shared_specialist_information || []
           });
           
-          // Reorder providers based on ranking
-          const rankedNPIs = rankingResponse.ranked_npis;
-          if (Array.isArray(rankedNPIs)) {
-            rankedNPIProviders = rankedNPIs.map(npi => 
-              npiData.providers.find(provider => provider.npi === npi)
-            ).filter((provider): provider is NPIProvider => provider !== undefined);
+          // Handle new treatment-specific ranking structure
+          const treatmentRankings = rankingResponse.treatment_rankings;
+          if (treatmentRankings && Object.keys(treatmentRankings).length > 0) {
+            // For now, use the first treatment's ranking (we'll add filtering later)
+            const firstTreatmentId = Object.keys(treatmentRankings)[0];
+            const firstTreatment = treatmentRankings[firstTreatmentId];
+            
+            const rankedNPIs = firstTreatment.ranked_providers;
+            if (Array.isArray(rankedNPIs)) {
+              rankedNPIProviders = rankedNPIs.map(npi => 
+                npiData.providers.find(provider => provider.npi === npi)
+              ).filter((provider): provider is NPIProvider => provider !== undefined);
+            }
+            
+            // Capture the ranking explanation and provider links
+            rankingExplanation = firstTreatment.explanation;
+            providerLinks = firstTreatment.provider_links || {};
           }
-          
-          // Capture the ranking explanation and provider links
-          rankingExplanation = rankingResponse.explanation;
-          providerLinks = rankingResponse.provider_links || {};
           
           console.log('NPI providers ranked successfully:', rankingResponse.message);
           console.log('Ranking explanation:', rankingExplanation);
@@ -645,7 +653,7 @@ const HomePage: React.FC = () => {
       console.log('🔍 DEBUG: Saving to localStorage - treatment_options:', aiRecommendations?.patient_profile?.treatment_options);
       
       // Save search results to localStorage for persistence
-      localStorage.setItem('concierge_search_results', JSON.stringify({
+      localStorage.setItem('mdspecialist_search_results', JSON.stringify({
         searchParams: {
           state: selectedState,
           city: selectedCity,
@@ -667,7 +675,8 @@ const HomePage: React.FC = () => {
         providers: rankedNPIProviders,
         totalProviders: npiData?.total_providers || 0,
         aiRecommendations: aiRecommendations,
-        rankingExplanation: rankingExplanation
+        rankingExplanation: rankingExplanation,
+        treatmentRankings: rankingResponse?.treatment_rankings || null
       }));
 
       // Navigate to results page with selected datasets
@@ -709,7 +718,8 @@ const HomePage: React.FC = () => {
           totalProviders: npiData?.total_providers || 0,
           aiRecommendations: aiRecommendations,
           rankingExplanation: rankingExplanation,
-          providerLinks: providerLinks
+          providerLinks: providerLinks,
+          treatmentRankings: rankingResponse?.treatment_rankings || null
         }
       });
     } catch (error) {

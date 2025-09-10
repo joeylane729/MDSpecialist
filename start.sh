@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🚀 Starting ConciergeMD..."
+echo "🚀 Starting MDSpecialist..."
 
 # Check if Docker is running
 if ! docker info > /dev/null 2>&1; then
@@ -23,7 +23,7 @@ fi
 echo "🐳 Starting services with Docker Compose..."
 docker compose up --build
 
-echo "✅ ConciergeMD is starting up!"
+echo "✅ MDSpecialist is starting up!"
 echo "🌐 Frontend will be available at: http://localhost:5173"
 echo "🔌 Backend API will be available at: http://localhost:8000"
 echo "📚 API documentation will be available at: http://localhost:8000/docs"

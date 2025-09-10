@@ -275,12 +275,17 @@ export interface ProviderContent {
   pubmed_articles: PubMedArticle[];
 }
 
-export interface NPIRankingResponse {
-  status: string;
-  ranked_npis: string[];
+export interface TreatmentRanking {
+  name: string;
+  ranked_providers: string[];
   explanation: string;
   provider_links: { [doctorName: string]: ProviderContent };
-  total_providers: number;
+}
+
+export interface NPIRankingResponse {
+  status: string;
+  treatment_rankings: { [treatmentId: string]: TreatmentRanking };
+  total_treatments: number;
   message: string;
 }
 

@@ -29,6 +29,19 @@ class SpecialistRecommendationSchema(BaseModel):
     reasoning: str = Field(..., description="Human-readable reasoning for recommendation")
     metadata: Dict[str, Any] = Field(..., description="Additional specialist metadata")
 
+class TreatmentRankingSchema(BaseModel):
+    """Schema for treatment-specific ranking results."""
+    name: str = Field(..., description="Treatment option name")
+    ranked_providers: List[str] = Field(..., description="List of NPI numbers ranked by relevance")
+    explanation: str = Field(..., description="Explanation of ranking for this treatment")
+    provider_links: Dict[str, Any] = Field(default_factory=dict, description="Provider-specific content links")
+
+class TreatmentRankingsResponseSchema(BaseModel):
+    """Schema for treatment-specific rankings response."""
+    treatment_rankings: Dict[str, TreatmentRankingSchema] = Field(..., description="Rankings grouped by treatment option")
+    total_treatments: int = Field(..., ge=0, description="Total number of treatments ranked")
+    message: str = Field(..., description="Response message")
+
 class RecommendationResponseSchema(BaseModel):
     """Schema for complete recommendation response."""
     patient_profile: Dict[str, Any] = Field(..., description="Unified patient profile and medical analysis results")
@@ -37,7 +50,7 @@ class RecommendationResponseSchema(BaseModel):
     processing_time_ms: int = Field(..., ge=0, description="Processing time in milliseconds")
     retrieval_strategies_used: List[str] = Field(..., description="Retrieval strategies used")
     timestamp: datetime = Field(..., description="Response timestamp")
-    shared_specialist_information: Optional[List[Dict[str, Any]]] = Field(None, description="Shared Pinecone data for NPI ranking")
+    shared_specialist_information: Optional[Dict[str, Any]] = Field(None, description="Treatment-grouped Pinecone data for NPI ranking")
 
 class SpecialistRecommendationRequestSchema(BaseModel):
     """Schema for specialist recommendation request."""

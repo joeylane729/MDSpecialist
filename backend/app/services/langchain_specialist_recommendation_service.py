@@ -35,92 +35,96 @@ class LangChainSpecialistRecommendationService:
         
         try:
             # Step 1: Comprehensive medical analysis and patient processing
-            logger.info("Performing comprehensive medical analysis with LangChain...")
+            logger.info("🔍 Step 1: Performing comprehensive medical analysis with LangChain...")
             medical_analysis_results = await self.medical_analysis.comprehensive_analysis(patient_input)
             
             # Step 2: LLM-powered retrieval of specialist information
-            logger.info("Retrieving specialist information with LangChain...")
-            logger.info(f"🔍 DEBUG: self.retrieval_strategies type: {type(self.retrieval_strategies)}")
-            logger.info(f"🔍 DEBUG: self.retrieval_strategies: {self.retrieval_strategies}")
-            logger.info(f"🔍 DEBUG: medical_analysis_results type: {type(medical_analysis_results)}")
-            logger.info(f"🔍 DEBUG: medical_analysis_results keys: {list(medical_analysis_results.keys()) if isinstance(medical_analysis_results, dict) else 'Not a dict'}")
+            logger.info("🔍 Step 2: Retrieving specialist information with LangChain...")
+            logger.debug(f"🔍 Retrieval strategies type: {type(self.retrieval_strategies)}")
+            logger.debug(f"🔍 Medical analysis results type: {type(medical_analysis_results)}")
+            logger.debug(f"🔍 Medical analysis results keys: {list(medical_analysis_results.keys()) if isinstance(medical_analysis_results, dict) else 'Not a dict'}")
             
-            specialist_information = await self.retrieval_strategies.retrieve_specialist_information(
-                patient_profile=medical_analysis_results,
+            treatment_specialist_information = await self.retrieval_strategies.retrieve_specialist_information(
+                medical_analysis_results=medical_analysis_results,
                 top_k=200  # Use same value as NPI ranking
             )
             
             # Debug logging to see what we actually got
-            logger.info(f"🔍 DEBUG: specialist_information type: {type(specialist_information)}")
-            logger.info(f"🔍 DEBUG: specialist_information: {specialist_information}")
+            logger.debug(f"🔍 Treatment specialist information type: {type(treatment_specialist_information)}")
+            logger.debug(f"🔍 Treatment specialist information keys: {list(treatment_specialist_information.keys()) if isinstance(treatment_specialist_information, dict) else 'Not a dict'}")
             
-            # Step 3: Convert specialist information directly to recommendations (skip ranking)
-            logger.info("Converting specialist information to recommendations...")
+            # Step 3: Convert treatment-specific specialist information to recommendations
+            logger.info("🔍 Step 3: Converting treatment-specific specialist information to recommendations...")
             recommendations = []
             
-            # Ensure specialist_information is a list
-            if isinstance(specialist_information, RecommendationResponse):
-                logger.error("🚨 ERROR: specialist_information is a RecommendationResponse object, not a list!")
-                logger.error("This suggests a recursive call or method name conflict.")
-                # Extract the specialist information from the response if possible
-                if hasattr(specialist_information, 'shared_specialist_information') and specialist_information.shared_specialist_information:
-                    specialist_information = specialist_information.shared_specialist_information
-                    logger.info(f"🔧 FIXED: Extracted specialist information from RecommendationResponse, now have {len(specialist_information)} items")
-                else:
-                    logger.error("🚨 Cannot extract specialist information from RecommendationResponse")
-                    raise ValueError("specialist_information is a RecommendationResponse object instead of a list")
-            elif not isinstance(specialist_information, list):
-                logger.error(f"🚨 ERROR: specialist_information is not a list! Type: {type(specialist_information)}")
-                raise ValueError(f"specialist_information must be a list, got {type(specialist_information)}")
+            # Ensure treatment_specialist_information is a dict with treatment groups
+            if not isinstance(treatment_specialist_information, dict):
+                logger.error(f"❌ ERROR: treatment_specialist_information is not a dict, it's {type(treatment_specialist_information)}")
+                raise ValueError(f"treatment_specialist_information must be a dict, got {type(treatment_specialist_information)}")
             
-            for i, info in enumerate(specialist_information):
-                # Extract specialist name from featuring field
-                featuring = info.get('featuring', '')
-                specialist_name = featuring.split(',')[0].strip() if featuring else f"Specialist {i+1}"
+            # Convert each treatment's specialist information to recommendations
+            for treatment_id, treatment_data in treatment_specialist_information.items():
+                treatment_name = treatment_data.get("name", f"Treatment {treatment_id}")
+                specialist_information = treatment_data.get("results", [])
                 
-                # Calculate scores that stay positive (0.9 down to 0.1)
-                max_score = 0.9
-                min_score = 0.1
-                total_items = len(specialist_information)
-                if total_items > 1:
-                    score = max_score - (i * (max_score - min_score) / (total_items - 1))
-                else:
-                    score = max_score
+                logger.info(f"📋 Processing {len(specialist_information)} specialists for treatment: {treatment_name}")
                 
-                recommendation = SpecialistRecommendation(
-                    specialist_id=info.get('id', info.get('_id', f"specialist_{i}")),
-                    name=specialist_name,
-                    specialty=info.get('specialty', 'Medical Specialist'),
-                    relevance_score=score,
-                    confidence_score=score,
-                    reasoning=f"Found in medical content: {info.get('title', 'Medical video')}",
-                    metadata=info
-                )
-                recommendations.append(recommendation)
+                # Convert specialist information to recommendations for this treatment
+                for i, info in enumerate(specialist_information):
+                    # Extract specialist name from featuring field
+                    featuring = info.get('featuring', '')
+                    specialist_name = featuring.split(',')[0].strip() if featuring else f"Specialist {i+1}"
+                    
+                    # Calculate scores that stay positive (0.9 down to 0.1)
+                    max_score = 0.9
+                    min_score = 0.1
+                    total_items = len(specialist_information)
+                    if total_items > 1:
+                        score = max_score - (i * (max_score - min_score) / (total_items - 1))
+                    else:
+                        score = max_score
+                    
+                    recommendation = SpecialistRecommendation(
+                        specialist_id=info.get('id', info.get('_id', f"specialist_{i}")),
+                        name=specialist_name,
+                        specialty=info.get('specialty', 'Medical Specialist'),
+                        relevance_score=score,
+                        confidence_score=score,
+                        reasoning=f"Found in medical content for {treatment_name}: {info.get('title', 'Medical video')}",
+                        metadata={
+                            **info,
+                            "treatment_id": treatment_id,
+                            "treatment_name": treatment_name
+                        }
+                    )
+                    recommendations.append(recommendation)
             
             # Step 4: Generate response
             processing_time = (datetime.now() - start_time).total_seconds() * 1000
             
+            # Calculate total candidates across all treatments
+            total_candidates = sum(len(treatment_data.get("results", [])) for treatment_data in treatment_specialist_information.values())
+            
             response = RecommendationResponse(
                 patient_profile=medical_analysis_results,
                 recommendations=recommendations,
-                total_candidates_found=len(specialist_information),
+                total_candidates_found=total_candidates,
                 processing_time_ms=int(processing_time),
                 retrieval_strategies_used=["langchain_vector_search"],
                 timestamp=datetime.now(),
-                shared_specialist_information=specialist_information
+                shared_specialist_information=treatment_specialist_information
             )
             
             # Debug logging for treatment options
-            logger.info(f"🔍 DEBUG: Response patient_profile keys: {list(medical_analysis_results.keys())}")
+            logger.debug(f"🔍 Response patient_profile keys: {list(medical_analysis_results.keys())}")
             if "treatment_options" in medical_analysis_results:
-                logger.info(f"🔍 DEBUG: Response includes {len(medical_analysis_results['treatment_options'])} treatment options")
+                logger.info(f"📋 Response includes {len(medical_analysis_results['treatment_options'])} treatment options")
                 for i, option in enumerate(medical_analysis_results['treatment_options']):
-                    logger.info(f"  {i+1}. {option.get('name', 'Unnamed')}")
+                    logger.info(f"   {i+1}. {option.get('name', 'Unnamed')}")
             else:
-                logger.warning("🔍 DEBUG: No treatment_options in response patient_profile")
+                logger.warning("⚠️  No treatment_options in response patient_profile")
             
-            logger.info(f"Generated {len(recommendations)} recommendations in {processing_time:.2f}ms using LangChain")
+            logger.info(f"✅ Generated {len(recommendations)} recommendations in {processing_time:.2f}ms using LangChain")
             return response
             
         except Exception as e:
@@ -145,38 +149,37 @@ class LangChainSpecialistRecommendationService:
             List of NPI numbers in ranked order (most relevant first)
         """
         try:
-            logger.info(f"🔍 SPECIALIST SERVICE: Starting NPI ranking with {len(npi_providers)} providers")
+            logger.info(f"🎯 Starting NPI ranking with {len(npi_providers)} providers")
             
             # Step 1: Get medical analysis
-            logger.info("Performing medical analysis for NPI ranking...")
+            logger.info("🔍 Step 1: Performing medical analysis for NPI ranking...")
             medical_analysis_results = await self.medical_analysis.comprehensive_analysis(patient_input)
             
             # Step 2: Use shared Pinecone specialist information (required)
             if not shared_specialist_information:
                 raise ValueError("shared_specialist_information is required for NPI ranking. No fallback Pinecone calls allowed.")
             
-            logger.info(f"🔍 SPECIALIST SERVICE: Using {len(shared_specialist_information)} shared specialist records")
-            specialist_information = shared_specialist_information
+            logger.info(f"🔍 Step 2: Using shared specialist records")
+            logger.info(f"📋 Treatment groups: {list(shared_specialist_information.keys()) if isinstance(shared_specialist_information, dict) else 'Not grouped'}")
             
-            # Step 3: Use ranking service to rank NPI providers
-            logger.info("Ranking NPI providers based on Pinecone data...")
-            ranking_result = await self.ranking_service.rank_npi_providers(
+            # Step 3: Use treatment-specific ranking service to rank NPI providers
+            logger.info("🔍 Step 3: Ranking NPI providers based on treatment-specific Pinecone data...")
+            ranking_result = await self.ranking_service.rank_npi_providers_by_treatment(
                 npi_providers=npi_providers,
-                pinecone_data=specialist_information,
+                treatment_pinecone_data=shared_specialist_information,
                 patient_profile=medical_analysis_results
             )
             
-            ranked_npis = ranking_result['ranking']
-            explanation = ranking_result['explanation']
-            provider_links = ranking_result.get('provider_links', {})
+            treatment_rankings = ranking_result['treatment_rankings']
+            total_treatments = ranking_result['total_treatments']
             
-            logger.info(f"Successfully ranked {len(ranked_npis)} NPI providers")
-            logger.info(f"Ranking explanation: {explanation}")
-            logger.info(f"Provider links: {provider_links}")
+            logger.info(f"✅ Successfully ranked NPI providers for {total_treatments} treatments")
+            for treatment_id, treatment_data in treatment_rankings.items():
+                logger.info(f"   📋 {treatment_data['name']}: {len(treatment_data['ranked_providers'])} providers")
+            
             return {
-                'ranking': ranked_npis,
-                'explanation': explanation,
-                'provider_links': provider_links
+                'treatment_rankings': treatment_rankings,
+                'total_treatments': total_treatments
             }
             
         except Exception as e:
