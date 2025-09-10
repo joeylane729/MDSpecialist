@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { searchNPIProviders, getSpecialistRecommendations, getMedicalAnalysis, rankNPIProviders, NPIProvider } from '../services/api';
+import { searchNPIProviders, getSpecialistRecommendations, getMedicalAnalysis, rankNPIProviders, NPIProvider, ProviderContent } from '../services/api';
 import { 
   Stethoscope, 
   Users, 
@@ -607,7 +607,7 @@ const HomePage: React.FC = () => {
       // Step 2: Rank NPI providers only if specialists are requested
       let rankedNPIProviders: NPIProvider[] = [];
       let rankingExplanation = '';
-      let providerLinks: { [doctorName: string]: string } = {};
+      let providerLinks: { [doctorName: string]: ProviderContent } = {};
       
       if (searchOptions.specialists && npiData) {
         rankedNPIProviders = npiData.providers;

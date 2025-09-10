@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Phone, Star, Award, Calendar, Building, HelpCircle, Clock, FileText, Shield, MoreVertical } from 'lucide-react';
-import { NPIProvider } from '../services/api';
+import React, { useState } from 'react';
+import { MapPin, Phone, Star, Award, Calendar, Building, HelpCircle, Clock, FileText, Shield, ExternalLink, BookOpen } from 'lucide-react';
+import { NPIProvider, ProviderContent, VumediContent, PubMedArticle } from '../services/api';
 import SchedulingModal from './SchedulingModal';
 
 interface NPIProviderCardProps {
@@ -8,16 +8,14 @@ interface NPIProviderCardProps {
   onClick?: (provider: NPIProvider) => void;
   isHighlighted?: boolean;
   grade?: string;
-  pineconeLink?: string | { link: string; title: string };
+  providerContent?: ProviderContent;
 }
 
-export default function NPIProviderCard({ provider, onClick, isHighlighted = false, grade, pineconeLink }: NPIProviderCardProps) {
+export default function NPIProviderCard({ provider, onClick, isHighlighted = false, grade, providerContent }: NPIProviderCardProps) {
   const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
   const [isQuestionsModalOpen, setIsQuestionsModalOpen] = useState(false);
   const [isPreAuthModalOpen, setIsPreAuthModalOpen] = useState(false);
   const [isInsuranceModalOpen, setIsInsuranceModalOpen] = useState(false);
-  const [isOverflowMenuOpen, setIsOverflowMenuOpen] = useState(false);
-  const overflowMenuRef = useRef<HTMLDivElement>(null);
 
   const handleClick = () => {
     if (onClick) {
@@ -28,23 +26,6 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
   const openSchedulingModal = () => {
     setIsSchedulingModalOpen(true);
   };
-
-  // Close overflow menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (overflowMenuRef.current && !overflowMenuRef.current.contains(event.target as Node)) {
-        setIsOverflowMenuOpen(false);
-      }
-    };
-
-    if (isOverflowMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOverflowMenuOpen]);
 
   // Get grade color based on letter grade
   const getGradeColor = (grade: string): string => {
@@ -65,8 +46,8 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
         }`}
         onClick={handleClick}
       >
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
             {/* Provider Header */}
             <div className="flex items-center mb-3">
               <h2 className="text-xl font-semibold text-gray-900 mr-3">
@@ -120,89 +101,115 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
               </span>
             </div>
 
-            {/* Pinecone Link */}
-            {pineconeLink && (
-              <div className="mt-4">
-                <a 
-                  href={typeof pineconeLink === 'string' ? pineconeLink : pineconeLink.link} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 hover:bg-purple-200 transition-colors"
-                >
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                  {typeof pineconeLink === 'string' ? 'View Medical Content' : pineconeLink.title}
-                </a>
+            {/* Provider Content - Vumedi and PubMed */}
+            {providerContent && (
+              <div className="mt-4 space-y-3">
+                {/* Vumedi Content */}
+                {providerContent.vumedi_content && providerContent.vumedi_content.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                      <ExternalLink className="w-4 h-4 mr-1" />
+                      Educational Videos
+                    </h4>
+                    <div className="space-y-2">
+                      {providerContent.vumedi_content.map((content, index) => (
+                        <a
+                          key={index}
+                          href={content.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="block p-2 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
+                        >
+                          <div className="text-sm font-medium text-purple-800 break-words">
+                            {content.title}
+                          </div>
+                          <div className="text-xs text-purple-600 mt-1">
+                            View Video →
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* PubMed Articles */}
+                {providerContent.pubmed_articles && providerContent.pubmed_articles.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                      <BookOpen className="w-4 h-4 mr-1" />
+                      Research Articles
+                    </h4>
+                    <div className="space-y-2">
+                      {providerContent.pubmed_articles.map((article, index) => (
+                        <a
+                          key={index}
+                          href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}/`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="block p-2 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                        >
+                          <div className="text-sm font-medium text-blue-800 break-words">
+                            {article.title}
+                          </div>
+                          <div className="text-xs text-blue-600 mt-1">
+                            PMID: {article.pmid} →
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
 
-          {/* Overflow Menu */}
-          <div className="ml-6 relative" ref={overflowMenuRef}>
+          {/* Action Buttons */}
+          <div className="flex flex-col space-y-2 w-48 flex-shrink-0">
             <button 
               onClick={(e) => {
                 e.stopPropagation();
-                setIsOverflowMenuOpen(!isOverflowMenuOpen);
+                setIsQuestionsModalOpen(true);
               }}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="flex items-center justify-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-xs font-bold whitespace-nowrap"
             >
-              <MoreVertical className="h-5 w-5" />
+              <HelpCircle className="h-4 w-4" />
+              <span>Questions to Ask</span>
             </button>
             
-            {/* Overflow Menu Dropdown */}
-            {isOverflowMenuOpen && (
-              <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsQuestionsModalOpen(true);
-                    setIsOverflowMenuOpen(false);
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  <HelpCircle className="h-4 w-4 mr-3 text-blue-800" />
-                  <span>Questions to Ask</span>
-                </button>
-                
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openSchedulingModal();
-                    setIsOverflowMenuOpen(false);
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  <Clock className="h-4 w-4 mr-3 text-blue-800" />
-                  <span>Help Making Appointment</span>
-                </button>
-                
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsPreAuthModalOpen(true);
-                    setIsOverflowMenuOpen(false);
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  <FileText className="h-4 w-4 mr-3 text-blue-800" />
-                  <span>Pre-authorization Letter</span>
-                </button>
-                
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsInsuranceModalOpen(true);
-                    setIsOverflowMenuOpen(false);
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  <Shield className="h-4 w-4 mr-3 text-blue-800" />
-                  <span>Insurance Approval Help</span>
-                </button>
-              </div>
-            )}
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                openSchedulingModal();
+              }}
+              className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-xs font-bold whitespace-nowrap"
+            >
+              <Clock className="h-4 w-4" />
+              <span>Book appointment</span>
+            </button>
+            
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsPreAuthModalOpen(true);
+              }}
+              className="flex items-center justify-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-xs font-bold whitespace-nowrap"
+            >
+              <FileText className="h-4 w-4" />
+              <span>Pre-authorization Letter</span>
+            </button>
+            
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsInsuranceModalOpen(true);
+              }}
+              className="flex items-center justify-center space-x-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors text-xs font-bold whitespace-nowrap"
+            >
+              <Shield className="h-4 w-4" />
+              <span>Insurance approval</span>
+            </button>
           </div>
         </div>
       </div>

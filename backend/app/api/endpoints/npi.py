@@ -277,8 +277,6 @@ async def search_providers_by_criteria(
                 search_state_for_filtering = state_abbrev if proximity.lower() == 'statewide' else state
                 if not is_within_search_radius(provider.provider_business_practice_location_address_state_name, search_state_for_filtering, proximity):
                     continue  # Skip this provider if it's outside the search area
-                    
-                logger.info(f"Provider {provider.npi} in {provider.provider_business_practice_location_address_state_name} is within {proximity} search area")
             
             # Get the primary specialty for display
             primary_specialty = get_specialty_description(provider.healthcare_provider_taxonomy_code_1)

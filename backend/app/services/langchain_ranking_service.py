@@ -25,12 +25,18 @@ class LangChainRankingService:
         self.ranking_prompt = PromptTemplate(
             input_variables=["npi_providers", "pinecone_data", "patient_profile"],
             template="""
-            You are a medical specialist ranking expert. Your task is to return doctor names with their corresponding Pinecone links and titles based on the information from Pinecone.
-            Specifically, if you see any of the names from the npi_providers list in the Pinecone data (very slight variation in formatting is fine, such as middle initial, capitalization, nicknames, etc.), you should add that doctor's name to the list you return along with the link and title from the Pinecone record.
+            You are a medical specialist ranking expert. Your task is to return doctor names with their corresponding Vumedi links/titles and PubMed articles based on the information from Pinecone.
+            The Pinecone data contains two types of content:
+            1. VUMEDI: Medical education videos with doctor names in "featuring" field, links, and titles
+            2. PUBMED: Research articles with author names, PMIDs, and titles
+            
             STRICT RULES:
             1. The list you return must only include names from the npi_providers list.
             2. Do not add any names that do not appear in the Pinecone data.
-            3. For each doctor, include the link and title from the Pinecone record where they appear (either as author or featured).
+            3. For each doctor, include:
+               - Vumedi content: link and title from Vumedi records where they appear
+               - PubMed content: PMID and title from PubMed records where they appear as authors
+            4. Match names with slight variations (middle initial, capitalization, nicknames, etc.)
             
             NPI Providers (NPI: Name):
             {npi_providers}
@@ -38,20 +44,35 @@ class LangChainRankingService:
             Specialist Information from Pinecone:
             {pinecone_data}
             
-            
-                        
             Return a JSON object with the fields below and do not include any other text in your response:
-            1. "providers": An array of objects, each containing "name" (doctor name in "FIRST LAST" format, all caps), "link" (the URL from the Pinecone record), and "title" (the title from the Pinecone record), ranked in order of relevance (most relevant first)
+            1. "providers": An array of objects, each containing:
+               - "name" (doctor name in "FIRST LAST" format, all caps)
+               - "vumedi_content": Array of objects with "link" and "title" from Vumedi records
+               - "pubmed_articles": Array of objects with "pmid" and "title" from PubMed records
+               - Ranked in order of relevance (most relevant first)
             2. "explanation": A 2-sentence explanation of your results.
             
             Example:
             {{
                 "providers": [
-                    {{"name": "ALBERT SMITH", "link": "https://example.com/video1", "title": "Advanced Treatment for Cluster Headaches"}},
-                    {{"name": "JANE DOE", "link": "https://example.com/video2", "title": "Migraine Management Strategies"}},
-                    {{"name": "MICHAEL JOHNSON", "link": "https://example.com/video3", "title": "Neurological Assessment Techniques"}}
+                    {{
+                        "name": "ALBERT SMITH", 
+                        "vumedi_content": [
+                            {{"link": "https://example.com/video1", "title": "Advanced Treatment for Cluster Headaches"}}
+                        ],
+                        "pubmed_articles": [
+                            {{"pmid": "12345678", "title": "Novel Approaches to Cluster Headache Management"}}
+                        ]
+                    }},
+                    {{
+                        "name": "JANE DOE", 
+                        "vumedi_content": [
+                            {{"link": "https://example.com/video2", "title": "Migraine Management Strategies"}}
+                        ],
+                        "pubmed_articles": []
+                    }}
                 ],
-                "explanation": "I saw Albert Smith's name in the Pinecone data (he gave a lecture on cluster headaches), so I ranked him first."
+                "explanation": "I found Albert Smith in both Vumedi videos and PubMed articles about cluster headaches, so I ranked him first."
             }}
             
            
@@ -214,13 +235,38 @@ class LangChainRankingService:
         return "\n".join(formatted)
     
     def _format_pinecone_data(self, pinecone_data: List[Dict[str, Any]]) -> str:
-        """Format Pinecone data for LLM input - author, featuring, and link fields."""
+        """Format Pinecone data for LLM input - handles both Vumedi and PubMed data."""
         formatted = []
+        vumedi_count = 0
+        pubmed_count = 0
+        
         for i, record in enumerate(pinecone_data, 1):
-            author = record.get('author', 'Unknown author')
-            featuring = record.get('featuring', 'Unknown specialist')
-            link = record.get('link', 'No link available')
-            formatted.append(f"{i}. Author: {author}, Featuring: {featuring}, Link: {link}")
+            source = record.get('_source', 'unknown')
+            
+            if source == 'vumedi':
+                vumedi_count += 1
+                author = record.get('author', 'Unknown author')
+                featuring = record.get('featuring', 'Unknown specialist')
+                link = record.get('link', 'No link available')
+                title = record.get('title', 'No title available')
+                formatted.append(f"{i}. [VUMEDI] Author: {author}, Featuring: {featuring}, Link: {link}, Title: {title}")
+                
+            elif source == 'pubmed':
+                pubmed_count += 1
+                authors = record.get('authors', 'Unknown authors')
+                pmid = record.get('pmid', 'No PMID available')
+                title = record.get('title', 'No title available')
+                formatted.append(f"{i}. [PUBMED] Authors: {authors}, PMID: {pmid}, Title: {title}")
+                
+            else:
+                # Fallback for records without source tag (assume Vumedi for backward compatibility)
+                author = record.get('author', 'Unknown author')
+                featuring = record.get('featuring', 'Unknown specialist')
+                link = record.get('link', 'No link available')
+                title = record.get('title', 'No title available')
+                formatted.append(f"{i}. [VUMEDI] Author: {author}, Featuring: {featuring}, Link: {link}, Title: {title}")
+        
+        logger.info(f"📊 Formatted Pinecone data: {vumedi_count} Vumedi records, {pubmed_count} PubMed records")
         return "\n".join(formatted)
     
     def _format_patient_profile(self, patient_profile: Dict[str, Any]) -> str:
@@ -257,35 +303,65 @@ class LangChainRankingService:
                     providers_data = result['providers']
                     logger.info(f"Parsed {len(providers_data)} provider entries from LLM response")
                     
-                    # Extract doctor names, links, and titles
+                    # Extract doctor names, Vumedi content, and PubMed articles
                     doctor_names = []
                     doctor_links = {}
                     logger.info(f"Processing {len(providers_data)} provider entries from LLM response")
                     for i, provider_entry in enumerate(providers_data):
                         if isinstance(provider_entry, dict) and 'name' in provider_entry:
                             name = provider_entry['name']
-                            link = provider_entry.get('link', '')
-                            title = provider_entry.get('title', 'Medical Content')
+                            
+                            # Extract Vumedi content
+                            vumedi_content = provider_entry.get('vumedi_content', [])
+                            vumedi_links = []
+                            for vumedi_item in vumedi_content:
+                                if isinstance(vumedi_item, dict):
+                                    vumedi_links.append({
+                                        'link': vumedi_item.get('link', ''),
+                                        'title': vumedi_item.get('title', 'Medical Content')
+                                    })
+                            
+                            # Extract PubMed articles
+                            pubmed_articles = provider_entry.get('pubmed_articles', [])
+                            pubmed_links = []
+                            for pubmed_item in pubmed_articles:
+                                if isinstance(pubmed_item, dict):
+                                    pubmed_links.append({
+                                        'pmid': pubmed_item.get('pmid', ''),
+                                        'title': pubmed_item.get('title', 'Research Article')
+                                    })
+                            
                             doctor_names.append(name)
                             doctor_links[name] = {
-                                'link': link,
-                                'title': title
+                                'vumedi_content': vumedi_links,
+                                'pubmed_articles': pubmed_links
                             }
+                            
+                            logger.info(f"Doctor {name}: {len(vumedi_links)} Vumedi links, {len(pubmed_links)} PubMed articles")
+                            
                         elif isinstance(provider_entry, str):
                             # Fallback for old format (just names)
                             doctor_names.append(provider_entry)
+                            doctor_links[provider_entry] = {
+                                'vumedi_content': [],
+                                'pubmed_articles': []
+                            }
                     
-                    logger.info(f"Extracted {len(doctor_names)} doctor names with {len(doctor_links)} links")
+                    logger.info(f"Extracted {len(doctor_names)} doctor names with {len(doctor_links)} content entries")
                     
                     # Convert doctor names back to NPI numbers
                     npi_ranking = self._convert_names_to_npis(doctor_names, providers)
                     logger.info(f"Converted to {len(npi_ranking)} NPI numbers")
                     
-                    logger.info(f"Returning {len(doctor_links)} doctor links")
+                    # Count total content for logging
+                    total_vumedi = sum(len(links['vumedi_content']) for links in doctor_links.values())
+                    total_pubmed = sum(len(links['pubmed_articles']) for links in doctor_links.values())
+                    logger.info(f"Returning {len(doctor_links)} doctor content entries: {total_vumedi} Vumedi links, {total_pubmed} PubMed articles")
+                    
                     return {
                         'ranking': npi_ranking,
                         'explanation': result['explanation'],
-                        'provider_links': doctor_links  # Include links for UI display
+                        'provider_links': doctor_links  # Include both Vumedi and PubMed content for UI display
                     }
                 else:
                     logger.warning("JSON response missing 'providers' or 'explanation' fields")

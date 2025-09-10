@@ -260,11 +260,26 @@ export interface NPIRankingRequest {
   shared_specialist_information?: any[];
 }
 
+export interface VumediContent {
+  link: string;
+  title: string;
+}
+
+export interface PubMedArticle {
+  pmid: string;
+  title: string;
+}
+
+export interface ProviderContent {
+  vumedi_content: VumediContent[];
+  pubmed_articles: PubMedArticle[];
+}
+
 export interface NPIRankingResponse {
   status: string;
   ranked_npis: string[];
   explanation: string;
-  provider_links: { [doctorName: string]: string };
+  provider_links: { [doctorName: string]: ProviderContent };
   total_providers: number;
   message: string;
 }

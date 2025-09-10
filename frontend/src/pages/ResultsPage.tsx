@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { NPIProvider, getSpecialistRecommendations, SpecialistRecommendationRequest, searchNPIProviders, rankNPIProviders, NPISearchRequest, NPIRankingRequest } from '../services/api';
+import { NPIProvider, getSpecialistRecommendations, SpecialistRecommendationRequest, searchNPIProviders, rankNPIProviders, NPISearchRequest, NPIRankingRequest, ProviderContent } from '../services/api';
 import NPIProviderCard from '../components/NPIProviderCard';
 
 interface Provider extends NPIProvider {
@@ -75,7 +75,7 @@ const ResultsPage: React.FC = () => {
   const [isBackNavigation, setIsBackNavigation] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [rankedProviders, setRankedProviders] = useState<Provider[]>([]);
-  const [providerLinks, setProviderLinks] = useState<{ [doctorName: string]: string }>({});
+  const [providerLinks, setProviderLinks] = useState<{ [doctorName: string]: ProviderContent }>({});
   const [activeView, setActiveView] = useState<'assessment' | 'specialists' | 'ai-recommendations'>('assessment');
   
   // Set initial view based on search options
@@ -960,18 +960,6 @@ const ResultsPage: React.FC = () => {
           </>
         )}
 
-        {/* Results Count */}
-        {activeView === 'specialists' && (
-        <div className="mb-3 text-sm text-gray-600">
-          Showing {rankedProviders.length} of {providers.length} providers
-          {searchTerm && ` matching "${searchTerm}"`}
-          {selectedTreatmentOptions.length > 0 && (
-            <span className="ml-2">
-              with treatment options: {selectedTreatmentOptions.join(', ')}
-            </span>
-          )}
-        </div>
-        )}
 
         {/* Results */}
         {activeView === 'specialists' && (
@@ -998,11 +986,11 @@ const ResultsPage: React.FC = () => {
                   onClick={handleProviderClick}
                   isHighlighted={isTopResult}
                   grade={grade}
-                  pineconeLink={(() => {
-                    const linkData = providerLinks[provider.name?.toUpperCase()];
-                    console.log(`DEBUG: Looking for link for provider "${provider.name}" (uppercase: "${provider.name?.toUpperCase()}") - found:`, linkData);
-                    console.log('DEBUG: Available provider links:', providerLinks);
-                    return linkData;
+                  providerContent={(() => {
+                    const contentData = providerLinks[provider.name?.toUpperCase()];
+                    console.log(`DEBUG: Looking for content for provider "${provider.name}" (uppercase: "${provider.name?.toUpperCase()}") - found:`, contentData);
+                    console.log('DEBUG: Available provider content:', providerLinks);
+                    return contentData;
                   })()}
                 />
               </div>

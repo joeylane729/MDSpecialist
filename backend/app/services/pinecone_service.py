@@ -23,6 +23,7 @@ class PineconeService:
         
         # Default index configuration
         self.default_index_name = "concierge-md-dev"
+        self.pubmed_index_name = "pubmed"
         self.default_cloud = "aws"
         self.default_region = "us-east-1"
         self.default_model = "llama-text-embed-v2"

@@ -1,431 +1,370 @@
-"""
-Load PubMed sample data into Pinecone vector database.
-
-This script reads the pubmed-sample-1256.xml file and uploads
-medical research articles to Pinecone for semantic search capabilities.
-"""
-
 import os
 import sys
 import xml.etree.ElementTree as ET
-import uuid
 from typing import List, Dict, Any, Optional
+import logging
+import time
+import re
+from pathlib import Path
 from dotenv import load_dotenv
 
-# Add the backend directory to the Python path
-backend_dir = os.path.join(os.path.dirname(__file__), '..')
-sys.path.append(backend_dir)
+# Load environment variables
+load_dotenv()
+
+# Add the parent directory to the path so we can import our modules
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.services.pinecone_service import PineconeService
 
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-def is_medical_article(article: ET.Element) -> bool:
-    """
-    Check if an article is medical/scientific in nature.
-    
-    Args:
-        article: XML element containing article data
+class PubMedLoader:
+    def __init__(self):
+        """Initialize the PubMed loader with Pinecone service."""
+        self.pinecone_service = PineconeService()
         
-    Returns:
-        True for all articles (no filtering)
-    """
-    # Load all articles - no filtering
-    return True
-
-
-def extract_article_data(article: ET.Element) -> Optional[Dict[str, Any]]:
-    """
-    Extract relevant data from a PubMed article XML element.
-    
-    Args:
-        article: XML element containing article data
+        # Get the pubmed-publications index
+        self.index = self.pinecone_service.pc.Index("pubmed-publications")
         
-    Returns:
-        Dictionary with extracted article data or None if invalid
-    """
-    try:
-        # Extract PMID
-        pmid_elem = article.find('.//PMID')
-        if pmid_elem is None:
-            return None
-        pmid = pmid_elem.text
+        # Data directory
+        self.data_dir = Path(__file__).parent.parent.parent / "data" / "pubmed"
         
-        # Extract title
-        title_elem = article.find('.//ArticleTitle')
-        title = title_elem.text if title_elem is not None else ""
-        
-        # Extract abstract
-        abstract_elem = article.find('.//Abstract/AbstractText')
-        abstract = abstract_elem.text if abstract_elem is not None else ""
-        
-        # Extract journal information
-        journal_title_elem = article.find('.//Journal/Title')
-        journal_title = journal_title_elem.text if journal_title_elem is not None else ""
-        
-        journal_abbrev_elem = article.find('.//Journal/ISOAbbreviation')
-        journal_abbrev = journal_abbrev_elem.text if journal_abbrev_elem is not None else ""
-        
-        # Extract publication date
-        pub_date = article.find('.//ArticleDate')
-        year = month = day = ""
-        if pub_date is not None:
-            year_elem = pub_date.find('Year')
-            month_elem = pub_date.find('Month')
-            day_elem = pub_date.find('Day')
-            year = year_elem.text if year_elem is not None else ""
-            month = month_elem.text if month_elem is not None else ""
-            day = day_elem.text if day_elem is not None else ""
-        
-        # Extract authors
-        authors = []
-        author_list = article.find('.//AuthorList')
-        if author_list is not None:
-            for author in author_list.findall('Author'):
-                last_name_elem = author.find('LastName')
-                fore_name_elem = author.find('ForeName')
-                if last_name_elem is not None and fore_name_elem is not None:
-                    authors.append(f"{fore_name_elem.text} {last_name_elem.text}")
-        
-        # Extract keywords
-        keywords = []
-        keyword_list = article.find('.//KeywordList')
-        if keyword_list is not None:
-            for keyword in keyword_list.findall('Keyword'):
-                if keyword.text:
-                    keywords.append(keyword.text)
-        
-        # Extract MeSH terms (if available)
-        mesh_terms = []
-        mesh_list = article.find('.//MeshHeadingList')
-        if mesh_list is not None:
-            for mesh in mesh_list.findall('.//DescriptorName'):
-                if mesh.text:
-                    mesh_terms.append(mesh.text)
-        
-        # Extract DOI
-        doi = ""
-        doi_elem = article.find('.//ELocationID[@EIdType="doi"]')
-        if doi_elem is not None:
-            doi = doi_elem.text
-        
-        # Create the text content for embedding
-        text_parts = []
-        if title:
-            text_parts.append(f"Title: {title}")
-        if abstract:
-            text_parts.append(f"Abstract: {abstract}")
-        if keywords:
-            text_parts.append(f"Keywords: {', '.join(keywords)}")
-        if mesh_terms:
-            text_parts.append(f"MeSH Terms: {', '.join(mesh_terms)}")
-        
-        # Combine all text for embedding
-        chunk_text = " | ".join(text_parts)
-        
-        # Skip if no meaningful content
-        if not chunk_text.strip() or len(chunk_text.strip()) < 50:
-            return None
-        
-        # Create unique ID for this record
-        record_id = f"pubmed_{pmid}"
-        
-        # Prepare metadata (handle None values safely)
-        metadata = {
-            "pmid": pmid,
-            "title": title.strip() if title else "",
-            "journal_title": journal_title.strip() if journal_title else "",
-            "journal_abbreviation": journal_abbrev.strip() if journal_abbrev else "",
-            "abstract": abstract.strip() if abstract else "",
-            "authors": authors,
-            "keywords": keywords,
-            "mesh_terms": mesh_terms,
-            "publication_year": year,
-            "publication_month": month,
-            "publication_day": day,
-            "doi": doi,
-            "source": "pubmed",
-            "content_type": "medical_research"
+        # Define allowed publication types (only these will be processed)
+        self.allowed_pub_types = {
+            'Journal Article', 'Review', 'Case Reports', 'Clinical Trial', 
+            'Randomized Controlled Trial', 'Meta-Analysis', 'Systematic Review',
+            'Comparative Study', 'Evaluation Study', 'Validation Study',
+            'Multicenter Study', 'Observational Study', 'Cohort Study',
+            'Case-Control Study', 'Cross-Sectional Study', 'Longitudinal Study',
+            'Prospective Study', 'Retrospective Study', 'Pilot Study',
+            'Feasibility Study', 'Proof of Concept Study', 'Phase I Clinical Trial',
+            'Phase II Clinical Trial', 'Phase III Clinical Trial', 'Phase IV Clinical Trial'
         }
-        
-        return {
-            "id": record_id,
-            "text": chunk_text,
-            "metadata": metadata
-        }
-        
-    except Exception as e:
-        # Only log errors for debugging, not every single one
-        if "NoneType" not in str(e):  # Skip common NoneType errors
-            print(f"⚠️  Error extracting article data: {e}")
-        return None
 
-
-def process_pubmed_data(xml_file_path: str, max_articles: Optional[int] = None) -> List[Dict[str, Any]]:
-    """
-    Process the PubMed XML data and prepare it for Pinecone upload.
-    
-    Args:
-        xml_file_path: Path to the pubmed-sample-1256.xml file
-        max_articles: Maximum number of articles to process (None for all)
-        
-    Returns:
-        List of dictionaries ready for Pinecone upsert
-    """
-    records = []
-    article_count = 0
-    medical_articles = 0
-    
-    print(f"📖 Reading PubMed data from {xml_file_path}...")
-    
-    try:
-        # Parse XML incrementally
-        context = ET.iterparse(xml_file_path, events=('start', 'end'))
-        
-        for event, elem in context:
-            if event == 'end' and elem.tag == 'PubmedArticle':
-                article_count += 1
-                
-                # Check if it's a medical article
-                if is_medical_article(elem):
-                    medical_articles += 1
-                    
-                    # Extract article data
-                    article_data = extract_article_data(elem)
-                    if article_data:
-                        records.append(article_data)
-                    
-                    # Progress indicator
-                    if medical_articles % 100 == 0:
-                        print(f"   Processed {medical_articles} medical articles...")
-                
-                # Limit processing if max_articles is specified
-                if max_articles and medical_articles >= max_articles:
-                    print(f"   Reached limit of {max_articles} medical articles")
-                    break
-                
-                # Clear element to free memory
-                elem.clear()
-        
-        print(f"✅ Processed {len(records)} valid articles from {article_count} total articles")
-        print(f"   📊 Articles to be loaded: {medical_articles}")
-        print(f"   📊 Articles with missing data: {article_count - len(records)}")
-        print(f"   📊 Success rate: {(len(records)/article_count)*100:.1f}%")
-        
-    except Exception as e:
-        print(f"❌ Error processing XML file: {e}")
-        return []
-    
-    return records
-
-
-def upload_to_pinecone(pinecone_service: PineconeService, records: List[Dict[str, Any]], batch_size: int = 96, index_name: str = "pubmed"):
-    """
-    Upload PubMed records to Pinecone in batches with real-time monitoring.
-    
-    Args:
-        pinecone_service: Initialized PineconeService
-        records: List of prepared records
-        batch_size: Number of records to upload per batch
-        index_name: Name of the index to upload to
-    """
-    print(f"🚀 Starting upload to Pinecone index: {index_name}")
-    
-    # Get the index
-    index = pinecone_service.pc.Index(index_name)
-    
-    total_records = len(records)
-    successful_uploads = 0
-    failed_uploads = 0
-    
-    # Get initial stats
-    print("\n📊 Initial Index Stats:")
-    initial_stats = pinecone_service.get_index_info()
-    if initial_stats["status"] == "found":
-        initial_vectors = initial_stats["stats"].get("total_vector_count", 0)
-        print(f"   📈 Starting vector count: {initial_vectors:,}")
-    
-    # Process in batches
-    for i in range(0, total_records, batch_size):
-        batch = records[i:i + batch_size]
-        batch_num = (i // batch_size) + 1
-        total_batches = (total_records + batch_size - 1) // batch_size
-        
-        print(f"\n📦 Uploading batch {batch_num}/{total_batches} ({len(batch)} records)...")
-        
+    def extract_article_data(self, article_element) -> Optional[Dict[str, Any]]:
+        """Extract relevant data from a PubMed article XML element."""
         try:
-            # Prepare batch for Pinecone
-            records_batch = []
-            for record in batch:
-                pinecone_record = {
-                    "_id": record["id"],
-                    "chunk_text": record["text"],  # This gets auto-embedded by Pinecone
-                    **record["metadata"]  # All other metadata fields
-                }
-                records_batch.append(pinecone_record)
+            # Extract PMID
+            pmid_element = article_element.find('.//PMID')
+            pmid = pmid_element.text if pmid_element is not None else f"no_pmid_{hash(str(article_element))}"
             
-            # Upload batch using upsert_records for integrated embeddings
-            index.upsert_records("__default__", records_batch)
-            successful_uploads += len(batch)
-            print(f"   ✅ Batch {batch_num} uploaded successfully")
+            # Extract article title
+            title_element = article_element.find('.//ArticleTitle')
+            title = title_element.text if title_element is not None else ""
             
-            # Show progress and current stats every few batches
-            if batch_num % 5 == 0 or batch_num == total_batches:
+            # Extract abstract
+            abstract_parts = []
+            abstract_elements = article_element.findall('.//AbstractText')
+            for abstract_elem in abstract_elements:
+                if abstract_elem.text:
+                    label = abstract_elem.get('Label', '')
+                    if label:
+                        abstract_parts.append(f"{label}: {abstract_elem.text}")
+                    else:
+                        abstract_parts.append(abstract_elem.text)
+            abstract = " ".join(abstract_parts)
+            
+            # Extract journal title
+            journal_element = article_element.find('.//Journal/Title')
+            journal_title = journal_element.text if journal_element is not None else ""
+            
+            # Extract publication year
+            pub_year = None
+            pub_date_element = article_element.find('.//PubDate')
+            if pub_date_element is not None:
+                year_element = pub_date_element.find('Year')
+                if year_element is not None:
+                    pub_year = year_element.text
+            
+            # Extract authors
+            authors = []
+            author_elements = article_element.findall('.//Author')
+            for author_elem in author_elements:
+                last_name = author_elem.find('LastName')
+                first_name = author_elem.find('ForeName')
+                if last_name is not None and first_name is not None:
+                    authors.append(f"{first_name.text} {last_name.text}")
+            
+            # Extract MeSH terms
+            mesh_terms = []
+            mesh_elements = article_element.findall('.//MeshHeading/DescriptorName')
+            for mesh_elem in mesh_elements:
+                if mesh_elem.text:
+                    mesh_terms.append(mesh_elem.text)
+            
+            # Extract publication types
+            pub_types = []
+            pub_type_elements = article_element.findall('.//PublicationType')
+            for pub_type_elem in pub_type_elements:
+                if pub_type_elem.text:
+                    pub_types.append(pub_type_elem.text)
+            
+            # Extract language
+            language_element = article_element.find('.//Language')
+            language = language_element.text if language_element is not None else None
+            
+            # Extract ISSN
+            issn_elem = article_element.find('.//Journal/ISSN')
+            issn = issn_elem.text if issn_elem is not None else None
+            
+            # Extract author affiliations (set to empty to reduce metadata size)
+            author_affiliations = []
+            
+            # Extract author ORCIDs
+            author_orcids = []
+            orcid_elements = article_element.findall('.//Author/Identifier[@Source="ORCID"]')
+            for orcid_elem in orcid_elements:
+                if orcid_elem.text:
+                    author_orcids.append(orcid_elem.text)
+            
+            # Filter: Only process articles that have at least one allowed publication type
+            if not any(pub_type in self.allowed_pub_types for pub_type in pub_types):
+                return None
+            
+            # Filter: Only process English articles
+            if language and language.lower() not in ['eng', 'english']:
+                return None
+            
+            # Filter: Only process articles from 2005 onwards (but allow missing years)
+            if pub_year:
                 try:
-                    current_stats = pinecone_service.get_index_info()
-                    if current_stats["status"] == "found":
-                        current_vectors = current_stats["stats"].get("total_vector_count", 0)
-                        vectors_added = current_vectors - initial_vectors
-                        print(f"   📊 Progress: {vectors_added:,} vectors added so far")
-                        print(f"   📊 Current total: {current_vectors:,} vectors")
-                        
-                        # Show storage info if available
-                        if "dimension" in current_stats["stats"]:
-                            dimension = current_stats["stats"]["dimension"]
-                            print(f"   📏 Vector dimension: {dimension}")
-                        
-                        # Show index size if available
-                        if "index_size" in current_stats["stats"]:
-                            index_size = current_stats["stats"]["index_size"]
-                            print(f"   💾 Index size: {index_size}")
-                        
-                except Exception as e:
-                    print(f"   ⚠️  Could not fetch current stats: {e}")
+                    pub_year_int = int(pub_year)
+                    if pub_year_int < 2005:
+                        return None
+                except (ValueError, TypeError):
+                    # If we can't parse the year, skip this article
+                    return None
+            
+            # Create text for embedding (combine title, abstract, authors, and MeSH terms)
+            embedding_text = f"{title}"
+            if abstract:
+                embedding_text += f" {abstract}"
+            if authors:
+                embedding_text += f" {' '.join(authors)}"
+            if mesh_terms:
+                embedding_text += f" {' '.join(mesh_terms)}"
+            
+            return {
+                'pmid': pmid,
+                'title': title,
+                'abstract': abstract,
+                'journal_title': journal_title,
+                'issn': issn,
+                'pub_year': pub_year,
+                'authors': authors,
+                'author_affiliations': author_affiliations,
+                'author_orcids': author_orcids,
+                'mesh_terms': mesh_terms,
+                'pub_types': pub_types,
+                'language': language,
+                'embedding_text': embedding_text
+            }
             
         except Exception as e:
-            error_message = str(e)
-            print(f"   ❌ Batch {batch_num} failed: {error_message}")
-            failed_uploads += len(batch)
-            
-            # If it's a rate limit error, add a small delay
-            if "429" in error_message or "RESOURCE_EXHAUSTED" in error_message:
-                print(f"   ⏳ Rate limited - continuing with next batch...")
-                import time
-                time.sleep(1)  # Brief pause
+            logger.error(f"Error extracting article data: {e}")
+            return None
     
-    print(f"\n📊 Upload Summary:")
-    print(f"   ✅ Successful: {successful_uploads} records")
-    print(f"   ❌ Failed: {failed_uploads} records")
-    print(f"   📈 Success Rate: {(successful_uploads/total_records)*100:.1f}%")
-    
-    # Show final stats
-    print(f"\n📊 Final Index Stats:")
-    try:
-        final_stats = pinecone_service.get_index_info()
-        if final_stats["status"] == "found":
-            final_vectors = final_stats["stats"].get("total_vector_count", 0)
-            total_added = final_vectors - initial_vectors
-            print(f"   📈 Final vector count: {final_vectors:,}")
-            print(f"   📈 Vectors added this session: {total_added:,}")
-            
-            # Show additional stats if available
-            if "dimension" in final_stats["stats"]:
-                dimension = final_stats["stats"]["dimension"]
-                print(f"   📏 Vector dimension: {dimension}")
-            
-            if "index_size" in final_stats["stats"]:
-                index_size = final_stats["stats"]["index_size"]
-                print(f"   💾 Final index size: {index_size}")
-                
-    except Exception as e:
-        print(f"   ⚠️  Could not fetch final stats: {e}")
-
-
-def main():
-    """Main function to load PubMed data into Pinecone."""
-    print("🏥 Loading PubMed Research Articles to Pinecone")
-    print("=" * 50)
-    
-    # Load environment variables
-    load_dotenv()
-    
-    # Define file path
-    xml_file_path = os.path.join(
-        os.path.dirname(__file__), 
-        "..", "..", 
-        "data", "pubmed-sample-1256.xml"
-    )
-    
-    if not os.path.exists(xml_file_path):
-        print(f"❌ Error: XML file not found at {xml_file_path}")
-        return
-    
-    try:
-        # Initialize Pinecone service
-        print("1. Initializing Pinecone service...")
-        pinecone_service = PineconeService()
-        print("   ✅ Pinecone service initialized")
+    def process_xml_file(self, xml_file_path: Path) -> List[Dict[str, Any]]:
+        """Process a single XML file and extract all articles."""
+        logger.info(f"Processing file: {xml_file_path.name}")
         
-        # Create or use pubmed index
-        pubmed_index_name = "pubmed"
-        print(f"   📁 Using index: {pubmed_index_name}")
+        try:
+            # Parse the XML file
+            tree = ET.parse(xml_file_path)
+            root = tree.getroot()
+            
+            articles = []
+            total_articles = 0
+            filtered_articles = 0
+            
+            # Find all PubmedArticle elements
+            for article_element in root.findall('.//PubmedArticle'):
+                total_articles += 1
+                article_data = self.extract_article_data(article_element)
+                if article_data:
+                    articles.append(article_data)
+                else:
+                    filtered_articles += 1
+            
+            logger.info(f"Extracted {len(articles)} articles from {xml_file_path.name} "
+                       f"(filtered out {filtered_articles} articles with disallowed publication types, non-English language, or pre-2005 publication year)")
+            return articles
+            
+        except Exception as e:
+            logger.error(f"Error processing file {xml_file_path.name}: {e}")
+            return []
+    
+    def prepare_articles_for_pinecone(self, articles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Prepare articles for Pinecone upload with integrated embeddings."""
+        logger.info(f"Preparing {len(articles)} articles for Pinecone upload with integrated embeddings...")
         
-        # Check if pubmed index exists, create if it doesn't
-        index_info = pinecone_service.get_index_info(pubmed_index_name)
-        if index_info["status"] != "found":
-            print(f"   🔨 Creating new index: {pubmed_index_name}")
-            # Create index with integrated embeddings
+        prepared_articles = []
+        
+        for i, article in enumerate(articles):
             try:
-                pinecone_service.pc.create_index_for_model(
-                    name=pubmed_index_name,
-                    cloud=pinecone_service.default_cloud,
-                    region=pinecone_service.default_region,
-                    embed={
-                        "model": pinecone_service.default_model,
-                        "field_map": {"text": "chunk_text"}
-                    }
-                )
-                print(f"   ✅ Index created with integrated embeddings: {pubmed_index_name}")
-                # Wait for index to be ready
-                import time
-                print("   ⏳ Waiting for index to be ready...")
-                time.sleep(10)
+                # For integrated embeddings, we just need to format the data
+                # The embedding will be generated automatically by Pinecone
+                prepared_articles.append(article)
+                
+                if (i + 1) % 100 == 0:
+                    logger.info(f"Prepared {i + 1}/{len(articles)} articles")
+                    
             except Exception as e:
-                print(f"   ❌ Failed to create index: {e}")
-                return
+                logger.error(f"Error preparing article {article['pmid']}: {e}")
+                continue
+        
+        logger.info(f"Successfully prepared {len(prepared_articles)} articles for upload")
+        return prepared_articles
+    
+    def upload_to_pinecone(self, articles: List[Dict[str, Any]], batch_size: int = 96):
+        """Upload articles to Pinecone using integrated embeddings with retry logic."""
+        logger.info(f"Uploading {len(articles)} articles to Pinecone using integrated embeddings...")
+        
+        removed_articles = []  # Track articles that were removed due to metadata size limits
+        total_batches = (len(articles) + batch_size - 1) // batch_size
+        
+        for i in range(0, len(articles), batch_size):
+            batch = articles[i:i + batch_size]
+            batch_num = i // batch_size + 1
+            
+            # Prepare records for integrated embeddings
+            records = []
+            for article in batch:
+                # Convert None values to empty strings for Pinecone compatibility
+                record = {
+                    '_id': article['pmid'],  # Use _id as specified in documentation
+                    'text': article['embedding_text'],  # This will be used for embedding generation
+                    'title': article['title'] or '',
+                    'abstract': article['abstract'] or '',
+                    'journal_title': article['journal_title'] or '',
+                    'issn': article['issn'] or '',
+                    'pub_year': article['pub_year'] or '',
+                    'authors': '; '.join(article['authors']) if article['authors'] else '',
+                    'author_affiliations': '; '.join(article['author_affiliations']) if article['author_affiliations'] else '',
+                    'author_orcids': '; '.join(article['author_orcids']) if article['author_orcids'] else '',
+                    'mesh_terms': '; '.join(article['mesh_terms']) if article['mesh_terms'] else '',
+                    'pub_types': '; '.join(article['pub_types']) if article['pub_types'] else '',
+                    'language': article['language'] or ''
+                }
+                records.append(record)
+            
+            # Try to upload with retry logic
+            max_retries = 3
+            retry_count = 0
+            success = False
+            
+            while retry_count < max_retries and not success:
+                try:
+                    # Upload batch to Pinecone using integrated embeddings
+                    self.index.upsert_records(
+                        "__default__",
+                        records
+                    )
+                    
+                    logger.info(f"Uploaded batch {batch_num}/{total_batches} ({len(batch)} articles)")
+                    success = True
+                    
+                except Exception as e:
+                    error_str = str(e)
+                    
+                    # Check if it's a rate limit error (429)
+                    if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                        retry_count += 1
+                        if retry_count < max_retries:
+                            logger.warning(f"Rate limit hit for batch {batch_num}, waiting 60 seconds before retry {retry_count}/{max_retries}")
+                            time.sleep(60)  # Wait 60 seconds
+                            continue
+                        else:
+                            logger.error(f"Rate limit error for batch {batch_num} after {max_retries} retries: {e}")
+                            break
+                    
+                    # Check if it's a metadata size error (400)
+                    elif "400" in error_str and "Metadata size" in error_str:
+                        # Extract the index of the problematic record
+                        match = re.search(r'found at index (\d+)', error_str)
+                        if match:
+                            problematic_index = int(match.group(1))
+                            problematic_pmid = records[problematic_index]['_id']
+                            
+                            # Remove the problematic record
+                            removed_articles.append({
+                                'pmid': problematic_pmid,
+                                'reason': 'Metadata size exceeds 40KB limit',
+                                'batch': batch_num
+                            })
+                            
+                            # Remove the problematic record and retry
+                            records.pop(problematic_index)
+                            logger.warning(f"Removed article {problematic_pmid} from batch {batch_num} due to metadata size limit")
+                            
+                            # If we still have records, retry
+                            if records:
+                                continue
+                            else:
+                                logger.error(f"All records in batch {batch_num} were too large, skipping batch")
+                                break
+                        else:
+                            logger.error(f"Metadata size error for batch {batch_num} but couldn't parse index: {e}")
+                            break
+                    
+                    # Other errors
+                    else:
+                        logger.error(f"Error uploading batch {batch_num}: {e}")
+                        break
+        
+        # Log summary of removed articles
+        if removed_articles:
+            logger.info(f"\n=== REMOVED ARTICLES SUMMARY ===")
+            logger.info(f"Total articles removed: {len(removed_articles)}")
+            logger.info(f"Reason: Metadata size exceeds 40KB limit")
+            logger.info(f"\nRemoved articles:")
+            for article in removed_articles:
+                logger.info(f"  - PMID: {article['pmid']} (Batch {article['batch']})")
         else:
-            print(f"   ✅ Using existing index: {pubmed_index_name}")
+            logger.info("No articles were removed due to metadata size limits")
         
-        # Show initial index details
-        print(f"   📊 Initial index stats:")
-        if "stats" in index_info:
-            stats = index_info["stats"]
-            if "total_vector_count" in stats:
-                print(f"      📈 Current vectors: {stats['total_vector_count']:,}")
-            if "dimension" in stats:
-                print(f"      📏 Vector dimension: {stats['dimension']}")
-            if "index_size" in stats:
-                print(f"      💾 Current size: {stats['index_size']}")
-        else:
-            print(f"      📈 New index - no vectors yet")
+        logger.info("Upload to Pinecone completed!")
+    
+    def run(self):
+        """Main execution method."""
+        logger.info("Starting PubMed data loading to Pinecone...")
         
-        # Process the XML data
-        print("\n2. Processing PubMed data...")
-        # You can limit the number of articles for testing by setting max_articles
-        records = process_pubmed_data(xml_file_path, max_articles=None)
+        # Find XML files
+        xml_files = list(self.data_dir.glob("*.xml"))
+        logger.info(f"Found {len(xml_files)} XML files to process")
         
-        if not records:
-            print("   ❌ No valid records to upload")
-            return
+        # Process XML files one at a time to avoid memory accumulation
+        total_files = len(xml_files)
+        total_articles_processed = 0
         
-        # Upload to Pinecone
-        print(f"\n3. Uploading {len(records)} records to Pinecone...")
-        upload_to_pinecone(pinecone_service, records, index_name=pubmed_index_name)
+        for i, xml_file in enumerate(xml_files, 1):
+            logger.info(f"Processing file {i}/{total_files}: {xml_file.name}")
+            articles = self.process_xml_file(xml_file)
+            
+            if articles:
+                logger.info(f"Extracted {len(articles)} articles from {xml_file.name}")
+                
+                # Prepare articles for Pinecone
+                articles_with_embeddings = self.prepare_articles_for_pinecone(articles)
+                
+                if articles_with_embeddings:
+                    # Upload to Pinecone immediately
+                    self.upload_to_pinecone(articles_with_embeddings)
+                    total_articles_processed += len(articles_with_embeddings)
+                    logger.info(f"Successfully uploaded {len(articles_with_embeddings)} articles from {xml_file.name}")
+                else:
+                    logger.error(f"No articles with embeddings generated from {xml_file.name}")
+                
+                # Clear memory
+                del articles
+                del articles_with_embeddings
+            else:
+                logger.warning(f"No articles extracted from {xml_file.name}")
         
-        # Verify upload
-        print("\n4. Verifying upload...")
-        final_stats = pinecone_service.get_index_info(pubmed_index_name)
-        if final_stats["status"] == "found":
-            vector_count = final_stats["stats"].get("total_vector_count", 0)
-            print(f"   ✅ Index now contains {vector_count} vectors")
-        
-        print("\n" + "=" * 50)
-        print("🎉 PubMed data loading completed successfully!")
-        print("Your Pinecone index now contains research articles for semantic search.")
-        
-    except Exception as e:
-        print(f"❌ Unexpected error: {str(e)}")
-        print("Check your configuration and try again")
-
+        logger.info(f"PubMed data loading completed successfully! Total articles processed: {total_articles_processed}")
 
 if __name__ == "__main__":
-    main()
+    loader = PubMedLoader()
+    loader.run()

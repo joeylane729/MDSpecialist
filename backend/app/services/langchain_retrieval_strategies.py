@@ -18,7 +18,8 @@ class LangChainRetrievalStrategies:
     
     def __init__(self, pinecone_service: PineconeService):
         self.pinecone_service = pinecone_service
-        self.index = self.pinecone_service.pc.Index(self.pinecone_service.default_index_name)
+        self.vumedi_index = self.pinecone_service.pc.Index(self.pinecone_service.default_index_name)
+        self.pubmed_index = self.pinecone_service.pc.Index(self.pinecone_service.pubmed_index_name)
         
         self.llm = ChatOpenAI(model="gpt-4o", temperature=0.1)
         
@@ -130,33 +131,59 @@ class LangChainRetrievalStrategies:
             if not queries:
                 raise ValueError("Failed to generate search queries from LLM")
             
-            # Search with each query and combine results
+            # Search with each query and combine results from both indexes
             all_candidates = []
             seen_ids = set()
             
             for i, query in enumerate(queries[:5], 1):  # Use up to 5 queries
                 try:
                     logger.info(f"🔍 Executing Pinecone query {i}: '{query}'")
-                    results = self.index.search(
+                    
+                    # Query Vumedi index
+                    vumedi_results = self.vumedi_index.search(
                         namespace="__default__",
                         query={
                             "inputs": {"text": query},
-                            "top_k": top_k // 3  # Distribute top_k across queries
+                            "top_k": top_k // 6  # Distribute top_k across queries and indexes
                         },
                         fields=["*"]
                     )
                     
-                    # Parse results
-                    query_results_count = 0
-                    if hasattr(results, 'result') and hasattr(results.result, 'hits'):
-                        for hit in results.result.hits:
+                    # Query PubMed index
+                    pubmed_results = self.pubmed_index.search(
+                        namespace="__default__",
+                        query={
+                            "inputs": {"text": query},
+                            "top_k": top_k // 6  # Distribute top_k across queries and indexes
+                        },
+                        fields=["*"]
+                    )
+                    
+                    # Parse Vumedi results
+                    vumedi_count = 0
+                    if hasattr(vumedi_results, 'result') and hasattr(vumedi_results.result, 'hits'):
+                        for hit in vumedi_results.result.hits:
                             candidate_id = hit.fields.get("link", f"{hit.fields.get('title', '')}_{hit.fields.get('author', '')}")
                             if candidate_id and candidate_id not in seen_ids:
+                                # Add source information
+                                hit.fields["_source"] = "vumedi"
                                 all_candidates.append(hit.fields)
                                 seen_ids.add(candidate_id)
-                                query_results_count += 1
+                                vumedi_count += 1
                     
-                    logger.info(f"✅ Query {i} returned {query_results_count} new results (total unique: {len(all_candidates)})")
+                    # Parse PubMed results
+                    pubmed_count = 0
+                    if hasattr(pubmed_results, 'result') and hasattr(pubmed_results.result, 'hits'):
+                        for hit in pubmed_results.result.hits:
+                            candidate_id = hit.fields.get("pmid", f"{hit.fields.get('title', '')}_{hit.fields.get('authors', '')}")
+                            if candidate_id and candidate_id not in seen_ids:
+                                # Add source information
+                                hit.fields["_source"] = "pubmed"
+                                all_candidates.append(hit.fields)
+                                seen_ids.add(candidate_id)
+                                pubmed_count += 1
+                    
+                    logger.info(f"✅ Query {i} returned {vumedi_count} Vumedi + {pubmed_count} PubMed = {vumedi_count + pubmed_count} new results (total unique: {len(all_candidates)})")
                                 
                 except Exception as e:
                     logger.error(f"Query failed: {query}, error: {str(e)}")
@@ -168,7 +195,12 @@ class LangChainRetrievalStrategies:
                 
                 # Specialty-based searches removed - using only LLM-generated queries
             
+            # Count results by source
+            vumedi_count = sum(1 for candidate in all_candidates if candidate.get("_source") == "vumedi")
+            pubmed_count = sum(1 for candidate in all_candidates if candidate.get("_source") == "pubmed")
+            
             logger.info(f"LangChain retrieval found {len(all_candidates)} specialist information records using {len(queries)} queries")
+            logger.info(f"📊 Results breakdown: {vumedi_count} from Vumedi, {pubmed_count} from PubMed")
             logger.info(f"🔍 DEBUG: Returning type: {type(all_candidates)}, length: {len(all_candidates)}")
             return all_candidates
             
