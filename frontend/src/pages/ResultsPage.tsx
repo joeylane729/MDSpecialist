@@ -814,7 +814,7 @@ const ResultsPage: React.FC = () => {
 
 
                 {/* Medical Assessment */}
-        {activeView === 'assessment' && searchParams?.searchOptions?.diagnosis && (searchParams?.predicted_icd10 || location.state?.aiRecommendations?.patient_profile?.predicted_icd10) && (
+        {activeView === 'assessment' && searchParams?.searchOptions?.diagnosis && (searchParams?.icd10_description || location.state?.aiRecommendations?.patient_profile?.icd10_description) && (
           <>
             {/* Medical Assessment Header */}
             <div className="text-center mb-4">
@@ -853,8 +853,6 @@ const ResultsPage: React.FC = () => {
                 <div className="p-3 bg-blue-50 rounded-lg">
                   <div className="flex items-center gap-3">
                     <i className="fas fa-star text-gray-700 text-sm"></i>
-                    <span className="font-mono text-sm text-gray-900 font-medium">{searchParams.predicted_icd10 || location.state?.aiRecommendations?.patient_profile?.predicted_icd10}</span>
-                    <span className="text-gray-500">-</span>
                     <p className="text-gray-700 text-sm">{searchParams.icd10_description || location.state?.aiRecommendations?.patient_profile?.icd10_description || 'Description not available'}</p>
                   </div>
                 </div>
