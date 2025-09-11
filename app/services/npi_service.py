@@ -4,8 +4,7 @@ from typing import List, Optional, Dict, Any
 import sys
 import os
 
-# Add shared directory to path for scoring functions
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'shared'))
+# Import scoring functions from app directory
 
 class NPIService:
     """Service for querying NPI provider data from PostgreSQL."""
@@ -133,7 +132,7 @@ class NPIService:
         
         # Try to use scoring if available
         try:
-            from scoring import rank_doctors
+            from ..scoring import rank_doctors
             # Create patient location for scoring
             patient_location = {
                 'metro_area': metro_area,

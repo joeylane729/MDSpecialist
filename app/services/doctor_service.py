@@ -5,9 +5,8 @@ from ..schemas.doctor import DoctorCreate, DoctorUpdate
 import sys
 import os
 
-# Add shared directory to path for scoring functions
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'shared'))
-from scoring import calculate_overall_grade
+# Import scoring functions from app directory
+from ..scoring import calculate_overall_grade
 
 class DoctorService:
     """Service for managing doctor data and operations."""
@@ -132,7 +131,7 @@ class DoctorService:
         
         # Import and use scoring function
         try:
-            from scoring import rank_doctors
+            from ..scoring import rank_doctors
             ranked_doctors = rank_doctors(doctor_dicts, patient_location)
         except ImportError:
             # Fallback if scoring module not available
