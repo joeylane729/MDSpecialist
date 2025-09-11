@@ -441,9 +441,9 @@ class MedicalAnalysisService:
                 Additional Information from Medical Records/PDFs:
                 {pdf_content}
                 
-                Analyze the symptoms and diagnosis information above and provide:
+                Analyze the information above and provide:
                 1. Primary diagnosis (most likely ICD-10 code and description based on symptoms and diagnosis)
-                2. Differential diagnoses (3-5 alternative possibilities with ICD-10 codes that could explain the symptoms)
+                2. Additional diagnoses (additional diagnoses with ICD-10 codes that could explain the symptoms)
                 3. Treatment options
                 
                 Consider the symptoms carefully when determining the most likely diagnosis and alternatives.
@@ -480,7 +480,6 @@ class MedicalAnalysisService:
                     ]
                 }}
                 
-                IMPORTANT: Always provide exactly 3 treatment options. Only return valid JSON. No other text.
                 """
             )
             
