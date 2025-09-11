@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 from bs4 import BeautifulSoup
 from urllib.parse import quote, urljoin
 import random
+from .medical_school_ranking_service import MedicalSchoolRankingService
 
 
 class MedicalSchoolService:
@@ -21,6 +22,7 @@ class MedicalSchoolService:
     
     def __init__(self, db: Session):
         self.db = db
+        self.ranking_service = MedicalSchoolRankingService(db)
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -93,6 +95,11 @@ class MedicalSchoolService:
         # Aggregate and score results
         aggregated_result = self._aggregate_results(all_results, first_name, last_name)
         
+        # Enhance with ranking information
+        ranking_info = None
+        if aggregated_result.get('medical_school'):
+            ranking_info = self.ranking_service.get_school_stats(aggregated_result['medical_school'])
+        
         return {
             'npi': npi,
             'provider_name': f"{first_name} {last_name}",
@@ -105,7 +112,8 @@ class MedicalSchoolService:
             'confidence': aggregated_result.get('confidence', 0.0),
             'sources': all_results,
             'best_source': aggregated_result.get('best_source'),
-            'all_medical_schools_found': aggregated_result.get('all_medical_schools', [])
+            'all_medical_schools_found': aggregated_result.get('all_medical_schools', []),
+            'ranking_info': ranking_info
         }
     
     def _scrape_doximity(self, first_name: str, last_name: str, city: str, state: str, specialty: str) -> Optional[Dict[str, Any]]:

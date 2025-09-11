@@ -53,9 +53,9 @@ class Doctor(BaseModel):
     social_media = Column(JSON)  # Social media presence
     directory_listings = Column(JSON)  # Professional directory listings
     
-    # Relationships
-    publications = relationship("Publication", back_populates="doctor")
-    talks = relationship("Talk", back_populates="doctor")
+    # Relationships (commented out until Publication and Talk models are created)
+    # publications = relationship("Publication", back_populates="doctor")
+    # talks = relationship("Talk", back_populates="doctor")
     
     @property
     def full_name(self):
