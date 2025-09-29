@@ -21,9 +21,12 @@ RUN mkdir -p /app/data
 
 # Create startup script
 RUN echo '#!/bin/bash' > /app/startup.sh && \
-    echo 'export PORT=${PORT:-8000}' >> /app/startup.sh && \
-    echo 'echo "Starting MDSpecialist API on port $PORT"' >> /app/startup.sh && \
-    echo 'exec uvicorn main:app --host 0.0.0.0 --port $PORT' >> /app/startup.sh && \
+    echo 'set -e' >> /app/startup.sh && \
+    echo 'echo "Environment variables:"' >> /app/startup.sh && \
+    echo 'env | grep -E "(PORT|DATABASE)" || true' >> /app/startup.sh && \
+    echo 'PORT=${PORT:-8000}' >> /app/startup.sh && \
+    echo 'echo "Using port: $PORT"' >> /app/startup.sh && \
+    echo 'exec uvicorn main:app --host 0.0.0.0 --port "$PORT"' >> /app/startup.sh && \
     chmod +x /app/startup.sh
 
 # Expose port
