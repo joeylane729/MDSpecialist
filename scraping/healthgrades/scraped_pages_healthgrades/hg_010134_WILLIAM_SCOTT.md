@@ -1,0 +1,831 @@
+![background mobile](https://photos.healthgrades.com/profile-images/standard-mobile-background.webp)
+
+![background desktop](https://photos.healthgrades.com/profile-images/standard-desktop-background.webp)
+
+Are you a healthcare professional?
+
+Is this your profile?
+
+Yes, Claim your profileYes, claim profileNo
+
+![provider image](https://photos.healthgrades.com/img/silhouettes/silhouette-male_w200h267_v1.jpg?name=Dr.%20William%20Scott%2C%20MD)
+
+# Dr. William Scott, MD
+
+## Family Medicine\| 30+ years of experience
+
+30+ years of experience
+
+5 Star Rating
+
+Based on 3 reviews5.0 Star Rating (3 reviews)
+
+ReviewSave
+
+Dr. William Scott, MD is a family medicine physician in Upland, CA and has over 30 years of experience in the medical field. He graduated from Wayne State University in 1991. He is affiliated with medical facilities such as Casa Colina Hospital and Kaiser Permanente Baldwin Park Medical Center. He is accepting new patients and telehealth appointments.
+
+### Practice
+
+1183 E Foothill Blvd ·Upland, CA 91786
+
+Show Phone Number
+
+## Compare Dr. Scott with other Family Doctors near you
+
+![Dr. Sotara Manalo, DO profile photo](https://photos.healthgrades.com/img/prov/x/3/t/x3t7g_w90h120_v19e84a836cb61070f0d80656f319e36b5b96d238.jpg)
+
+### Dr. Sotara Manalo, DO
+
+Friendly Staff
+
+### Dr. Sotara Manalo, DO
+
+21 Ratings
+
+View profile
+
+![Dr. John Fagan, MD profile photo](https://photos.healthgrades.com/img/prov/x/t/v/xtvgq_w90h120_v3de1a9bd5263f519e32612b032f49714e2a51512.jpg)
+
+### Dr. John Fagan, MD
+
+Patient Favorite Award
+
+### Dr. John Fagan, MD
+
+41 Ratings
+
+View profilePatient Favorite Award
+
+[View more providers like this](https://www.healthgrades.com/family-practice-directory/ca-california/upland)
+
+## Highlights
+
+Dr. Scott specializes in the area of Family Practice
+
+Explains Conditions Well
+
+Friendly Staff
+
+Telehealth Available
+
+Practices at Top Hospital
+
+Good Communication
+
+Quiet Hospital
+
+Clean Hospital
+
+Highly Recommended Hospital
+
+Good Nurse Communication
+
+Good Patient Care
+
+## Experience
+
+### Search for Dr. Scott's experience in a specific area
+
+Condition or Procedure
+
+### What Dr. Scott treats most often
+
+Based on treatment records, we have identified the following as areas of care that Dr. Scott treats most frequently.
+
+Treatment Frequency
+
+### Arterial Blood Gas Test (ABG)
+
+normal
+
+Dr. Scott performs Arterial Blood Gas Test (ABG) as often as similar providers.
+
+[Log-in to compare providers with MyHealthMatch](https://www.healthgrades.com/account/login)
+
+### Electrocardiogram (EKG)
+
+normal
+
+Dr. Scott performs Electrocardiogram (EKG) as often as similar providers.
+
+[Log-in to compare providers with MyHealthMatch](https://www.healthgrades.com/account/login)
+
+### Immunization Administration
+
+normal
+
+Dr. Scott performs Immunization Administration as often as similar providers.
+
+[Log-in to compare providers with MyHealthMatch](https://www.healthgrades.com/account/login)
+
+SHOW MORE
+
+[Learn more about experience and why treatment frequency matters](https://helpcenter.healthgrades.com/about-my-profile/experience-check)
+
+Dr. Scott's conditions and procedures:
+
+- Arterial Blood Gas Test (ABG)
+- Electrocardiogram (EKG)
+- Immunization Administration
+- Mild Asthma
+- Acute Upper Respiratory Infection
+- Administrative Physical
+- All Headaches (incl. Migraine)
+- Common Cold
+- Constipation
+- Down Syndrome
+- Foot Infection
+- Foot Sprain
+- Ingrown Nail
+- Intestinal Diverticulitis
+- Joint Pain
+- Limb Pain
+- Long COVID Disorder
+- Muscle Spasm
+- Nail Infection
+- Nausea
+- Pharyngitis
+- Sebaceous Cysts
+- Shortness of Breath
+- Throat Pain
+- Tobacco Use Disorder
+- Urinary Incontinence
+- Urinary Tract Infection (UTI)
+- Care Coordination for Complex Conditions and Procedures
+- Abdominal Pain
+- Abnormal Thyroid
+- Achilles Tendinitis
+- Acne
+- Actinic Keratosis
+- Acute Laryngitis
+- Acute Pharyngitis
+- ADHD and-or ADD
+- Allergic Conjunctivitis
+- Allergic Rhinitis
+- Anal or Rectal Pain
+- Anemia
+- Animal Allergies
+- Ankle Sprains and Strains
+- Anxiety
+- Arthritis
+- Asthma
+- Asymptomatic Post-Menopausal Status
+- Atherosclerosis
+- Atopic Dermatitis (Eczema)
+- Back Pain
+- Balanitis
+- Balanoposthitis
+- Blepharitis
+- Bronchitis
+- Bronchospasm
+- Burn Injuries
+- Bursitis
+- Cellulitis
+- Chest Pain
+- Chest Wall Pain Syndrome
+- Chronic Deep Vein Thrombosis (DVT)
+- Chronic Neck Pain
+- Chronic Pain
+- Chronic Sinusitis
+- COPD (Chronic Obstructive Pulmonary Disease)
+- Cough
+- Deep Vein Thrombosis (DVT)
+- Dermatitis Due to Drugs
+- Dermatitis Due to Substances Taken Internally
+- Diabetes Type 2
+- Diabetes With Renal Manifestations
+- Diabetic Polyneuropathy
+- Difficulty With Walking
+- Dizziness
+- Dyslipidemia
+- Earwax Buildup
+- Eczema and Contact Dermatitis
+- Essential Tremor
+- Fibromyalgia
+- Gait Abnormality
+- Ganglion Cyst
+- Gastritis
+- Gastroesophageal Reflux Disease (GERD)
+- Gout
+- Headache
+- Heart Disease
+- Heart Palpitations
+- Hemorrhoids
+- Herpes Zoster Without Complication
+- Hyperlipidemia
+- Hypertension
+- Hypoglycemia
+- Hypogonadism
+- Hypotension
+- Hypotension (Excluding Maternal)
+- Hypothyroidism
+- Insomnia
+- Irritable Bowel Syndrome
+- Knee Sprain
+- Laryngitis
+- Leg and Foot Ulcers
+- Limb Swelling Caused by Fluid Overload
+- Lipid Disorders
+- Low Back Pain
+- Malaise and Fatigue
+- Menstrual Disorders
+- Migraine
+- Moles (Benign Skin Lesions)
+- Nasopharyngitis
+- Neck Strain (incl. Whiplash Injury)
+- Noninfectious Gastroenteritis and Colitis
+- Obesity
+- Osteoarthritis
+- Osteoarthritis of Hand
+- Osteoarthritis of Hand or Wrist
+- Osteoarthritis of Knee
+- Osteoarthritis of Spine
+- Osteoporosis
+- Otitis Media
+- Outer Ear Infection
+- Overweight
+- Patellofemoral Pain Syndrome (PFPS)
+- Pediatric Obesity
+- Pediatric Overweight
+- Pinkeye (Conjunctivitis)
+- Plantar Fasciitis
+- Pneumonia
+- Polyneuropathy
+- Proteinuria
+- Radiculopathy
+- Rash
+- Sciatica
+- Seborrheic Dermatitis
+- Shingles
+- Sinus Tachycardia
+- Sinusitis
+- Sleep Apnea
+- Sprains and Strains (incl. Muscle Tear)
+- Sunburn
+- Venous Insufficiency
+- Vertigo
+- Viral Infection
+- Vitamin B Deficiency
+- Vitamin D Deficiency
+- Wheezing
+- ACTH (Cosyntropin) Stimulation Test
+- Alcohol Misuse Screening and Counseling
+- Alcohol or Substance Misuse Screening and Counseling
+- Anemia and Iron Deficiency Screening
+- Arrhythmia Screening
+- Bacteriuria Screening
+- Blood Allergy Testing
+- Bone Density Scan
+- Breast Cancer Screening
+- Cancer Screening
+- Cardiac Ultrasound
+- Cardiovascular Stress Test
+- Chest Pain Evaluation
+- Chlamydia Infection Screening
+- Cholesterol Screening
+- Dementia Evaluation
+- Dementia or Depression Screening
+- Detoxification Evaluation
+- Diabetes Screening
+- Diabetic Evaluation
+- Dipstick Urinalysis
+- Disability Evaluation
+- Drug Allergy Testing
+- Dual-Energy X-Ray Absorptiometry (DEXA) Scan
+- Dyslexia Assessment
+- Evaluation and Treatment of Sleep Disorders
+- Fetal Cardiac Screening
+- Genetic Screening for Breast Cancer
+- Geriatric Assessment
+- Gonorrhea Screening
+- Health Screening
+- HeartAware Online Risk Screening
+- Hepatitis A Screening
+- Hepatitis B Virus Screening
+- Hepatitis C Virus Screening
+- Hepatitis Screening
+- Herpes Simplex Screening
+- HIV Screening
+- Home Sleep Study
+- Impairment Rating Evaluation
+- Independent Educational Evaluation
+- Joint Fluid Test
+- Lyme Disease Evaluation
+- Mammography
+- McMurray's Test
+- Melanoma Screening
+- Memory Evaluation
+- Menopause Evaluation and Treatment
+- Mole Evaluation
+- Oral Glucose Tolerance Test
+- Osteoporosis Screening
+- Ovarian Cancer Screening
+- Patch Testing
+- Pre-Operative Evaluation
+- Pregnancy Test
+- Prostate Cancer Screening
+- Prostate Cancer Screening Exam (DRE)
+- Psychiatric Evaluation
+- Psychiatric Evaluation - Child and Adolescent
+- Psychological Evaluation
+- Psychological Evaluations Prior to Bariatric Surgery
+- Rapid Flu Test
+- Sexually Transmitted Infections Screening
+- Skin Screenings
+- Skin Testing and Screening
+- Spinal and Postural Screening
+- STD Screening
+- Strep Test
+- Syphilis Screening
+- Thyroid Screening
+- Trichomoniasis Screening
+- Tuberculosis Screening
+- Urine Pregnancy Test
+- Vaccination
+- Vaginosis Screening
+- VAP Lipid Testing
+- Wellness Examination
+- Wheelchair Evaluation
+- Worker's Compensation Evaluations
+
+## Dr. Scott's Reviews
+
+### Likelihood to recommend Dr. Scott
+
+**5.0**
+
+3ratings, 2 with a written review
+
+|     |     |     |
+| --- | --- | --- |
+| 5 star | 100% | 100% |
+| 4 star | 0% | 0% |
+| 3 star | 0% | 0% |
+| 2 star | 0% | 0% |
+| 1 star | 0% | 0% |
+
+![healthgrades logo](https://photos.healthgrades.com/public3/images/logo-blue-full.svg)
+
+### Leave a review
+
+How likely are you to recommend
+
+Dr. Scott?
+
+Definitely NotNoMaybeYesDefinitelySelect Rating
+
+### Provider Feedback
+
+100% positive
+
+Trusted the provider's decisions
+
+100%
+
+0%
+
+2 agree0 disagree
+
+Explained conditions well
+
+100%
+
+0%
+
+2 agree0 disagree
+
+Listened & answered questions
+
+100%
+
+0%
+
+2 agree0 disagree
+
+Appointment wasn't rushed
+
+100%
+
+0%
+
+2 agree0 disagree
+
+I felt respected
+
+no votes yet
+
+no votes yet
+
+### Office + Staff Feedback
+
+83% positive
+
+Staff friendliness
+
+100%
+
+0%
+
+2 agree0 disagree
+
+Appointment scheduling
+
+50%
+
+50%
+
+1 agree1 disagree
+
+Office environment
+
+100%
+
+0%
+
+1 agree0 disagree
+
+Wait times
+
+100%
+
+0%
+
+1 agree0 disagree
+
+### Your trust is our top concern.
+
+We strive to keep reviews honest, trustworthy, and fair.
+
+RecentHighestLowestMost Helpful
+
+Reply Flag
+
+Dr. Scott has been my primary physician for over 20 years has always provided excellent care to my family. On Friday, 11/20/20, I had a message from his office, asking me to schedule an appointment for a physical. I did call today, 11/23 and I am waiting for a return call to schedule the...
+
+More details
+
+Helpful
+
+Allison Burgess – Nov 24, 2020
+
+[×](https://www.healthgrades.com/physician/dr-william-scott-xlx3d#) Post a ResponseAre you Dr. Scott?
+
+Yes
+
+No
+
+Reply Flag
+
+Dr. Scott is someone that I feel is an excellent doctor ...he's very patient and seems to be concerned about my needs.. I recently retired and had an opportunity to go elsewhere for my health care but because of Doctor Scott I stayed with Kaiser it cost a little more but it's worth it.... it's...
+
+More details
+
+Helpful
+
+B Willis in Pomona, CA – Sep 05, 2017
+
+[×](https://www.healthgrades.com/physician/dr-william-scott-xlx3d#) Post a ResponseAre you Dr. Scott?
+
+Yes
+
+No
+
+### Leave a review
+
+How was your experience with Dr. Scott?
+
+Comment
+
+Continue
+
+![Provider explaining information to patient](https://photos.healthgrades.com/img/ads/claim_this_profile.jpg)
+
+### Is this your profile?
+
+Respond to reviews, add information, and reach more patients. Claiming is free and only takes a minute.
+
+[Claim your profile](https://update.healthgrades.com/landing/claim?pwid=XLX3D&pCID=hg_ProvProfile)
+
+### Overall Patient Satisfaction
+
+3responses
+
+Likelihood of recommending Dr. Scott to family and friends is 5 out of 5
+
+### Know Before You Go
+
+Expand your knowledge with related news and articles.
+
+[Do's and Don'ts of Diabetes](https://resources.healthgrades.com/right-care/diabetes/dos-and-donts-of-diabetes?hid=t12_review&tpc=getting-the-right-diabetes-treatment) [Interpreting Your Cholesterol Test Results](https://resources.healthgrades.com/right-care/cholesterol/interpreting-your-cholesterol-test-results?hid=t12_review) [13 Tips for Managing Migraine Symptoms](https://resources.healthgrades.com/right-care/migraine-and-headache/10-tips-for-managing-migraine-symptoms?hid=t12_review)
+
+## About Me
+
+### care philosophy
+
+Health care leader whose mission is to keep you healthy. Under-one-roof convenience, 24-hour advice nurse, and online access to manage your health - anytime.
+
+### Specialties\*
+
+- Family Medicine
+
+
+\*Healthgrades does not verify qualifications for medical specialties. Please verify your provider's specialty and qualifications directly with your provider and applicable medical board.
+
+### Education
+
+- Wayne State University
+Medical School, 1991
+
+### Board Certifications
+
+American Board of Medical Specialties®
+
+American Board of Family Medicine®
+
+-
+
+Family Practice
+
+Learn more about board certification
+
+### Board Action Check
+
+For detailed information about any of the below board actions, please search for the provider's records on the linked state licensing board or the [Federation of State Medical Boards](https://www.docinfo.org/).  To learn more about the difference between these sources, please refer to our [FAQs](https://www.healthgrades.com/about/healthgrades-methodologies#faqs).
+
+Healthgrades has not received any data indicating a board action exists for this provider.
+
+Healthgrades receives board action history for physicians and physician assistants. The information displayed here is sourced from independent information providers, such as state board websites, and may not be the most up-to-date information. Healthgrades makes no representations with respect to the accuracy of any information provided here and assumes no responsibility or liability for such information.
+
+Learn more about medical license public record check
+
+### Common Questions and Answers
+
+Questions
+
+Responses
+
+Please call the office to learn more.
+
+[(888) 750-0036](tel:8887500036)
+
+![diabetes video center](https://dims.healthgrades.com/dims3/MMH/91197ff/2147483647/strip/true/crop/1131x1131+283+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F34%2F66%2F75b2c2544eb18dea9d8396a2269c%2Fimage-elderly-man-and-woman-walking-in-fields.jpg)
+
+#### Focus on Diabetes
+
+[10 Ways to Maintain Good Health With Diabetes](https://www.healthgrades.com/video/diabetes-video-center?&vid=10-ways-to-maintain-good-health-with-diabetes&hid=t12_learn_fomo)
+
+Managing diabetes goes beyond focusing on blood sugar levels—you’ve got to commit to living a healthy life, staying active, eating well, and minimizing stress. Follow these tips to get on the right path.
+
+[Top 10 Tips](https://www.healthgrades.com/video/diabetes-video-center?&vid=10-ways-to-maintain-good-health-with-diabetes&hid=t12_learn_fomo)
+
+## Insurance Check
+
+### Search for your insurance carrier and choose your plan type
+
+Insurance Carrier
+
+Choose Plan Type
+
+Apply
+
+Try: Kaiser Permanente,
+
+Please verify your coverage with the provider. [(888) 750-0036](tel:8887500036 "Call: (888) 750-0036")
+
+## Locations
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/9/88/204.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/9/89/204.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/9/87/204.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/9/90/204.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/9/86/204.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/9/91/204.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/9/85/204.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/9/92/204.png)
+
+Map Marker 1
+1
+
+Map Marker 2
+2
+
+[+](https://www.healthgrades.com/physician/dr-william-scott-xlx3d# "Zoom in") [−](https://www.healthgrades.com/physician/dr-william-scott-xlx3d# "Zoom out")
+
+[Leaflet](https://leafletjs.com/ "A JavaScript library for interactive maps") \| © [OpenStreetMap](http://osm.org/copyright) contributors
+
+### Practice
+
+1
+
+Kaiser Permanente
+
+[Kaiser Permanente](https://www.healthgrades.com/group-directory/ca-california/upland/connecticut-orthopaedics-sports-therapy-and-rehab-x7rtlj)
+
+1183 E Foothill Blvd
+
+Upland, CA 91786
+
+[View office profile](https://www.healthgrades.com/group-directory/ca-california/upland/connecticut-orthopaedics-sports-therapy-and-rehab-x7rtlj)
+
+[(888) 750-0036](tel:(888)750-0036)
+
+Fax
+
+[Driving Directions](https://www.google.com/maps/dir/?api=1&destination=1183+E+Foothill+Blvd,+Upland,+CA+91786)
+
+### Practice
+
+2
+
+Kaiser Permanente Fontana Medical Center
+
+Kaiser Permanente Fontana Medical Center
+
+9961 Sierra Ave
+
+Fontana, CA 92335
+
+[(909) 427-3910](tel:(909)427-3910)
+
+Fax
+
+[Driving Directions](https://www.google.com/maps/dir/?api=1&destination=9961+Sierra+Ave,+Fontana,+CA+92335)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fchrons-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fchrons-desktop-step-2.jpg)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fpsorisasis-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fpsorisasis-desktop-step-2.jpg)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-desktop-step-2.jpg)
+
+## Before Your Visit
+
+An appointment guide can help you get the most out of your visit.
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fchrons-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fchrons-desktop-step-1.jpg)View This Guide
+
+### Diabetes: Top Questions
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fpsorisasis-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fpsorisasis-desktop-step-1.jpg)View This Guide
+
+### IBS with Constipation: Top Questions
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-desktop-step-1.jpg)View This Guide
+
+### RSV Virus: Top Questions
+
+✕
+
+Enter your email to unlock this appointment guide. Plus, enjoy access to exclusive health content, expert tips, and more.
+
+Email capture form for
+
+EMAIL
+
+View Guide
+
+Submission of this form is subject to Healthgrades
+
+[User Agreement](https://www.healthgrades.com/content/user-agreement) and [Privacy Policy](https://www.healthgrades.com/content/privacy-notice?redirected=true).
+
+## Affiliated Hospitals
+
+### [Casa Colina Hospital](https://www.healthgrades.com/hospital/casa-colina-hospital-050782)
+
+255 E Bonita Ave
+
+Pomona, CA 91767
+
+![Healthgrades Quality Award Medallion](https://ucmscdn.healthgrades.com/e0/06/c0985bae4e609d5ce9be7d5fb7b6/award-winning-hospital.png)
+
+Recipient of 6
+
+hospital awards
+
+Outstanding Patient Experience Award™2025, 2024, 2023
+
+Top in the nation for overall patient experience based on nine measures related to doctor and nurse communication, hospital cleanliness and noise levels, and medication and post-discharge care instructions
+
+[View all awards](https://www.healthgrades.com/hospital/casa-colina-hospital-050782#awards)
+
+How patients felt about the care they received at this hospital.
+
+86%
+
+Patients said they were given information about recovering at home
+
+1% higher than the national average
+
+84%
+
+Patients said their room and bathroom were always kept clean
+
+16% higher than the national average
+
+[View all patient feedback](https://www.healthgrades.com/hospital/casa-colina-hospital-050782#patient-experience)
+
+### [Kaiser Permanente Fontana Medical Center](https://www.healthgrades.com/hospital/kaiser-permanente-fontana-medical-center-df78a6)
+
+9961 Sierra Ave
+
+Fontana, CA 92335
+
+![Healthgrades Quality Award Medallion](https://ucmscdn.healthgrades.com/e0/06/c0985bae4e609d5ce9be7d5fb7b6/award-winning-hospital.png)
+
+Recipient of 2
+
+hospital awards
+
+How patients felt about the care they received at this hospital.
+
+88%
+
+Patients said they were given information about recovering at home
+
+3% higher than the national average
+
+80%
+
+Patients said that nurses always listened to them and explained things well
+
+4% higher than the national average
+
+[View all patient feedback](https://www.healthgrades.com/hospital/kaiser-permanente-fontana-medical-center-df78a6#patient-experience)
+
+### [Mountains Community Hospital](https://www.healthgrades.com/hospital/mountains-community-hospital-2d881c)
+
+29101 Hospital Rd
+
+Lake Arrowhead, CA 92352
+
+How patients felt about the care they received at this hospital.
+
+90%
+
+Patients said they were given information about recovering at home
+
+1% higher than the national average
+
+88%
+
+Patients said that nurses always listened to them and explained things well
+
+5% higher than the national average
+
+[View all patient feedback](https://www.healthgrades.com/hospital/mountains-community-hospital-2d881c#patient-experience)
+
++1 More Hospital
+
+Learn more about how Healthgrades measures [Hospital Quality](https://www.healthgrades.com/quality/ratings-awards/methodology)
+
+## Compare Dr. Scott with other Family Doctors near you
+
+![Dr. Sotara Manalo, DO profile photo](https://photos.healthgrades.com/img/prov/x/3/t/x3t7g_w90h120_v19e84a836cb61070f0d80656f319e36b5b96d238.jpg)
+
+### Dr. Sotara Manalo, DO
+
+Friendly Staff
+
+### Dr. Sotara Manalo, DO
+
+21 Ratings
+
+View profile
+
+![Dr. John Fagan, MD profile photo](https://photos.healthgrades.com/img/prov/x/t/v/xtvgq_w90h120_v3de1a9bd5263f519e32612b032f49714e2a51512.jpg)
+
+### Dr. John Fagan, MD
+
+Patient Favorite Award
+
+### Dr. John Fagan, MD
+
+41 Ratings
+
+View profilePatient Favorite Award
+
+[View more providers like this](https://www.healthgrades.com/family-practice-directory/ca-california/upland)
+
+### You May Also Like
+
+[![contentimage](https://dims.healthgrades.com/dims3/MMH/9fbfba1/2147483647/strip/false/crop/3744x3744+936+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F8a%2Fd6%2F681c66b64e2c9f4264aa313f1c03%2Fimage-getty-174858660.jpg)\\
+\\
+Treatment Options for Migraines](https://resources.healthgrades.com/right-care/migraine-and-headache/treatment-options-for-migraines?hid=t12_compare_contentalgo&tpc=your-guide-to-preventing-migraines) [![contentimage](https://dims.healthgrades.com/dims3/MMH/a45ba22/2147483647/strip/false/crop/683x683+247+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F12%2F93%2Fda252777ab4bba39549cdf83299f%2Fgettyimages-1423893133-1024x683.jpg)\\
+\\
+How Alzheimer’s Disease Leads to Uncontrolled Emotions](https://resources.healthgrades.com/right-care/alzheimers-disease/how-alzheimers-disease-leads-to-uncontrolled-emotions?hid=t12_compare_contentalgo&tpc=treating-involuntary-crying-and-laughing) [![contentimage](https://dims.healthgrades.com/dims3/MMH/b382f23/2147483647/strip/false/crop/628x628+286+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F48%2Fba%2F666a356bdefd5e12b6cdaca02ae2%2Fhg-chopping-veggies-1200x628-facebook.jpg)\\
+\\
+Everything to Know About Treating Fatty Liver Disease](https://resources.healthgrades.com/right-care/liver-conditions/treatment-options-for-fatty-liver-disease?hid=t12_compare_contentalgo&tpc=treating-nonalcoholic-fatty-liver-disease)
+
+### Recommended Reading From Healthgrades
+
+[![contentimage](https://dims.healthgrades.com/dims3/MMH/220b57d/2147483647/strip/true/crop/3840x3840+819+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F46%2Fb7%2Fcee1da63401da96e8a18bc211d04%2Fimage-getty-464488018.jpg)\\
+\\
+6 Things to Know About the Shingles Vaccine](https://resources.healthgrades.com/right-care/vaccines/6-things-to-know-about-the-shingles-vaccine?hid=t12_compare) [![contentimage](https://dims.healthgrades.com/dims3/MMH/00829e7/2147483647/strip/true/crop/3299x3299+1837+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F46%2F9f%2F15308e16433fa5f627ad8cf6435d%2Fimage-gettyimages-483655356.jpg)\\
+\\
+When to Go to the ER for Constipation](https://resources.healthgrades.com/right-care/digestive-health/when-to-see-a-doctor-for-constipation?hid=t12_compare) [![contentimage](https://dims.healthgrades.com/dims3/MMH/0d5a8f3/2147483647/strip/true/crop/3409x3409+857+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F8f%2F50%2Fc52ec81c4f3eb73ebc92c078ee8d%2Fimage-gettyimages-557475327.jpg)\\
+\\
+7+ Symptoms Never to Ignore if You Have Depression](https://resources.healthgrades.com/right-care/depression/7-symptoms-never-to-ignore-if-you-have-depression?hid=t12_compare)
+
+## Explore More Providers
+
+[View all specialties](https://www.healthgrades.com/specialty-directory)
+
+SpecialistsNearby Related SpecialistsNearby Family Medicine Physician
+
+[Family Medicine](https://www.healthgrades.com/family-practice-directory) [Internal Medicine](https://www.healthgrades.com/internal-medicine-directory) [Obstetrics & Gynecology](https://www.healthgrades.com/obstetrics-gynecology-directory) [Cardiology](https://www.healthgrades.com/cardiology-directory) [Orthopedic Surgery](https://www.healthgrades.com/orthopedic-surgery-directory) [General Surgery](https://www.healthgrades.com/surgery-general-directory) [Neurology](https://www.healthgrades.com/neurology-directory) [Gastroenterology](https://www.healthgrades.com/gastroenterology-directory) [Urology](https://www.healthgrades.com/urology-directory) [Oncology](https://www.healthgrades.com/oncology-directory) [Neurosurgery](https://www.healthgrades.com/neurosurgery-directory) [Endocrinology, Diabetes & Metabolism](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory)
+
+[Geriatric Medicine](https://www.healthgrades.com/geriatric-medicine-directory) [Sports Medicine](https://www.healthgrades.com/sports-medicine-directory) [Nursing (Nurse Practitioner)](https://www.healthgrades.com/nurse-practitioner-directory) [Hospice & Palliative Medicine](https://www.healthgrades.com/hospice-care-palliative-medicine-directory) [Internal Medicine](https://www.healthgrades.com/internal-medicine-directory)
+
+[Family Medicine, Los Angeles CA](https://www.healthgrades.com/family-practice-directory/ca-california/los-angeles) [Family Medicine, San Diego CA](https://www.healthgrades.com/family-practice-directory/ca-california/san-diego) [Family Medicine, Ventura CA](https://www.healthgrades.com/family-practice-directory/ca-california/ventura) [Family Medicine, Riverside CA](https://www.healthgrades.com/family-practice-directory/ca-california/riverside) [Family Medicine, Long Beach CA](https://www.healthgrades.com/family-practice-directory/ca-california/long-beach) [Family Medicine, Anaheim CA](https://www.healthgrades.com/family-practice-directory/ca-california/anaheim) [Family Medicine, Santa Ana CA](https://www.healthgrades.com/family-practice-directory/ca-california/santa-ana) [Family Medicine, Fontana CA](https://www.healthgrades.com/family-practice-directory/ca-california/fontana) [Family Medicine, Irvine CA](https://www.healthgrades.com/family-practice-directory/ca-california/irvine) [Family Medicine, Santa Monica CA](https://www.healthgrades.com/family-practice-directory/ca-california/santa-monica) [Family Medicine, Glendale CA](https://www.healthgrades.com/family-practice-directory/ca-california/glendale)

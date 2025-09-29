@@ -1,0 +1,533 @@
+![background mobile](https://photos.healthgrades.com/profile-images/standard-mobile-background.webp)
+
+![background desktop](https://photos.healthgrades.com/profile-images/standard-desktop-background.webp)
+
+Are you a healthcare professional?
+
+Is this your profile?
+
+Yes, Claim your profileYes, claim profileNo
+
+![provider image](https://photos.healthgrades.com/img/silhouettes/silhouette-male_w200h267_v1.jpg?name=Dr.%20Mark%20Smith%2C%20MD)
+
+# Dr. Mark Smith, MD
+
+## Pediatrics\| 45+ years of experience
+
+45+ years of experience
+
+3.7 Star Rating
+
+Based on 3 reviews3.7 Star Rating (3 reviews)
+
+ReviewSave
+
+Dr. Mark Smith, MD is a pediatrician in Kingwood, TX and has over 45 years of experience in the medical field. He graduated from University of Texas Medical Branch in 1975. He is affiliated with Oakbend Medical Center.
+
+### Humble Pediatric Association
+
+611 Rockmead Dr Ste 600 ·Kingwood, TX 77339
+
+Show Phone Number
+
+Compare Dr. Smith with Pediatricians from
+
+## HCA Houston Healthcare Kingwood
+
+![HCA Houston Healthcare Kingwood](https://photos.healthgrades.com/img/facility/logo/005E01_MAP_w180h65.png)
+
+Make an appointment at HCA Houston Healthcare Kingwood today at
+
+[281-417-4665](tel:281-417-4665)
+
+![Dr. Latresha McBride, MD profile photo](https://photos.healthgrades.com/img/silhouettes/silhouette-female_w90h120_v1.jpg)
+
+### Dr. Latresha McBride, MD
+
+Explains Conditions Well
+
+### Dr. Latresha McBride, MD
+
+5 Ratings
+
+View profile
+
+![Dr. Chikku Paul, MD profile photo](https://photos.healthgrades.com/img/prov/x/g/x/xgx6c_w90h120_v401679242a6cf3b14c42e5d53a729005c6c8a529.jpg)
+
+### Dr. Chikku Paul, MD
+
+Explains Conditions Well
+
+### Dr. Chikku Paul, MD
+
+4 Ratings
+
+View profile
+
+![Dr. Cynthia Smoot, MD profile photo](https://photos.healthgrades.com/img/prov/y/r/v/yrvkq_w90h120_vac6851a6a4528f021409881b87c979753302fec7.jpg)
+
+### Dr. Cynthia Smoot, MD
+
+Explains Conditions Well
+
+### Dr. Cynthia Smoot, MD
+
+16 Ratings
+
+View profile
+
+[View more providers like this](https://www.healthgrades.com/pediatrics-directory/tx-texas/kingwood)
+
+## Highlights
+
+Dr. Smith specializes in the area of Pediatrics
+
+Friendly Staff
+
+Easy Scheduling
+
+Quiet Hospital
+
+## Experience
+
+### Search for Dr. Smith's experience in a specific area
+
+Condition or Procedure
+
+### What Dr. Smith treats most often
+
+Based on treatment records, we have identified the following as areas of care that Dr. Smith treats most frequently.
+
+Treatment Frequency
+
+### Electrocardiogram (EKG)
+
+normal
+
+Dr. Smith performs Electrocardiogram (EKG) as often as similar providers.
+
+[Log-in to compare providers with MyHealthMatch](https://www.healthgrades.com/account/login)
+
+### Arterial Blood Gas Test (ABG)
+
+normal
+
+Dr. Smith performs Arterial Blood Gas Test (ABG) as often as similar providers.
+
+[Log-in to compare providers with MyHealthMatch](https://www.healthgrades.com/account/login)
+
+[Learn more about experience and why treatment frequency matters](https://helpcenter.healthgrades.com/about-my-profile/experience-check)
+
+Dr. Smith's conditions and procedures:
+
+- Arterial Blood Gas Test (ABG)
+- Electrocardiogram (EKG)
+- Acute Bronchitis
+- Acute Lower Respiratory Infection
+- Acidosis
+- Coronary Artery Disease (CAD)
+- Diabetes Type 2
+- Gastroesophageal Reflux Disease (GERD)
+- Hyperlipidemia
+- Hypertension
+- Hypothyroidism
+- Lipid Disorders
+- Urinary Tract Infection (UTI)
+- Immunization Administration
+
+## Dr. Smith's Reviews
+
+### Likelihood to recommend Dr. Smith
+
+**3.7**
+
+3ratings, 1 with written review
+
+|     |     |     |
+| --- | --- | --- |
+| 5 star | 67% | 67% |
+| 4 star | 0% | 0% |
+| 3 star | 0% | 0% |
+| 2 star | 0% | 0% |
+| 1 star | 33% | 33% |
+
+![healthgrades logo](https://photos.healthgrades.com/public3/images/logo-blue-full.svg)
+
+### Leave a review
+
+How likely are you to recommend
+
+Dr. Smith?
+
+Definitely NotNoMaybeYesDefinitelySelect Rating
+
+### Provider Feedback
+
+69% positive
+
+Trusted the provider's decisions
+
+66.66666666666666%
+
+33.33333333333333%
+
+2 agree1 disagree
+
+Explained conditions well
+
+66.66666666666666%
+
+33.33333333333333%
+
+2 agree1 disagree
+
+Listened & answered questions
+
+66.66666666666666%
+
+33.33333333333333%
+
+2 agree1 disagree
+
+Appointment wasn't rushed
+
+66.66666666666666%
+
+33.33333333333333%
+
+2 agree1 disagree
+
+I felt respected
+
+100%
+
+0%
+
+1 agree0 disagree
+
+### Office + Staff Feedback
+
+100% positive
+
+Appointment scheduling
+
+100%
+
+0%
+
+3 agree0 disagree
+
+Staff friendliness
+
+100%
+
+0%
+
+3 agree0 disagree
+
+Office environment
+
+100%
+
+0%
+
+2 agree0 disagree
+
+Wait times
+
+100%
+
+0%
+
+2 agree0 disagree
+
+### Your trust is our top concern.
+
+We strive to keep reviews honest, trustworthy, and fair.
+
+Reply Flag
+
+Dr. Smith was very encouraging when my son was born with Down Syndrome, almost 46 years ago. He might remember what a devastating time it was for me. My son and I are both thriving.
+
+More details
+
+Helpful
+
+Jo Ann Youngblood – Feb 27, 2025
+
+[×](https://www.healthgrades.com/physician/dr-mark-smith-y4qlm#) Post a ResponseAre you Dr. Smith?
+
+Yes
+
+No
+
+### Leave a review
+
+How was your experience with Dr. Smith?
+
+Comment
+
+Continue
+
+![Provider explaining information to patient](https://photos.healthgrades.com/img/ads/claim_this_profile.jpg)
+
+### Is this your profile?
+
+Respond to reviews, add information, and reach more patients. Claiming is free and only takes a minute.
+
+[Claim your profile](https://update.healthgrades.com/landing/claim?pwid=Y4QLM&pCID=hg_ProvProfile)
+
+### Overall Patient Satisfaction
+
+3responses
+
+Likelihood of recommending Dr. Smith to family and friends is 3.6666667 out of 5
+
+### Know Before You Go
+
+Expand your knowledge with related news and articles.
+
+[Facts About Women's Health in 2023](https://www.healthgrades.com/womenshealth?hid=t12_review) [How to Talk to Your Kids About Your Depression](https://resources.healthgrades.com/right-care/depression/how-to-talk-to-your-kids-about-your-depression?hid=t12_review) [How and When to Use a Nebulizer for Asthma](https://resources.healthgrades.com/right-care/asthma/how-and-when-to-use-a-nebulizer-for-asthma?hid=t12_review)
+
+## About Me
+
+### biography
+
+Dr. Mark Smith, MD is a pediatrician in Kingwood, TX and has over 45 years of experience in the medical field. He graduated from University of Texas Medical Branch in 1975. He is affiliated with Oakbend Medical Center.
+
+### Specialties\*
+
+- Pediatrics
+
+
+\*Healthgrades does not verify qualifications for medical specialties. Please verify your provider's specialty and qualifications directly with your provider and applicable medical board.
+
+### Education
+
+- University Of Texas Medical Branch
+Medical School, 1975
+
+### Board Certifications
+
+American Board of Medical Specialties®
+
+American Board of Pediatrics®
+
+-
+
+Pediatrics
+
+Learn more about board certification
+
+### Board Action Check
+
+For detailed information about any of the below board actions, please search for the provider's records on the linked state licensing board or the [Federation of State Medical Boards](https://www.docinfo.org/).  To learn more about the difference between these sources, please refer to our [FAQs](https://www.healthgrades.com/about/healthgrades-methodologies#faqs).
+
+Healthgrades has not received any data indicating a board action exists for this provider.
+
+Healthgrades receives board action history for physicians and physician assistants. The information displayed here is sourced from independent information providers, such as state board websites, and may not be the most up-to-date information. Healthgrades makes no representations with respect to the accuracy of any information provided here and assumes no responsibility or liability for such information.
+
+Learn more about medical license public record check
+
+### Common Questions and Answers
+
+Questions
+
+Responses
+
+Please call the office to learn more.
+
+[281-417-4665](tel:2814174665)
+
+### Healthgrades Tips for Getting the Best Care for Your Child
+
+Guidance for getting the right healthcare
+
+[5 Reasons to See a Pediatrician](https://resources.healthgrades.com/right-care/childrens-health/5-reasons-to-see-a-pediatrician?hid=t12_learn&tpc=childrens-health) [Never Ignore These 8 Symptoms in Children](https://resources.healthgrades.com/right-care/childrens-health/never-ignore-these-childrens-health-symptoms?hid=t12_learn&tpc=childrens-health) [11 Things Your Pediatrician Wants You to Know](https://resources.healthgrades.com/right-care/childrens-health/11-things-your-pediatrician-wants-you-to-know?hid=t12_learn&tpc=childrens-health)
+
+## Insurance Check
+
+### Search for your insurance carrier and choose your plan type
+
+Insurance Carrier
+
+Choose Plan Type
+
+Apply
+
+Try: Curative, First Health,
+
+Please verify your coverage with the provider. [(281) 348-7575](tel:2813487575 "Call: (281) 348-7575")
+
+## Locations
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/3857/6756.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/3856/6756.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/3858/6756.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/3855/6756.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/3859/6756.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/3854/6756.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/3860/6756.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/3853/6756.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/3861/6756.png)
+
+Map Marker 1
+1
+
+[+](https://www.healthgrades.com/physician/dr-mark-smith-y4qlm# "Zoom in") [−](https://www.healthgrades.com/physician/dr-mark-smith-y4qlm# "Zoom out")
+
+[Leaflet](https://leafletjs.com/ "A JavaScript library for interactive maps") \| © [OpenStreetMap](http://osm.org/copyright) contributors
+
+### Humble Pediatric Association
+
+1
+
+Humble Atascocita
+
+[Humble Atascocita](https://www.healthgrades.com/group-directory/tx-texas/kingwood/humble-pediatric-association-u3fwx5v)
+
+611 Rockmead Dr Ste 600
+
+Kingwood, TX 77339
+
+[View office profile](https://www.healthgrades.com/group-directory/tx-texas/kingwood/humble-pediatric-association-u3fwx5v)
+
+[281-417-4665](tel:281-417-4665)
+
+Fax
+
+[Driving Directions](https://www.google.com/maps/dir/?api=1&destination=611+Rockmead+Dr+Ste+600,+Kingwood,+TX+77339)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fbipolar-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fbipolar-desktop-step-2.jpg)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-desktop-step-2.jpg)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Falzheimers-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Falzheimers-desktop-step-2.jpg)
+
+## Before Your Visit
+
+An appointment guide can help you get the most out of your visit.
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fbipolar-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fbipolar-desktop-step-1.jpg)View This Guide
+
+### Well Child Visit: Top Questions
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-desktop-step-1.jpg)View This Guide
+
+### ADHD: Top Questions
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Falzheimers-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Falzheimers-desktop-step-1.jpg)View This Guide
+
+### Asthma: Top Questions
+
+✕
+
+Enter your email to unlock this appointment guide. Plus, enjoy access to exclusive health content, expert tips, and more.
+
+Email capture form for
+
+EMAIL
+
+View Guide
+
+Submission of this form is subject to Healthgrades
+
+[User Agreement](https://www.healthgrades.com/content/user-agreement) and [Privacy Policy](https://www.healthgrades.com/content/privacy-notice?redirected=true).
+
+## Affiliated Hospitals
+
+### [Oakbend Medical Center](https://www.healthgrades.com/hospital/oakbend-medical-center-e2a43c)
+
+1705 Jackson St
+
+Richmond, TX 77469
+
+How patients felt about the care they received at this hospital.
+
+79%
+
+Patients said they were given information about recovering at home
+
+6% lower than the national average
+
+72%
+
+Patients said that doctors always listened to them and explained things well
+
+4% lower than the national average
+
+[View all patient feedback](https://www.healthgrades.com/hospital/oakbend-medical-center-e2a43c#patient-experience)
+
+Learn more about how Healthgrades measures [Hospital Quality](https://www.healthgrades.com/quality/ratings-awards/methodology)
+
+Compare Dr. Smith with Pediatricians from
+
+## HCA Houston Healthcare Kingwood
+
+![HCA Houston Healthcare Kingwood](https://photos.healthgrades.com/img/facility/logo/005E01_MAP_w180h65.png)
+
+Make an appointment at HCA Houston Healthcare Kingwood today at
+
+[281-417-4665](tel:281-417-4665)
+
+![Dr. Latresha McBride, MD profile photo](https://photos.healthgrades.com/img/silhouettes/silhouette-female_w90h120_v1.jpg)
+
+### Dr. Latresha McBride, MD
+
+Explains Conditions Well
+
+### Dr. Latresha McBride, MD
+
+5 Ratings
+
+View profile
+
+![Dr. Chikku Paul, MD profile photo](https://photos.healthgrades.com/img/prov/x/g/x/xgx6c_w90h120_v401679242a6cf3b14c42e5d53a729005c6c8a529.jpg)
+
+### Dr. Chikku Paul, MD
+
+Explains Conditions Well
+
+### Dr. Chikku Paul, MD
+
+4 Ratings
+
+View profile
+
+![Dr. Cynthia Smoot, MD profile photo](https://photos.healthgrades.com/img/prov/y/r/v/yrvkq_w90h120_vac6851a6a4528f021409881b87c979753302fec7.jpg)
+
+### Dr. Cynthia Smoot, MD
+
+Explains Conditions Well
+
+### Dr. Cynthia Smoot, MD
+
+16 Ratings
+
+View profile
+
+[View more providers like this](https://www.healthgrades.com/pediatrics-directory/tx-texas/kingwood)
+
+### You May Also Like
+
+[![contentimage](https://dims.healthgrades.com/dims3/MMH/b382f23/2147483647/strip/false/crop/628x628+286+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F48%2Fba%2F666a356bdefd5e12b6cdaca02ae2%2Fhg-chopping-veggies-1200x628-facebook.jpg)\\
+\\
+Everything to Know About Treating Fatty Liver Disease](https://resources.healthgrades.com/right-care/liver-conditions/treatment-options-for-fatty-liver-disease?hid=t12_compare_contentalgo&tpc=treating-nonalcoholic-fatty-liver-disease) [![contentimage](https://dims.healthgrades.com/dims3/MMH/e4ece85/2147483647/strip/false/crop/628x628+234+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F4e%2Fd7%2Fafe45adc3808fa6b5eab48b1a0cc%2Fhg-child-looking-at-arm-1200x628-facebook.jpg)\\
+\\
+What Does Eczema Look Like?](https://resources.healthgrades.com/right-care/eczema/what-does-eczema-look-like?hid=t12_compare_contentalgo&tpc=finding-solutions-for-eczema) [![contentimage](https://dims.healthgrades.com/dims3/MMH/57548c5/2147483647/strip/false/crop/481x481+123+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F76%2F4c%2F32f64ff549518a6e2b91a4ba5bef%2Fimage-hives-on-neck.jpg)\\
+\\
+Understanding Hives](https://resources.healthgrades.com/right-care/allergies/understanding-hives?hid=t12_compare_contentalgo&tpc=finding-the-right-treatment-for-hives)
+
+### Recommended Reading From Healthgrades
+
+[![contentimage](https://dims.healthgrades.com/dims3/MMH/3c02636/2147483647/strip/true/crop/3840x3840+960+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F69%2F91%2Fd09d1cb546b68c9f8b5ed7eb901a%2Fgettyimages-697534977.jpg)\\
+\\
+7 Life Hacks for Working Moms with Depression](https://resources.healthgrades.com/right-care/depression/7-life-hacks-for-working-moms-with-depression?hid=t12_compare) [![contentimage](https://dims.healthgrades.com/dims3/MMH/17efc44/2147483647/strip/true/crop/3416x3416+680+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2Ff7%2F44%2Fff839e2241f5a79a8ac108ec32d0%2Fimage-gettyimages-495831127-woman-outside-on-swingset.jpg)\\
+\\
+Foods to Avoid for Diabetes: A Complete Guide](https://resources.healthgrades.com/right-care/diabetes/9-foods-to-avoid-with-diabetes?hid=t12_compare) [![contentimage](https://dims.healthgrades.com/dims3/MMH/6813e61/2147483647/strip/true/crop/549x549+95+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F4a%2F94%2Fd4966320f0101d09846b8d6e4306%2Fhg-grandparent-and-grandchildren-732x549-thumbnail.jpg)\\
+\\
+Can Adults Get Respiratory Syncytial Virus (RSV)?](https://resources.healthgrades.com/right-care/infections-and-contagious-diseases/can-adults-get-rsv?hid=t12_compare)
+
+## Explore More Providers
+
+[View all specialties](https://www.healthgrades.com/specialty-directory)
+
+SpecialistsNearby Related SpecialistsNearby Pediatrician
+
+[Family Medicine](https://www.healthgrades.com/family-practice-directory) [Internal Medicine](https://www.healthgrades.com/internal-medicine-directory) [Obstetrics & Gynecology](https://www.healthgrades.com/obstetrics-gynecology-directory) [Cardiology](https://www.healthgrades.com/cardiology-directory) [Orthopedic Surgery](https://www.healthgrades.com/orthopedic-surgery-directory) [General Surgery](https://www.healthgrades.com/surgery-general-directory) [Neurology](https://www.healthgrades.com/neurology-directory) [Gastroenterology](https://www.healthgrades.com/gastroenterology-directory) [Urology](https://www.healthgrades.com/urology-directory) [Oncology](https://www.healthgrades.com/oncology-directory) [Neurosurgery](https://www.healthgrades.com/neurosurgery-directory) [Endocrinology, Diabetes & Metabolism](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory)
+
+[Pediatric Emergency Medicine](https://www.healthgrades.com/pediatric-emergency-medicine-directory) [Pediatric Cardiology](https://www.healthgrades.com/pediatric-cardiology-directory) [Neonatal Medicine](https://www.healthgrades.com/perinatal-medicine-neonatal-medicine-directory) [Pediatric Gastroenterology](https://www.healthgrades.com/pediatric-gastroenterology-directory) [Pediatric Medicine](https://www.healthgrades.com/pediatric-medicine-directory)
+
+[Pediatrics, Houston TX](https://www.healthgrades.com/pediatrics-directory/tx-texas/houston) [Pediatrics, Galveston TX](https://www.healthgrades.com/pediatrics-directory/tx-texas/galveston) [Pediatrics, Katy TX](https://www.healthgrades.com/pediatrics-directory/tx-texas/katy) [Pediatrics, Sugar Land TX](https://www.healthgrades.com/pediatrics-directory/tx-texas/sugar-land) [Pediatrics, Pearland TX](https://www.healthgrades.com/pediatrics-directory/tx-texas/pearland) [Pediatrics, Spring TX](https://www.healthgrades.com/pediatrics-directory/tx-texas/spring) [Pediatrics, Conroe TX](https://www.healthgrades.com/pediatrics-directory/tx-texas/conroe) [Pediatrics, Cypress TX](https://www.healthgrades.com/pediatrics-directory/tx-texas/cypress) [Pediatrics, Webster TX](https://www.healthgrades.com/pediatrics-directory/tx-texas/webster) [Pediatrics, Pasadena TX](https://www.healthgrades.com/pediatrics-directory/tx-texas/pasadena) [Pediatrics, Humble TX](https://www.healthgrades.com/pediatrics-directory/tx-texas/humble)

@@ -1,0 +1,540 @@
+![background mobile](https://photos.healthgrades.com/profile-images/standard-mobile-background.webp)
+
+![background desktop](https://photos.healthgrades.com/profile-images/standard-desktop-background.webp)
+
+Are you a healthcare professional?
+
+Is this your profile?
+
+Yes, Claim your profileYes, claim profileNo
+
+![provider image](https://photos.healthgrades.com/img/silhouettes/silhouette-male_w200h267_v1.jpg?name=Dr.%20John%20Wilson%2C%20MD)
+
+# Dr. John Wilson, MD
+
+## Diagnostic Radiology\| 40+ years of experience
+
+40+ years of experience
+
+Have you ever been a patient of this provider?
+
+YesNo
+
+Dr. John Wilson, MD is a diagnostic radiologist in Springfield, MO and has over 40 years of experience in the medical field. He graduated from UNIVERSITY OF OKLAHOMA / HEALTH SCIENCES CENTER in 1984. He is affiliated with Mercy Hospital Springfield.
+
+### Practice
+
+1235 E Cherokee St ·Springfield, MO 65804
+
+[(417) 820-9729](tel:(417)820-9729)
+
+## Highlights
+
+Dr. Wilson specializes in the area of Diagnostic Radiology
+
+ADVERTISEMENT
+
+![healthgrades-rx](https://photos.healthgrades.com/profile-images/hgrx/HgRxDiscountVersion.webp)
+
+## Save money with free prescription discounts
+
+Get your prescription for as low as $4 with our free coupons or discount card, usable at over 64,000 participating pharmacies.
+
+Start saving
+
+Healthgrades Rx
+
+Get your prescription for as low as $4 with our free coupons or discount card, usable at over 64,000 participating pharmacies.
+
+Start saving
+
+Healthgrades Rx
+
+Optum Perks and Healthgrades are subsidiaries of RVO Health.
+
+## Experience
+
+### Search for Dr. Wilson's experience in a specific area
+
+Condition or Procedure
+
+[Learn more about experience and why treatment frequency matters](https://helpcenter.healthgrades.com/about-my-profile/experience-check)
+
+Dr. Wilson's conditions and procedures:
+
+- Abdominal Pain
+- Abnormal Thyroid
+- Acidosis
+- Actinic Keratosis
+- Acute Bronchitis
+- Acute Deep Vein Thrombosis (DVT)
+- Acute Kidney Infection
+- Acute Lower Respiratory Infection
+- Acute Sinusitis
+- Acute Venous Embolism Thrombosis
+- ADHD and-or ADD
+- Alkalosis
+- All Headaches (incl. Migraine)
+- Allergic Rhinitis
+- Anal or Rectal Pain
+- Anemia
+- Ankle Sprain and Achilles Tendon Sprain or Rupture
+- Ankle Sprains and Strains
+- Anxiety
+- Arthritis
+- Arthritis of the Elbow
+- Asthma
+- Asymptomatic Post-Menopausal Status
+- Ataxia
+- Atherosclerosis
+- Back Pain
+- Balanoposthitis
+- Bedsores
+- Bell's Palsy
+- Benign Chronic Pain Syndrome
+- Bladder Infection
+- Blood in Urine (Hematuria)
+- Bronchiectasis
+- Bronchitis
+- Bruise of Face, Scalp, or Neck
+- Bunion
+- Calcium Metabolism Disorders
+- Candidiasis of Skin and Nails
+- Carpal Tunnel Syndrome
+- Celiac Disease
+- Cellulitis
+- Chest Pain
+- Chronic Deep Vein Thrombosis (DVT)
+- Chronic Depression (Dysthymia)
+- Chronic Neck Pain
+- Chronic Pain
+- Chronic Venous Embolism Thrombosis
+- Cold Sore
+- Confusion
+- Constipation
+- COPD (Chronic Obstructive Pulmonary Disease)
+- Coronary Artery Disease (CAD)
+- Cough
+- Cystic Fibrosis
+- Deep Vein Thrombosis (DVT)
+- Dehydration
+- Diabetes Type 1
+- Diabetes Type 2
+- Diabetes With Renal Manifestations
+- Diabetic Polyneuropathy
+- Diarrhea
+- Difficulty With Walking
+- Dizziness
+- Dysphagia
+- Eczema and Contact Dermatitis
+- Emphysema
+- Enlarged Prostate (BPH)
+- Enteritis
+- Erectile Dysfunction
+- Esophagitis
+- Essential Tremor
+- Fever
+- Fibromyalgia
+- Gait Abnormality
+- Gas-Bloat Syndrome
+- Gastritis
+- Gastroesophageal Reflux Disease (GERD)
+- Gastroparesis
+- Gout
+- Hammer Toe
+- Headache
+- Heart Disease
+- Heart Palpitations
+- Heartburn
+- Hemorrhoids
+- Herpes Simplex Infection
+- Hip Pointer
+- Hoarse Voice (Dysphonia)
+- Hypercalcemia
+- Hyperkalemia
+- Hyperlipidemia
+- Hypertension
+- Hypertensive Chronic Kidney Disease
+- Hypoglycemia
+- Hypokalemia
+- Hypotension
+- Hypotension (Excluding Maternal)
+- Hypothyroidism
+- Hypoxemia
+- Indigestion
+- Influenza (Flu)
+- Insomnia
+- Intestinal Diverticulosis
+- Iron Metabolism Disorders
+- Irritable Bowel Syndrome
+- Joint Pain
+- Kidney Infection
+- Kidney Stone Pain (Renal Colic)
+- Leg and Foot Ulcers
+- Limb Pain
+- Limb Swelling
+- Limb Swelling Caused by Fluid Overload
+- Lipid Disorders
+- Liver Damage from Alcohol
+- Low Back Pain
+- Magnesium Metabolism Disorders
+- Malaise and Fatigue
+- Malnutrition
+- Menopausal and Postmenopausal Disorders
+- Menstrual Disorders
+- Migraine
+- Mineral Metabolism Disorders
+- Mood Disorders (Dysthymia and Cyclothymia)
+- Muscle Spasm
+- Muscle Weakness
+- Nail and Nail Bed Infection
+- Nausea
+- Neurogenic Bladder
+- Nighttime Urination (Nocturia)
+- Non-Alcoholic Fatty Liver Disease
+- Noninfectious Gastroenteritis and Colitis
+- Nosebleed
+- Obesity
+- Osteoarthritis
+- Osteoarthritis of Foot
+- Osteoarthritis of Hand
+- Osteoarthritis of Hand or Wrist
+- Osteoarthritis of Hip
+- Osteoarthritis of Hip and Thigh
+- Osteoarthritis of Knee
+- Osteoarthritis of Shoulder
+- Osteoarthritis of Spine
+- Osteopenia
+- Osteoporosis
+- Overactive Bladder
+- Painful Urination (Dysuria)
+- Partial Lung Collapse
+- Patellofemoral Pain Syndrome (PFPS)
+- Peptic Ulcer
+- Pericardial Disease
+- Peripheral Nerve Disorders
+- Peripheral Vascular Disease (PAD, PVD)
+- Phlebitis and Thrombophlebitis
+- Phosphorus Metabolism Disorders
+- Pneumonia
+- Pollen Allergy
+- Polymyalgia Rheumatica (PMR)
+- Polyneuropathy
+- Polyuria
+- Prostatitis
+- Radiculopathy
+- Rash
+- Raynaud's Disease
+- Reflux Esophagitis
+- Restless Leg Syndrome
+- Rib Fracture
+- Ringworm
+- Rosacea
+- Sarcoidosis
+- Sciatica
+- Secondary Diabetes Mellitus
+- Sepsis
+- Sexually Transmitted Diseases (STDs)
+- Shortness of Breath
+- Sinusitis
+- Sleep Apnea
+- Spermatocele
+- Sprains and Strains (incl. Muscle Tear)
+- Swine Flu
+- Symptomatic Menopause
+- Testicular Dysfunction
+- Tinnitus
+- Tobacco Use Disorder
+- Transient Ischemic Attack (TIA)
+- Tremor
+- Trigeminal Neuralgia
+- Urinary Hesitancy
+- Urinary Incontinence
+- Urinary Stones
+- Urinary Tract Infection (UTI)
+- Vaginitis or Vaginosis
+- Venous Embolism and Thrombosis
+- Venous Insufficiency
+- Vertigo
+- Vitamin D Deficiency
+- Wheezing
+- Yeast Infections
+- Abscess or Cyst Drainage or Aspiration
+- Abscess or Fluid Incision and Drainage
+- Arterial Blood Gas Test (ABG)
+- Cholesterol Screening
+- Diabetes Screening
+- Electrocardiogram (EKG)
+- Hepatitis B Virus Screening
+- Hepatitis C Virus Screening
+- Hepatitis Screening
+- Immunization Administration
+- Incision and Removal of Foreign Object
+- Liver Function Test
+- Prostate Cancer Screening
+- Puncture Aspiration
+- Sexually Transmitted Infections Screening
+- Thyroid Screening
+
+## Insurance Check
+
+### Search for your insurance carrier and choose your plan type
+
+Insurance Carrier
+
+Choose Plan Type
+
+Apply
+
+Try: CareFirst BlueCross BlueShield, Humana, Aetna, Blue Cross Blue Shield, or Cigna
+
+Please verify your coverage with the provider. [(417) 820-9729](tel:4178209729 "Call: (417) 820-9729")
+
+## Dr. Wilson's Reviews
+
+![healthgrades logo](https://photos.healthgrades.com/public3/images/logo-blue-full.svg)
+
+### Be the first to leave a review
+
+How likely are you to recommend
+
+Dr. Wilson?
+
+Definitely NotNoMaybeYesDefinitelySelect Rating
+
+![Provider explaining information to patient](https://photos.healthgrades.com/img/ads/claim_this_profile.jpg)
+
+### Is this your profile?
+
+Respond to reviews, add information, and reach more patients. Claiming is free and only takes a minute.
+
+[Claim your profile](https://update.healthgrades.com/landing/claim?pwid=2BBN9&pCID=hg_ProvProfile)
+
+### Know Before You Go
+
+Expand your knowledge with related news and articles.
+
+[9 Preventive Health Screenings Doctors Recommend for Females](https://resources.healthgrades.com/right-care/patient-advocate/9-important-health-screenings-you-may-not-be-getting?hid=t12_review) [How to Find Prescription Drug Discounts](https://resources.healthgrades.com/right-care/patient-advocate/prescription-drug-discounts?hid=t12_review) [Health Concerns That Can Be Treated in a Telehealth Visit](https://resources.healthgrades.com/right-care/patient-advocate/health-concerns-that-can-be-treated-in-a-telehealth-visit?hid=t12_review)
+
+## About Me
+
+### biography
+
+Dr. John Wilson, MD is a diagnostic radiologist in Springfield, MO and has over 40 years of experience in the medical field. He graduated from UNIVERSITY OF OKLAHOMA / HEALTH SCIENCES CENTER in 1984. He is affiliated with Mercy Hospital Springfield.
+
+### Specialties\*
+
+- Diagnostic Radiology
+
+
+\*Healthgrades does not verify qualifications for medical specialties. Please verify your provider's specialty and qualifications directly with your provider and applicable medical board.
+
+### Education
+
+- University Of Oklahoma / Health Sciences Center
+Medical School, 1984
+
+### Board Certifications
+
+American Board of Medical Specialties®
+
+American Board of Radiology®
+
+-
+
+Diagnostic Radiology
+
+Learn more about board certification
+
+### Board Action Check
+
+For detailed information about any of the below board actions, please search for the provider's records on the linked state licensing board or the [Federation of State Medical Boards](https://www.docinfo.org/).  To learn more about the difference between these sources, please refer to our [FAQs](https://www.healthgrades.com/about/healthgrades-methodologies#faqs).
+
+Healthgrades has not received any data indicating a board action exists for this provider.
+
+Healthgrades receives board action history for physicians and physician assistants. The information displayed here is sourced from independent information providers, such as state board websites, and may not be the most up-to-date information. Healthgrades makes no representations with respect to the accuracy of any information provided here and assumes no responsibility or liability for such information.
+
+Learn more about medical license public record check
+
+### Common Questions and Answers
+
+Questions
+
+Responses
+
+Please call the office to learn more.
+
+[(417) 820-9729](tel:4178209729)
+
+### Healthgrades Tips for Getting the Right Healthcare
+
+Guidance for getting the right healthcare
+
+[8 Tips for Choosing a Doctor](https://resources.healthgrades.com/right-care/patient-advocate/8-tips-for-choosing-a-doctor?hid=t12_learn&tpc=patient-advocate) [What to Say at Your Appointment: 7 Tips From Doctors](https://resources.healthgrades.com/right-care/patient-advocate/what-to-say-at-your-appointment-7-tips-from-doctors?hid=t12_learn&tpc=patient-advocate) [6 Tips for Talking to Your Doctor](https://resources.healthgrades.com/right-care/patient-advocate/6-tips-for-talking-to-your-doctor?hid=t12_learn&tpc=patient-advocate)
+
+## Locations
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/3946/6366.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/3947/6366.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/3945/6366.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/3948/6366.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/3944/6366.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/3949/6366.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/3943/6366.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/3950/6366.png)
+
+Map Marker 1
+1
+
+[+](https://www.healthgrades.com/physician/dr-john-wilson-2bbn9# "Zoom in") [−](https://www.healthgrades.com/physician/dr-john-wilson-2bbn9# "Zoom out")
+
+[Leaflet](https://leafletjs.com/ "A JavaScript library for interactive maps") \| © [OpenStreetMap](http://osm.org/copyright) contributors
+
+### Practice
+
+1
+
+Mercy Children's Hospital Springfield
+
+Mercy Children's Hospital Springfield
+
+1235 E Cherokee St
+
+Springfield, MO 65804
+
+[(417) 820-9729](tel:(417)820-9729)
+
+Fax
+
+[Driving Directions](https://www.google.com/maps/dir/?api=1&destination=1235+E+Cherokee+St,+Springfield,+MO+65804)
+
+## Affiliated Hospitals
+
+### [Mercy Hospital Springfield](https://www.healthgrades.com/hospital/mercy-hospital-springfield-0a5943)
+
+1235 E Cherokee St
+
+Springfield, MO 65804
+
+![Healthgrades Quality Award Medallion](https://ucmscdn.healthgrades.com/e0/06/c0985bae4e609d5ce9be7d5fb7b6/award-winning-hospital.png)
+
+Recipient of 23
+
+hospital awards
+
+America’s 50 Best Hospitals for Surgical Excellence Award™2023
+
+Superior clinical outcomes in surgical care across 15 of the most common in-hospital surgical procedures including cardiac, vascular, joint replacement, prostate, spine, and gastrointestinal surgeries
+
+[View all awards](https://www.healthgrades.com/hospital/mercy-hospital-springfield-0a5943#awards)
+
+How patients felt about the care they received at this hospital.
+
+86%
+
+Patients said they were given information about recovering at home
+
+1% higher than the national average
+
+75%
+
+Patients said that doctors always listened to them and explained things well
+
+1% lower than the national average
+
+[View all patient feedback](https://www.healthgrades.com/hospital/mercy-hospital-springfield-0a5943#patient-experience)
+
+Learn more about how Healthgrades measures [Hospital Quality](https://www.healthgrades.com/quality/ratings-awards/methodology)
+
+## Compare Providers
+
+[Show more Diagnostic Radiologists](https://www.healthgrades.com/diagnostic-radiology-directory/mo-missouri/springfield)
+
+Providers shown are based on Dr. Wilson's location and specialty.
+
+### [Dr. Britton Lott, MD](https://www.healthgrades.com/physician/dr-britton-lott-gbwn4)
+
+Specialty: Breast Radiology
+
+[5.0(2 ratings)View all ratings](https://www.healthgrades.com/physician/dr-britton-lott-gbwn4#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fsilhouettes%2Fsilhouette-female_w60h80_v1.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-britton-lott-gbwn4) Add to Compare
+
+### [Dr. Jane Seto, DO](https://www.healthgrades.com/physician/dr-jane-seto-g8q34)
+
+Specialty: Diagnostic Radiology
+
+[5.0(3 ratings)View all ratings](https://www.healthgrades.com/physician/dr-jane-seto-g8q34#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fsilhouettes%2Fsilhouette-female_w60h80_v1.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-jane-seto-g8q34) Add to Compare
+
+### [Dr. Michelle Walters, MD](https://www.healthgrades.com/physician/dr-michelle-walters-y8v44)
+
+Specialty: Diagnostic Radiology
+
+[3.0(2 ratings)View all ratings](https://www.healthgrades.com/physician/dr-michelle-walters-y8v44#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fsilhouettes%2Fsilhouette-female_w60h80_v1.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-michelle-walters-y8v44) Add to Compare
+
+### [Dr. Melanie Pearce Smith, DO](https://www.healthgrades.com/physician/dr-melanie-pearce-smith-yxl9y)
+
+Specialty: Diagnostic Radiology
+
+[5.0(1 rating)View all ratings](https://www.healthgrades.com/physician/dr-melanie-pearce-smith-yxl9y#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fsilhouettes%2Fsilhouette-female_w60h80_v1.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-melanie-pearce-smith-yxl9y) Add to Compare
+
+### [Dr. Mark Barrett, MD](https://www.healthgrades.com/physician/dr-mark-barrett-392p9)
+
+Specialty: Diagnostic Radiology
+
+[5.0(1 rating)View all ratings](https://www.healthgrades.com/physician/dr-mark-barrett-392p9#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fsilhouettes%2Fsilhouette-male_w60h80_v1.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-mark-barrett-392p9) Add to Compare
+
+### [Dr. Jason Gatewood, MD](https://www.healthgrades.com/physician/dr-jason-gatewood-3d64h)
+
+Specialty: Breast Radiology
+
+[Leave A Review](https://www.healthgrades.com/physician/dr-jason-gatewood-3d64h#leave-review)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fprov%2F3%2FD%2F6%2F3D64H_w60h80_v17611.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-jason-gatewood-3d64h) Add to Compare
+
+[View All Results](https://www.healthgrades.com/diagnostic-radiology-directory/mo-missouri/springfield)
+
+### You May Also Like
+
+[![contentimage](https://dims.healthgrades.com/dims3/MMH/5739ddb/2147483647/strip/false/crop/628x628+326+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F1f%2F39%2Fa087883d0b25de8e72998951f7d1%2Fhg-doctors-office-front-desk-1200x628-facebook.jpg)\\
+\\
+10 Mistakes People Make at Their Doctor Visits](https://resources.healthgrades.com/right-care/patient-advocate/10-mistakes-people-make-at-their-doctor-visits?hid=t12_compare_contentalgo) [![contentimage](https://dims.healthgrades.com/dims3/MMH/aa0ebb8/2147483647/strip/false/crop/628x628+201+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F66%2Fb1%2Fd2ae116fa670ff8484c1169e83f0%2Fhg-mother-son-at-doctor-appointment-1200x628-facebook.jpg)\\
+\\
+Tips for Asking Your Doctor Questions](https://resources.healthgrades.com/right-care/patient-advocate/6-tips-for-talking-to-your-doctor?hid=t12_compare_contentalgo) [![contentimage](https://dims.healthgrades.com/dims3/MMH/33c6de0/2147483647/strip/false/crop/628x628+143+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F48%2F19%2F3084869bf3e728e02779484db628%2Fhg-physical-exam-1200x628-facebook.jpg)\\
+\\
+What to Ask at An Annual Physical Exam](https://resources.healthgrades.com/right-care/patient-advocate/6-things-your-doctor-does-at-an-annual-physical?hid=t12_compare_contentalgo)
+
+### Recommended Reading From Healthgrades
+
+[![contentimage](https://dims.healthgrades.com/dims3/MMH/0d5a8f3/2147483647/strip/true/crop/3409x3409+857+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F8f%2F50%2Fc52ec81c4f3eb73ebc92c078ee8d%2Fimage-gettyimages-557475327.jpg)\\
+\\
+7 Symptoms Never to Ignore If You Have Depression](https://resources.healthgrades.com/right-care/depression/7-symptoms-never-to-ignore-if-you-have-depression?hid=t12_compare) [![contentimage](https://dims.healthgrades.com/dims3/MMH/15d1543/2147483647/strip/true/crop/3414x3414+854+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2Fbf%2F1d%2F5e18583943618c08db064688d114%2Fimage-gettyimages-184313225.jpg)\\
+\\
+Top 13 Things to Avoid When Managing Migraine](https://resources.healthgrades.com/right-care/migraine-and-headache/dont-do-these-things-for-a-migraine?hid=t12_compare) [![contentimage](https://dims.healthgrades.com/dims3/MMH/17efc44/2147483647/strip/true/crop/3416x3416+680+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2Ff7%2F44%2Fff839e2241f5a79a8ac108ec32d0%2Fimage-gettyimages-495831127-woman-outside-on-swingset.jpg)\\
+\\
+Foods to Avoid for Diabetes: A Complete Guide](https://resources.healthgrades.com/right-care/diabetes/9-foods-to-avoid-with-diabetes?hid=t12_compare)
+
+## Explore More Providers
+
+[View all specialties](https://www.healthgrades.com/specialty-directory)
+
+SpecialistsNearby Related SpecialistsNearby Diagnostic Radiologist
+
+[Family Medicine](https://www.healthgrades.com/family-practice-directory) [Internal Medicine](https://www.healthgrades.com/internal-medicine-directory) [Obstetrics & Gynecology](https://www.healthgrades.com/obstetrics-gynecology-directory) [Cardiology](https://www.healthgrades.com/cardiology-directory) [Orthopedic Surgery](https://www.healthgrades.com/orthopedic-surgery-directory) [General Surgery](https://www.healthgrades.com/surgery-general-directory) [Neurology](https://www.healthgrades.com/neurology-directory) [Gastroenterology](https://www.healthgrades.com/gastroenterology-directory) [Urology](https://www.healthgrades.com/urology-directory) [Oncology](https://www.healthgrades.com/oncology-directory) [Neurosurgery](https://www.healthgrades.com/neurosurgery-directory) [Endocrinology, Diabetes & Metabolism](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory)
+
+[Neuroradiology](https://www.healthgrades.com/neuroradiology-directory) [Radiology](https://www.healthgrades.com/radiology-directory) [Vascular & Interventional Radiology](https://www.healthgrades.com/interventional-radiology-vascular-radiology-directory) [Nuclear Radiology](https://www.healthgrades.com/nuclear-radiology-directory)
+
+[Diagnostic Radiology, Joplin MO](https://www.healthgrades.com/diagnostic-radiology-directory/mo-missouri/joplin) [Diagnostic Radiology, Rolla MO](https://www.healthgrades.com/diagnostic-radiology-directory/mo-missouri/rolla) [Diagnostic Radiology, Lebanon MO](https://www.healthgrades.com/diagnostic-radiology-directory/mo-missouri/lebanon) [Diagnostic Radiology, West Plains MO](https://www.healthgrades.com/diagnostic-radiology-directory/mo-missouri/west-plains) [Diagnostic Radiology, Branson MO](https://www.healthgrades.com/diagnostic-radiology-directory/mo-missouri/branson) [Diagnostic Radiology, Clinton MO](https://www.healthgrades.com/diagnostic-radiology-directory/mo-missouri/clinton) [Diagnostic Radiology, Osage Beach MO](https://www.healthgrades.com/diagnostic-radiology-directory/mo-missouri/osage-beach) [Diagnostic Radiology, Bolivar MO](https://www.healthgrades.com/diagnostic-radiology-directory/mo-missouri/bolivar) [Diagnostic Radiology, Cassville MO](https://www.healthgrades.com/diagnostic-radiology-directory/mo-missouri/cassville) [Diagnostic Radiology, Mountain View MO](https://www.healthgrades.com/diagnostic-radiology-directory/mo-missouri/mountain-view)

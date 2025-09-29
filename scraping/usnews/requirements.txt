@@ -1,0 +1,4 @@
+firecrawl-py
+python-dotenv
+sqlalchemy
+psycopg2-binary

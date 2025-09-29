@@ -281,6 +281,51 @@ async def search_providers_by_criteria(
             # Get the primary specialty for display
             primary_specialty = get_specialty_description(provider.healthcare_provider_taxonomy_code_1)
             
+            # Fetch education from US News with Healthgrades fallback (per field)
+            edu_med_school = None
+            edu_residency = None
+            edu_fellowship = None
+            edu_certifications = None
+
+            try:
+                # US News first
+                usnews_sql = text("""
+                    SELECT medical_school, residency, fellowship, certifications
+                    FROM usnews_data
+                    WHERE npi = :npi
+                    LIMIT 1
+                """)
+                us_row = db.execute(usnews_sql, {"npi": provider.npi}).fetchone()
+                if us_row:
+                    edu_med_school = us_row.medical_school
+                    edu_residency = us_row.residency
+                    edu_fellowship = us_row.fellowship
+                    edu_certifications = us_row.certifications
+
+                # Healthgrades fallback per field
+                if not (edu_med_school and str(edu_med_school).strip() and str(edu_med_school) != 'None') or \
+                   not (edu_residency and str(edu_residency).strip() and str(edu_residency) != 'None') or \
+                   not (edu_fellowship and str(edu_fellowship).strip() and str(edu_fellowship) != 'None') or \
+                   not (edu_certifications and str(edu_certifications).strip() and str(edu_certifications) != 'None'):
+                    hg_sql = text("""
+                        SELECT medical_school, residency, fellowship, certifications
+                        FROM healthgrades_data
+                        WHERE npi = :npi
+                        LIMIT 1
+                    """)
+                    hg_row = db.execute(hg_sql, {"npi": provider.npi}).fetchone()
+                    if hg_row:
+                        if not (edu_med_school and str(edu_med_school).strip() and str(edu_med_school) != 'None'):
+                            edu_med_school = hg_row.medical_school
+                        if not (edu_residency and str(edu_residency).strip() and str(edu_residency) != 'None'):
+                            edu_residency = hg_row.residency
+                        if not (edu_fellowship and str(edu_fellowship).strip() and str(edu_fellowship) != 'None'):
+                            edu_fellowship = hg_row.fellowship
+                        if not (edu_certifications and str(edu_certifications).strip() and str(edu_certifications) != 'None'):
+                            edu_certifications = hg_row.certifications
+            except Exception as e:
+                logger.error(f"Error enriching education for NPI {provider.npi}: {e}")
+
             formatted_provider = {
                 "id": provider.npi,  # Use NPI as ID
                 "npi": provider.npi,
@@ -298,9 +343,10 @@ async def search_providers_by_criteria(
                 "languages": [],  # No language data available
                 "insurance": [],  # No insurance data available
                 "education": {
-                    "medicalSchool": None,  # No medical school data available
-                    "graduationYear": None,  # No graduation year data available
-                    "residency": None  # No residency data available
+                    "medicalSchool": edu_med_school if (edu_med_school and str(edu_med_school) != 'None') else None,
+                    "residency": edu_residency if (edu_residency and str(edu_residency) != 'None') else None,
+                    "fellowship": edu_fellowship if (edu_fellowship and str(edu_fellowship) != 'None') else None,
+                    "certifications": edu_certifications if (edu_certifications and str(edu_certifications) != 'None') else None
                 }
             }
             filtered_providers.append(formatted_provider)

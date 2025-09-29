@@ -1,0 +1,472 @@
+![background mobile](https://photos.healthgrades.com/profile-images/standard-mobile-background.webp)
+
+![background desktop](https://photos.healthgrades.com/profile-images/standard-desktop-background.webp)
+
+Are you a healthcare professional?
+
+Is this your profile?
+
+Yes, Claim your profileYes, claim profileNo
+
+![provider image](https://photos.healthgrades.com/img/silhouettes/silhouette-male_w200h267_v1.jpg?name=Dr.%20Nirav%20Patel%2C%20MD)
+
+# Dr. Nirav Patel, MD
+
+## Neuroradiology
+
+Be the first to review this provider!
+
+PoorFairGoodVery GoodExcellent
+
+(Select Rating)
+
+Dr. Nirav Patel, MD is a neuroradiologist in Atlanta, GA. He is affiliated with medical facilities Norwalk Hospital and Danbury Hospital.
+
+### Practice
+
+1000 Johnson Ferry Rd ·Atlanta, GA 30342
+
+[(404) 851-6323](tel:(404)851-6323)
+
+## Highlights
+
+Dr. Patel specializes in the areas of Diagnostic Radiology & Neuroradiology
+
+Practices at Top Hospital
+
+Clean Hospital
+
+ADVERTISEMENT
+
+![healthgrades-rx](https://photos.healthgrades.com/profile-images/hgrx/HgRxDiscountVersion.webp)
+
+## Save money with free prescription discounts
+
+Get your prescription for as low as $4 with our free coupons or discount card, usable at over 64,000 participating pharmacies.
+
+Start saving
+
+Healthgrades Rx
+
+Get your prescription for as low as $4 with our free coupons or discount card, usable at over 64,000 participating pharmacies.
+
+Start saving
+
+Healthgrades Rx
+
+Optum Perks and Healthgrades are subsidiaries of RVO Health.
+
+## Experience
+
+### Search for Dr. Patel's experience in a specific area
+
+Condition or Procedure
+
+[Learn more about experience and why treatment frequency matters](https://helpcenter.healthgrades.com/about-my-profile/experience-check)
+
+Dr. Patel's conditions and procedures:
+
+- Traumatic Brain Injury (TBI)
+
+## Insurance Check
+
+### Search for your insurance carrier and choose your plan type
+
+Insurance Carrier
+
+Choose Plan Type
+
+Apply
+
+Try: Prime Health Services, Connecticare, Blue Cross and Blue Shield of Texas, EmblemHealth, or CareFirst BlueCross BlueShield
+
+Please verify your coverage with the provider. [(404) 851-6323](tel:4048516323 "Call: (404) 851-6323")
+
+## Dr. Patel's Reviews
+
+![healthgrades logo](https://photos.healthgrades.com/public3/images/logo-blue-full.svg)
+
+### Be the first to leave a review
+
+How likely are you to recommend
+
+Dr. Patel?
+
+Definitely NotNoMaybeYesDefinitelySelect Rating
+
+![Provider explaining information to patient](https://photos.healthgrades.com/img/ads/claim_this_profile.jpg)
+
+### Is this your profile?
+
+Respond to reviews, add information, and reach more patients. Claiming is free and only takes a minute.
+
+[Claim your profile](https://update.healthgrades.com/landing/claim?pwid=GHXBS&pCID=hg_ProvProfile)
+
+### Know Before You Go
+
+Expand your knowledge with related news and articles.
+
+[7 Must-Have Items for Your Migraine Attack Toolkit](https://resources.healthgrades.com/right-care/migraine-and-headache/7-must-have-items-for-your-migraine-attack-toolkit?hid=t12_review) [Managing Involuntary Laughing and Crying After Stroke](https://resources.healthgrades.com/right-care/brain-and-nerves/managing-involuntary-laughing-and-crying-after-stroke?hid=t12_review) [7 Ways to Manage Chronic Pain With Multiple Sclerosis](https://resources.healthgrades.com/right-care/multiple-sclerosis/7-ways-to-manage-chronic-pain-with-multiple-sclerosis?hid=t12_review)
+
+## About Me
+
+### biography
+
+Dr. Nirav Patel, MD is a neuroradiologist in Atlanta, GA. He is affiliated with medical facilities Norwalk Hospital and Danbury Hospital.
+
+### Specialties\*
+
+- Diagnostic Radiology
+
+- Neuroradiology
+
+
+\*Healthgrades does not verify qualifications for medical specialties. Please verify your provider's specialty and qualifications directly with your provider and applicable medical board.
+
+### Board Certifications
+
+American Board of Medical Specialties®
+
+American Board of Radiology®
+
+-
+
+Diagnostic Radiology
+
+-
+
+Neuroradiology
+
+Learn more about board certification
+
+### Board Action Check
+
+For detailed information about any of the below board actions, please search for the provider's records on the linked state licensing board or the [Federation of State Medical Boards](https://www.docinfo.org/).  To learn more about the difference between these sources, please refer to our [FAQs](https://www.healthgrades.com/about/healthgrades-methodologies#faqs).
+
+Healthgrades has not received any data indicating a board action exists for this provider.
+
+Healthgrades receives board action history for physicians and physician assistants. The information displayed here is sourced from independent information providers, such as state board websites, and may not be the most up-to-date information. Healthgrades makes no representations with respect to the accuracy of any information provided here and assumes no responsibility or liability for such information.
+
+Learn more about medical license public record check
+
+### Common Questions and Answers
+
+Questions
+
+Responses
+
+Please call the office to learn more.
+
+[(404) 851-6323](tel:4048516323)
+
+![treating involuntary crying and laughing](https://dims.healthgrades.com/dims3/MMH/ae2f78b/2147483647/strip/true/crop/683x683+138+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F71%2F6d%2F1f44b6a8431e622dfc120f7e1daa%2Fgettyimages-1469776928-1024x683.jpg)
+
+#### Focus on Uncontrolled Emotions
+
+[5 Conditions Associated with Uncontrollable Laughing or Crying](https://resources.healthgrades.com/right-care/brain-and-nerves/5-conditions-associated-with-uncontrollable-laughing-or-crying?hid=t12_learn_fomo&tpc=treating-involuntary-crying-and-laughing)
+
+Spontaneous outbursts of emotion such as crying or laughing are associated with several neurological conditions. This behavior is known as pseudobulbar effect, and there are treatments available.
+
+[Learn More](https://resources.healthgrades.com/right-care/brain-and-nerves/5-conditions-associated-with-uncontrollable-laughing-or-crying?hid=t12_learn_fomo&tpc=treating-involuntary-crying-and-laughing)
+
+## Locations
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/1/0/0.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/1/1/0.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/1/1/0.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/1/0/0.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/1/0/0.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/1/1/0.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/1/1/0.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/1/0/0.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/1/0/0.png)
+
+Map Marker 1
+1
+
+Map Marker 2
+2
+
+Map Marker 3
+3
+
+Map Marker 4
+4
+
+[+](https://www.healthgrades.com/physician/dr-nirav-patel-ghxbs# "Zoom in") [−](https://www.healthgrades.com/physician/dr-nirav-patel-ghxbs# "Zoom out")
+
+[Leaflet](https://leafletjs.com/ "A JavaScript library for interactive maps") \| © [OpenStreetMap](http://osm.org/copyright) contributors
+
+### Practice
+
+1
+
+Northside Hospital
+
+[Northside Hospital](https://www.healthgrades.com/group-directory/ga-georgia/atlanta/practice-xsbf4g)
+
+1000 Johnson Ferry Rd
+
+Atlanta, GA 30342
+
+[View office profile](https://www.healthgrades.com/group-directory/ga-georgia/atlanta/practice-xsbf4g)
+
+[(404) 851-6323](tel:(404)851-6323)
+
+Fax
+
+[Driving Directions](https://www.google.com/maps/dir/?api=1&destination=1000+Johnson+Ferry+Rd,+Atlanta,+GA+30342)
+
+### Practice
+
+2
+
+Danbury Hospital
+
+Danbury Hospital
+
+24 Hospital Ave
+
+Danbury, CT 06810
+
+[(203) 739-7532](tel:(203)739-7532)
+
+Fax
+
+[Driving Directions](https://www.google.com/maps/dir/?api=1&destination=24+Hospital+Ave,+Danbury,+CT+06810)
+
+3
+
+Norwalk Hospital
+
+Norwalk Hospital
+
+34 Maple St
+
+Norwalk, CT 06850
+
+[(203) 739-7532](tel:(203)739-7532)
+
+[Driving Directions](https://www.google.com/maps/dir/?api=1&destination=34+Maple+St,+Norwalk,+CT+06850)
+
+4
+
+Office
+
+Office
+
+8791 Conference Dr
+
+Fort Myers, FL 33919
+
+[(239) 331-5566](tel:(239)331-5566)
+
+Fax
+
+[Driving Directions](https://www.google.com/maps/dir/?api=1&destination=8791+Conference+Dr,+Fort+Myers,+FL+33919)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fpsorisasis-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fpsorisasis-desktop-step-2.jpg)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fheart-failure-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fheart-failure-desktop-step-2.jpg)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fasthma-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fasthma-desktop-step-2.jpg)
+
+## Before Your Visit
+
+An appointment guide can help you get the most out of your visit.
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fpsorisasis-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fpsorisasis-desktop-step-1.jpg)View This Guide
+
+### Migraine: Top Questions
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fheart-failure-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fheart-failure-desktop-step-1.jpg)View This Guide
+
+### Multiple Sclerosis: Top Questions
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fasthma-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fasthma-desktop-step-1.jpg)View This Guide
+
+### Pseudobulbar Affect: Top Questions
+
+✕
+
+Enter your email to unlock this appointment guide. Plus, enjoy access to exclusive health content, expert tips, and more.
+
+Email capture form for
+
+EMAIL
+
+View Guide
+
+Submission of this form is subject to Healthgrades
+
+[User Agreement](https://www.healthgrades.com/content/user-agreement) and [Privacy Policy](https://www.healthgrades.com/content/privacy-notice?redirected=true).
+
+## Affiliated Hospitals
+
+### [Danbury Hospital](https://www.healthgrades.com/hospital/danbury-hospital-6bcf43)
+
+24 Hospital Ave
+
+Danbury, CT 06810
+
+![Healthgrades Quality Award Medallion](https://ucmscdn.healthgrades.com/e0/06/c0985bae4e609d5ce9be7d5fb7b6/award-winning-hospital.png)
+
+Recipient of 28
+
+hospital awards
+
+America's 250 Best Hospitals Award™2025, 2024
+
+Top 5% in the nation for consistently delivering clinical quality
+
+Patient Safety Excellence Award™2024
+
+Top 5% in the nation for consistently delivering clinical quality
+
+[View all awards](https://www.healthgrades.com/hospital/danbury-hospital-6bcf43#awards)
+
+How patients felt about the care they received at this hospital.
+
+89%
+
+Patients said they were given information about recovering at home
+
+4% higher than the national average
+
+75%
+
+Patients said that doctors always listened to them and explained things well
+
+1% lower than the national average
+
+[View all patient feedback](https://www.healthgrades.com/hospital/danbury-hospital-6bcf43#patient-experience)
+
+### [Norwalk Hospital](https://www.healthgrades.com/hospital/norwalk-hospital-6d9ca3)
+
+34 Maple St
+
+Norwalk, CT 06850
+
+![Healthgrades Quality Award Medallion](https://ucmscdn.healthgrades.com/e0/06/c0985bae4e609d5ce9be7d5fb7b6/award-winning-hospital.png)
+
+Recipient of 40
+
+hospital awards
+
+America's 50 Best Hospitals Award™2025, 2024
+
+Superior clinical outcomes in the care and treatment of stroke
+
+America's 100 Best Hospitals Award™2025, 2024, 2023
+
+Superior clinical outcomes in the care and treatment of stroke
+
+[View all awards](https://www.healthgrades.com/hospital/norwalk-hospital-6d9ca3#awards)
+
+How patients felt about the care they received at this hospital.
+
+88%
+
+Patients said they were given information about recovering at home
+
+3% higher than the national average
+
+77%
+
+Patients said that doctors always listened to them and explained things well
+
+1% higher than the national average
+
+[View all patient feedback](https://www.healthgrades.com/hospital/norwalk-hospital-6d9ca3#patient-experience)
+
+Learn more about how Healthgrades measures [Hospital Quality](https://www.healthgrades.com/quality/ratings-awards/methodology)
+
+## Compare Providers
+
+[Show more Neuroradiologists](https://www.healthgrades.com/neuroradiology-directory/ga-georgia/atlanta)
+
+Providers shown are based on Dr. Patel's location and specialty.
+
+### [Dr. Serge Ouanounou, MD](https://www.healthgrades.com/physician/dr-serge-ouanounou-35gcr)
+
+Specialty: Neuroradiology
+
+[Leave A Review](https://www.healthgrades.com/physician/dr-serge-ouanounou-35gcr#leave-review)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fsilhouettes%2Fsilhouette-male_w60h80_v1.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-serge-ouanounou-35gcr) Add to Compare
+
+### [Dr. Jennifer Becker, MD](https://www.healthgrades.com/physician/dr-jennifer-becker-y9rhtqz)
+
+Specialty: Neuroradiology
+
+[5.0(1 rating)View all ratings](https://www.healthgrades.com/physician/dr-jennifer-becker-y9rhtqz#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fsilhouettes%2Fsilhouette-female_w60h80_v1.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-jennifer-becker-y9rhtqz) Add to Compare
+
+### [Dr. Arun Krishnan, MD](https://www.healthgrades.com/physician/dr-arun-krishnan-26ncw)
+
+Specialty: Neuroradiology
+
+[Leave A Review](https://www.healthgrades.com/physician/dr-arun-krishnan-26ncw#leave-review)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fsilhouettes%2Fsilhouette-male_w60h80_v1.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-arun-krishnan-26ncw) Add to Compare
+
+### [Dr. Richard Cory, MD](https://www.healthgrades.com/physician/dr-richard-cory-22r49)
+
+Specialty: Neuroradiology
+
+[5.0(1 rating)View all ratings](https://www.healthgrades.com/physician/dr-richard-cory-22r49#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fsilhouettes%2Fsilhouette-male_w60h80_v1.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-richard-cory-22r49) Add to Compare
+
+### [Dr. Jacques Dion, MD](https://www.healthgrades.com/physician/dr-jacques-dion-y3xyq)
+
+Specialty: Neuroradiology
+
+[5.0(4 ratings)View all ratings](https://www.healthgrades.com/physician/dr-jacques-dion-y3xyq#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fsilhouettes%2Fsilhouette-male_w60h80_v1.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-jacques-dion-y3xyq) Add to Compare
+
+### [Dr. Frank Tong, MD](https://www.healthgrades.com/physician/dr-frank-tong-3jk96)
+
+Specialty: Neuroradiology
+
+[5.0(5 ratings)View all ratings](https://www.healthgrades.com/physician/dr-frank-tong-3jk96#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fsilhouettes%2Fsilhouette-male_w60h80_v1.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-frank-tong-3jk96) Add to Compare
+
+[View All Results](https://www.healthgrades.com/neuroradiology-directory/ga-georgia/atlanta)
+
+### You May Also Like
+
+[![contentimage](https://dims.healthgrades.com/dims3/MMH/5739ddb/2147483647/strip/false/crop/628x628+326+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F1f%2F39%2Fa087883d0b25de8e72998951f7d1%2Fhg-doctors-office-front-desk-1200x628-facebook.jpg)\\
+\\
+10 Mistakes People Make at Their Doctor Visits](https://resources.healthgrades.com/right-care/patient-advocate/10-mistakes-people-make-at-their-doctor-visits?hid=t12_compare_contentalgo) [![contentimage](https://dims.healthgrades.com/dims3/MMH/aa0ebb8/2147483647/strip/false/crop/628x628+201+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F66%2Fb1%2Fd2ae116fa670ff8484c1169e83f0%2Fhg-mother-son-at-doctor-appointment-1200x628-facebook.jpg)\\
+\\
+Tips for Asking Your Doctor Questions](https://resources.healthgrades.com/right-care/patient-advocate/6-tips-for-talking-to-your-doctor?hid=t12_compare_contentalgo) [![contentimage](https://dims.healthgrades.com/dims3/MMH/33c6de0/2147483647/strip/false/crop/628x628+143+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F48%2F19%2F3084869bf3e728e02779484db628%2Fhg-physical-exam-1200x628-facebook.jpg)\\
+\\
+What to Ask at An Annual Physical Exam](https://resources.healthgrades.com/right-care/patient-advocate/6-things-your-doctor-does-at-an-annual-physical?hid=t12_compare_contentalgo)
+
+### Recommended Reading From Healthgrades
+
+[![contentimage](https://dims.healthgrades.com/dims3/MMH/b7ff259/2147483647/strip/true/crop/1358x1358+153+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F59%2F05%2Fb3dfe4e84a979ce1cc9dfd05093c%2F4-surprising-symptoms-of-ms.jpg)\\
+\\
+4 Surprising Symptoms of MS](https://resources.healthgrades.com/right-care/multiple-sclerosis/4-surprising-symptoms-of-ms?hid=t12_compare) [![contentimage](https://dims.healthgrades.com/dims3/MMH/0d5a8f3/2147483647/strip/true/crop/3409x3409+857+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F8f%2F50%2Fc52ec81c4f3eb73ebc92c078ee8d%2Fimage-gettyimages-557475327.jpg)\\
+\\
+7+ Symptoms Never to Ignore if You Have Depression](https://resources.healthgrades.com/right-care/depression/7-symptoms-never-to-ignore-if-you-have-depression?hid=t12_compare) [![contentimage](https://dims.healthgrades.com/dims3/MMH/ae2f78b/2147483647/strip/true/crop/683x683+138+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F71%2F6d%2F1f44b6a8431e622dfc120f7e1daa%2Fgettyimages-1469776928-1024x683.jpg)\\
+\\
+5 Conditions Associated with Uncontrollable Laughing or Crying](https://resources.healthgrades.com/right-care/brain-and-nerves/5-conditions-associated-with-uncontrollable-laughing-or-crying?hid=t12_compare)
+
+## Explore More Providers
+
+[View all specialties](https://www.healthgrades.com/specialty-directory)
+
+SpecialistsNearby Neuroradiologist
+
+[Family Medicine](https://www.healthgrades.com/family-practice-directory) [Internal Medicine](https://www.healthgrades.com/internal-medicine-directory) [Obstetrics & Gynecology](https://www.healthgrades.com/obstetrics-gynecology-directory) [Cardiology](https://www.healthgrades.com/cardiology-directory) [Orthopedic Surgery](https://www.healthgrades.com/orthopedic-surgery-directory) [General Surgery](https://www.healthgrades.com/surgery-general-directory) [Neurology](https://www.healthgrades.com/neurology-directory) [Gastroenterology](https://www.healthgrades.com/gastroenterology-directory) [Urology](https://www.healthgrades.com/urology-directory) [Oncology](https://www.healthgrades.com/oncology-directory) [Neurosurgery](https://www.healthgrades.com/neurosurgery-directory) [Endocrinology, Diabetes & Metabolism](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory)
+
+[Neuroradiology, Marietta GA](https://www.healthgrades.com/neuroradiology-directory/ga-georgia/marietta) [Neuroradiology, Duluth GA](https://www.healthgrades.com/neuroradiology-directory/ga-georgia/duluth) [Neuroradiology, Canton GA](https://www.healthgrades.com/neuroradiology-directory/ga-georgia/canton) [Neuroradiology, Athens GA](https://www.healthgrades.com/neuroradiology-directory/ga-georgia/athens) [Neuroradiology, Gainesville GA](https://www.healthgrades.com/neuroradiology-directory/ga-georgia/gainesville) [Neuroradiology, Cumming GA](https://www.healthgrades.com/neuroradiology-directory/ga-georgia/cumming) [Neuroradiology, Carrollton GA](https://www.healthgrades.com/neuroradiology-directory/ga-georgia/carrollton) [Neuroradiology, Lawrenceville GA](https://www.healthgrades.com/neuroradiology-directory/ga-georgia/lawrenceville) [Neuroradiology, Macon GA](https://www.healthgrades.com/neuroradiology-directory/ga-georgia/macon) [Neuroradiology, Roswell GA](https://www.healthgrades.com/neuroradiology-directory/ga-georgia/roswell)

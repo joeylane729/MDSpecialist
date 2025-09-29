@@ -6,11 +6,8 @@ class NPIProvider(BaseModel):
     
     __tablename__ = "npi_providers"
     
-    # Primary key (auto-generated)
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    
-    # Core NPI information
-    npi = Column(String(10), index=True)
+    # Primary key
+    npi = Column(String(10), primary_key=True, index=True)
     entity_type_code = Column(String(1))
     replacement_npi = Column(String(10))
     employer_identification_number = Column(String(20))

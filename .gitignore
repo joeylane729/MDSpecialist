@@ -124,6 +124,20 @@ docker-compose.override.yml
 # Large data files
 npidata.csv
 *.csv
+*.json
+
+# Keep essential project config JSON files tracked
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.node.json
+!railway.json
+!frontend/package.json
+!frontend/package-lock.json
+!frontend/tsconfig.json
+!frontend/tsconfig.node.json
+!frontend/railway.json
+!backend/railway.json
 
 # Vumedi scraping data files
 data/vumedi-scraping/vumedi_content.json

@@ -1,0 +1,507 @@
+![background mobile](https://photos.healthgrades.com/profile-images/standard-mobile-background.webp)
+
+![background desktop](https://photos.healthgrades.com/profile-images/standard-desktop-background.webp)
+
+Are you a healthcare professional?
+
+Is this your profile?
+
+Yes, Claim your profileYes, claim profileNo
+
+![provider image](https://photos.healthgrades.com/img/silhouettes/silhouette-male_w200h267_v1.jpg?name=Dr.%20Richard%20Smith%2C%20MD)
+
+# Dr. Richard Smith, MD
+
+## Cardiothoracic Surgery\| 45+ years of experience
+
+45+ years of experience
+
+5 Star Rating
+
+Based on 1 review5.0 Star Rating (1 review)
+
+ReviewSave
+
+Dr. Richard Smith, MD is a cardiothoracic surgeon in Traverse City, MI and has over 45 years of experience in the medical field. He graduated from George Washington University School of Medicine & Health Sciences in 1976. He is affiliated with Munson Medical Center.
+
+### Practice
+
+1221 Sixth St Ste 202 ·Traverse City, MI 49684
+
+Show Phone Number
+
+Compare Dr. Smith with Cardiothoracic Surgeons from
+
+## Mayo
+
+![Mayo](https://photos.healthgrades.com/img/client/logo/MAYO_MAP_w180h65.png)
+
+![Dr. Sahar Saddoughi, MD profile photo](https://photos.healthgrades.com/img/prov/x/y/l/xylv6cj_w90h120_v830d056db7f91e8ad8e26ee5b77600b3452f6786.jpg)
+
+### Dr. Sahar Saddoughi, MD
+
+### Dr. Sahar Saddoughi, MD
+
+1 Rating
+
+View profile
+
+![Dr. Elizabeth Stephens, MD profile photo](https://photos.healthgrades.com/img/prov/c/a/j/cajjz_w90h120_vcca2fd00c7a6a4ce44ba46c587fd8f7bec0f0dae.jpg)
+
+### Dr. Elizabeth Stephens, MD
+
+### Dr. Elizabeth Stephens, MD
+
+0 Ratings
+
+View profile
+
+![Dr. Gabor Bagameri, MD profile photo](https://photos.healthgrades.com/img/prov/2/5/k/25kjc_w90h120_v38d0ca17116b6a626b9f2adb0cddb799639098e5.jpg)
+
+### Dr. Gabor Bagameri, MD
+
+Explains Conditions Well
+
+### Dr. Gabor Bagameri, MD
+
+8 Ratings
+
+View profile
+
+[View more providers like this](https://www.healthgrades.com/cardiothoracic-surgery-directory/mi-michigan/traverse-city)
+
+## Highlights
+
+Good Communication
+
+Good Nurse Communication
+
+Highly Recommended Hospital
+
+## Experience
+
+### Search for Dr. Smith's experience in a specific area
+
+Condition or Procedure
+
+### What Dr. Smith treats most often
+
+Based on treatment records, we have identified the following as areas of care that Dr. Smith treats most frequently.
+
+Treatment Frequency
+
+### Coronary Artery Bypass with Robotic Assist
+
+normal
+
+Dr. Smith performs Coronary Artery Bypass with Robotic Assist as often as similar providers.
+
+[Log-in to compare providers with MyHealthMatch](https://www.healthgrades.com/account/login)
+
+### Coronary Artery Bypass Graft (CABG) Surgery
+
+normal
+
+Dr. Smith performs Coronary Artery Bypass Graft (CABG) Surgery as often as similar providers.
+
+[Log-in to compare providers with MyHealthMatch](https://www.healthgrades.com/account/login)
+
+### Heart Attack (Acute Myocardial Infarction)
+
+normal
+
+Dr. Smith treats Heart Attack (Acute Myocardial Infarction) as often as similar providers.
+
+[Log-in to compare providers with MyHealthMatch](https://www.healthgrades.com/account/login) [Learn more about Heart Attack (Acute Myocardial Infarction)](https://www.healthgrades.com/conditions/heart-attack)
+
+SHOW MORE
+
+[Learn more about experience and why treatment frequency matters](https://helpcenter.healthgrades.com/about-my-profile/experience-check)
+
+Dr. Smith's conditions and procedures:
+
+- Coronary Artery Bypass with Robotic Assist
+- Heart Attack (Acute Myocardial Infarction)
+- Coronary Artery Bypass Graft (CABG) Surgery
+- Cardiac Catheterization (incl. Coronary Angiography)
+- Acute Coronary Syndrome
+- Cardiac Catheterization with Robotic Assist
+- Heart Attack (NSTEMI)
+- Thoracentesis
+- Coronary Artery Disease (CAD)
+- Maze Procedure
+- Valve Repair or Replacement (Aortic, Mitral, Tricuspid, and Pulmonary)
+- Aortic Valve Surgery
+- Transcatheter Aortic Valve Replacement/Implantation (TAVR/TAVI)
+- Aortic Valve Disease
+- Hypertensive Heart with Failure
+- Peripheral Artery Catheterization
+- Atrial Fibrillation
+- Heart Valve Disorders
+- Paroxysmal Atrial Fibrillation
+- Systolic Heart Failure
+- Arterial Catheterization with Robotic Assist
+- Aneurysm of Heart
+- Aortic Aneurysm
+- Aortic Ectasia
+- Aortic Valve Regurgitation
+- Atrial Septal Defect
+- Cardiac Tamponade
+- Carotid Artery Disease
+- Collapsed Lung (Pneumothorax)
+- Congenital Aortic Valve Disorders
+- Congenital Heart Defects
+- Coronary Artery Dissection
+- Diaphragmatic and Hiatal Hernia
+- Empyema
+- Endocarditis
+- Heart Attack (STEMI)
+- Hypertensive Heart without Failure
+- Interstitial Lung Disease
+- Lung Abscess
+- Lung Cancer
+- Metastatic Respiratory System Cancer
+- Mitral and Aortic Valve Disorder
+- Mitral Valve Disease
+- Mitral Valve Regurgitation
+- Mitral Valve Stenosis
+- Patent Foramen Ovale (PFO)
+- Pericardial Disease
+- Peripheral Arterial Aneurysm
+- Peripheral Arterial Aneurysm and Dissection
+- Pleural Effusion
+- Pneumonitis
+- Pulmonary Embolism
+- Pulmonary Insufficiency
+- Pulmonary Valve Disease
+- Rheumatic Aortic Valve Disorders
+- Rheumatic Mitral Stenosis
+- Septal Defect
+- Unstable Angina
+- Ventricular Fibrillation
+- Ventricular Tachycardia (VT)
+- Ablation for Cardiac Arrhythmias
+- Atrial Tissue Ablation
+- Automatic Implantable Cardioverter Defibrillator (ICD) Implantation
+- Cardioverter-Defibrillator or Pacemaker Insertion, Removal or Repair
+- Chest CT (incl. Heart and Lungs)
+- Decortication and Pleurectomy
+- Insertion of Left Ventricular Lead for Pacemaker or Cardioverter and Defibrillator
+- Mitral Valve Prosthetic Implantation
+- Mitral Valve Replacement
+- Mitral Valve Surgery
+- Non-Coronary Angioplasty, Atherectomy, and Stenting
+- Port Placements or Replacements
+- Aneurysm
+- Aortic Dissection
+- Aortic Stenosis
+- Congenital Heart Disease
+- Coronary Artery Aneurysm
+- Patent Ductus Arteriosus
+- Ruptured Aortic Aneurysm
+- Carotid Endarterectomy (CEA) or Excision of Infected Graft
+- Esophagogastric Fundoplasty
+- Excision of Esophageal Lesion
+- Open Diaphragmatic or Paraesophageal Hiatal Hernia Repair
+- Pacemaker Insertion or Replacement
+- Thoracoscopic Wedge Resection
+- Tracheal Surgery
+- Video-Assisted Thoracoscopic Surgery (VATS) or Thoracotomy
+
+## Dr. Smith's Reviews
+
+### Likelihood to recommend Dr. Smith
+
+**5.0**
+
+1rating
+
+|     |     |     |
+| --- | --- | --- |
+| 5 star | 100% | 100% |
+| 4 star | 0% | 0% |
+| 3 star | 0% | 0% |
+| 2 star | 0% | 0% |
+| 1 star | 0% | 0% |
+
+![healthgrades logo](https://photos.healthgrades.com/public3/images/logo-blue-full.svg)
+
+### Leave a review
+
+How likely are you to recommend
+
+Dr. Smith?
+
+Definitely NotNoMaybeYesDefinitelySelect Rating
+
+### Leave a review
+
+How was your experience with Dr. Smith?
+
+Comment
+
+Continue
+
+![Provider explaining information to patient](https://photos.healthgrades.com/img/ads/claim_this_profile.jpg)
+
+### Is this your profile?
+
+Respond to reviews, add information, and reach more patients. Claiming is free and only takes a minute.
+
+[Claim your profile](https://update.healthgrades.com/landing/claim?pwid=YWRJQ&pCID=hg_ProvProfile)
+
+### Overall Patient Satisfaction
+
+1responses
+
+Likelihood of recommending Dr. Smith to family and friends is 5 out of 5
+
+### Know Before You Go
+
+Expand your knowledge with related news and articles.
+
+[8 Surprising Facts About Cholesterol](https://resources.healthgrades.com/right-care/cholesterol/8-surprising-facts-about-cholesterol?hid=t12_review) [How to Limit Fluids With Heart Failure](https://resources.healthgrades.com/right-care/heart-failure/how-to-limit-fluids-with-heart-failure?hid=t12_review) [Complications of Diabetes and Their Prevention](https://resources.healthgrades.com/right-care/diabetes/12-complications-of-diabetes?hid=t12_review)
+
+## About Me
+
+### biography
+
+Dr. Richard Smith, MD is a cardiothoracic surgeon in Traverse City, MI and has over 45 years of experience in the medical field. He graduated from George Washington University School of Medicine & Health Sciences in 1976. He is affiliated with Munson Medical Center.
+
+### Specialties\*
+
+- Cardiothoracic Surgery
+
+
+\*Healthgrades does not verify qualifications for medical specialties. Please verify your provider's specialty and qualifications directly with your provider and applicable medical board.
+
+### Education
+
+- George Washington University School Of Medicine & Health Sciences
+Medical School, 1976
+
+### Board Action Check
+
+For detailed information about any of the below board actions, please search for the provider's records on the linked state licensing board or the [Federation of State Medical Boards](https://www.docinfo.org/).  To learn more about the difference between these sources, please refer to our [FAQs](https://www.healthgrades.com/about/healthgrades-methodologies#faqs).
+
+Healthgrades has not received any data indicating a board action exists for this provider.
+
+Healthgrades receives board action history for physicians and physician assistants. The information displayed here is sourced from independent information providers, such as state board websites, and may not be the most up-to-date information. Healthgrades makes no representations with respect to the accuracy of any information provided here and assumes no responsibility or liability for such information.
+
+Learn more about medical license public record check
+
+### Languages
+
+- English
+
+- French
+
+
+### Common Questions and Answers
+
+Questions
+
+Responses
+
+Please call the office to learn more.
+
+[(231) 935-5730](tel:2319355730)
+
+![treating transthyretin amyloid cardiomyopathy](https://dims.healthgrades.com/dims3/MMH/546a6a4/2147483647/strip/true/crop/575x575+169+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F5f%2F1e%2Fe383d46a69ae18cb5fe8781c1c71%2Fhg-stethoscope-on-older-man-1296x728-header-1024x575.jpg)
+
+#### Focus on ATTR-CM
+
+[Understanding Treatment Options for Transthyretin Amyloid Cardiomyopathy](https://resources.healthgrades.com/right-care/heart-health/understanding-your-treatment-options-for-transthyretin-amyloid-cardiomyopathy?hid=t12_learn_fomo&tpc=treating-transthyretin-amyloid-cardiomyopathy)
+
+New research and medications are helping people with ATTR-CM slow down disease progression and improve quality of life.
+
+[Learn More](https://resources.healthgrades.com/right-care/heart-health/understanding-your-treatment-options-for-transthyretin-amyloid-cardiomyopathy?hid=t12_learn_fomo&tpc=treating-transthyretin-amyloid-cardiomyopathy)
+
+## Insurance Check
+
+### Search for your insurance carrier and choose your plan type
+
+Insurance Carrier
+
+Choose Plan Type
+
+Apply
+
+Try: Humana, UnitedHealthCare, Aetna, Priority Health, or Blue Cross Blue Shield of Michigan
+
+Please verify your coverage with the provider. [(231) 935-5730](tel:2319355730 "Call: (231) 935-5730")
+
+## Locations
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4293/5908.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4294/5908.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4293/5909.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4294/5909.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4292/5908.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4295/5908.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4292/5909.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4295/5909.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4291/5908.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4296/5908.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4291/5909.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4296/5909.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4290/5908.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4297/5908.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4290/5909.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4297/5909.png)
+
+Map Marker 1
+1
+
+[+](https://www.healthgrades.com/physician/dr-richard-smith-ywrjq# "Zoom in") [−](https://www.healthgrades.com/physician/dr-richard-smith-ywrjq# "Zoom out")
+
+[Leaflet](https://leafletjs.com/ "A JavaScript library for interactive maps") \| © [OpenStreetMap](http://osm.org/copyright) contributors
+
+### Practice
+
+1
+
+Cardiothoracic Surgeons
+
+[Cardiothoracic Surgeons](https://www.healthgrades.com/group-directory/mi-michigan/traverse-city/cardiothoracic-surgeons-xqnl9q)
+
+1221 Sixth St Ste 202
+
+Traverse City, MI 49684
+
+[View office profile](https://www.healthgrades.com/group-directory/mi-michigan/traverse-city/cardiothoracic-surgeons-xqnl9q)
+
+[(231) 935-5730](tel:(231)935-5730)
+
+Fax
+
+[Driving Directions](https://www.google.com/maps/dir/?api=1&destination=1221+Sixth+St+Ste+202,+Traverse+City,+MI+49684)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-desktop-step-2.jpg)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fbipolar-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fbipolar-desktop-step-2.jpg)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Falzheimers-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Falzheimers-desktop-step-2.jpg)
+
+## Before Your Visit
+
+An appointment guide can help you get the most out of your visit.
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-desktop-step-1.jpg)View This Guide
+
+### Heart Failure: Top Questions
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fbipolar-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fbipolar-desktop-step-1.jpg)View This Guide
+
+### Cholesterol: Top Questions
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Falzheimers-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Falzheimers-desktop-step-1.jpg)View This Guide
+
+### Atrial Fibrillation: Top Questions
+
+✕
+
+Enter your email to unlock this appointment guide. Plus, enjoy access to exclusive health content, expert tips, and more.
+
+Email capture form for
+
+EMAIL
+
+View Guide
+
+Submission of this form is subject to Healthgrades
+
+[User Agreement](https://www.healthgrades.com/content/user-agreement) and [Privacy Policy](https://www.healthgrades.com/content/privacy-notice?redirected=true).
+
+## Affiliated Hospitals
+
+### [Munson Medical Center](https://www.healthgrades.com/hospital/munson-medical-center-aea464)
+
+1105 Sixth St
+
+Traverse City, MI 49684
+
+![Healthgrades Quality Award Medallion](https://ucmscdn.healthgrades.com/e0/06/c0985bae4e609d5ce9be7d5fb7b6/award-winning-hospital.png)
+
+Recipient of 6
+
+hospital awards
+
+Patient Safety Excellence Award™2023
+
+Top in the nation for providing excellence in patient safety by preventing infections, medical errors, and other preventable complications
+
+[View all awards](https://www.healthgrades.com/hospital/munson-medical-center-aea464#awards)
+
+How patients felt about the care they received at this hospital.
+
+89%
+
+Patients said they were given information about recovering at home
+
+4% higher than the national average
+
+80%
+
+Patients said that doctors always listened to them and explained things well
+
+4% higher than the national average
+
+[View all patient feedback](https://www.healthgrades.com/hospital/munson-medical-center-aea464#patient-experience)
+
+Learn more about how Healthgrades measures [Hospital Quality](https://www.healthgrades.com/quality/ratings-awards/methodology)
+
+Compare Dr. Smith with Cardiothoracic Surgeons from
+
+## Mayo
+
+![Mayo](https://photos.healthgrades.com/img/client/logo/MAYO_MAP_w180h65.png)
+
+![Dr. Sahar Saddoughi, MD profile photo](https://photos.healthgrades.com/img/prov/x/y/l/xylv6cj_w90h120_v830d056db7f91e8ad8e26ee5b77600b3452f6786.jpg)
+
+### Dr. Sahar Saddoughi, MD
+
+### Dr. Sahar Saddoughi, MD
+
+1 Rating
+
+View profile
+
+![Dr. Elizabeth Stephens, MD profile photo](https://photos.healthgrades.com/img/prov/c/a/j/cajjz_w90h120_vcca2fd00c7a6a4ce44ba46c587fd8f7bec0f0dae.jpg)
+
+### Dr. Elizabeth Stephens, MD
+
+### Dr. Elizabeth Stephens, MD
+
+0 Ratings
+
+View profile
+
+![Dr. Gabor Bagameri, MD profile photo](https://photos.healthgrades.com/img/prov/2/5/k/25kjc_w90h120_v38d0ca17116b6a626b9f2adb0cddb799639098e5.jpg)
+
+### Dr. Gabor Bagameri, MD
+
+Explains Conditions Well
+
+### Dr. Gabor Bagameri, MD
+
+8 Ratings
+
+View profile
+
+[View more providers like this](https://www.healthgrades.com/cardiothoracic-surgery-directory/mi-michigan/traverse-city)
+
+### You May Also Like
+
+[![contentimage](https://dims.healthgrades.com/dims3/MMH/f6fe13c/2147483647/strip/false/crop/3487x3487+763+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F3f%2Fbb%2Fabc000784430895c49340e97feb6%2Fimage-gettyimages-483598585.jpg)\\
+\\
+Expert Tips for Getting Through TAVR](https://resources.healthgrades.com/right-care/aortic-valve-replacement/expert-tips-for-getting-through-tavr?hid=t12_compare_contentalgo) [![contentimage](https://dims.healthgrades.com/dims3/MMH/feafc29/2147483647/strip/false/crop/3508x3508+874+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F13%2Fe8%2Ff8d4b7db40a091ffdb540894f0fc%2Fimage-gettyimages-97612040.jpg)\\
+\\
+What I Wish Heart Patients Knew About TAVR](https://resources.healthgrades.com/right-care/aortic-valve-replacement/what-i-wish-heart-patients-knew-about-tavr?hid=t12_compare_contentalgo) [![contentimage](https://dims.healthgrades.com/dims3/MMH/fb741ae/2147483647/strip/false/crop/3414x3414+854+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2Fed%2Fbd%2F21b2ce1646b6bd00b125786ce68d%2Fimage-getty-124206853.jpg)\\
+\\
+5 Differences Between TAVR and Surgery for Severe Aortic Stenosis](https://resources.healthgrades.com/right-care/aortic-valve-replacement/5-differences-between-tavr-and-surgery-for-aortic-stenosis?hid=t12_compare_contentalgo)
+
+### Recommended Reading From Healthgrades
+
+[![contentimage](https://dims.healthgrades.com/dims3/MMH/9910c9e/2147483647/strip/true/crop/568x568+89+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2Faa%2Fac%2Fafbde45a48631d2b2af7c70543d5%2Fgettyimages-1197181934-1024x568.jpg)\\
+\\
+Family History of Cardiomyopathy: Know Your Risk](https://resources.healthgrades.com/right-care/heart-health/family-history-of-cardiomyopathy-know-your-risk?hid=t12_compare) [![contentimage](https://dims.healthgrades.com/dims3/MMH/3ee5e09/2147483647/strip/true/crop/1415x1415+354+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F7a%2Fa8%2Fa434548e42fdb5e32be6240e2e39%2Fimage-getty-97421424.jpg)\\
+\\
+Cholesterol Advice Doctors Want You to Know](https://resources.healthgrades.com/right-care/cholesterol/high-cholesterol-7-things-doctors-want-you-to-know?hid=t12_compare) [![contentimage](https://dims.healthgrades.com/dims3/MMH/dc3b5f7/2147483647/strip/true/crop/549x549+92+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F33%2F50%2F2371d19ccde699a06b7977e324c1%2F337216-how-does-type-2-diabetes-affect-the-heart-732x549-thumbnail.jpg)\\
+\\
+How Does Type 2 Diabetes Affect the Heart?](https://resources.healthgrades.com/right-care/diabetes/the-effects-of-type-2-diabetes-on-your-heart?hid=t12_compare)
+
+## Explore More Providers
+
+[View all specialties](https://www.healthgrades.com/specialty-directory)
+
+SpecialistsNearby Cardiothoracic Surgeon
+
+[Family Medicine](https://www.healthgrades.com/family-practice-directory) [Internal Medicine](https://www.healthgrades.com/internal-medicine-directory) [Obstetrics & Gynecology](https://www.healthgrades.com/obstetrics-gynecology-directory) [Cardiology](https://www.healthgrades.com/cardiology-directory) [Orthopedic Surgery](https://www.healthgrades.com/orthopedic-surgery-directory) [General Surgery](https://www.healthgrades.com/surgery-general-directory) [Neurology](https://www.healthgrades.com/neurology-directory) [Gastroenterology](https://www.healthgrades.com/gastroenterology-directory) [Urology](https://www.healthgrades.com/urology-directory) [Oncology](https://www.healthgrades.com/oncology-directory) [Neurosurgery](https://www.healthgrades.com/neurosurgery-directory) [Endocrinology, Diabetes & Metabolism](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory)
+
+[Cardiothoracic Surgery, Petoskey MI](https://www.healthgrades.com/cardiothoracic-surgery-directory/mi-michigan/petoskey) [Cardiothoracic Surgery, Ludington MI](https://www.healthgrades.com/cardiothoracic-surgery-directory/mi-michigan/ludington)

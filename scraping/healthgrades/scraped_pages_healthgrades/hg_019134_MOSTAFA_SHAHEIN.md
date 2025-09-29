@@ -1,0 +1,496 @@
+![background mobile](https://photos.healthgrades.com/profile-images/standard-mobile-background.webp)
+
+![background desktop](https://photos.healthgrades.com/profile-images/standard-desktop-background.webp)
+
+Are you a healthcare professional?
+
+Is this your profile?
+
+Yes, Claim your profileYes, claim profileNo
+
+![provider image](https://photos.healthgrades.com/img/silhouettes/silhouette-male_w200h267_v1.jpg?name=Dr.%20Mostafa%20Shahein%2C%20MD)
+
+# Dr. Mostafa Shahein, MD
+
+## Neurosurgery
+
+5 Star Rating
+
+Based on 2 reviews5.0 Star Rating (2 reviews)
+
+ReviewSave
+
+Dr. Mostafa Shahein, MD is a neurosurgeon in Miami, FL.
+
+### Practice
+
+3100 SW 62nd Ave ·Miami, FL 33155
+
+Show Phone Number
+
+Compare Dr. Shahein with Neurosurgeons from
+
+## Baptist Health
+
+![Baptist Health](https://photos.healthgrades.com/img/client/logo/BAHESF_PDCHSP_w180h65.png)
+
+Make an appointment at Baptist Health today at
+
+[(786) 373-3597](tel:(786) 373-3597)
+
+![Dr. Raul Vasquez Castellanos, MD profile photo](https://photos.healthgrades.com/img/prov/3/8/D/38DG8_w90h120_v77033.jpg)
+
+### Dr. Raul Vasquez Castellanos, MD
+
+Healthgrades Choice
+
+### Dr. Raul Vasquez Castellanos, MD
+
+222 Ratings
+
+View profileHealthgrades Choice
+
+![Dr. Jobyna Whiting, MD profile photo](https://photos.healthgrades.com/img/prov/y/f/x/yfxms_w90h120_v759a891305f639ea61811413c4040a3480203fbb.jpg)
+
+### Dr. Jobyna Whiting, MD
+
+Healthgrades Choice
+
+### Dr. Jobyna Whiting, MD
+
+171 Ratings
+
+View profileHealthgrades Choice
+
+![Dr. Evan Bander, MD profile photo](https://photos.healthgrades.com/img/silhouettes/silhouette-male_w90h120_v1.jpg)
+
+### Dr. Evan Bander, MD
+
+Quiet Hospital
+
+### Dr. Evan Bander, MD
+
+0 Ratings
+
+View profile
+
+![Dr. Italo Linfante, MD profile photo](https://photos.healthgrades.com/img/prov/x/x/7/xx78x_w90h120_v9d22063184f335486aa6e6c3db2a59fa0709a765.jpg)
+
+### Dr. Italo Linfante, MD
+
+Explains Conditions Well
+
+### Dr. Italo Linfante, MD
+
+19 Ratings
+
+View profile
+
+![Dr. Justin Sporrer, MD profile photo](https://photos.healthgrades.com/img/prov/x/j/n/xjnxs_w90h120_v1b17a1c1ceffff60d6a8c39aa7a4ac8ddb820cfd.jpg)
+
+### Dr. Justin Sporrer, MD
+
+Healthgrades Choice
+
+### Dr. Justin Sporrer, MD
+
+208 Ratings
+
+View profileHealthgrades Choice
+
+![Dr. Robert Wicks, MD profile photo](https://photos.healthgrades.com/img/prov/g/k/t/gkthf_w90h120_vcba4a216188324cd723298abf192e504548d15ca.jpg)
+
+### Dr. Robert Wicks, MD
+
+Quiet Hospital
+
+### Dr. Robert Wicks, MD
+
+9 Ratings
+
+View profile
+
+Show more providers
+
+## Experience
+
+### Search for Dr. Shahein's experience in a specific area
+
+Condition or Procedure
+
+[Learn more about experience and why treatment frequency matters](https://helpcenter.healthgrades.com/about-my-profile/experience-check)
+
+## Dr. Shahein's Reviews
+
+### Likelihood to recommend Dr. Shahein
+
+**5.0**
+
+2ratings, 2 with a written review
+
+|     |     |     |
+| --- | --- | --- |
+| 5 star | 100% | 100% |
+| 4 star | 0% | 0% |
+| 3 star | 0% | 0% |
+| 2 star | 0% | 0% |
+| 1 star | 0% | 0% |
+
+### Provider Feedback
+
+100% positive
+
+Trusted the provider's decisions
+
+100%
+
+0%
+
+2 agree0 disagree
+
+Explained conditions well
+
+100%
+
+0%
+
+1 agree0 disagree
+
+Listened & answered questions
+
+100%
+
+0%
+
+1 agree0 disagree
+
+Appointment wasn't rushed
+
+100%
+
+0%
+
+1 agree0 disagree
+
+I felt respected
+
+no votes yet
+
+no votes yet
+
+### Office + Staff Feedback
+
+100% positive
+
+Appointment scheduling
+
+100%
+
+0%
+
+1 agree0 disagree
+
+Office environment
+
+100%
+
+0%
+
+1 agree0 disagree
+
+Staff friendliness
+
+100%
+
+0%
+
+1 agree0 disagree
+
+Wait times
+
+100%
+
+0%
+
+1 agree0 disagree
+
+### Your trust is our top concern.
+
+We strive to keep reviews honest, trustworthy, and fair.
+
+RecentHighestLowestMost Helpful
+
+Reply Flag
+
+A lot of people go through pains in their relationships it’s hard to give up on true love, sometimes we pretend to be fine but we are, fighting to get the one we love is also fighting to get back our joy and . Dr Sam help the broken hearts for he's capable and able to get your EX lovers, partners,...
+
+More details
+
+Helpful
+
+Sophia – Jan 02, 2023
+
+[×](https://www.healthgrades.com/physician/dr-mostafa-shahein-jgqxles178#) Post a ResponseAre you Dr. Shahein?
+
+Yes
+
+No
+
+Reply Flag
+
+Hi everyone Am here to testify of a great and powerful spell caster called Dr Tunde I was so confused and devastated when my husband left me without a word, I needed him back desperately because i loved him so much. So a friend of mine introduced me to this powerful spell caster who had helped her...
+
+More details
+
+Helpful
+
+Joan Roy – Oct 29, 2021
+
+[×](https://www.healthgrades.com/physician/dr-mostafa-shahein-jgqxles178#) Post a ResponseAre you Dr. Shahein?
+
+Yes
+
+No
+
+### Leave a review
+
+How was your experience with Dr. Shahein?
+
+Comment
+
+Continue
+
+### Is this your profile?
+
+Respond to reviews, add information, and reach more patients. Claiming is free and only takes a minute.
+
+[Claim your profile](https://update.healthgrades.com/landing/claim?pwid=JGQXLES178&pCID=hg_ProvProfile)
+
+### Overall Patient Satisfaction
+
+2responses
+
+Likelihood of recommending Dr. Shahein to family and friends is 5 out of 5
+
+### Know Before You Go
+
+Expand your knowledge with related news and articles.
+
+[7 Must-Have Items for Your Migraine Attack Toolkit](https://resources.healthgrades.com/right-care/migraine-and-headache/7-must-have-items-for-your-migraine-attack-toolkit?hid=t12_review) [Managing Involuntary Laughing and Crying After Stroke](https://resources.healthgrades.com/right-care/brain-and-nerves/managing-involuntary-laughing-and-crying-after-stroke?hid=t12_review) [7 Ways to Manage Chronic Pain With Multiple Sclerosis](https://resources.healthgrades.com/right-care/multiple-sclerosis/7-ways-to-manage-chronic-pain-with-multiple-sclerosis?hid=t12_review)
+
+## About Me
+
+### biography
+
+Dr. Mostafa Shahein, MD is a neurosurgeon in Miami, FL.
+
+### Specialties\*
+
+- Neurosurgery
+
+
+\*Healthgrades does not verify qualifications for medical specialties. Please verify your provider's specialty and qualifications directly with your provider and applicable medical board.
+
+### Board Action Check
+
+For detailed information about any of the below board actions, please search for the provider's records on the linked state licensing board or the [Federation of State Medical Boards](https://www.docinfo.org/).  To learn more about the difference between these sources, please refer to our [FAQs](https://www.healthgrades.com/about/healthgrades-methodologies#faqs).
+
+Healthgrades has not received any data indicating a board action exists for this provider.
+
+Healthgrades receives board action history for physicians and physician assistants. The information displayed here is sourced from independent information providers, such as state board websites, and may not be the most up-to-date information. Healthgrades makes no representations with respect to the accuracy of any information provided here and assumes no responsibility or liability for such information.
+
+Learn more about medical license public record check
+
+### Common Questions and Answers
+
+Questions
+
+Responses
+
+Please call the office to learn more.
+
+[(786) 373-3597](tel:7863733597)
+
+#### Focus on Uncontrolled Emotions
+
+[5 Conditions Associated with Uncontrollable Laughing or Crying](https://resources.healthgrades.com/right-care/brain-and-nerves/5-conditions-associated-with-uncontrollable-laughing-or-crying?hid=t12_learn_fomo&tpc=treating-involuntary-crying-and-laughing)
+
+Spontaneous outbursts of emotion such as crying or laughing are associated with several neurological conditions. This behavior is known as pseudobulbar effect, and there are treatments available.
+
+[Learn More](https://resources.healthgrades.com/right-care/brain-and-nerves/5-conditions-associated-with-uncontrollable-laughing-or-crying?hid=t12_learn_fomo&tpc=treating-involuntary-crying-and-laughing)
+
+## Insurance Check
+
+### Search for your insurance carrier and choose your plan type
+
+Insurance Carrier
+
+Choose Plan Type
+
+Apply
+
+Try: Cigna, First Health, Curative, Blue Cross Blue Shield, or UnitedHealthCare
+
+Please verify your coverage with the provider. [(305) 666-6511](tel:3056666511 "Call: (305) 666-6511")
+
+## Locations
+
+### Practice
+
+1
+
+Nicklaus Children's Hospital
+
+[Nicklaus Children's Hospital](https://www.healthgrades.com/group-directory/fl-florida/miami/practice-xs9kgj)
+
+3100 SW 62nd Ave
+
+Miami, FL 33155
+
+[View office profile](https://www.healthgrades.com/group-directory/fl-florida/miami/practice-xs9kgj)
+
+[(786) 373-3597](tel:(786)373-3597)
+
+Fax
+
+[Driving Directions](https://www.google.com/maps/dir/?api=1&destination=3100+SW+62nd+Ave,+Miami,+FL+33155)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fdepression-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fdepression-desktop-step-2.jpg)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-desktop-step-2.jpg)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Falzheimers-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Falzheimers-desktop-step-2.jpg)
+
+## Before Your Visit
+
+An appointment guide can help you get the most out of your visit.
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fdepression-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fdepression-desktop-step-1.jpg)View This Guide
+
+### Migraine: Top Questions
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-desktop-step-1.jpg)View This Guide
+
+### Multiple Sclerosis: Top Questions
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Falzheimers-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Falzheimers-desktop-step-1.jpg)View This Guide
+
+### Pseudobulbar Affect: Top Questions
+
+✕
+
+Enter your email to unlock this appointment guide. Plus, enjoy access to exclusive health content, expert tips, and more.
+
+Email capture form for
+
+EMAIL
+
+View Guide
+
+Submission of this form is subject to Healthgrades
+
+[User Agreement](https://www.healthgrades.com/content/user-agreement) and [Privacy Policy](https://www.healthgrades.com/content/privacy-notice?redirected=true).
+
+Compare Dr. Shahein with Neurosurgeons from
+
+## Baptist Health
+
+![Baptist Health](https://photos.healthgrades.com/img/client/logo/BAHESF_PDCHSP_w180h65.png)
+
+Make an appointment at Baptist Health today at
+
+[(786) 373-3597](tel:(786) 373-3597)
+
+![Dr. Raul Vasquez Castellanos, MD profile photo](https://photos.healthgrades.com/img/prov/3/8/D/38DG8_w90h120_v77033.jpg)
+
+### Dr. Raul Vasquez Castellanos, MD
+
+Healthgrades Choice
+
+### Dr. Raul Vasquez Castellanos, MD
+
+222 Ratings
+
+View profileHealthgrades Choice
+
+![Dr. Jobyna Whiting, MD profile photo](https://photos.healthgrades.com/img/prov/y/f/x/yfxms_w90h120_v759a891305f639ea61811413c4040a3480203fbb.jpg)
+
+### Dr. Jobyna Whiting, MD
+
+Healthgrades Choice
+
+### Dr. Jobyna Whiting, MD
+
+171 Ratings
+
+View profileHealthgrades Choice
+
+![Dr. Evan Bander, MD profile photo](https://photos.healthgrades.com/img/silhouettes/silhouette-male_w90h120_v1.jpg)
+
+### Dr. Evan Bander, MD
+
+Quiet Hospital
+
+### Dr. Evan Bander, MD
+
+0 Ratings
+
+View profile
+
+![Dr. Italo Linfante, MD profile photo](https://photos.healthgrades.com/img/prov/x/x/7/xx78x_w90h120_v9d22063184f335486aa6e6c3db2a59fa0709a765.jpg)
+
+### Dr. Italo Linfante, MD
+
+Explains Conditions Well
+
+### Dr. Italo Linfante, MD
+
+19 Ratings
+
+View profile
+
+![Dr. Justin Sporrer, MD profile photo](https://photos.healthgrades.com/img/prov/x/j/n/xjnxs_w90h120_v1b17a1c1ceffff60d6a8c39aa7a4ac8ddb820cfd.jpg)
+
+### Dr. Justin Sporrer, MD
+
+Healthgrades Choice
+
+### Dr. Justin Sporrer, MD
+
+208 Ratings
+
+View profileHealthgrades Choice
+
+![Dr. Robert Wicks, MD profile photo](https://photos.healthgrades.com/img/prov/g/k/t/gkthf_w90h120_vcba4a216188324cd723298abf192e504548d15ca.jpg)
+
+### Dr. Robert Wicks, MD
+
+Quiet Hospital
+
+### Dr. Robert Wicks, MD
+
+9 Ratings
+
+View profile
+
+Show more providers
+
+### You May Also Like
+
+[5 Conditions Associated with Uncontrollable Laughing or Crying](https://resources.healthgrades.com/right-care/brain-and-nerves/5-conditions-associated-with-uncontrollable-laughing-or-crying?hid=t12_compare_contentalgo&tpc=treating-involuntary-crying-and-laughing) [5 Things to Know About Cognitive Aging](https://resources.healthgrades.com/right-care/brain-and-nerves/things-to-know-about-cognitive-aging?hid=t12_compare_contentalgo&tpc=your-guide-to-brain-health) [14 Common Symptoms of Tardive Dyskinesia](https://resources.healthgrades.com/right-care/brain-and-nerves/common-symptoms-of-tardive-dyskinesia?hid=t12_compare_contentalgo&tpc=treating-tardive-dyskinesia)
+
+### Recommended Reading From Healthgrades
+
+[4 Surprising Symptoms of MS](https://resources.healthgrades.com/right-care/multiple-sclerosis/4-surprising-symptoms-of-ms?hid=t12_compare) [7+ Symptoms Never to Ignore if You Have Depression](https://resources.healthgrades.com/right-care/depression/7-symptoms-never-to-ignore-if-you-have-depression?hid=t12_compare) [5 Conditions Associated with Uncontrollable Laughing or Crying](https://resources.healthgrades.com/right-care/brain-and-nerves/5-conditions-associated-with-uncontrollable-laughing-or-crying?hid=t12_compare)
+
+## Explore More Providers
+
+[View all specialties](https://www.healthgrades.com/specialty-directory)
+
+SpecialistsNearby Related SpecialistsNearby Neurosurgeon
+
+[Family Medicine](https://www.healthgrades.com/family-practice-directory) [Internal Medicine](https://www.healthgrades.com/internal-medicine-directory) [Obstetrics & Gynecology](https://www.healthgrades.com/obstetrics-gynecology-directory) [Cardiology](https://www.healthgrades.com/cardiology-directory) [Orthopedic Surgery](https://www.healthgrades.com/orthopedic-surgery-directory) [General Surgery](https://www.healthgrades.com/surgery-general-directory) [Neurology](https://www.healthgrades.com/neurology-directory) [Gastroenterology](https://www.healthgrades.com/gastroenterology-directory) [Urology](https://www.healthgrades.com/urology-directory) [Oncology](https://www.healthgrades.com/oncology-directory) [Neurosurgery](https://www.healthgrades.com/neurosurgery-directory) [Endocrinology, Diabetes & Metabolism](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory)
+
+[Orthopedic Surgery](https://www.healthgrades.com/orthopedic-surgery-directory) [Neurology](https://www.healthgrades.com/neurology-directory) [Pediatric Neurosurgery](https://www.healthgrades.com/pediatric-neurosurgery-directory) [Oncology](https://www.healthgrades.com/oncology-directory) [Nursing (Nurse Practitioner)](https://www.healthgrades.com/nurse-practitioner-directory)
+
+[Neurosurgery, Miami FL](https://www.healthgrades.com/neurosurgery-directory/fl-florida/miami) [Neurosurgery, Fort Lauderdale FL](https://www.healthgrades.com/neurosurgery-directory/fl-florida/fort-lauderdale) [Neurosurgery, Naples FL](https://www.healthgrades.com/neurosurgery-directory/fl-florida/naples) [Neurosurgery, Boca Raton FL](https://www.healthgrades.com/neurosurgery-directory/fl-florida/boca-raton) [Neurosurgery, South Miami FL](https://www.healthgrades.com/neurosurgery-directory/fl-florida/south-miami) [Neurosurgery, Hollywood FL](https://www.healthgrades.com/neurosurgery-directory/fl-florida/hollywood) [Neurosurgery, Weston FL](https://www.healthgrades.com/neurosurgery-directory/fl-florida/weston) [Neurosurgery, West Palm Beach FL](https://www.healthgrades.com/neurosurgery-directory/fl-florida/west-palm-beach) [Neurosurgery, Delray Beach FL](https://www.healthgrades.com/neurosurgery-directory/fl-florida/delray-beach) [Neurosurgery, Hialeah FL](https://www.healthgrades.com/neurosurgery-directory/fl-florida/hialeah) [Neurosurgery, Boynton Beach FL](https://www.healthgrades.com/neurosurgery-directory/fl-florida/boynton-beach)

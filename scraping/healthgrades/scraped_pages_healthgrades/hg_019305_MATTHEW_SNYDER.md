@@ -1,0 +1,687 @@
+![background mobile](https://photos.healthgrades.com/profile-images/standard-mobile-background.webp)
+
+![background desktop](https://photos.healthgrades.com/profile-images/standard-desktop-background.webp)
+
+Are you a healthcare professional?
+
+Is this your profile?
+
+Yes, Claim your profileYes, claim profileNo
+
+![provider image](https://photos.healthgrades.com/img/silhouettes/silhouette-male_w200h267_v1.jpg?name=Dr.%20Matthew%20Snyder%2C%20DO)
+
+# Dr. Matthew Snyder, DO
+
+## Family Medicine\| 15+ years of experience
+
+15+ years of experience
+
+Be the first to leave a review
+
+ReviewSave
+
+Dr. Matthew Snyder, DO is a family medicine physician in Nellis AFB, NV and has over 15 years of experience in the medical field. He graduated from Michigan State University College of Osteopathic Medicine in 2005. He is affiliated with medical facilities Banner Churchill Community Hospital and Perry County Memorial Hospital.
+
+### Practice
+
+4700 Las Vegas Blvd N ·Nellis AFB, NV 89191
+
+Show Phone Number
+
+Compare Dr. Snyder with Family Doctors from
+
+## Humana CenterWell
+
+![Humana CenterWell](https://photos.healthgrades.com/img/client/logo/CWELL_MAP_w180h65.png)
+
+![Dr. Charlie Lin, DO profile photo](https://photos.healthgrades.com/img/prov/y/g/v/ygvsc_w90h120_vce3df9cb3e465f00c607306ac184cb58d85ad912.jpg)
+
+### Dr. Charlie Lin, DO
+
+Low Wait Times
+
+### Dr. Charlie Lin, DO
+
+3 Ratings
+
+View profile
+
+![Dr. Kevin Ngo, DO profile photo](https://photos.healthgrades.com/img/prov/n/b/s/nbsqjzr941_w90h120_v2136472fe77a6b1d9ce82bc7ad5c4aeb96462b1b.jpg)
+
+### Dr. Kevin Ngo, DO
+
+### Dr. Kevin Ngo, DO
+
+0 Ratings
+
+View profile
+
+![Dr. Jennifer Avena, DO profile photo](https://photos.healthgrades.com/img/silhouettes/silhouette-unknown_w90h120_v1.jpg)
+
+### Dr. Jennifer Avena, DO
+
+### Dr. Jennifer Avena, DO
+
+11 Ratings
+
+View profile
+
+![Dr. Sonia Garcia-Jayne, DO profile photo](https://photos.healthgrades.com/img/prov/x/y/m/xymsqwl_w90h120_vdf6aebec00220ad699facdadefddf48a9057c218.jpg)
+
+### Dr. Sonia Garcia-Jayne, DO
+
+Explains Conditions Well
+
+### Dr. Sonia Garcia-Jayne, DO
+
+5 Ratings
+
+View profile
+
+![Dr. Harry Strothers, MD profile photo](https://photos.healthgrades.com/img/prov/x/w/x/xwxn2_w90h120_vee31308e7719e7ef889ee2cd1b46d7ee97b32a4c.jpg)
+
+### Dr. Harry Strothers, MD
+
+### Dr. Harry Strothers, MD
+
+2 Ratings
+
+View profile
+
+![Dr. Gabriel Estrada Sotomayor, MD profile photo](https://photos.healthgrades.com/img/prov/r/n/x/rnx74aa976_w90h120_v86ae5d3cac08063702eed2ff56b22ca74dd5d4fc.jpg)
+
+### Dr. Gabriel Estrada Sotomayor, MD
+
+### Dr. Gabriel Estrada Sotomayor, MD
+
+0 Ratings
+
+View profile
+
+Show more providers
+
+## Highlights
+
+Dr. Snyder specializes in the area of Family Practice
+
+Specializes in Care for 65+
+
+Good Communication
+
+Good Patient Care
+
+Clean Hospital
+
+Quiet Hospital
+
+## Experience
+
+### Search for Dr. Snyder's experience in a specific area
+
+Condition or Procedure
+
+### What Dr. Snyder treats most often
+
+Based on treatment records, we have identified the following as areas of care that Dr. Snyder treats most frequently.
+
+Treatment Frequency
+
+### Arterial Blood Gas Test (ABG)
+
+normal
+
+Dr. Snyder performs Arterial Blood Gas Test (ABG) as often as similar providers.
+
+[Log-in to compare providers with MyHealthMatch](https://www.healthgrades.com/account/login)
+
+### Electrocardiogram (EKG)
+
+normal
+
+Dr. Snyder performs Electrocardiogram (EKG) as often as similar providers.
+
+[Log-in to compare providers with MyHealthMatch](https://www.healthgrades.com/account/login)
+
+### Tobacco Use Disorder
+
+normal
+
+Dr. Snyder treats Tobacco Use Disorder as often as similar providers.
+
+[Log-in to compare providers with MyHealthMatch](https://www.healthgrades.com/account/login)
+
+[Learn more about experience and why treatment frequency matters](https://helpcenter.healthgrades.com/about-my-profile/experience-check)
+
+Dr. Snyder's conditions and procedures:
+
+- Arterial Blood Gas Test (ABG)
+- Electrocardiogram (EKG)
+- Tobacco Use Disorder
+- Dehydration
+- Fever
+- Joint Pain
+- Nausea
+- Shortness of Breath
+- Urinary Tract Infection (UTI)
+- Abdominal Pain
+- Acidosis
+- Acute Bronchitis
+- Acute Venous Embolism Thrombosis
+- All Headaches (incl. Migraine)
+- All Types of Food Poisoning
+- Allergic Conjunctivitis
+- Allergic Rhinitis
+- Anemia
+- Anxiety
+- Arthritis
+- Arthritis of the Elbow
+- Asthma
+- Atherosclerosis
+- Back Pain
+- Bedsores
+- Benign Chronic Pain Syndrome
+- Bladder Infection
+- Blood in Urine (Hematuria)
+- Bronchitis
+- Bruise of Face, Scalp, or Neck
+- Celiac Disease
+- Cellulitis
+- Chest Pain
+- Chronic Deep Vein Thrombosis (DVT)
+- Chronic Depression (Dysthymia)
+- Chronic Neck Pain
+- Chronic Pain
+- Chronic Sinusitis
+- Chronic Venous Embolism Thrombosis
+- Constipation
+- COPD (Chronic Obstructive Pulmonary Disease)
+- Cough
+- Deep Vein Thrombosis (DVT)
+- Diabetes Type 1
+- Diabetes Type 2
+- Diabetes With Renal Manifestations
+- Diabetic Polyneuropathy
+- Diarrhea
+- Difficulty With Walking
+- Dizziness
+- Down Syndrome
+- Dyslipidemia
+- Dysphagia
+- Emphysema
+- Enlarged Prostate (BPH)
+- Enteritis
+- Fibromyalgia
+- Food Poisoning
+- Gait Abnormality
+- Gastritis
+- Gastroesophageal Reflux Disease (GERD)
+- Gastroparesis
+- Gout
+- Headache
+- Heart Disease
+- Heart Palpitations
+- Hemorrhoids
+- Hernia
+- Hyperkalemia
+- Hyperlipidemia
+- Hypertension
+- Hypoglycemia
+- Hypokalemia
+- Hypotension
+- Hypotension (Excluding Maternal)
+- Hypothyroidism
+- Hypoxemia
+- Influenza (Flu)
+- Irritable Bowel Syndrome
+- Leg and Foot Ulcers
+- Limb Pain
+- Limb Swelling
+- Limb Swelling Caused by Fluid Overload
+- Lipid Disorders
+- Low Back Pain
+- Magnesium Metabolism Disorders
+- Malaise and Fatigue
+- Migraine
+- Mineral Metabolism Disorders
+- Mood Disorders (Dysthymia and Cyclothymia)
+- Muscle Spasm
+- Muscle Weakness
+- Neurogenic Bladder
+- Nosebleed
+- Obesity
+- Osteoarthritis
+- Osteoarthritis of Foot
+- Osteoarthritis of Hand
+- Osteoarthritis of Hand or Wrist
+- Osteoarthritis of Hip
+- Osteoarthritis of Hip and Thigh
+- Osteoarthritis of Knee
+- Osteoarthritis of Shoulder
+- Osteoporosis
+- Otitis Media
+- Outer Ear Infection
+- Overactive Bladder
+- Overweight
+- Patellofemoral Pain Syndrome (PFPS)
+- Peptic Ulcer
+- Pinkeye (Conjunctivitis)
+- Pneumonia
+- Pollen Allergy
+- Polyneuropathy
+- Polyuria
+- Radiculopathy
+- Rash
+- Restless Leg Syndrome
+- Sinus Bradycardia
+- Sinus Tachycardia
+- Sleep Apnea
+- Swine Flu
+- Transient Ischemic Attack (TIA)
+- Tremor
+- Urinary Incontinence
+- Venous Insufficiency
+- Vertigo
+- Viral Enteritis
+- Vitamin D Deficiency
+- Wheezing
+- Abscess or Cyst Drainage or Aspiration
+- Abscess or Fluid Incision and Drainage
+- ACTH (Cosyntropin) Stimulation Test
+- Alcohol Misuse Screening and Counseling
+- Alcohol or Substance Misuse Screening and Counseling
+- Anemia and Iron Deficiency Screening
+- Arrhythmia Screening
+- Bacteriuria Screening
+- Blood Allergy Testing
+- Bone Density Scan
+- Breast Cancer Screening
+- Cancer Screening
+- Cardiac Ultrasound
+- Cardiovascular Stress Test
+- Chest Pain Evaluation
+- Chlamydia Infection Screening
+- Cholesterol Screening
+- Dementia Evaluation
+- Dementia or Depression Screening
+- Detoxification Evaluation
+- Diabetes Screening
+- Diabetic Evaluation
+- Dipstick Urinalysis
+- Disability Evaluation
+- Drug Allergy Testing
+- Dual-Energy X-Ray Absorptiometry (DEXA) Scan
+- Dupuytren's Contracture Treatment
+- Dyslexia Assessment
+- Evaluation and Treatment of Sleep Disorders
+- Fetal Cardiac Screening
+- Genetic Screening for Breast Cancer
+- Geriatric Assessment
+- Gonorrhea Screening
+- Health Screening
+- HeartAware Online Risk Screening
+- Hepatitis A Screening
+- Hepatitis B Virus Screening
+- Hepatitis C Virus Screening
+- Hepatitis Screening
+- Herpes Simplex Screening
+- HIV Screening
+- Home Sleep Study
+- Immunization Administration
+- Impairment Rating Evaluation
+- Independent Educational Evaluation
+- Joint Fluid Test
+- Lyme Disease Evaluation
+- Mammography
+- McMurray's Test
+- Melanoma Screening
+- Memory Evaluation
+- Menopause Evaluation and Treatment
+- Mole Evaluation
+- Oral Glucose Tolerance Test
+- Osteoporosis Screening
+- Ovarian Cancer Screening
+- Patch Testing
+- Pre-Operative Evaluation
+- Pregnancy Test
+- Prostate Cancer Screening
+- Prostate Cancer Screening Exam (DRE)
+- Psychiatric Evaluation
+- Psychiatric Evaluation - Child and Adolescent
+- Psychological Evaluation
+- Psychological Evaluations Prior to Bariatric Surgery
+- Rapid Flu Test
+- Sexually Transmitted Infections Screening
+- Skin Screenings
+- Skin Testing and Screening
+- Spinal and Postural Screening
+- STD Screening
+- Strep Test
+- Syphilis Screening
+- Thyroid Screening
+- Trichomoniasis Screening
+- Tuberculosis Screening
+- Urine Pregnancy Test
+- Vaccination
+- Vaginosis Screening
+- VAP Lipid Testing
+- Wheelchair Evaluation
+- Worker's Compensation Evaluations
+
+## Dr. Snyder's Reviews
+
+![healthgrades logo](https://photos.healthgrades.com/public3/images/logo-blue-full.svg)
+
+### Be the first to leave a review
+
+How likely are you to recommend
+
+Dr. Snyder?
+
+Definitely NotNoMaybeYesDefinitelySelect Rating
+
+![Provider explaining information to patient](https://photos.healthgrades.com/img/ads/claim_this_profile.jpg)
+
+### Is this your profile?
+
+Respond to reviews, add information, and reach more patients. Claiming is free and only takes a minute.
+
+[Claim your profile](https://update.healthgrades.com/landing/claim?pwid=YVFV9&pCID=hg_ProvProfile)
+
+### Know Before You Go
+
+Expand your knowledge with related news and articles.
+
+[Do's and Don'ts of Diabetes](https://resources.healthgrades.com/right-care/diabetes/dos-and-donts-of-diabetes?hid=t12_review&tpc=getting-the-right-diabetes-treatment) [Interpreting Your Cholesterol Test Results](https://resources.healthgrades.com/right-care/cholesterol/interpreting-your-cholesterol-test-results?hid=t12_review) [13 Tips for Managing Migraine Symptoms](https://resources.healthgrades.com/right-care/migraine-and-headache/10-tips-for-managing-migraine-symptoms?hid=t12_review)
+
+## About Me
+
+### biography
+
+Dr. Matthew Snyder, DO is a family medicine physician in Nellis AFB, NV and has over 15 years of experience in the medical field. He graduated from Michigan State University College of Osteopathic Medicine in 2005. He is affiliated with medical...
+
+Read More
+
+### Specialties\*
+
+- Family Medicine
+
+
+\*Healthgrades does not verify qualifications for medical specialties. Please verify your provider's specialty and qualifications directly with your provider and applicable medical board.
+
+### Education
+
+- Michigan State University College Of Osteopathic Medicine
+Medical School, 2005
+
+### Board Certifications
+
+American Board of Medical Specialties®
+
+American Board of Family Medicine®
+
+-
+
+Family Practice
+
+Learn more about board certification
+
+### Board Action Check
+
+For detailed information about any of the below board actions, please search for the provider's records on the linked state licensing board or the [Federation of State Medical Boards](https://www.docinfo.org/).  To learn more about the difference between these sources, please refer to our [FAQs](https://www.healthgrades.com/about/healthgrades-methodologies#faqs).
+
+Healthgrades has not received any data indicating a board action exists for this provider.
+
+Healthgrades receives board action history for physicians and physician assistants. The information displayed here is sourced from independent information providers, such as state board websites, and may not be the most up-to-date information. Healthgrades makes no representations with respect to the accuracy of any information provided here and assumes no responsibility or liability for such information.
+
+Learn more about medical license public record check
+
+### Common Questions and Answers
+
+Questions
+
+Responses
+
+Please call the office to learn more.
+
+[(702) 653-2978](tel:7026532978)
+
+![brain health video center](https://dims.healthgrades.com/dims3/MMH/cef3c83/2147483647/strip/true/crop/567x567+140+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2Fb1%2F98%2F355d0a064073b8b655afca0e46aa%2Fimage-women-with-elderly-parent.jpg)
+
+#### Focus on Brain Health
+
+[Alzheimer's Disease: 3 Things to Know](https://resources.healthgrades.com/video/brain-health-video-center/alzheimers-disease-3-things-to-know?hid=t12_learn_fomo)
+
+Having a loved one with Alzheimer's can be stressful. But the more you know about it, the better prepared you'll be.
+
+[Learn More](https://resources.healthgrades.com/video/brain-health-video-center/alzheimers-disease-3-things-to-know?hid=t12_learn_fomo)
+
+## Insurance Check
+
+### Search for your insurance carrier and choose your plan type
+
+Insurance Carrier
+
+Choose Plan Type
+
+Apply
+
+Try: HealthLink,
+
+Please verify your coverage with the provider. [(702) 653-2978](tel:7026532978 "Call: (702) 653-2978")
+
+## Locations
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/2955/6419.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/2956/6419.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/2955/6420.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/2956/6420.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/2954/6419.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/2957/6419.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/2954/6420.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/2957/6420.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/2953/6419.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/2958/6419.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/2953/6420.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/2958/6420.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/2952/6419.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/2959/6419.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/2952/6420.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/2959/6420.png)
+
+Map Marker 1
+1
+
+[+](https://www.healthgrades.com/physician/dr-matthew-snyder-yvfv9# "Zoom in") [−](https://www.healthgrades.com/physician/dr-matthew-snyder-yvfv9# "Zoom out")
+
+[Leaflet](https://leafletjs.com/ "A JavaScript library for interactive maps") \| © [OpenStreetMap](http://osm.org/copyright) contributors
+
+### Practice
+
+1
+
+Office
+
+Office
+
+4700 Las Vegas Blvd N
+
+Nellis AFB, NV 89191
+
+[(702) 653-2978](tel:(702)653-2978)
+
+Fax
+
+[Driving Directions](https://www.google.com/maps/dir/?api=1&destination=4700+Las+Vegas+Blvd+N,+Nellis+AFB,+NV+89191)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fdepression-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fdepression-desktop-step-2.jpg)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fheart-failure-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fheart-failure-desktop-step-2.jpg)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fclinical-cancer-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fclinical-cancer-desktop-step-2.jpg)
+
+## Before Your Visit
+
+An appointment guide can help you get the most out of your visit.
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fdepression-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fdepression-desktop-step-1.jpg)View This Guide
+
+### Diabetes: Top Questions
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fheart-failure-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fheart-failure-desktop-step-1.jpg)View This Guide
+
+### IBS with Constipation: Top Questions
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fclinical-cancer-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fclinical-cancer-desktop-step-1.jpg)View This Guide
+
+### RSV Virus: Top Questions
+
+✕
+
+Enter your email to unlock this appointment guide. Plus, enjoy access to exclusive health content, expert tips, and more.
+
+Email capture form for
+
+EMAIL
+
+View Guide
+
+Submission of this form is subject to Healthgrades
+
+[User Agreement](https://www.healthgrades.com/content/user-agreement) and [Privacy Policy](https://www.healthgrades.com/content/privacy-notice?redirected=true).
+
+## Affiliated Hospitals
+
+### [Banner Churchill Community Hospital](https://www.healthgrades.com/hospital/banner-churchill-community-hospital-41068f)
+
+801 E Williams Ave
+
+Fallon, NV 89406
+
+How patients felt about the care they received at this hospital.
+
+92%
+
+Patients said they were given information about recovering at home
+
+3% higher than the national average
+
+88%
+
+Patients said that doctors always listened to them and explained things well
+
+5% higher than the national average
+
+[View all patient feedback](https://www.healthgrades.com/hospital/banner-churchill-community-hospital-41068f#patient-experience)
+
+### [Perry County Memorial Hospital](https://www.healthgrades.com/hospital/perry-county-memorial-hospital-175a8a)
+
+8885 State Road 237
+
+Tell City, IN 47586
+
+How patients felt about the care they received at this hospital.
+
+92%
+
+Patients said they were given information about recovering at home
+
+3% higher than the national average
+
+90%
+
+Patients said their room and bathroom were always kept clean
+
+12% higher than the national average
+
+[View all patient feedback](https://www.healthgrades.com/hospital/perry-county-memorial-hospital-175a8a#patient-experience)
+
+Learn more about how Healthgrades measures [Hospital Quality](https://www.healthgrades.com/quality/ratings-awards/methodology)
+
+Compare Dr. Snyder with Family Doctors from
+
+## Humana CenterWell
+
+![Humana CenterWell](https://photos.healthgrades.com/img/client/logo/CWELL_MAP_w180h65.png)
+
+![Dr. Charlie Lin, DO profile photo](https://photos.healthgrades.com/img/prov/y/g/v/ygvsc_w90h120_vce3df9cb3e465f00c607306ac184cb58d85ad912.jpg)
+
+### Dr. Charlie Lin, DO
+
+Low Wait Times
+
+### Dr. Charlie Lin, DO
+
+3 Ratings
+
+View profile
+
+![Dr. Kevin Ngo, DO profile photo](https://photos.healthgrades.com/img/prov/n/b/s/nbsqjzr941_w90h120_v2136472fe77a6b1d9ce82bc7ad5c4aeb96462b1b.jpg)
+
+### Dr. Kevin Ngo, DO
+
+### Dr. Kevin Ngo, DO
+
+0 Ratings
+
+View profile
+
+![Dr. Jennifer Avena, DO profile photo](https://photos.healthgrades.com/img/silhouettes/silhouette-unknown_w90h120_v1.jpg)
+
+### Dr. Jennifer Avena, DO
+
+### Dr. Jennifer Avena, DO
+
+11 Ratings
+
+View profile
+
+![Dr. Sonia Garcia-Jayne, DO profile photo](https://photos.healthgrades.com/img/prov/x/y/m/xymsqwl_w90h120_vdf6aebec00220ad699facdadefddf48a9057c218.jpg)
+
+### Dr. Sonia Garcia-Jayne, DO
+
+Explains Conditions Well
+
+### Dr. Sonia Garcia-Jayne, DO
+
+5 Ratings
+
+View profile
+
+![Dr. Harry Strothers, MD profile photo](https://photos.healthgrades.com/img/prov/x/w/x/xwxn2_w90h120_vee31308e7719e7ef889ee2cd1b46d7ee97b32a4c.jpg)
+
+### Dr. Harry Strothers, MD
+
+### Dr. Harry Strothers, MD
+
+2 Ratings
+
+View profile
+
+![Dr. Gabriel Estrada Sotomayor, MD profile photo](https://photos.healthgrades.com/img/prov/r/n/x/rnx74aa976_w90h120_v86ae5d3cac08063702eed2ff56b22ca74dd5d4fc.jpg)
+
+### Dr. Gabriel Estrada Sotomayor, MD
+
+### Dr. Gabriel Estrada Sotomayor, MD
+
+0 Ratings
+
+View profile
+
+Show more providers
+
+### You May Also Like
+
+[![contentimage](https://dims.healthgrades.com/dims3/MMH/9fbfba1/2147483647/strip/false/crop/3744x3744+936+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F8a%2Fd6%2F681c66b64e2c9f4264aa313f1c03%2Fimage-getty-174858660.jpg)\\
+\\
+Treatment Options for Migraines](https://resources.healthgrades.com/right-care/migraine-and-headache/treatment-options-for-migraines?hid=t12_compare_contentalgo&tpc=your-guide-to-preventing-migraines) [![contentimage](https://dims.healthgrades.com/dims3/MMH/a45ba22/2147483647/strip/false/crop/683x683+247+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F12%2F93%2Fda252777ab4bba39549cdf83299f%2Fgettyimages-1423893133-1024x683.jpg)\\
+\\
+How Alzheimer’s Disease Leads to Uncontrolled Emotions](https://resources.healthgrades.com/right-care/alzheimers-disease/how-alzheimers-disease-leads-to-uncontrolled-emotions?hid=t12_compare_contentalgo&tpc=treating-involuntary-crying-and-laughing) [![contentimage](https://dims.healthgrades.com/dims3/MMH/b382f23/2147483647/strip/false/crop/628x628+286+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F48%2Fba%2F666a356bdefd5e12b6cdaca02ae2%2Fhg-chopping-veggies-1200x628-facebook.jpg)\\
+\\
+Everything to Know About Treating Fatty Liver Disease](https://resources.healthgrades.com/right-care/liver-conditions/treatment-options-for-fatty-liver-disease?hid=t12_compare_contentalgo&tpc=treating-nonalcoholic-fatty-liver-disease)
+
+### Recommended Reading From Healthgrades
+
+[![contentimage](https://dims.healthgrades.com/dims3/MMH/220b57d/2147483647/strip/true/crop/3840x3840+819+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F46%2Fb7%2Fcee1da63401da96e8a18bc211d04%2Fimage-getty-464488018.jpg)\\
+\\
+6 Things to Know About the Shingles Vaccine](https://resources.healthgrades.com/right-care/vaccines/6-things-to-know-about-the-shingles-vaccine?hid=t12_compare) [![contentimage](https://dims.healthgrades.com/dims3/MMH/00829e7/2147483647/strip/true/crop/3299x3299+1837+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F46%2F9f%2F15308e16433fa5f627ad8cf6435d%2Fimage-gettyimages-483655356.jpg)\\
+\\
+When to Go to the ER for Constipation](https://resources.healthgrades.com/right-care/digestive-health/when-to-see-a-doctor-for-constipation?hid=t12_compare) [![contentimage](https://dims.healthgrades.com/dims3/MMH/0d5a8f3/2147483647/strip/true/crop/3409x3409+857+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F8f%2F50%2Fc52ec81c4f3eb73ebc92c078ee8d%2Fimage-gettyimages-557475327.jpg)\\
+\\
+7+ Symptoms Never to Ignore if You Have Depression](https://resources.healthgrades.com/right-care/depression/7-symptoms-never-to-ignore-if-you-have-depression?hid=t12_compare)
+
+## Explore More Providers
+
+[View all specialties](https://www.healthgrades.com/specialty-directory)
+
+SpecialistsNearby Related SpecialistsNearby Family Medicine Physician
+
+[Family Medicine](https://www.healthgrades.com/family-practice-directory) [Internal Medicine](https://www.healthgrades.com/internal-medicine-directory) [Obstetrics & Gynecology](https://www.healthgrades.com/obstetrics-gynecology-directory) [Cardiology](https://www.healthgrades.com/cardiology-directory) [Orthopedic Surgery](https://www.healthgrades.com/orthopedic-surgery-directory) [General Surgery](https://www.healthgrades.com/surgery-general-directory) [Neurology](https://www.healthgrades.com/neurology-directory) [Gastroenterology](https://www.healthgrades.com/gastroenterology-directory) [Urology](https://www.healthgrades.com/urology-directory) [Oncology](https://www.healthgrades.com/oncology-directory) [Neurosurgery](https://www.healthgrades.com/neurosurgery-directory) [Endocrinology, Diabetes & Metabolism](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory)
+
+[Geriatric Medicine](https://www.healthgrades.com/geriatric-medicine-directory) [Sports Medicine](https://www.healthgrades.com/sports-medicine-directory) [Nursing (Nurse Practitioner)](https://www.healthgrades.com/nurse-practitioner-directory) [Aerospace Medicine](https://www.healthgrades.com/aerospace-medicine-directory) [Urgent Care Medicine](https://www.healthgrades.com/urgent-care-medicine-directory)
+
+[Family Medicine, Las Vegas NV](https://www.healthgrades.com/family-practice-directory/nv-nevada/las-vegas) [Family Medicine, Henderson NV](https://www.healthgrades.com/family-practice-directory/nv-nevada/henderson) [Family Medicine, North Las Vegas NV](https://www.healthgrades.com/family-practice-directory/nv-nevada/north-las-vegas) [Family Medicine, Nellis AFB NV](https://www.healthgrades.com/family-practice-directory/nv-nevada/nellis-afb) [Family Medicine, Pahrump NV](https://www.healthgrades.com/family-practice-directory/nv-nevada/pahrump) [Family Medicine, Mesquite NV](https://www.healthgrades.com/family-practice-directory/nv-nevada/mesquite) [Family Medicine, Boulder City NV](https://www.healthgrades.com/family-practice-directory/nv-nevada/boulder-city) [Family Medicine, Laughlin NV](https://www.healthgrades.com/family-practice-directory/nv-nevada/laughlin) [Family Medicine, Alamo NV](https://www.healthgrades.com/family-practice-directory/nv-nevada/alamo) [Family Medicine, Caliente NV](https://www.healthgrades.com/family-practice-directory/nv-nevada/caliente)

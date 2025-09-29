@@ -1,0 +1,307 @@
+![Dr. Justin Thomas MD](https://doximity-res.cloudinary.com/images/c_crop,f_auto,h_320,q_auto,t_public_profile_photo_320x320,w_320,x_0,y_-2/muhag4mhg0vxen101u8j/justin-thomas-md-brownwood-tx.jpg)
+
+# Dr. Justin ThomasMD
+
+Radiation Oncology
+
+**6 - 10** Years of Experience
+
+![Dr. Justin Thomas MD](https://doximity-res.cloudinary.com/images/c_crop,f_auto,h_320,q_auto,t_public_profile_photo_320x320,w_320,x_0,y_-2/muhag4mhg0vxen101u8j/justin-thomas-md-brownwood-tx.jpg)
+
+[1501 Burnet Rd, Brownwood, TX](https://health.usnews.com/doctors/justin-thomas-1813697#location)
+
+![Dr. Justin Thomas MD](https://doximity-res.cloudinary.com/images/c_crop,f_auto,h_320,q_auto,t_public_profile_photo_320x320,w_320,x_0,y_-2/muhag4mhg0vxen101u8j/justin-thomas-md-brownwood-tx.jpg)
+
+Save
+
+## Overview
+
+Dr. Justin Thomas is a radiation oncologist in Brownwood, Texas. He received his medical degree from Texas Tech University HSC El Paso and has been in practice between 6-10 years. Dr. Justin Thomas accepts Medicare, Aetna, Humana, United Healthcare - see other [insurance plans accepted](https://health.usnews.com/doctors/justin-thomas-1813697#insurance).
+
+Doctor's Details
+
+Speaks **English**
+
+## Specialties
+
+Specialty
+
+### Radiation Oncology
+
+Radiation oncologists treat cancer using various forms of radiation to detect and kill malignant cells. Radiation therapy is often combined with other modes of treatment, especially surgery and chemotherapy.
+
+Subspecialties
+
+### General Radiation Oncology
+
+Doctor's Details
+
+Speaks **English**
+
+## Check to See if Dr. Justin Thomas Accepts Your Insurance
+
+[Accepts Medicare](https://health.usnews.com/doctors/search?insurance_carrier=CMS%20Medicare)
+
+Accepts Medicaid
+
+Please contact your provider to confirm if they accept your insurance.
+
+Insurance Carrier
+
+Clear
+
+example:
+
+Aetna, Cigna, etc.
+
+Plan Type
+
+Clear
+
+All Plans
+
+### Accepted Insurance Plans
+
+[Aetna](https://health.usnews.com/doctors/search?insurance_carrier=Aetna&location=76801)
+
+- [EPO](https://health.usnews.com/doctors/search?insurance_carrier=Aetna&insurance_plan=EPO&location=76801)
+- [HMO](https://health.usnews.com/doctors/search?insurance_carrier=Aetna&insurance_plan=HMO&location=76801)
+- [Medicare](https://health.usnews.com/doctors/search?insurance_carrier=Aetna&insurance_plan=Medicare&location=76801)
+- [POS](https://health.usnews.com/doctors/search?insurance_carrier=Aetna&insurance_plan=POS&location=76801)
+- [PPO](https://health.usnews.com/doctors/search?insurance_carrier=Aetna&insurance_plan=PPO&location=76801)
+
+[Baylor Scott and White](https://health.usnews.com/doctors/search?insurance_carrier=Baylor%20Scott%20and%20White&location=76801)
+
+- [HMO](https://health.usnews.com/doctors/search?insurance_carrier=Baylor%20Scott%20and%20White&insurance_plan=HMO&location=76801)
+
+[CMS Medicare](https://health.usnews.com/doctors/search?insurance_carrier=CMS%20Medicare&location=76801)
+
+- [Medicare](https://health.usnews.com/doctors/search?insurance_carrier=CMS%20Medicare&insurance_plan=Medicare&location=76801)
+
+[Elevance](https://health.usnews.com/doctors/search?insurance_carrier=Elevance&location=76801)
+
+- [HMO](https://health.usnews.com/doctors/search?insurance_carrier=Elevance&insurance_plan=HMO&location=76801)
+- [Medicaid](https://health.usnews.com/doctors/search?insurance_carrier=Elevance&insurance_plan=Medicaid&location=76801)
+
+[HCSC](https://health.usnews.com/doctors/search?insurance_carrier=HCSC&location=76801)
+
+- [HMO](https://health.usnews.com/doctors/search?insurance_carrier=HCSC&insurance_plan=HMO&location=76801)
+
+[Humana](https://health.usnews.com/doctors/search?insurance_carrier=Humana&location=76801)
+
+- [Medicare](https://health.usnews.com/doctors/search?insurance_carrier=Humana&insurance_plan=Medicare&location=76801)
+- [PPO](https://health.usnews.com/doctors/search?insurance_carrier=Humana&insurance_plan=PPO&location=76801)
+
+[United Healthcare](https://health.usnews.com/doctors/search?insurance_carrier=United%20Healthcare&location=76801)
+
+- [HMO](https://health.usnews.com/doctors/search?insurance_carrier=United%20Healthcare&insurance_plan=HMO&location=76801)
+- [Medicare](https://health.usnews.com/doctors/search?insurance_carrier=United%20Healthcare&insurance_plan=Medicare&location=76801)
+- [POS](https://health.usnews.com/doctors/search?insurance_carrier=United%20Healthcare&insurance_plan=POS&location=76801)
+- [PPO](https://health.usnews.com/doctors/search?insurance_carrier=United%20Healthcare&insurance_plan=PPO&location=76801)
+
+Don\`t see your plan listed? [Click here to find providers that accept your insurance](https://health.usnews.com/doctors/search?location=76801).
+
+## Location & Contact Information
+
+© [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors
+
++−
+
+⇧
+
+- [![](<Base64-Image-Removed>)](https://openlayers.org/)
+- © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors.
+
+i
+
+Doctor Address
+
+1501 Burnet Rd, Brownwood, TX, 76801
+
+[(325) 649-5000](tel://(325))
+
+Explore Map
+
+## Education & Experience
+
+### Medical School & Residency
+
+Baylor College of Medicine
+
+Residency, Radiation Oncology, 2020-2024
+
+Texas Tech University HSC El Paso
+
+Medical School
+
+UTHealth School of Public Health
+
+MPH, 2015-2019
+
+### Certifications & Licensure
+
+American Board of Radiology (ABMS®)
+
+Certified in Radiation Oncology
+
+TX State Medical License
+
+Active through 2027
+
+Provider NPI:
+
+1669933701
+
+### Publications
+
+Personalized Brachytherapy: Applications and Future Directions.
+
+Arjit Baghwala, Chengfeng Li, Justin J Thomas, Bin S Teh, Edward B Butler, Andrew M Farach, Piyush Pathak
+
+Predictors of follow-up non-compliance after definitive radiotherapy for locally advanced cervical cancer at a community cancer center.
+
+Lucas G Sapienza, Justin J Thomas, Alfredo E Echeverria, Shelly Sharma, Daniel A Hamstra, Tracilyn R Hall, Michelle S Ludwig
+
+Endoscopic assessment of radiological stage IVA cervical cancer: A bivariate meta-analysis supporting an evidence-based staging algorithm proposal.
+
+Lucas G Sapienza, Justin J Thomas, Timothy N Showalter, Alfredo E Echeverria, Michelle S Ludwig, Albert C Chen, Eunji Jo, Vinícius F Calsavara, Susan G Hilsenbeck, Anuja Jhingran, Michael M Frumovitz, Glauco Baiocchi
+
+Three-dimensional (3D) anatomic location, extension, and timing of severe osteoradionecrosis of the mandible.
+
+Lucas G Sapienza, Justin J Thomas, Weiyuan Mai, Alexander N Hanania, Sandeep Hunjan, Vlad C Sandulache, Albert C Chen
+
+Stage Presentation, Care Patterns, Treatment Outcomes, and Impact of Radiotherapy on Overall Survival for Adrenocortical Carcinoma.
+
+Justin J. Thomas, Jonathan D. Tward
+
+## Frequently Asked Questions About Dr. Thomas
+
+### Can I make an appointment online with Dr. Thomas?
+
+Yes, you can [book an appointment](https://health.usnews.com/doctors/justin-thomas-1813697) with Dr. Thomas online today. It's simple, secure, and free.
+
+### Does Dr. Thomas offer telehealth?
+
+Call [Dr. Thomas](https://health.usnews.com/doctors/justin-thomas-1813697) for more information on telehealth services.
+
+### Dr. Thomas accepts insurance
+
+Check Dr. Thomas' [profile](https://health.usnews.com/doctors/justin-thomas-1813697#insurance) to see which insurance they accept.
+
+### Where is Dr. Thomas'  office located?
+
+Dr. Thomas' office is located at
+1501 Burnet Rd, Brownwood, TX.
+[View the map](https://health.usnews.com/doctors/justin-thomas-1813697#location).
+
+Let us know if this information is out of date or incorrect.
+
+Report a correction to this profile
+
+Are you Justin Thomas?
+
+[Claim or edit this profile at ![](https://health.usnews.com/static-atlas/assets/img/health/doximity-dark.png)](https://www.doximity.com/us_news/access/4d220221-e1ee-4356-a6e2-e2aa52eeaa7d)
+
+## Living Well With
+
+[![](https://www.usnews.com/object/image/0000015d-1e10-dc58-a5dd-fff3b3d10000/170707-girlpill-stock.jpg?update-time=1572905135948&size=responsiveSquare150)\\
+\\
+Hormone Therapy for Breast Cancer](https://health.usnews.com/conditions/cancer/breast-cancer/articles/hormone-therapy-for-breast-cancer)
+
+[Health Tip: Exercising After Breast Cancer](https://health.usnews.com/health-news/news/articles/2013/10/16/health-tip-exercising-after-breast-cancer)
+
+[![](https://www.usnews.com/object/image/0000015a-c84c-df39-a55e-dfcf9a030000/170313-patientdoctor-stock.jpg?update-time=1545934648995&size=responsiveSquare150)\\
+\\
+Living With Metastatic Breast Cancer](https://health.usnews.com/health-care/patient-advice/articles/2017-07-04/living-with-metastatic-breast-cancer)
+
+Doctor's Details
+
+Speaks **English**
+
+[Health disclaimer »\\
+\\
+Disclaimer and a note about your health »](https://health.usnews.com/health-news/articles/2012/07/16/disclaimer-and-a-note-about-your-health)
+
+## You May Also Like
+
+[**Does Medicare Cover Cataract Surgery?** \\
+\\
+Understand Medicare’s coverage for cataract surgery in 2026. Know when surgery is medically necessary and what expenses Medicare and you are responsible for.\\
+\\
+Elaine K. HowleySept. 22, 2025\\
+\\
+![](https://www.usnews.com/object/image/0000018c-35d9-df4a-a3bd-b5fbe4650000/gettyimages-1340040261.jpg?update-time=1701710556430&size=responsiveSquare150)](https://health.usnews.com/medicare/articles/does-medicare-cover-cataract-surgery)
+
+[**Does Medicare Cover Dental Implants?** \\
+\\
+Medicare often doesn’t cover any dental services. Learn why, plus alternative coverage options.\\
+\\
+Cheyenne BuckinghamSept. 19, 2025\\
+\\
+![](https://www.usnews.com/object/image/00000199-63a0-d209-a7db-7bffc3010000/gettyimages-1459740112.jpg?update-time=1758313132380&size=responsiveSquare150)](https://health.usnews.com/medicare/articles/does-medicare-cover-dental-implants)
+
+[**Medical Necessity for Medicare** \\
+\\
+Here's what "medically necessary" means in the world of Medicare, how to get a Certificate of Medical Necessity and what to do when something is deemed not medically necessary.\\
+\\
+Vanessa Caceres Sept. 15, 2025\\
+\\
+![](https://www.usnews.com/object/image/00000161-007f-d025-a367-c9ffbd920000/180116-doctornursewalk-stock.jpg?update-time=1516131860683&size=responsiveSquare150)](https://health.usnews.com/medicare/articles/medical-necessity-for-medicare-certificates-and-tips)
+
+[**How Are Patients Choosing ASCs?** \\
+\\
+Ambulatory surgery centers, or ASCs for short, are becoming attractive options for common outpatient procedures, and patient reviews and satisfaction scores are one of the main ways people choose where to go.\\
+\\
+Paul WynnSept. 12, 2025\\
+\\
+![](https://www.usnews.com/object/image/00000190-03bc-df3b-a1d8-83ffcb3f0000/https-media-gettyimages-com-id-1421939057-photo-adult-female-patient-talks-with-nurse.jpg?update-time=1718049665176&size=responsiveSquare150)](https://health.usnews.com/best-ascs/articles/how-are-patients-choosing-ambulatory-surgery-centers)
+
+[**Does Medicare Cover Weight Loss Drugs?** \\
+\\
+GLP-1 drugs, such as Ozempic, are reshaping diabetes care and weight loss. Find out if Medicare covers them and if they’re right for you.\\
+\\
+Paul Wynn and Geoff WilliamsSept. 12, 2025\\
+\\
+![](https://www.usnews.com/object/image/0000018d-378d-d5a4-a18d-3fbfcff60000/https-media-gettyimages-com-id-1393991963-photo-obese-fat-man-preparing-semaglutide-ozempic-injection-control-blood-sugar-levels.jpg?update-time=1706034093382&size=responsiveSquare150)](https://health.usnews.com/medicare/articles/does-medicare-cover-ozempic)
+
+[**What Is Ketamine?** \\
+\\
+Find out what ketamine is, how ketamine therapy is used to treat depression, what side effects it can have and more.\\
+\\
+Payton SySept. 12, 2025\\
+\\
+![](https://www.usnews.com/object/image/0000018b-492c-d814-a1db-cdfd12d90000/gettyimages-1440229538.jpg?update-time=1697739932218&size=responsiveSquare150)](https://health.usnews.com/health-care/patient-advice/articles/what-is-ketamine-and-is-it-good-for-depression)
+
+[**Does Medicare Cover Dental in 2026?** \\
+\\
+Learn about limitations and options for managing your oral health under Medicare and other insurance plans.\\
+\\
+Paul WynnSept. 11, 2025\\
+\\
+![](https://www.usnews.com/object/image/0000018c-20cc-d810-a5fd-7ced7eaa0000/gettyimages-1169330386.jpg?update-time=1701357356622&size=responsiveSquare150)](https://health.usnews.com/medicare/articles/does-medicare-cover-dental-care)
+
+[**Warning Signs of Kidney Problems** \\
+\\
+In the early stages of chronic kidney disease, you might have few obvious signs or symptoms. Here's what to look for.\\
+\\
+Claire WoltersSept. 10, 2025\\
+\\
+![](https://www.usnews.com/object/image/0000018d-669c-d1f9-af8f-7ffe5bee0000/gettyimages-1448250348.jpg?update-time=1706823579129&size=responsiveSquare150)](https://health.usnews.com/conditions/kidney-disease/articles/symptoms-of-a-kidney-problem)
+
+[**Shingles Vaccine: Covered by Medicare?** \\
+\\
+Learn about Medicare's policies on covering the shingles vaccine and why you should protect yourself.\\
+\\
+Paul WynnSept. 10, 2025\\
+\\
+![](https://www.usnews.com/object/image/0000018e-ce02-df19-a7ee-cf0fd0e70000/gettyimages-1299308834.jpg?update-time=1712853307917&size=responsiveSquare150)](https://health.usnews.com/medicare/articles/does-medicare-pay-for-shingles-shot)
+
+[**A Good Medicare Dental Plan** \\
+\\
+Original Medicare generally doesn't cover dental work. But if you want dental coverage, you have options.\\
+\\
+Geoff WilliamsSept. 9, 2025\\
+\\
+![](https://www.usnews.com/object/image/00000199-2e68-d15c-a9ff-6f7a66e50000/gettyimages-925985938.jpg?update-time=1757420254270&size=responsiveSquare150)](https://health.usnews.com/medicare/articles/what-to-look-for-in-a-good-medicare-dental-plan)
+
+Load More

@@ -46,6 +46,12 @@ export interface NPIProvider {
   phone: string;
   boardCertified: boolean;
   acceptingPatients: boolean;
+  education?: {
+    medicalSchool?: string | null;
+    residency?: string | null;
+    fellowship?: string | null;
+    certifications?: string | null;
+  };
 }
 
 export interface NPISearchRequest {

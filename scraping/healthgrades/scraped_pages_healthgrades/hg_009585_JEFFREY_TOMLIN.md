@@ -1,0 +1,844 @@
+![background mobile](https://photos.healthgrades.com/profile-images/standard-mobile-background.webp)
+
+![background desktop](https://photos.healthgrades.com/profile-images/standard-desktop-background.webp)
+
+Are you a healthcare professional?
+
+Is this your profile?
+
+Yes, Claim your profileYes, claim profileNo
+
+![provider image](https://photos.healthgrades.com/img/silhouettes/silhouette-male_w200h267_v1.jpg?name=Dr.%20Jeffrey%20Tomlin%2C%20MD)
+
+# Dr. Jeffrey Tomlin, MD
+
+## Internal Medicine\| 30+ years of experience
+
+30+ years of experience
+
+3.3 Star Rating
+
+Based on 31 reviews3.3 Star Rating (31 reviews)
+
+ReviewSave
+
+Dr. Jeffrey Tomlin, MD is an internist in McHenry, IL and has over 30 years of experience in the medical field. He graduated from Indiana University School of Medicine in 1993. He is affiliated with medical facilities Northwestern Medicine McHenry Hospital and Northwestern Medicine Central Dupage Hospital. He is accepting new patients.
+
+### Practice
+
+3633 Municipal Dr ·McHenry, IL 60050
+
+[(779) 244-3072](tel:(779)244-3072)
+
+## Highlights
+
+Dr. Tomlin specializes in the area of Internal Medicine
+
+Practices at Top Hospital
+
+Good Nurse Communication
+
+Good Patient Care
+
+Quiet Hospital
+
+Clean Hospital
+
+Highly Recommended Hospital
+
+Good Communication
+
+ADVERTISEMENT
+
+![healthgrades-rx](https://photos.healthgrades.com/profile-images/hgrx/HgRxDiscountVersion.webp)
+
+## Save money with free prescription discounts
+
+Get your prescription for as low as $4 with our free coupons or discount card, usable at over 64,000 participating pharmacies.
+
+Start saving
+
+Healthgrades Rx
+
+Get your prescription for as low as $4 with our free coupons or discount card, usable at over 64,000 participating pharmacies.
+
+Start saving
+
+Healthgrades Rx
+
+Optum Perks and Healthgrades are subsidiaries of RVO Health.
+
+## Experience
+
+### Search for Dr. Tomlin's experience in a specific area
+
+Condition or Procedure
+
+### What Dr. Tomlin treats most often
+
+Based on treatment records, we have identified the following as areas of care that Dr. Tomlin treats most frequently.
+
+Treatment Frequency
+
+### All Headaches (incl. Migraine)
+
+very high
+
+Dr. Tomlin treats All Headaches (incl. Migraine) much more often than similar providers.
+
+[Log-in to compare providers with MyHealthMatch](https://www.healthgrades.com/account/login)
+
+### Acute Lower Respiratory Infection
+
+very high
+
+Dr. Tomlin treats Acute Lower Respiratory Infection much more often than similar providers.
+
+[Log-in to compare providers with MyHealthMatch](https://www.healthgrades.com/account/login)
+
+### Nausea
+
+very high
+
+Dr. Tomlin treats Nausea much more often than similar providers.
+
+[Log-in to compare providers with MyHealthMatch](https://www.healthgrades.com/account/login) [Learn more about Nausea](https://www.healthgrades.com/symptoms/nausea)
+
+SHOW MORE
+
+[Learn more about experience and why treatment frequency matters](https://helpcenter.healthgrades.com/about-my-profile/experience-check)
+
+Dr. Tomlin's conditions and procedures:
+
+- Acute Lower Respiratory Infection
+- All Headaches (incl. Migraine)
+- Nausea
+- Muscle Spasm
+- Immunization Administration
+- Shortness of Breath
+- Muscle Cramping
+- Limb Pain
+- Tobacco Use Disorder
+- Acute Upper Respiratory Infection
+- Arterial Blood Gas Test (ABG)
+- Foot Infection
+- Throat Pain
+- Joint Pain
+- Electrocardiogram (EKG)
+- Venous Embolism and Thrombosis
+- Constipation
+- Nail Infection
+- Urinary Tract Infection (UTI)
+- Urinary Incontinence
+- Fever
+- Asphyxia and Hypoxemia
+- Leukocytopenia
+- Pharyngitis
+- Sleep-Related Leg Cramp
+- Abdominal Pain
+- Acne
+- Acute Bronchitis
+- Acute Deep Vein Thrombosis (DVT)
+- Acute Pharyngitis
+- Acute Sinusitis
+- Acute Venous Embolism Thrombosis
+- Adhesive Capsulitis Shoulder
+- Allergic Conjunctivitis
+- Allergic Rhinitis
+- Anemia
+- Animal Allergies
+- Anxiety
+- Arthritis
+- Arthritis of the Elbow
+- Arthritis of the Neck
+- Asthma
+- Asymptomatic Post-Menopausal Status
+- Ataxia
+- Atherosclerosis
+- Back Pain
+- Balanoposthitis
+- Bedsores
+- Blood in Urine (Hematuria)
+- Bronchitis
+- Bursitis
+- Calcium Metabolism Disorders
+- Carpal Tunnel Syndrome
+- Cellulitis
+- Chest Pain
+- Chest Wall Pain Syndrome
+- Chronic Depression (Dysthymia)
+- Chronic Fatigue Syndrome
+- Chronic Neck Pain
+- Chronic Pain
+- Chronic Sinusitis
+- Cluster Headache
+- Confusion
+- Contact Dermatitis
+- COPD (Chronic Obstructive Pulmonary Disease)
+- Cough
+- Deep Vein Thrombosis (DVT)
+- Dermatitis Herpetiformis
+- Diabetes Type 1
+- Diabetes Type 2
+- Diabetes With Renal Manifestations
+- Diabetic Polyneuropathy
+- Diarrhea
+- Difficulty With Walking
+- Dizziness
+- Dysentery
+- Dyslipidemia
+- Dysphagia
+- Ear Ache
+- Earwax Buildup
+- Eczema and Contact Dermatitis
+- Emphysema
+- Enlarged Prostate (BPH)
+- Esophagitis
+- Fibromyalgia
+- Foot Sprain
+- Gait Abnormality
+- Gas-Bloat Syndrome
+- Gastritis
+- Gastroesophageal Reflux Disease (GERD)
+- Genital Herpes
+- Gout
+- Headache
+- Heart Disease
+- Heart Palpitations
+- Hemorrhoids
+- Hernia
+- Herpes Simplex Infection
+- Hives
+- Hyperlipidemia
+- Hypertension
+- Hypogonadism
+- Hypokalemia
+- Hypotension
+- Hypotension (Excluding Maternal)
+- Hypothyroidism
+- Indigestion
+- Influenza (Flu)
+- Insomnia
+- Intestinal Diverticulitis
+- Intestinal Diverticulosis
+- Iron Metabolism Disorders
+- Irritable Bowel Syndrome
+- Itchy Skin
+- Jock Itch
+- Lactose Intolerance
+- Limb Swelling
+- Limb Swelling Caused by Fluid Overload
+- Lipid Disorders
+- Liver Damage from Alcohol
+- Low Back Pain
+- Lyme Disease
+- Magnesium Metabolism Disorders
+- Malaise and Fatigue
+- Migraine
+- Mineral Metabolism Disorders
+- Mood Disorders (Dysthymia and Cyclothymia)
+- Muscle Weakness
+- Neurogenic Bladder
+- Noninfectious Gastroenteritis and Colitis
+- Obesity
+- Onychomycosis
+- Osteoarthritis
+- Osteoarthritis of Foot
+- Osteoarthritis of Hip
+- Osteoarthritis of Hip and Thigh
+- Osteoarthritis of Knee
+- Osteoarthritis of Shoulder
+- Osteoarthritis of Spine
+- Osteopenia
+- Osteoporosis
+- Overactive Bladder
+- Overweight
+- Painful Urination (Dysuria)
+- Patellofemoral Pain Syndrome (PFPS)
+- Pinkeye (Conjunctivitis)
+- Pneumonia
+- Pollen Allergy
+- Polyneuropathy
+- Polyuria
+- Prostatitis
+- Radiculopathy
+- Rash
+- Reflux Esophagitis
+- Restless Leg Syndrome
+- Ringworm
+- Rosacea
+- Salivary Gland Stones and Inflammation
+- Sciatica
+- Sexually Transmitted Diseases (STDs)
+- Shoulder Tendinitis and Tenosynovitis
+- Sinus Bradycardia
+- Sinus Tachycardia
+- Sinusitis
+- Sleep Apnea
+- Speech, Language and Learning Disorders
+- Sprains and Strains (incl. Muscle Tear)
+- Strep Throat
+- Testicular Dysfunction
+- Thyroid Goiter
+- Trigeminal Neuralgia
+- Urinary Stones
+- Vertigo
+- Viral Infection
+- Vitamin B Deficiency
+- Vitamin D Deficiency
+- Wheezing
+- Care Coordination for Complex Conditions and Procedures
+- Wellness Examination
+
+## Insurance Check
+
+### Search for your insurance carrier and choose your plan type
+
+Insurance Carrier
+
+Choose Plan Type
+
+Apply
+
+Try: CareFirst BlueCross BlueShield, UnitedHealthCare, Cigna, Wellmark Blue Cross and Blue Shield, or Aetna
+
+Please verify your coverage with the provider. [(779) 244-3072](tel:7792443072 "Call: (779) 244-3072")
+
+## Dr. Tomlin's Reviews
+
+### Likelihood to recommend Dr. Tomlin
+
+**3.3**
+
+31ratings, 11 with a written review
+
+|     |     |     |
+| --- | --- | --- |
+| 5 star | 52% | 52% |
+| 4 star | 6% | 6% |
+| 3 star | 0% | 0% |
+| 2 star | 6% | 6% |
+| 1 star | 35% | 35% |
+
+![healthgrades logo](https://photos.healthgrades.com/public3/images/logo-blue-full.svg)
+
+### Leave a review
+
+How likely are you to recommend
+
+Dr. Tomlin?
+
+Definitely NotNoMaybeYesDefinitelySelect Rating
+
+### Provider Feedback
+
+72% positive
+
+Trusted the provider's decisions
+
+73.07692307692307%
+
+26.923076923076923%
+
+19 agree7 disagree
+
+Appointment wasn't rushed
+
+73.07692307692307%
+
+26.923076923076923%
+
+19 agree7 disagree
+
+Listened & answered questions
+
+69.23076923076923%
+
+30.76923076923077%
+
+18 agree8 disagree
+
+Explained conditions well
+
+72%
+
+28.000000000000004%
+
+18 agree7 disagree
+
+I felt respected
+
+no votes yet
+
+no votes yet
+
+### Office + Staff Feedback
+
+76% positive
+
+Staff friendliness
+
+64%
+
+36%
+
+16 agree9 disagree
+
+Office environment
+
+81.81818181818183%
+
+18.181818181818183%
+
+18 agree4 disagree
+
+Appointment scheduling
+
+70%
+
+30%
+
+14 agree6 disagree
+
+Wait times
+
+94.44444444444444%
+
+5.555555555555555%
+
+17 agree1 disagree
+
+### Your trust is our top concern.
+
+We strive to keep reviews honest, trustworthy, and fair.
+
+RecentHighestLowestMost Helpful
+
+Reply Flag
+
+What you read about Faith and the staff is true. As seniors my parents were told that they don't take Medicare. Faith didn't send the medical history to the new doctor, she only sent last visits notes and lab results. Terrible experience.
+
+More details
+
+4 others found this helpful
+
+Helpful
+
+Cesar – Jun 12, 2023
+
+[×](https://www.healthgrades.com/physician/dr-jeffrey-tomlin-y52gf#) Post a ResponseAre you Dr. Tomlin?
+
+Yes
+
+No
+
+Reply Flag
+
+Skip this doctor
+
+I had a miscommunication with scheduling and a no show fee. No compromise or discussion from a rude staff. Being a doctor does not give you the right to be rude or inconsiderate to customers. Skip this doctors office.
+
+More details
+
+3 others found this helpful
+
+Helpful
+
+Mar 31, 2023
+
+[×](https://www.healthgrades.com/physician/dr-jeffrey-tomlin-y52gf#) Post a ResponseAre you Dr. Tomlin?
+
+Yes
+
+No
+
+Reply Flag
+
+Think twice
+
+He misdiagnosed me, approved me for a surgical procedure when I had an unknown heart condition that was obvious from an EKG which he misread. Another Dr. picked it up right away. Office staff/Faith denied me a hospital follow up appointment which almost cost me my life. I was a long time patient...
+
+More details
+
+4 others found this helpful
+
+Helpful
+
+Nov 29, 2022
+
+[×](https://www.healthgrades.com/physician/dr-jeffrey-tomlin-y52gf#) Post a ResponseAre you Dr. Tomlin?
+
+Yes
+
+No
+
+Reply Flag
+
+Office staff needs to go
+
+Faith is rude and does not care about patients. Her bad attitude and lack of care seems to have rubbed off on the receptionists now. We have been seeing DR Tomlin for years. Even before he moved his office to McHenry. We are no longer subjecting ourselves to his office behavior. I would recommend...
+
+More details
+
+8 others found this helpful
+
+Helpful
+
+Oct 19, 2022
+
+[×](https://www.healthgrades.com/physician/dr-jeffrey-tomlin-y52gf#) Post a ResponseAre you Dr. Tomlin?
+
+Yes
+
+No
+
+Reply Flag
+
+I I wish there was a lower rating
+
+Rude office staff that is supported by their management. Not just once either. They either DO NOT know or care about providing good customer service. They act like they are the only game in town. Never again.
+
+More details
+
+5 others found this helpful
+
+Helpful
+
+Oct 19, 2022
+
+[×](https://www.healthgrades.com/physician/dr-jeffrey-tomlin-y52gf#) Post a ResponseAre you Dr. Tomlin?
+
+Yes
+
+No
+
+[Show more reviews](https://www.healthgrades.com/physician/dr-jeffrey-tomlin-y52gf/comments)
+
+### Leave a review
+
+How was your experience with Dr. Tomlin?
+
+Comment
+
+Continue
+
+![Provider explaining information to patient](https://photos.healthgrades.com/img/ads/claim_this_profile.jpg)
+
+### Is this your profile?
+
+Respond to reviews, add information, and reach more patients. Claiming is free and only takes a minute.
+
+[Claim your profile](https://update.healthgrades.com/landing/claim?pwid=Y52GF&pCID=hg_ProvProfile)
+
+### Overall Patient Satisfaction
+
+31responses
+
+Likelihood of recommending Dr. Tomlin to family and friends is 3.3225806 out of 5
+
+### Know Before You Go
+
+Expand your knowledge with related news and articles.
+
+[Do's and Don'ts of Diabetes](https://resources.healthgrades.com/right-care/diabetes/dos-and-donts-of-diabetes?hid=t12_review&tpc=getting-the-right-diabetes-treatment) [Interpreting Your Cholesterol Test Results](https://resources.healthgrades.com/right-care/cholesterol/interpreting-your-cholesterol-test-results?hid=t12_review) [13 Tips for Managing Migraine Symptoms](https://resources.healthgrades.com/right-care/migraine-and-headache/10-tips-for-managing-migraine-symptoms?hid=t12_review)
+
+## About Me
+
+### biography
+
+Dr. Jeffrey Tomlin, MD is an internist in McHenry, IL and has over 30 years of experience in the medical field. He graduated from Indiana University School of Medicine in 1993. He is affiliated with medical facilities Northwestern Medicine McHenry...
+
+Read More
+
+### Specialties\*
+
+- Internal Medicine
+
+
+\*Healthgrades does not verify qualifications for medical specialties. Please verify your provider's specialty and qualifications directly with your provider and applicable medical board.
+
+### Education
+
+- Mayo Grad School Of Medicine
+Internship Hospital, 1994
+- Indiana University School Of Medicine
+Medical School, 1993
+
+### Board Certifications
+
+American Board of Medical Specialties®
+
+American Board of Internal Medicine®
+
+-
+
+Internal Medicine
+
+Learn more about board certification
+
+### Board Action Check
+
+For detailed information about any of the below board actions, please search for the provider's records on the linked state licensing board or the [Federation of State Medical Boards](https://www.docinfo.org/).  To learn more about the difference between these sources, please refer to our [FAQs](https://www.healthgrades.com/about/healthgrades-methodologies#faqs).
+
+Healthgrades has not received any data indicating a board action exists for this provider.
+
+Healthgrades receives board action history for physicians and physician assistants. The information displayed here is sourced from independent information providers, such as state board websites, and may not be the most up-to-date information. Healthgrades makes no representations with respect to the accuracy of any information provided here and assumes no responsibility or liability for such information.
+
+Learn more about medical license public record check
+
+### Common Questions and Answers
+
+Questions
+
+Responses
+
+Please call the office to learn more.
+
+[(779) 244-3072](tel:7792443072)
+
+![brain health video center](https://dims.healthgrades.com/dims3/MMH/cef3c83/2147483647/strip/true/crop/567x567+140+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2Fb1%2F98%2F355d0a064073b8b655afca0e46aa%2Fimage-women-with-elderly-parent.jpg)
+
+#### Focus on Brain Health
+
+[Alzheimer's Disease: 3 Things to Know](https://resources.healthgrades.com/video/brain-health-video-center/alzheimers-disease-3-things-to-know?hid=t12_learn_fomo)
+
+Having a loved one with Alzheimer's can be stressful. But the more you know about it, the better prepared you'll be.
+
+[Learn More](https://resources.healthgrades.com/video/brain-health-video-center/alzheimers-disease-3-things-to-know?hid=t12_learn_fomo)
+
+## Locations
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4174/6062.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4175/6062.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4173/6062.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4176/6062.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4172/6062.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4177/6062.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4171/6062.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/14/4178/6062.png)
+
+Map Marker 1
+1
+
+[+](https://www.healthgrades.com/physician/dr-jeffrey-tomlin-y52gf# "Zoom in") [−](https://www.healthgrades.com/physician/dr-jeffrey-tomlin-y52gf# "Zoom out")
+
+[Leaflet](https://leafletjs.com/ "A JavaScript library for interactive maps") \| © [OpenStreetMap](http://osm.org/copyright) contributors
+
+### Practice
+
+1
+
+Fox Ridge Medical Associates LLC
+
+[Fox Ridge Medical Associates LLC](https://www.healthgrades.com/group-directory/il-illinois/mchenry/fox-ridge-medical-associates-x6c5rn)
+
+3633 Municipal Dr
+
+McHenry, IL 60050
+
+[View office profile](https://www.healthgrades.com/group-directory/il-illinois/mchenry/fox-ridge-medical-associates-x6c5rn)
+
+[(779) 244-3072](tel:(779)244-3072)
+
+Fax
+
+[Driving Directions](https://www.google.com/maps/dir/?api=1&destination=3633+Municipal+Dr,+McHenry,+IL+60050)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fpsorisasis-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fpsorisasis-desktop-step-2.jpg)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-desktop-step-2.jpg)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fclinical-cancer-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fclinical-cancer-desktop-step-2.jpg)
+
+## Before Your Visit
+
+An appointment guide can help you get the most out of your visit.
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fpsorisasis-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fpsorisasis-desktop-step-1.jpg)View This Guide
+
+### Diabetes: Top Questions
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-desktop-step-1.jpg)View This Guide
+
+### IBS with Constipation: Top Questions
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fclinical-cancer-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fclinical-cancer-desktop-step-1.jpg)View This Guide
+
+### RSV Virus: Top Questions
+
+✕
+
+Enter your email to unlock this appointment guide. Plus, enjoy access to exclusive health content, expert tips, and more.
+
+Email capture form for
+
+EMAIL
+
+View Guide
+
+Submission of this form is subject to Healthgrades
+
+[User Agreement](https://www.healthgrades.com/content/user-agreement) and [Privacy Policy](https://www.healthgrades.com/content/privacy-notice?redirected=true).
+
+## Affiliated Hospitals
+
+### [Northwestern Medicine Central Dupage Hospital](https://www.healthgrades.com/hospital/northwestern-medicine-central-dupage-hospital-f32082)
+
+25 N Winfield Rd
+
+Winfield, IL 60190
+
+![Healthgrades Quality Award Medallion](https://ucmscdn.healthgrades.com/e0/06/c0985bae4e609d5ce9be7d5fb7b6/award-winning-hospital.png)
+
+Recipient of 8
+
+hospital awards
+
+Patient Safety Excellence Award™2025
+
+Top in the nation for providing excellence in patient safety by preventing infections, medical errors, and other preventable complications
+
+Outstanding Patient Experience Award™2025, 2024
+
+Top in the nation for providing excellence in patient safety by preventing infections, medical errors, and other preventable complications
+
+[View all awards](https://www.healthgrades.com/hospital/northwestern-medicine-central-dupage-hospital-f32082#awards)
+
+How patients felt about the care they received at this hospital.
+
+87%
+
+Patients said they were given information about recovering at home
+
+2% higher than the national average
+
+81%
+
+Patients who gave a rating of 9 or 10
+
+14% higher than the national average
+
+[View all patient feedback](https://www.healthgrades.com/hospital/northwestern-medicine-central-dupage-hospital-f32082#patient-experience)
+
+### [Northwestern Medicine McHenry Hospital](https://www.healthgrades.com/hospital/northwestern-medicine-mchenry-hospital-17e9f1)
+
+4201 W Medical Center Dr
+
+McHenry, IL 60050
+
+![Healthgrades Quality Award Medallion](https://ucmscdn.healthgrades.com/e0/06/c0985bae4e609d5ce9be7d5fb7b6/award-winning-hospital.png)
+
+Recipient of 32
+
+hospital awards
+
+America's 100 Best Hospitals Award™2025
+
+Top in the nation for providing excellence in patient safety by preventing infections, medical errors, and other preventable complications
+
+America's 250 Best Hospitals Award™2025, 2024, 2023
+
+Top in the nation for providing excellence in patient safety by preventing infections, medical errors, and other preventable complications
+
+[View all awards](https://www.healthgrades.com/hospital/northwestern-medicine-mchenry-hospital-17e9f1#awards)
+
+How patients felt about the care they received at this hospital.
+
+87%
+
+Patients said they were given information about recovering at home
+
+2% higher than the national average
+
+80%
+
+Patients said that nurses always listened to them and explained things well
+
+4% higher than the national average
+
+[View all patient feedback](https://www.healthgrades.com/hospital/northwestern-medicine-mchenry-hospital-17e9f1#patient-experience)
+
+Learn more about how Healthgrades measures [Hospital Quality](https://www.healthgrades.com/quality/ratings-awards/methodology)
+
+## Compare Providers
+
+[Show more Internal Medicine Doctors](https://www.healthgrades.com/internal-medicine-directory/il-illinois/mchenry)
+
+Providers shown are based on Dr. Tomlin's location and specialty.
+
+### [Dr. Mukesh Arora, MD](https://www.healthgrades.com/physician/dr-mukesh-arora-yt7tw)
+
+Specialty: Internal Medicine
+
+[4.5(98 ratings)View all ratings](https://www.healthgrades.com/physician/dr-mukesh-arora-yt7tw#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fprov%2FY%2FT%2F7%2FYT7TW_w60h80_v34096.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-mukesh-arora-yt7tw) Add to Compare
+
+### [Dr. Mohit Arora, MD](https://www.healthgrades.com/physician/dr-mohit-arora-26h23)
+
+Specialty: Internal Medicine
+
+[3.7(31 ratings)View all ratings](https://www.healthgrades.com/physician/dr-mohit-arora-26h23#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fsilhouettes%2Fsilhouette-male_w60h80_v1.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-mohit-arora-26h23) Add to Compare
+
+### [Dr. Deepkamal Kaur, MD](https://www.healthgrades.com/physician/dr-deepkamal-kaur-gc7kg)
+
+Specialty: Internal Medicine
+
+[4.7(27 ratings)View all ratings](https://www.healthgrades.com/physician/dr-deepkamal-kaur-gc7kg#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fprov%2FG%2FC%2F7%2FGC7KG_w60h80_v12844.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-deepkamal-kaur-gc7kg) Add to Compare
+
+### [Dr. Raman Popli, MD](https://www.healthgrades.com/physician/dr-raman-popli-2dmf3)
+
+Specialty: Internal Medicine
+
+[4.6(50 ratings)View all ratings](https://www.healthgrades.com/physician/dr-raman-popli-2dmf3#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fsilhouettes%2Fsilhouette-male_w60h80_v1.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-raman-popli-2dmf3) Add to Compare
+
+### [Dr. Imran Osmani, MD](https://www.healthgrades.com/physician/dr-imran-osmani-y9twsgz)
+
+Specialty: Internal Medicine
+
+[5.0(3 ratings)View all ratings](https://www.healthgrades.com/physician/dr-imran-osmani-y9twsgz#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fsilhouettes%2Fsilhouette-male_w60h80_v1.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-imran-osmani-y9twsgz) Add to Compare
+
+[View All Results](https://www.healthgrades.com/internal-medicine-directory/il-illinois/mchenry)
+
+### You May Also Like
+
+[![contentimage](https://dims.healthgrades.com/dims3/MMH/9fbfba1/2147483647/strip/false/crop/3744x3744+936+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F8a%2Fd6%2F681c66b64e2c9f4264aa313f1c03%2Fimage-getty-174858660.jpg)\\
+\\
+Treatment Options for Migraines](https://resources.healthgrades.com/right-care/migraine-and-headache/treatment-options-for-migraines?hid=t12_compare_contentalgo&tpc=your-guide-to-preventing-migraines) [![contentimage](https://dims.healthgrades.com/dims3/MMH/a45ba22/2147483647/strip/false/crop/683x683+247+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F12%2F93%2Fda252777ab4bba39549cdf83299f%2Fgettyimages-1423893133-1024x683.jpg)\\
+\\
+How Alzheimer’s Disease Leads to Uncontrolled Emotions](https://resources.healthgrades.com/right-care/alzheimers-disease/how-alzheimers-disease-leads-to-uncontrolled-emotions?hid=t12_compare_contentalgo&tpc=treating-involuntary-crying-and-laughing) [![contentimage](https://dims.healthgrades.com/dims3/MMH/0c6f162/2147483647/strip/false/crop/561x561+232+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2Fd0%2Fc2%2Ffc6266880046cd911f2e1914adc0%2Fgettyimages-1462724148-1024x561.jpg)\\
+\\
+Nonalcoholic Fatty Liver Disease: Eat This, Not That](https://resources.healthgrades.com/right-care/liver-conditions/nonalcoholic-fatty-liver-disease-eat-this-not-that?hid=t12_compare_contentalgo&tpc=treating-nonalcoholic-fatty-liver-disease)
+
+### Recommended Reading From Healthgrades
+
+[![contentimage](https://dims.healthgrades.com/dims3/MMH/220b57d/2147483647/strip/true/crop/3840x3840+819+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F46%2Fb7%2Fcee1da63401da96e8a18bc211d04%2Fimage-getty-464488018.jpg)\\
+\\
+6 Things to Know About the Shingles Vaccine](https://resources.healthgrades.com/right-care/vaccines/6-things-to-know-about-the-shingles-vaccine?hid=t12_compare) [![contentimage](https://dims.healthgrades.com/dims3/MMH/00829e7/2147483647/strip/true/crop/3299x3299+1837+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F46%2F9f%2F15308e16433fa5f627ad8cf6435d%2Fimage-gettyimages-483655356.jpg)\\
+\\
+When to Go to the ER for Constipation](https://resources.healthgrades.com/right-care/digestive-health/when-to-see-a-doctor-for-constipation?hid=t12_compare) [![contentimage](https://dims.healthgrades.com/dims3/MMH/0d5a8f3/2147483647/strip/true/crop/3409x3409+857+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F8f%2F50%2Fc52ec81c4f3eb73ebc92c078ee8d%2Fimage-gettyimages-557475327.jpg)\\
+\\
+7+ Symptoms Never to Ignore if You Have Depression](https://resources.healthgrades.com/right-care/depression/7-symptoms-never-to-ignore-if-you-have-depression?hid=t12_compare)
+
+## Explore More Providers
+
+[View all specialties](https://www.healthgrades.com/specialty-directory)
+
+SpecialistsNearby Related SpecialistsNearby Internist
+
+[Family Medicine](https://www.healthgrades.com/family-practice-directory) [Internal Medicine](https://www.healthgrades.com/internal-medicine-directory) [Obstetrics & Gynecology](https://www.healthgrades.com/obstetrics-gynecology-directory) [Cardiology](https://www.healthgrades.com/cardiology-directory) [Orthopedic Surgery](https://www.healthgrades.com/orthopedic-surgery-directory) [General Surgery](https://www.healthgrades.com/surgery-general-directory) [Neurology](https://www.healthgrades.com/neurology-directory) [Gastroenterology](https://www.healthgrades.com/gastroenterology-directory) [Urology](https://www.healthgrades.com/urology-directory) [Oncology](https://www.healthgrades.com/oncology-directory) [Neurosurgery](https://www.healthgrades.com/neurosurgery-directory) [Endocrinology, Diabetes & Metabolism](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory)
+
+[Critical Care Medicine](https://www.healthgrades.com/critical-care-medicine-directory) [Cardiology](https://www.healthgrades.com/cardiology-directory) [Gastroenterology](https://www.healthgrades.com/gastroenterology-directory) [Nephrology](https://www.healthgrades.com/nephrology-directory) [Pulmonary Disease](https://www.healthgrades.com/pulmonology-directory)
+
+[Internal Medicine, Chicago IL](https://www.healthgrades.com/internal-medicine-directory/il-illinois/chicago) [Internal Medicine, Evanston IL](https://www.healthgrades.com/internal-medicine-directory/il-illinois/evanston) [Internal Medicine, Burr Ridge IL](https://www.healthgrades.com/internal-medicine-directory/il-illinois/burr-ridge) [Internal Medicine, Maywood IL](https://www.healthgrades.com/internal-medicine-directory/il-illinois/maywood) [Internal Medicine, Oak Lawn IL](https://www.healthgrades.com/internal-medicine-directory/il-illinois/oak-lawn) [Internal Medicine, Park Ridge IL](https://www.healthgrades.com/internal-medicine-directory/il-illinois/park-ridge) [Internal Medicine, Naperville IL](https://www.healthgrades.com/internal-medicine-directory/il-illinois/naperville) [Internal Medicine, Rockford IL](https://www.healthgrades.com/internal-medicine-directory/il-illinois/rockford) [Internal Medicine, Glenview IL](https://www.healthgrades.com/internal-medicine-directory/il-illinois/glenview) [Internal Medicine, Arlington Heights IL](https://www.healthgrades.com/internal-medicine-directory/il-illinois/arlington-heights) [Internal Medicine, Skokie IL](https://www.healthgrades.com/internal-medicine-directory/il-illinois/skokie)

@@ -331,9 +331,14 @@ class PubMedLoader:
         """Main execution method."""
         logger.info("Starting PubMed data loading to Pinecone...")
         
-        # Find XML files
+        # Find XML files and sort them in reverse order (1199 to 900)
         xml_files = list(self.data_dir.glob("*.xml"))
+        
+        # Sort files by name in reverse order to process from 1199 to 900
+        xml_files.sort(key=lambda x: x.name, reverse=True)
+        
         logger.info(f"Found {len(xml_files)} XML files to process")
+        logger.info("Processing files in reverse order (1199 to 900)")
         
         # Process XML files one at a time to avoid memory accumulation
         total_files = len(xml_files)

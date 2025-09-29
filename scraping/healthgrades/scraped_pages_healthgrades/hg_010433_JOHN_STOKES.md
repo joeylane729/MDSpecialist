@@ -1,0 +1,512 @@
+![background mobile](https://photos.healthgrades.com/profile-images/standard-mobile-background.webp)
+
+![background desktop](https://photos.healthgrades.com/profile-images/standard-desktop-background.webp)
+
+Are you a healthcare professional?
+
+Is this your profile?
+
+Yes, Claim your profileYes, claim profileNo
+
+![provider image](https://photos.healthgrades.com/img/silhouettes/silhouette-male_w200h267_v1.jpg?name=Dr.%20John%20Stokes%2C%20MD)
+
+# Dr. John Stokes, MD
+
+## Endocrinology, Diabetes & Metabolism\| 45+ years of experience
+
+45+ years of experience
+
+2.4 Star Rating
+
+Based on 5 reviews2.4 Star Rating (5 reviews)
+
+ReviewSave
+
+Dr. John Stokes, MD is a diabetes & metabolism endocrinologist in Champaign, IL and has over 45 years of experience in the medical field. He graduated from University of Illinois College of Medicine in 1976.
+
+### Practice
+
+1801 W Windsor Rd ·Champaign, IL 61822
+
+[(217) 366-4407](tel:(217)366-4407)
+
+## Highlights
+
+Dr. Stokes specializes in the area of Internal Medicine
+
+ADVERTISEMENT
+
+![healthgrades-rx](https://photos.healthgrades.com/profile-images/hgrx/diabetes.webp)
+
+## Our customers save an overage of $145 on prescriptions
+
+See prescription prices now.
+
+Start saving
+
+Healthgrades Rx
+
+See prescription prices now.
+
+Start saving
+
+Healthgrades Rx
+
+Optum Perks and Healthgrades are subsidiaries of RVO Health.
+
+## Experience
+
+### Search for Dr. Stokes' experience in a specific area
+
+Condition or Procedure
+
+[Learn more about experience and why treatment frequency matters](https://helpcenter.healthgrades.com/about-my-profile/experience-check)
+
+Dr. Stokes' conditions and procedures:
+
+- Abnormal Thyroid
+- Adrenal Gland Diseases
+- Adrenal Incidentaloma
+- Adrenal Insufficiency
+- Autoimmune Thyroid Diseases
+- Calcium Metabolism Disorders
+- Diabetes Type 1
+- Diabetes Type 2
+- Goiter
+- Graves' Disease
+- Gynecomastia
+- Hashimoto's Disease
+- Hypercalcemia
+- Hyperlipidemia
+- Hyperparathyroidism
+- Hyperthyroidism
+- Hypoglycemia
+- Hypokalemia
+- Hypothyroidism
+- Lipid Disorders
+- Malaise and Fatigue
+- Multiple Endocrine Neoplasia
+- Obesity
+- Osteopenia
+- Osteoporosis
+- Thyroid Cancer
+- Thyroiditis
+- Vitamin D Deficiency
+
+## Insurance Check
+
+### Search for your insurance carrier and choose your plan type
+
+Insurance Carrier
+
+Choose Plan Type
+
+Apply
+
+Try: MultiPlan, HealthLink, Aetna,
+
+Please verify your coverage with the provider. [(217) 366-4407](tel:2173664407 "Call: (217) 366-4407")
+
+## Dr. Stokes' Reviews
+
+### Likelihood to recommend Dr. Stokes
+
+**2.4**
+
+5ratings, 1 with written review
+
+|     |     |     |
+| --- | --- | --- |
+| 5 star | 20% | 20% |
+| 4 star | 20% | 20% |
+| 3 star | 0% | 0% |
+| 2 star | 0% | 0% |
+| 1 star | 60% | 60% |
+
+![healthgrades logo](https://photos.healthgrades.com/public3/images/logo-blue-full.svg)
+
+### Leave a review
+
+How likely are you to recommend
+
+Dr. Stokes?
+
+Definitely NotNoMaybeYesDefinitelySelect Rating
+
+### Provider Feedback
+
+43% positive
+
+Trusted the provider's decisions
+
+40%
+
+60%
+
+2 agree3 disagree
+
+Explained conditions well
+
+40%
+
+60%
+
+2 agree3 disagree
+
+Listened & answered questions
+
+40%
+
+60%
+
+2 agree3 disagree
+
+Appointment wasn't rushed
+
+40%
+
+60%
+
+2 agree3 disagree
+
+I felt respected
+
+100%
+
+0%
+
+1 agree0 disagree
+
+### Office + Staff Feedback
+
+64% positive
+
+Appointment scheduling
+
+50%
+
+50%
+
+2 agree2 disagree
+
+Staff friendliness
+
+50%
+
+50%
+
+2 agree2 disagree
+
+Wait times
+
+100%
+
+0%
+
+3 agree0 disagree
+
+Office environment
+
+66.66666666666666%
+
+33.33333333333333%
+
+2 agree1 disagree
+
+### Your trust is our top concern.
+
+We strive to keep reviews honest, trustworthy, and fair.
+
+Reply Flag
+
+Past practice
+
+I believe he was my Dr Stokes in San Juan Capistarno forty years ago. Dr Stokes was knowledgeable, caring and attentive.
+
+More details
+
+Helpful
+
+Michael Wilford – Mar 17, 2025
+
+[×](https://www.healthgrades.com/physician/dr-john-stokes-339wg#) Post a ResponseAre you Dr. Stokes?
+
+Yes
+
+No
+
+### Leave a review
+
+How was your experience with Dr. Stokes?
+
+Comment
+
+Continue
+
+![Provider explaining information to patient](https://photos.healthgrades.com/img/ads/claim_this_profile.jpg)
+
+### Is this your profile?
+
+Respond to reviews, add information, and reach more patients. Claiming is free and only takes a minute.
+
+[Claim your profile](https://update.healthgrades.com/landing/claim?pwid=339WG&pCID=hg_ProvProfile)
+
+### Overall Patient Satisfaction
+
+5responses
+
+Likelihood of recommending Dr. Stokes to family and friends is 2.4 out of 5
+
+### Know Before You Go
+
+Expand your knowledge with related news and articles.
+
+[How Diabetes Affects Your Lungs](https://resources.healthgrades.com/right-care/diabetes/how-diabetes-affects-your-lungs?hid=t12_review) [Best and Worst Foods for Thyroid Eye Disease](https://resources.healthgrades.com/right-care/thyroid-disorders/best-and-worst-foods-for-thyroid-eye-disease?hid=t12_review) [What Diabetes Does to Your Eyes](https://resources.healthgrades.com/right-care/diabetes/what-diabetes-does-to-your-eyes?hid=t12_review)
+
+## About Me
+
+### biography
+
+Dr. John Stokes, MD is a diabetes & metabolism endocrinologist in Champaign, IL and has over 45 years of experience in the medical field. He graduated from University of Illinois College of Medicine in 1976.
+
+### Specialties\*
+
+- Endocrinology, Diabetes & Metabolism
+
+
+\*Healthgrades does not verify qualifications for medical specialties. Please verify your provider's specialty and qualifications directly with your provider and applicable medical board.
+
+### Education
+
+- University Of Illinois College Of Medicine
+Medical School, 1976
+
+### Board Certifications
+
+American Board of Medical Specialties®
+
+American Board of Internal Medicine
+
+-
+
+Internal Medicine†
+
+†Self designated
+
+Learn more about board certification
+
+### Board Action Check
+
+For detailed information about any of the below board actions, please search for the provider's records on the linked state licensing board or the [Federation of State Medical Boards](https://www.docinfo.org/).  To learn more about the difference between these sources, please refer to our [FAQs](https://www.healthgrades.com/about/healthgrades-methodologies#faqs).
+
+Healthgrades has not received any data indicating a board action exists for this provider.
+
+Healthgrades receives board action history for physicians and physician assistants. The information displayed here is sourced from independent information providers, such as state board websites, and may not be the most up-to-date information. Healthgrades makes no representations with respect to the accuracy of any information provided here and assumes no responsibility or liability for such information.
+
+Learn more about medical license public record check
+
+### Common Questions and Answers
+
+Questions
+
+Responses
+
+Please call the office to learn more.
+
+[(217) 366-4407](tel:2173664407)
+
+![your guide to thyroid eye disease](https://dims.healthgrades.com/dims3/MMH/5145532/2147483647/strip/true/crop/984x984+356+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2Fd5%2Fd6%2F0b3ef3de4849991444f84e23341d%2F6-things-you-didnt-know-about-thyroid-eye-disease.jpg)
+
+#### Focus on Thyroid Eye Disease
+
+[6 Things You Didn't Know About Thyroid Eye Disease](https://resources.healthgrades.com/right-care/thyroid-disorders/6-things-you-didnt-know-about-thyroid-eye-disease?hid=t12_learn_fomo&tpc=your-guide-to-thyroid-disease)
+
+What does thyroid disease have to do with your eyes? Find out how your immune system can attack the muscles and tissues around your eyes.
+
+[Watch Now](https://resources.healthgrades.com/right-care/thyroid-disorders/6-things-you-didnt-know-about-thyroid-eye-disease?hid=t12_learn_fomo&tpc=your-guide-to-thyroid-disease)
+
+## Locations
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/9/130/193.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/9/129/193.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/9/131/193.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/9/128/193.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/9/132/193.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/9/127/193.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/9/133/193.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/9/126/193.png)![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https://maps.healthgrades.com/osm/9/134/193.png)
+
+Map Marker 1
+1
+
+Map Marker 2
+2
+
+[+](https://www.healthgrades.com/physician/dr-john-stokes-339wg# "Zoom in") [−](https://www.healthgrades.com/physician/dr-john-stokes-339wg# "Zoom out")
+
+[Leaflet](https://leafletjs.com/ "A JavaScript library for interactive maps") \| © [OpenStreetMap](http://osm.org/copyright) contributors
+
+### Practice
+
+1
+
+Office
+
+[Office](https://www.healthgrades.com/group-directory/il-illinois/champaign/practice-x7vtwm)
+
+1801 W Windsor Rd
+
+Champaign, IL 61822
+
+[View office profile](https://www.healthgrades.com/group-directory/il-illinois/champaign/practice-x7vtwm)
+
+[(217) 366-4407](tel:(217)366-4407)
+
+Fax
+
+[Driving Directions](https://www.google.com/maps/dir/?api=1&destination=1801+W+Windsor+Rd,+Champaign,+IL+61822)
+
+### Practice
+
+2
+
+Christie Clinic PLLC
+
+Christie Clinic PLLC
+
+101 W University Ave
+
+Champaign, IL 61820
+
+[(217) 366-5434](tel:(217)366-5434)
+
+Fax
+
+[Driving Directions](https://www.google.com/maps/dir/?api=1&destination=101+W+University+Ave,+Champaign,+IL+61820)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-desktop-step-2.jpg)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fheart-failure-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fheart-failure-desktop-step-2.jpg)
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fbipolar-mobile-step-2.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fbipolar-desktop-step-2.jpg)
+
+## Before Your Visit
+
+An appointment guide can help you get the most out of your visit.
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fadpkd-desktop-step-1.jpg)View This Guide
+
+### Type 2 Diabetes: Top Questions
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fheart-failure-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fheart-failure-desktop-step-1.jpg)View This Guide
+
+### Diabetic Macular Edema: Top Questions
+
+![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fbipolar-mobile-step-1.jpg)![Guide preview](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fappt-guides%2Fbipolar-desktop-step-1.jpg)View This Guide
+
+### Thyroid Eye Disease: Top Questions
+
+✕
+
+Enter your email to unlock this appointment guide. Plus, enjoy access to exclusive health content, expert tips, and more.
+
+Email capture form for
+
+EMAIL
+
+View Guide
+
+Submission of this form is subject to Healthgrades
+
+[User Agreement](https://www.healthgrades.com/content/user-agreement) and [Privacy Policy](https://www.healthgrades.com/content/privacy-notice?redirected=true).
+
+## Compare Providers
+
+[Show more Endocrinologists](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory/il-illinois/champaign)
+
+Providers shown are based on Dr. Stokes' location and specialty.
+
+### [Dr. Gabriel Uwaifo, MD](https://www.healthgrades.com/physician/dr-gabriel-uwaifo-2mtqf)
+
+Specialty: Endocrinology, Diabetes & Metabolism
+
+[5.0(15 ratings)View all ratings](https://www.healthgrades.com/physician/dr-gabriel-uwaifo-2mtqf#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fprov%2F2%2FM%2FT%2F2MTQF_w60h80_v12447.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-gabriel-uwaifo-2mtqf) Add to Compare
+
+### [Dr. Dawn Ayers, MD](https://www.healthgrades.com/physician/dr-dawn-ayers-y296l)
+
+Specialty: Endocrinology, Diabetes & Metabolism
+
+[4.8(32 ratings)View all ratings](https://www.healthgrades.com/physician/dr-dawn-ayers-y296l#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fprov%2Fy%2F2%2F9%2Fy296l_w60h80_v4847315b65dce9a52e40dfdcfa238ba0701443ac.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-dawn-ayers-y296l) Add to Compare
+
+### [Dr. Edward Rico, MD](https://www.healthgrades.com/physician/dr-edward-rico-34hcl)
+
+Specialty: Endocrinology, Diabetes & Metabolism
+
+[4.7(49 ratings)View all ratings](https://www.healthgrades.com/physician/dr-edward-rico-34hcl#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fprov%2F3%2F4%2FH%2F34HCL_w60h80_v8411.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-edward-rico-34hcl) Add to Compare
+
+### [Dr. Priya Menon, MD](https://www.healthgrades.com/physician/dr-priya-menon-yqskk)
+
+Specialty: Endocrinology, Diabetes & Metabolism
+
+[4.6(34 ratings)View all ratings](https://www.healthgrades.com/physician/dr-priya-menon-yqskk#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fprov%2Fy%2Fq%2Fs%2Fyqskk_w60h80_va22df0f6b2de4fdaa0b4e936bed13bf1556631b1.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-priya-menon-yqskk) Add to Compare
+
+### [Dr. Rachel Shell, MD](https://www.healthgrades.com/physician/dr-rachel-shell-xrs8p)
+
+Specialty: Endocrinology, Diabetes & Metabolism
+
+[4.1(8 ratings)View all ratings](https://www.healthgrades.com/physician/dr-rachel-shell-xrs8p#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fprov%2Fx%2Fr%2Fs%2Fxrs8p_w60h80_v78b2a70f7ac99ede2c7e8a5a0e3ddb67083da3e0.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-rachel-shell-xrs8p) Add to Compare
+
+### [Dr. Melchor Paulo Aranas, MD](https://www.healthgrades.com/physician/dr-melchor-paulo-aranas-g68yn)
+
+Specialty: Family Medicine
+
+[4.0(13 ratings)View all ratings](https://www.healthgrades.com/physician/dr-melchor-paulo-aranas-g68yn#ratings)
+
+![](https://dims.healthgrades.com/dims3/MMH/format/webp/?url=https:%2F%2Fphotos.healthgrades.com%2Fimg%2Fsilhouettes%2Fsilhouette-male_w60h80_v1.jpg)
+
+[View Profile (link opens in a new tab)](https://www.healthgrades.com/physician/dr-melchor-paulo-aranas-g68yn) Add to Compare
+
+[View All Results](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory/il-illinois/champaign)
+
+### You May Also Like
+
+[![contentimage](https://dims.healthgrades.com/dims3/MMH/66c225d/2147483647/strip/false/crop/2803x2803+1173+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2Ff5%2F13%2Fe6a4638e418499b9dab252a096af%2Fimage-getty-538685625.jpg)\\
+\\
+Qué hacer y qué no hacer al tratar la diabetes](https://resources.healthgrades.com/right-care/diabetes/que-hacer-y-que-no-hacer-al-tratar-la-diabetes?hid=t12_compare_contentalgo&tpc=obten-el-tratamiento-adecuado-para-la-diabetes) [![contentimage](https://dims.healthgrades.com/dims3/MMH/2ccfea5/2147483647/strip/false/crop/628x628+241+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2Faf%2Fd9%2F2b525b378105243cdb1648f356d2%2F400558-a-complete-guide-to-depression-1200x628-facebook-1200x628.jpg)\\
+\\
+Depression: Symptoms, Causes, Risk Factors, and Treatment](https://resources.healthgrades.com/right-care/depression/depression?hid=t12_compare_contentalgo&tpc=finding-the-best-depression-treatment) [![contentimage](https://dims.healthgrades.com/dims3/MMH/b08660a/2147483647/strip/false/crop/628x628+198+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2Fa9%2F12%2Fe04bfa36a56469531cf7e7225078%2Fhg-grandmother-reading-1200x628-facebook.jpg)\\
+\\
+How Does Graves’ Disease Affect Life Length?](https://resources.healthgrades.com/right-care/thyroid-disorders/graves-disease-prognosis-and-life-expectancy?hid=t12_compare_contentalgo&tpc=your-guide-to-graves-disease)
+
+### Recommended Reading From Healthgrades
+
+[![contentimage](https://dims.healthgrades.com/dims3/MMH/c8c9b91/2147483647/strip/true/crop/1526x1526+382+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2F51%2F44%2F74e046554a0ab0f4f541bcba0066%2Fimage-gettyimages-81754597-senior-couple-eating-breakfast.jpg)\\
+\\
+9 Healthy Breakfast Choices for People with Diabetes](https://resources.healthgrades.com/right-care/diabetes/9-healthy-breakfast-choices-for-people-with-diabetes?hid=t12_compare) [![contentimage](https://dims.healthgrades.com/dims3/MMH/a2eb170/2147483647/strip/true/crop/683x683+341+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2Fa0%2Ff2%2Ffdcba6554eebe1bb62e84ce917ea%2Fgettyimages-1293529499-1024x683.jpg)\\
+\\
+What People with Diabetes Should Know About Respiratory Syncytial Virus](https://resources.healthgrades.com/right-care/infections-and-contagious-diseases/what-people-with-diabetes-should-know-about-rsv?hid=t12_compare) [![contentimage](https://dims.healthgrades.com/dims3/MMH/5145532/2147483647/strip/true/crop/984x984+356+0/resize/440x440!/quality/75/?url=https%3A%2F%2Fucmscdn.healthgrades.com%2Fd5%2Fd6%2F0b3ef3de4849991444f84e23341d%2F6-things-you-didnt-know-about-thyroid-eye-disease.jpg)\\
+\\
+6 Things You Didn't Know About Thyroid Eye Disease](https://resources.healthgrades.com/right-care/thyroid-disorders/6-things-you-didnt-know-about-thyroid-eye-disease?hid=t12_compare)
+
+## Explore More Providers
+
+[View all specialties](https://www.healthgrades.com/specialty-directory)
+
+SpecialistsNearby Diabetes & Metabolism Endocrinologist
+
+[Family Medicine](https://www.healthgrades.com/family-practice-directory) [Internal Medicine](https://www.healthgrades.com/internal-medicine-directory) [Obstetrics & Gynecology](https://www.healthgrades.com/obstetrics-gynecology-directory) [Cardiology](https://www.healthgrades.com/cardiology-directory) [Orthopedic Surgery](https://www.healthgrades.com/orthopedic-surgery-directory) [General Surgery](https://www.healthgrades.com/surgery-general-directory) [Neurology](https://www.healthgrades.com/neurology-directory) [Gastroenterology](https://www.healthgrades.com/gastroenterology-directory) [Urology](https://www.healthgrades.com/urology-directory) [Oncology](https://www.healthgrades.com/oncology-directory) [Neurosurgery](https://www.healthgrades.com/neurosurgery-directory) [Endocrinology, Diabetes & Metabolism](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory)
+
+[Endocrinology, Diabetes & Metabolism, Springfield IL](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory/il-illinois/springfield) [Endocrinology, Diabetes & Metabolism, Peoria IL](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory/il-illinois/peoria) [Endocrinology, Diabetes & Metabolism, Joliet IL](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory/il-illinois/joliet) [Endocrinology, Diabetes & Metabolism, Urbana IL](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory/il-illinois/urbana) [Endocrinology, Diabetes & Metabolism, Normal IL](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory/il-illinois/normal) [Endocrinology, Diabetes & Metabolism, Bourbonnais IL](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory/il-illinois/bourbonnais) [Endocrinology, Diabetes & Metabolism, Decatur IL](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory/il-illinois/decatur) [Endocrinology, Diabetes & Metabolism, Effingham IL](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory/il-illinois/effingham) [Endocrinology, Diabetes & Metabolism, Danville IL](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory/il-illinois/danville) [Endocrinology, Diabetes & Metabolism, Mattoon IL](https://www.healthgrades.com/diabetes-metabolism-endocrinology-directory/il-illinois/mattoon)

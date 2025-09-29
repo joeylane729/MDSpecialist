@@ -91,7 +91,36 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
             {/* Additional Info */}
             <div className="mt-4">
               <span className="font-medium text-gray-700">Education:</span>
-              <p className="text-gray-600 mt-1">--</p>
+              {provider.education && (provider.education.medicalSchool || provider.education.residency || provider.education.fellowship || provider.education.certifications) ? (
+                <div className="text-gray-600 mt-1 space-y-1">
+                  {provider.education.medicalSchool && (
+                    <div>
+                      <span className="text-gray-700 font-medium">Medical School: </span>
+                      <span className="break-words">{provider.education.medicalSchool}</span>
+                    </div>
+                  )}
+                  {provider.education.residency && (
+                    <div>
+                      <span className="text-gray-700 font-medium">Residency: </span>
+                      <span className="break-words">{provider.education.residency}</span>
+                    </div>
+                  )}
+                  {provider.education.fellowship && (
+                    <div>
+                      <span className="text-gray-700 font-medium">Fellowship: </span>
+                      <span className="break-words">{provider.education.fellowship}</span>
+                    </div>
+                  )}
+                  {provider.education.certifications && (
+                    <div>
+                      <span className="text-gray-700 font-medium">Certifications: </span>
+                      <span className="break-words">{provider.education.certifications}</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-600 mt-1">--</p>
+              )}
             </div>
 
             {/* Status */}

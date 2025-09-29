@@ -1,0 +1,685 @@
+![](https://health.usnews.com/static-atlas/assets/img/health/doctor-male.svg)
+
+# Dr. Robert C. SolomonMD
+
+Accepting New Patients
+
+Internal Medicine
+
+[**LewisGale Hospital Montgomery**, +2 others](https://health.usnews.com/doctors/robert-solomon-335709#hospitals)
+
+Patients Top Choice
+
+<p>Patient Top Choice label is awarded to providers who have received a 5-star rating from their patients. Read more about our methodology <a target="\_blank" href="https://health.usnews.com/health-care/top-doctors/articles/doctor-finder-data-sources-and-methodology#patient-experience">here</a>.</p>
+
+Patients Top Choice
+
+<p>Patient Top Choice label is awarded to providers who have received a 5-star rating from their patients. Read more about our methodology <a target="\_blank" href="https://health.usnews.com/health-care/top-doctors/articles/doctor-finder-data-sources-and-methodology#patient-experience">here</a>.</p>
+
+[5 / 5\\
+\\
+Patient Rating](https://health.usnews.com/doctors/robert-solomon-335709#patient-experience)
+
+[**287** Reviews](https://health.usnews.com/doctors/robert-solomon-335709#patient-experience)
+**21** \+ Years of Experience
+
+![](https://health.usnews.com/static-atlas/assets/img/health/doctor-male.svg)
+
+[Patient Awards\\
+\\
+**Received 7**](https://health.usnews.com/doctors/robert-solomon-335709#patient-experience)
+
+[Expert\\
+\\
+**in 4 conditions**](https://health.usnews.com/doctors/robert-solomon-335709#expertise)
+
+[LewisGale Hospital Montgomery](https://health.usnews.com/doctors/robert-solomon-335709#hospitals)
+
+[3700 S Main St, Blacksburg, VA](https://health.usnews.com/doctors/robert-solomon-335709#location)
+
+![](https://health.usnews.com/static-atlas/assets/img/health/doctor-male.svg)
+
+Save
+
+## Overview
+
+Dr. Robert C. Solomon is an internist in Blacksburg, Virginia and is affiliated with multiple hospitals in the area, including [LewisGale Hospital Montgomery](https://health.usnews.com/best-hospitals/area/va/lewisgale-hospital-montgomery-6340140) and [LewisGale Medical Center](https://health.usnews.com/best-hospitals/area/va/lewis-gale-medical-center-6340008). He received his medical degree from Eastern Virginia Medical School and has been in practice for more than 20 years. Dr. Robert C. Solomon has expertise in treating coronary artery disease, hypertension & high blood pressure, diabetes, among other conditions - see all areas of [expertise](https://health.usnews.com/doctors/robert-solomon-335709#expertise). Dr. Robert C. Solomon accepts Aetna, Humana, Cigna, Blue Cross, United Healthcare - see other [insurance plans accepted](https://health.usnews.com/doctors/robert-solomon-335709#insurance). Dr. Robert C. Solomon is highly recommended by patients.
+
+Doctor's Details
+
+Speaks **English**
+
+Works at **LewisGale Hospital Montgomery**
+
+## Specialties
+
+Specialty
+
+### Internal Medicine
+
+General internal medicine physician, also known as internists, are primary care physicians (PCPs) who only work with adults (not children or adolescents). One of every four physicians in the U.S. is an internist, many of whom are certified in one of 19 subspecialties, including cardiology, infectious disease and medical oncology.
+
+Subspecialties
+
+### General Internal Medicine
+
+Doctor's Details
+
+Speaks **English**
+
+Works at **LewisGale Hospital Montgomery**
+
+## Patient Awards
+
+Patients' Top Choice
+
+Patients Recommend
+
+Makes Time For Patients
+
+Listens Attentively
+
+Clearly Explains
+
+Performs Thorough Exams
+
+Great Bedside Manner
+
+### Patient Experience
+
+The overall patient experience rating comes from Press Ganey, which aggregates patient reviews from over a hundred sites, evaluating doctors in 10 patient experience metrics to arrive at an overall score. [Read](https://health.usnews.com/health-care/top-doctors/articles/doctor-finder-data-sources-and-methodology#patient-experience) the full methodology.
+
+#### Excellent
+
+(5/5)
+
+287 Reviews Total
+
+#### Thoroughness of Examination
+
+Previous patients' satisfaction in their perception of the thoroughness of the examination they received from this physician
+
+Excellent
+
+(5/5)
+
+#### Ability to Answer Questions
+
+Previous patients' assessment of this physician's ability to answer all of their questions
+
+Excellent
+
+(5/5)
+
+#### Clarity of Instructions
+
+Previous patients' satisfaction in the clarity of this physician's instructions for taking care of their health condition
+
+Excellent
+
+(5/5)
+
+#### Provider's follow-up
+
+Previous patients' satisfaction of the followup care they received from this physician and responsiveness to their concerns
+
+Excellent
+
+(5/5)
+
+#### Amount of Time with Patient
+
+Previous patients' satisfaction with the time this physician spent with them during appointments
+
+Excellent
+
+(5/5)
+
+#### Provider's Attitude
+
+Previous patients' assessment of this physician's friendliness and caring attitude
+
+Excellent
+
+(5/5)
+
+#### Perceived Outcomes
+
+Previous patients' satisfaction with the physician's treatment of a condition or outcome of a procedure
+
+Excellent
+
+(5/5)
+
+#### Patient Loyalty
+
+Previous patients' trust in this physician, likelihood to see this physician again, or willingness to recommend this physician to another patient
+
+Excellent
+
+(5/5)
+
+#### General Feedback
+
+Previous patients' general assessment of this physician
+
+Excellent
+
+(5/5)
+
+**See All Categories**
+
+## Areas of Expertise for  Dr. Solomon
+
+This practitioner provides the following types of care. The more often a provider has treated a particular condition or has performed a particular surgery, the more expertise they may have in treating patients with similar needs. Based on three years (2021-2023) of Medicare Fee for Service data (which does not include Medicare Advantage), each scale below indicates the number of patients treated relative to other doctors who treat the same condition. Note that this provider may treat patients who are not covered by Medicare and are therefore not included in this analysis. Click [here](https://health.usnews.com/health-care/top-doctors/articles/doctor-finder-data-sources-and-methodology#areas-expertise) to learn more about our methodology.
+
+[Chronic hypertension](https://health.usnews.com/doctors/chronic-hypertension) Chronic high blood pressure (hypertension) means your heart has to work harder to pump blood. It's important to manage it to keep your heart and blood vessels healthy. Chronic hypertension can usually be managed at home.
+
+State Average
+
+This Doctor
+
+[Chronic diabetes](https://health.usnews.com/doctors/chronic-diabetes) Chronic diabetes is a condition where your body has trouble controlling the levels of sugar in your blood. It requires careful management.
+
+State Average
+
+This Doctor
+
+[Atrial fibrillation and flutter](https://health.usnews.com/doctors/chronic-atrial-fibrillation-flutter) Atrial fibrillation and atrial flutter are conditions where the heart's rhythm is irregular and sometimes fast, possibly leading to palpitations or dizziness, and increasing risk of stroke.
+
+This Doctor
+
+State Average
+
+See more conditions
+
+Looking for something else?
+
+[nugget1](https://health.usnews.com/ "nugget1") [nugget2](https://health.usnews.com/ "nugget2") [nugget3](https://health.usnews.com/ "nugget3") [nugget4](https://health.usnews.com/ "nugget4")
+
+## Check to See if Dr. Robert C. Solomon Accepts Your Insurance
+
+Please contact your provider to confirm if they accept your insurance.
+
+Insurance Carrier
+
+Clear
+
+example:
+
+Aetna, Cigna, etc.
+
+Plan Type
+
+Clear
+
+All Plans
+
+### Accepted Insurance Plans
+
+[Aetna](https://health.usnews.com/doctors/search?insurance_carrier=Aetna&location=24060)
+
+- [EPO](https://health.usnews.com/doctors/search?insurance_carrier=Aetna&insurance_plan=EPO&location=24060)
+- [HMO](https://health.usnews.com/doctors/search?insurance_carrier=Aetna&insurance_plan=HMO&location=24060)
+- [Medicare](https://health.usnews.com/doctors/search?insurance_carrier=Aetna&insurance_plan=Medicare&location=24060)
+- [POS](https://health.usnews.com/doctors/search?insurance_carrier=Aetna&insurance_plan=POS&location=24060)
+- [PPO](https://health.usnews.com/doctors/search?insurance_carrier=Aetna&insurance_plan=PPO&location=24060)
+
+[Blue Cross Blue Shield of Massachusetts](https://health.usnews.com/doctors/search?insurance_carrier=Blue%20Cross%20Blue%20Shield%20of%20Massachusetts&location=24060)
+
+- [Medicare](https://health.usnews.com/doctors/search?insurance_carrier=Blue%20Cross%20Blue%20Shield%20of%20Massachusetts&insurance_plan=Medicare&location=24060)
+- [PPO](https://health.usnews.com/doctors/search?insurance_carrier=Blue%20Cross%20Blue%20Shield%20of%20Massachusetts&insurance_plan=PPO&location=24060)
+
+[Blue Cross Blue Shield of Michigan](https://health.usnews.com/doctors/search?insurance_carrier=Blue%20Cross%20Blue%20Shield%20of%20Michigan&location=24060)
+
+- [POS](https://health.usnews.com/doctors/search?insurance_carrier=Blue%20Cross%20Blue%20Shield%20of%20Michigan&insurance_plan=POS&location=24060)
+- [PPO](https://health.usnews.com/doctors/search?insurance_carrier=Blue%20Cross%20Blue%20Shield%20of%20Michigan&insurance_plan=PPO&location=24060)
+
+[Cigna](https://health.usnews.com/doctors/search?insurance_carrier=Cigna&location=24060)
+
+- [HMO](https://health.usnews.com/doctors/search?insurance_carrier=Cigna&insurance_plan=HMO&location=24060)
+- [Medicare](https://health.usnews.com/doctors/search?insurance_carrier=Cigna&insurance_plan=Medicare&location=24060)
+- [PPO](https://health.usnews.com/doctors/search?insurance_carrier=Cigna&insurance_plan=PPO&location=24060)
+
+[Excellus BlueCross BlueShield](https://health.usnews.com/doctors/search?insurance_carrier=Excellus%20BlueCross%20BlueShield&location=24060)
+
+- [EPO](https://health.usnews.com/doctors/search?insurance_carrier=Excellus%20BlueCross%20BlueShield&insurance_plan=EPO&location=24060)
+- [HMO](https://health.usnews.com/doctors/search?insurance_carrier=Excellus%20BlueCross%20BlueShield&insurance_plan=HMO&location=24060)
+- [Medicare](https://health.usnews.com/doctors/search?insurance_carrier=Excellus%20BlueCross%20BlueShield&insurance_plan=Medicare&location=24060)
+- [POS](https://health.usnews.com/doctors/search?insurance_carrier=Excellus%20BlueCross%20BlueShield&insurance_plan=POS&location=24060)
+- [PPO](https://health.usnews.com/doctors/search?insurance_carrier=Excellus%20BlueCross%20BlueShield&insurance_plan=PPO&location=24060)
+
+[HCSC](https://health.usnews.com/doctors/search?insurance_carrier=HCSC&location=24060)
+
+- [Medicare](https://health.usnews.com/doctors/search?insurance_carrier=HCSC&insurance_plan=Medicare&location=24060)
+- [PPO](https://health.usnews.com/doctors/search?insurance_carrier=HCSC&insurance_plan=PPO&location=24060)
+
+[Humana](https://health.usnews.com/doctors/search?insurance_carrier=Humana&location=24060)
+
+- [Medicare](https://health.usnews.com/doctors/search?insurance_carrier=Humana&insurance_plan=Medicare&location=24060)
+- [PPO](https://health.usnews.com/doctors/search?insurance_carrier=Humana&insurance_plan=PPO&location=24060)
+
+[United Healthcare](https://health.usnews.com/doctors/search?insurance_carrier=United%20Healthcare&location=24060)
+
+- [HMO](https://health.usnews.com/doctors/search?insurance_carrier=United%20Healthcare&insurance_plan=HMO&location=24060)
+- [Medicare](https://health.usnews.com/doctors/search?insurance_carrier=United%20Healthcare&insurance_plan=Medicare&location=24060)
+- [POS](https://health.usnews.com/doctors/search?insurance_carrier=United%20Healthcare&insurance_plan=POS&location=24060)
+- [PPO](https://health.usnews.com/doctors/search?insurance_carrier=United%20Healthcare&insurance_plan=PPO&location=24060)
+
+Don\`t see your plan listed? [Click here to find providers that accept your insurance](https://health.usnews.com/doctors/search?location=24060).
+
+#### Internists Like  Dr. Solomon Near Me
+
+[Noelle Bissell MD\\
+\\
+(3/5)\\
+\\
+Christiansburg, VA\\
+\\
+![](https://health.usnews.com/static-atlas/assets/img/health/doctor-female.svg?noindex=true)](https://health.usnews.com/doctors/noelle-bissell-2332808) [Mary-Ellen Mick DO\\
+\\
+(3/5)\\
+\\
+Christiansburg, VA\\
+\\
+![](https://health.usnews.com/static-atlas/assets/img/health/doctor-female.svg?noindex=true)](https://health.usnews.com/doctors/mary-ellen-mick-821457) [Ryan Curfiss DO\\
+\\
+(3/5)\\
+\\
+Christiansburg, VA\\
+\\
+![](https://health.usnews.com/static-atlas/assets/img/health/doctor-male.svg?noindex=true)](https://health.usnews.com/doctors/ryan-curfiss-939575) [Christy Fagg DO\\
+\\
+(4/5)\\
+\\
+Blacksburg, VA\\
+\\
+![Christy Fagg DO](https://doximity-res.cloudinary.com/images/f_auto,q_auto,t_public_profile_photo_320x320/tvriqk9xnyh17vu1m9kb/christy-fagg-do-blacksburg-va.jpg?noindex=true)](https://health.usnews.com/doctors/christy-fagg-858580) [See more nearby doctors »](https://health.usnews.com/doctors/internists/virginia/blacksburg)
+
+## Location & Contact Information
+
+Doctor Address
+
+3700 S Main St, Blacksburg, VA, 24060
+
+Affiliated Hospitals
+
+1
+
+LewisGale Hospital Montgomery
+
+2
+
+LewisGale Medical Center
+
+3
+
+Salem Veterans Affairs Medical Center
+
+Explore Map
+
+### Where does Robert C. Solomon practice?
+
+Doctor’s Office
+
+#### Lewis Gale Physicians Llc
+
+#### Practice NPI: 1902977705
+
+Here are other providers that practice at the same doctor's office:
+
+[Benjamin Hull](https://health.usnews.com/doctors/benjamin-hull-729532)
+
+5/5
+
+Otolaryngology (ENT)
+
+[Michele Ballou](https://health.usnews.com/doctors/michele-ballou-133415)
+
+5/5
+
+Pulmonology
+
+[Julianna Snow](https://health.usnews.com/doctors/julianna-snow-2914317)
+
+5/5
+
+Family Medicine
+
+[Brian Gross](https://health.usnews.com/doctors/brian-gross-712313)
+
+5/5
+
+Otolaryngology (ENT)
+
+[Andrew Maiolo](https://health.usnews.com/doctors/andrew-maiolo-246120)
+
+5/5
+
+Cardiology
+
+[Bernard Hynes](https://health.usnews.com/doctors/bernard-hynes-151830)
+
+5/5
+
+Cardiology
+
+[Joseph Troise](https://health.usnews.com/doctors/joseph-troise-181335)
+
+5/5
+
+Obstetrics & Gynecology
+
+[Clement Elechi](https://health.usnews.com/doctors/clement-elechi-237478)
+
+5/5
+
+Neurology
+
+[Alan McLuckie](https://health.usnews.com/doctors/alan-mcluckie-157399)
+
+5/5
+
+Cardiology
+
+[Sydney Barnes](https://health.usnews.com/doctors/sydney-barnes-332347)
+
+5/5
+
+General Surgery
+
+[George Zolovick](https://health.usnews.com/doctors/george-zolovick-112000)
+
+5/5
+
+Obstetrics & Gynecology
+
+[Carl Hannah](https://health.usnews.com/doctors/carl-hannah-884679)
+
+5/5
+
+Family Medicine
+
+[Jonathan Fraim](https://health.usnews.com/physician-assistants/jonathan-fraim-1988528)
+
+5/5
+
+Physician Assistant
+
+[Jeremy Smalley](https://health.usnews.com/doctors/jeremy-smalley-2415739)
+
+5/5
+
+Orthopedics
+
+[Sorina Dancea](https://health.usnews.com/doctors/sorina-dancea-106878)
+
+5/5
+
+Rheumatology
+
+[Quasir Raza](https://health.usnews.com/doctors/quasir-raza-555036)
+
+5/5
+
+Internal Medicine
+
+[Vandana Karri](https://health.usnews.com/doctors/vandana-karri-246075)
+
+5/5
+
+Oncology
+
+[John Harding](https://health.usnews.com/doctors/john-harding-331828)
+
+5/5
+
+Obstetrics & Gynecology
+
+[Jonh Pineda-Bonilla](https://health.usnews.com/doctors/jonh-pineda-bonilla-807695)
+
+5/5
+
+Gastroenterology
+
+[Mark Gustafson](https://health.usnews.com/doctors/mark-gustafson-246029)
+
+5/5
+
+Obstetrics & Gynecology
+
+**\+ Show More**
+
+### Hospital & ASC Affiliations
+
+[**LewisGale Hospital MontgomeryBlacksburg, VA**](https://health.usnews.com/best-hospitals/area/va/lewisgale-hospital-montgomery-6340140?int=hospital-affiliation-in-content)
+
+[**LewisGale Medical CenterBoones Mill, VA**](https://health.usnews.com/best-hospitals/area/va/lewis-gale-medical-center-6340008?int=hospital-affiliation-in-content)
+
+[**Salem Veterans Affairs Medical CenterSalem, VA**](https://health.usnews.com/best-hospitals/area/va/salem-veterans-affairs-medical-center-6341060?int=hospital-affiliation-in-content)
+
+## Education & Experience
+
+### Medical School & Residency
+
+Eastern Virginia Medical School
+
+Medical School
+
+Dwight David Eisenhower Army Medical Center
+
+Residency, Internal Medicine, 1983-1986
+
+### Certifications & Licensure
+
+American Board of Internal Medicine (ABMS®)
+
+Certified in Internal Medicine
+
+CO State Medical License
+
+Active through 1991
+
+VA State Medical License
+
+Active through 2026
+
+GA State Medical License
+
+Active through 1991
+
+PA State Medical License
+
+Active through 1990
+
+MD State Medical License
+
+Active through 2012
+
+Provider NPI:
+
+1902864374
+
+### Publications
+
+Coffers Brimming, Ethically Bankrupt.
+
+Solomon, R.C.
+
+Ethical issues in medical malpractice.
+
+Solomon, R.C.
+
+Alteplase for stroke. Financial information is needed to ensure objectivity.
+
+Solomon, R. C.
+
+Emergency medical services management of ST-segment elevation myocardial infarction in the United States--a report from the American Heart Association Mission: Lifeline Program.
+
+Robert E. O'Connor, Graham Nichol, Louis Gonzales, Peter Moyer, Ivan C. Rokos, Michael R. Sayre, Robert C. Solomon, Gary Wingrove, William J. Brady, Susan McBride, Andrea L. Lorden, Mayme L. Roettig, Anna R. Acuña, Alice K. Jacobs, Steven V. Manoukian
+
+A call to actions wisely chosen.
+
+Solomon RC
+
+Gifts to Physicians from the Pharmaceutical Industry: An Ethical Analysis
+
+Catherine A. Marco, John C. Moskop, Joel M. Geiderman, Gregory Luke Larkin, Robert C. Solomon
+
+Confronting the ethical challenges to informed consent in emergency medicine research.
+
+Terri A. Schmidt, David Salo, Jason A. Hughes, Jean Abbott, Joel M. Geiderman, Catherine X. Johnson, Katie B. McClure, Mary Pat McKay, Junaid Abdul Razzak, Raquel M. Schears, Robert C. Solomon
+
+Ethics seminars: the ethical debate on practicing procedures on the newly dead
+
+Terri A. Schmidt, Jean Abbott, Joel M. Geiderman, Jason A. Hughes, Catherine X. Johnson, Katie B. McClure, Mary Pat McKay, Junaid Abdul Razzak, David Salo, Raquel M. Schears, Robert C. Solomon
+
+Filming patients without prior consent.
+
+Joel M. Geiderman, Robert C. Solomon
+
+## Frequently Asked Questions About Dr. Solomon
+
+### Can I make an appointment online with Dr. Solomon?
+
+Yes, you can [book an appointment](https://health.usnews.com/doctors/robert-solomon-335709) with Dr. Solomon online today. It's simple, secure, and free.
+
+### Does Dr. Solomon offer telehealth?
+
+Call [Dr. Solomon](https://health.usnews.com/doctors/robert-solomon-335709) for more information on telehealth services.
+
+### What do patients say about Dr. Solomon?
+
+We’ve published patient experience ratings for Dr. Solomon in 6 key categories based on 287 reviews. [See ratings](https://health.usnews.com/doctors/robert-solomon-335709#patient-experience).
+
+### Dr. Solomon accepts insurance
+
+Check Dr. Solomon's [profile](https://health.usnews.com/doctors/robert-solomon-335709#insurance) to see which insurance they accept.
+
+### Where is Dr. Solomon's  office located?
+
+Dr. Solomon's office is located at
+3700 S Main St, Blacksburg, VA.
+[View the map](https://health.usnews.com/doctors/robert-solomon-335709#location).
+
+### What are Dr. Solomon's  areas of care?
+
+General internal medicine physician, also known as internists, are primary care physicians (PCPs) who only work with adults (not children or adolescents). One of every four physicians in the U.S. is an internist, many of whom are certified in one of 19 subspecialties, including cardiology, infectious disease and medical oncology.
+See all conditions on Dr. Solomon's
+[profile](https://health.usnews.com/doctors/robert-solomon-335709).
+
+Let us know if this information is out of date or incorrect.
+
+Report a correction to this profile
+
+Are you Robert C. Solomon?
+
+[Claim or edit this profile at ![](https://health.usnews.com/static-atlas/assets/img/health/doximity-dark.png)](https://www.doximity.com/us_news/access/1a719de9-79c4-4295-8c15-9792300f7a4c)
+
+## Living Well With
+
+[![](https://www.usnews.com/object/image/00000173-06a8-d577-abff-7efb31810000/200630-joggingcouple-stock.jpg?update-time=1593544704337&size=responsiveSquare150)\\
+\\
+The Best Exercises to Lower Cholesterol](https://health.usnews.com/health-care/patient-advice/articles/exercises-to-lower-cholesterol)
+
+[![](https://www.usnews.com/object/image/0000018b-0002-dcac-a5af-7a8b6e4c0000/gettyimages-1397290446.jpg?update-time=1696512296904&size=responsiveSquare150)\\
+\\
+5 Types of Primary Care Doctors](https://health.usnews.com/health-care/top-doctors/articles/types-of-primary-care-doctors)
+
+[![](https://www.usnews.com/object/image/0000018e-a59f-dce5-a9de-eddf44a30000/gettyimages-2063690212.jpg?update-time=1712175721509&size=responsiveSquare150)\\
+\\
+Types of Doctors and Medical Specialists: Which One Should I See?](https://health.usnews.com/health-news/best-hospitals/articles/types-of-doctors-and-medical-specialists)
+
+Doctor's Details
+
+Speaks **English**
+
+Works at **LewisGale Hospital Montgomery**
+
+[Health disclaimer »\\
+\\
+Disclaimer and a note about your health »](https://health.usnews.com/health-news/articles/2012/07/16/disclaimer-and-a-note-about-your-health)
+
+## You May Also Like
+
+[**Does Medicare Cover Cataract Surgery?** \\
+\\
+Understand Medicare’s coverage for cataract surgery in 2026. Know when surgery is medically necessary and what expenses Medicare and you are responsible for.\\
+\\
+Elaine K. HowleySept. 22, 2025\\
+\\
+![](https://www.usnews.com/object/image/0000018c-35d9-df4a-a3bd-b5fbe4650000/gettyimages-1340040261.jpg?update-time=1701710556430&size=responsiveSquare150)](https://health.usnews.com/medicare/articles/does-medicare-cover-cataract-surgery)
+
+[**Does Medicare Cover Dental Implants?** \\
+\\
+Medicare often doesn’t cover any dental services. Learn why, plus alternative coverage options.\\
+\\
+Cheyenne BuckinghamSept. 19, 2025\\
+\\
+![](https://www.usnews.com/object/image/00000199-63a0-d209-a7db-7bffc3010000/gettyimages-1459740112.jpg?update-time=1758313132380&size=responsiveSquare150)](https://health.usnews.com/medicare/articles/does-medicare-cover-dental-implants)
+
+[**Medical Necessity for Medicare** \\
+\\
+Here's what "medically necessary" means in the world of Medicare, how to get a Certificate of Medical Necessity and what to do when something is deemed not medically necessary.\\
+\\
+Vanessa Caceres Sept. 15, 2025\\
+\\
+![](https://www.usnews.com/object/image/00000161-007f-d025-a367-c9ffbd920000/180116-doctornursewalk-stock.jpg?update-time=1516131860683&size=responsiveSquare150)](https://health.usnews.com/medicare/articles/medical-necessity-for-medicare-certificates-and-tips)
+
+[**How Are Patients Choosing ASCs?** \\
+\\
+Ambulatory surgery centers, or ASCs for short, are becoming attractive options for common outpatient procedures, and patient reviews and satisfaction scores are one of the main ways people choose where to go.\\
+\\
+Paul WynnSept. 12, 2025\\
+\\
+![](https://www.usnews.com/object/image/00000190-03bc-df3b-a1d8-83ffcb3f0000/https-media-gettyimages-com-id-1421939057-photo-adult-female-patient-talks-with-nurse.jpg?update-time=1718049665176&size=responsiveSquare150)](https://health.usnews.com/best-ascs/articles/how-are-patients-choosing-ambulatory-surgery-centers)
+
+[**Does Medicare Cover Weight Loss Drugs?** \\
+\\
+GLP-1 drugs, such as Ozempic, are reshaping diabetes care and weight loss. Find out if Medicare covers them and if they’re right for you.\\
+\\
+Paul Wynn and Geoff WilliamsSept. 12, 2025\\
+\\
+![](https://www.usnews.com/object/image/0000018d-378d-d5a4-a18d-3fbfcff60000/https-media-gettyimages-com-id-1393991963-photo-obese-fat-man-preparing-semaglutide-ozempic-injection-control-blood-sugar-levels.jpg?update-time=1706034093382&size=responsiveSquare150)](https://health.usnews.com/medicare/articles/does-medicare-cover-ozempic)
+
+[**What Is Ketamine?** \\
+\\
+Find out what ketamine is, how ketamine therapy is used to treat depression, what side effects it can have and more.\\
+\\
+Payton SySept. 12, 2025\\
+\\
+![](https://www.usnews.com/object/image/0000018b-492c-d814-a1db-cdfd12d90000/gettyimages-1440229538.jpg?update-time=1697739932218&size=responsiveSquare150)](https://health.usnews.com/health-care/patient-advice/articles/what-is-ketamine-and-is-it-good-for-depression)
+
+[**Does Medicare Cover Dental in 2026?** \\
+\\
+Learn about limitations and options for managing your oral health under Medicare and other insurance plans.\\
+\\
+Paul WynnSept. 11, 2025\\
+\\
+![](https://www.usnews.com/object/image/0000018c-20cc-d810-a5fd-7ced7eaa0000/gettyimages-1169330386.jpg?update-time=1701357356622&size=responsiveSquare150)](https://health.usnews.com/medicare/articles/does-medicare-cover-dental-care)
+
+[**Warning Signs of Kidney Problems** \\
+\\
+In the early stages of chronic kidney disease, you might have few obvious signs or symptoms. Here's what to look for.\\
+\\
+Claire WoltersSept. 10, 2025\\
+\\
+![](https://www.usnews.com/object/image/0000018d-669c-d1f9-af8f-7ffe5bee0000/gettyimages-1448250348.jpg?update-time=1706823579129&size=responsiveSquare150)](https://health.usnews.com/conditions/kidney-disease/articles/symptoms-of-a-kidney-problem)
+
+[**Shingles Vaccine: Covered by Medicare?** \\
+\\
+Learn about Medicare's policies on covering the shingles vaccine and why you should protect yourself.\\
+\\
+Paul WynnSept. 10, 2025\\
+\\
+![](https://www.usnews.com/object/image/0000018e-ce02-df19-a7ee-cf0fd0e70000/gettyimages-1299308834.jpg?update-time=1712853307917&size=responsiveSquare150)](https://health.usnews.com/medicare/articles/does-medicare-pay-for-shingles-shot)
+
+[**A Good Medicare Dental Plan** \\
+\\
+Original Medicare generally doesn't cover dental work. But if you want dental coverage, you have options.\\
+\\
+Geoff WilliamsSept. 9, 2025\\
+\\
+![](https://www.usnews.com/object/image/00000199-2e68-d15c-a9ff-6f7a66e50000/gettyimages-925985938.jpg?update-time=1757420254270&size=responsiveSquare150)](https://health.usnews.com/medicare/articles/what-to-look-for-in-a-good-medicare-dental-plan)
+
+Load More
