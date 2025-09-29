@@ -19,16 +19,6 @@ COPY app/ ./app/
 # Create data directory
 RUN mkdir -p /app/data
 
-# Create startup script
-RUN echo '#!/bin/bash' > /app/startup.sh && \
-    echo 'set -e' >> /app/startup.sh && \
-    echo 'echo "Environment variables:"' >> /app/startup.sh && \
-    echo 'env | grep -E "(PORT|DATABASE)" || true' >> /app/startup.sh && \
-    echo 'PORT=${PORT:-8000}' >> /app/startup.sh && \
-    echo 'echo "Using port: $PORT"' >> /app/startup.sh && \
-    echo 'exec uvicorn main:app --host 0.0.0.0 --port "$PORT"' >> /app/startup.sh && \
-    chmod +x /app/startup.sh
-
 # Expose port
 EXPOSE 8000
 
@@ -36,5 +26,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD ["sh", "-c", "curl -f http://localhost:${PORT:-8000}/healthz || exit 1"]
 
-# Run the application using startup script
-CMD ["sh", "-c", "./startup.sh"]
+# Run the application directly with proper shell expansion
+CMD ["bash", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
