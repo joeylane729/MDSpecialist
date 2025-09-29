@@ -15,10 +15,16 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY main.py .
 COPY app/ ./app/
-COPY startup.sh .
 
 # Create data directory
 RUN mkdir -p /app/data
+
+# Create startup script
+RUN echo '#!/bin/bash' > /app/startup.sh && \
+    echo 'export PORT=${PORT:-8000}' >> /app/startup.sh && \
+    echo 'echo "Starting MDSpecialist API on port $PORT"' >> /app/startup.sh && \
+    echo 'exec uvicorn main:app --host 0.0.0.0 --port $PORT' >> /app/startup.sh && \
+    chmod +x /app/startup.sh
 
 # Expose port
 EXPOSE 8000
