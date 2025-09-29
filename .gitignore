@@ -125,6 +125,7 @@ docker-compose.override.yml
 npidata.csv
 *.csv
 *.json
+*.md
 
 # Keep essential project config JSON files tracked
 !package.json
