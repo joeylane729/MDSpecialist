@@ -6,8 +6,7 @@ from firecrawl import Firecrawl
 from dotenv import load_dotenv
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'backend'))
-from app.database import get_db
+from backend.app.database import get_db
 from sqlalchemy import text
 
 load_dotenv()

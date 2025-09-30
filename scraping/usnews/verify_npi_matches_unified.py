@@ -25,9 +25,8 @@ import re
 from pathlib import Path
 from typing import Optional, Tuple, List
 
-# Ensure backend is importable for DB access
-sys.path.append(str(Path(__file__).parent.parent / 'backend'))
-from app.database import get_db
+# Import from backend directly
+from backend.app.database import get_db
 from sqlalchemy import text
 
 

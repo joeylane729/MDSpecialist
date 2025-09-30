@@ -8,11 +8,9 @@ import sys
 import subprocess
 from pathlib import Path
 
-# Add the backend directory to the path so we can import the database models
-sys.path.append(str(Path(__file__).parent.parent.parent / 'backend'))
-
-from app.database import get_db
-from app.models.npi_provider import NPIProvider
+# Import from backend directly
+from backend.app.database import get_db
+from backend.app.models.npi_provider import NPIProvider
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 

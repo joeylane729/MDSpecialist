@@ -13,8 +13,8 @@ from sqlalchemy.exc import IntegrityError
 # Add the parent directory to the path so we can import app modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.database import SessionLocal, engine
-from app.models.journals import Journal
+from backend.app.database import SessionLocal, engine
+from backend.app.models.journals import Journal
 
 # Set up logging
 logging.basicConfig(

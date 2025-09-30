@@ -14,7 +14,7 @@ load_dotenv()
 # Add the parent directory to the path so we can import our modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.services.pinecone_service import PineconeService
+from backend.app.services.pinecone_service import PineconeService
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

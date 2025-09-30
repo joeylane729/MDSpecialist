@@ -13,8 +13,8 @@ from pathlib import Path
 # Add the parent directory to the path so we can import from app
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.database import get_db, engine
-from app.models.medical_school_ranking import MedicalSchoolRanking
+from backend.app.database import get_db, engine
+from backend.app.models.medical_school_ranking import MedicalSchoolRanking
 from sqlalchemy.orm import Session
 
 

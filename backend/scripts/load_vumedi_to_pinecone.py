@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 backend_dir = os.path.join(os.path.dirname(__file__), '..')
 sys.path.append(backend_dir)
 
-from app.services.pinecone_service import PineconeService
+from backend.app.services.pinecone_service import PineconeService
 
 
 def process_vumedi_data(csv_file_path: str) -> List[Dict[str, Any]]:

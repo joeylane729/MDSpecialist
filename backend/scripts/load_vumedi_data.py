@@ -10,11 +10,9 @@ import pandas as pd
 from datetime import datetime
 import logging
 
-# Add the parent directory to the path so we can import app modules
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from app.database import SessionLocal, engine
-from app.models.vumedi_content import VumediContent
+# Import from backend app directly
+from backend.app.database import SessionLocal, engine
+from backend.app.models.vumedi_content import VumediContent
 
 # Set up logging
 logging.basicConfig(

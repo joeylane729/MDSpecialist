@@ -18,7 +18,7 @@ import json
 # Add the parent directory to the path so we can import from app
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app.database import SessionLocal
+from backend.app.database import SessionLocal
 from sqlalchemy import text, create_engine
 from sqlalchemy.orm import sessionmaker
 
