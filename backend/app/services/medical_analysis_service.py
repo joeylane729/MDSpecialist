@@ -19,29 +19,8 @@ class MedicalAnalysisService:
     """Service for comprehensive medical analysis including specialty determination, ICD-10 coding, and diagnosis prediction."""
     
     def __init__(self, db: Session = None):
-        # Defer LLM initialization until first use to avoid startup failures
-        # when OPENAI_API_KEY is not configured in the environment.
-        self.llm = None
+        self.llm = ChatOpenAI(model="gpt-4o", temperature=0.1)
         self.db = db
-
-    def get_llm(self) -> Optional[ChatOpenAI]:
-        """Lazily initialize and return the ChatOpenAI client.
-
-        Returns None if OPENAI_API_KEY is not configured so that
-        API routes can continue to function (with limited features)
-        instead of crashing the whole app on startup.
-        """
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            logger.warning("OPENAI_API_KEY not set; LLM features are disabled")
-            return None
-        if self.llm is None:
-            try:
-                self.llm = ChatOpenAI(model="gpt-4o", temperature=0.1)
-            except Exception as exc:
-                logger.error(f"Failed to initialize ChatOpenAI: {exc}")
-                return None
-        return self.llm
         
         # Patient processing prompt
         # No longer need complex patient processing - just pass through the input
@@ -397,12 +376,7 @@ class MedicalAnalysisService:
                 """
             )
             
-            llm = self.get_llm()
-            if llm is None:
-                logger.warning("Skipping ICD-10 prediction because LLM is unavailable")
-                return None
-
-            chain = LLMChain(llm=llm, prompt=prompt)
+            chain = LLMChain(llm=self.llm, prompt=prompt)
             
             response = await chain.arun(
                 symptoms=symptoms,
@@ -509,12 +483,7 @@ class MedicalAnalysisService:
                 """
             )
             
-            llm = self.get_llm()
-            if llm is None:
-                logger.warning("Skipping diagnosis prediction because LLM is unavailable")
-                return None
-
-            chain = LLMChain(llm=llm, prompt=prompt)
+            chain = LLMChain(llm=self.llm, prompt=prompt)
             
             response = await chain.arun(
                 symptoms=symptoms,
