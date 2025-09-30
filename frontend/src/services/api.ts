@@ -223,6 +223,13 @@ export const getMedicalAnalysis = async (
   request: MedicalAnalysisRequest
 ): Promise<MedicalAnalysisResponse> => {
   try {
+    console.log('🔍 [Frontend] Starting medical analysis request:', {
+      symptoms: request.symptoms,
+      diagnosis: request.diagnosis,
+      apiBaseUrl: API_BASE_URL,
+      fullUrl: `${API_BASE_URL}/api/v1/medical-analysis`
+    });
+
     // Create FormData for the request
     const formData = new FormData();
     formData.append('symptoms', request.symptoms);
@@ -245,15 +252,26 @@ export const getMedicalAnalysis = async (
       });
     }
     
+    console.log('🔍 [Frontend] Making API call to:', `${API_BASE_URL}/api/v1/medical-analysis`);
+    
     const response = await api.post('/api/v1/medical-analysis', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
     
+    console.log('✅ [Frontend] Medical analysis response received:', response.data);
     return response.data;
   } catch (error) {
+    console.error('❌ [Frontend] Medical analysis error:', error);
     if (axios.isAxiosError(error)) {
+      console.error('❌ [Frontend] Axios error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url,
+        baseURL: error.config?.baseURL
+      });
       throw new Error(error.response?.data?.detail || 'Failed to get medical analysis');
     }
     throw error;
