@@ -133,7 +133,7 @@ class NPIService:
         
         # Try to use scoring if available
         try:
-            from scoring import rank_doctors
+            from ..scoring import rank_doctors
             # Create patient location for scoring
             patient_location = {
                 'metro_area': metro_area,
