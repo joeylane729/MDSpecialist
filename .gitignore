@@ -22,6 +22,10 @@ wheels/
 *.egg
 MANIFEST
 
+# Python version files (prevent Railway Railpack detection)
+.python-version
+runtime.txt
+
 # Environment variables
 .env
 .env.local
