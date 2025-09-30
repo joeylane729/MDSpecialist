@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.app.api.endpoints import match, doctors, npi, specialist_recommendation, npi_ranking, medical_analysis
+from app.api.endpoints import match, doctors, npi, specialist_recommendation, npi_ranking, medical_analysis
 import os
 
 # Create FastAPI app

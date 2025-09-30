@@ -12,7 +12,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY . .
+COPY main.py .
+COPY backend/ ./backend/
+
+# Create symlink so main.py can import from backend.app
+RUN ln -s /app/backend/app /app/app
 
 # Create data directory
 RUN mkdir -p /app/data
