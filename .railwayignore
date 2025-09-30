@@ -1,0 +1,3 @@
+# Force Railway to use Dockerfile instead of auto-detection
+.python-version
+runtime.txt
