@@ -315,24 +315,38 @@ export interface NPIRankingResponse {
 
 export const rankNPIProviders = async (request: NPIRankingRequest): Promise<NPIRankingResponse> => {
   try {
+    console.log('🔍 [Frontend] rankNPIProviders called with:', {
+      npi_count: request.npi_providers?.length,
+      patient_input_length: request.patient_input?.length,
+      has_shared_info: !!request.shared_specialist_information,
+      shared_info_type: typeof request.shared_specialist_information,
+      shared_info_keys: request.shared_specialist_information ? Object.keys(request.shared_specialist_information) : null
+    });
+    
     const formData = new FormData();
     formData.append('npi_providers', JSON.stringify(request.npi_providers));
     formData.append('patient_input', request.patient_input);
     
     // Add shared Pinecone data if provided
     if (request.shared_specialist_information) {
-      formData.append('shared_specialist_information', JSON.stringify(request.shared_specialist_information));
+      const sharedInfoStr = JSON.stringify(request.shared_specialist_information);
+      console.log('🔍 [Frontend] Appending shared_specialist_information:', sharedInfoStr.substring(0, 200) + '...');
+      formData.append('shared_specialist_information', sharedInfoStr);
+    } else {
+      console.log('⚠️ [Frontend] No shared_specialist_information - skipping');
     }
     
+    console.log('🔍 [Frontend] Sending POST to /api/v1/rank-npi-providers');
     const response = await api.post(`/api/v1/rank-npi-providers`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
     
+    console.log('✅ [Frontend] Ranking successful:', response.data.message);
     return response.data;
   } catch (error) {
-    console.error('Error ranking NPI providers:', error);
+    console.error('❌ [Frontend] Error ranking NPI providers:', error);
     throw error;
   }
 };
