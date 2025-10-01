@@ -427,86 +427,6 @@ class LangChainRankingService:
         
         return npi_ranking
     
-    def _simple_name_match(self, doctor_name: str, record_name: str) -> bool:
-        """
-        Simple fuzzy name matching - checks if names match with common variations.
-        
-        Args:
-            doctor_name: Doctor's name from NPI (e.g., "JOHN SMITH")
-            record_name: Name from Pinecone record (e.g., "John A. Smith" or "Smith, John")
-            
-        Returns:
-            True if names match, False otherwise
-        """
-        # Normalize both names: uppercase, remove punctuation
-        import re
-        doctor_clean = re.sub(r'[^\w\s]', '', doctor_name.upper())
-        record_clean = re.sub(r'[^\w\s]', '', record_name.upper())
-        
-        # Split into parts
-        doctor_parts = set(doctor_clean.split())
-        record_parts = set(record_clean.split())
-        
-        # Match if first and last name are both present
-        # (ignoring middle names/initials for simplicity)
-        if len(doctor_parts) >= 2 and len(record_parts) >= 2:
-            # Check if at least 2 parts match (first and last name)
-            matches = len(doctor_parts.intersection(record_parts))
-            return matches >= 2
-        
-        return False
-    
-    def _count_pinecone_appearances(
-        self,
-        doctor_name: str,
-        pinecone_data: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
-        """
-        Count how many times a doctor appears in Pinecone data.
-        
-        Args:
-            doctor_name: Doctor's name from NPI
-            pinecone_data: List of Pinecone records (Vumedi + PubMed)
-            
-        Returns:
-            Dict with vumedi_count, pubmed_count, vumedi_content, and pubmed_articles
-        """
-        vumedi_count = 0
-        pubmed_count = 0
-        vumedi_content = []
-        pubmed_articles = []
-        
-        for record in pinecone_data:
-            source = record.get('_source', 'unknown')
-            
-            if source == 'vumedi':
-                # Check "featuring" field for Vumedi videos
-                featuring = record.get('featuring', '')
-                if self._simple_name_match(doctor_name, featuring):
-                    vumedi_count += 1
-                    vumedi_content.append({
-                        'link': record.get('link', ''),
-                        'title': record.get('title', 'Medical Content')
-                    })
-                    
-            elif source == 'pubmed':
-                # Check "authors" field for PubMed articles
-                authors = record.get('authors', '')
-                if self._simple_name_match(doctor_name, authors):
-                    pubmed_count += 1
-                    pubmed_articles.append({
-                        'pmid': record.get('_id', ''),
-                        'title': record.get('title', 'Research Article')
-                    })
-        
-        return {
-            'vumedi_count': vumedi_count,
-            'pubmed_count': pubmed_count,
-            'total_count': vumedi_count + pubmed_count,
-            'vumedi_content': vumedi_content,
-            'pubmed_articles': pubmed_articles
-        }
-    
     async def rank_npi_providers_by_treatment(
         self,
         npi_providers: List[Dict[str, Any]],
@@ -515,7 +435,7 @@ class LangChainRankingService:
         max_providers: int = 10000
     ) -> Dict[str, Any]:
         """
-        Rank ALL NPI providers by counting their Pinecone appearances (1 point per publication/video).
+        Rank NPI providers using GPT matching, then append unmatched providers at the end.
         
         Args:
             npi_providers: List of NPI provider dictionaries
@@ -527,7 +447,7 @@ class LangChainRankingService:
             Dictionary with treatment-specific rankings showing ALL providers
         """
         try:
-            logger.info(f"🎯 === SIMPLE COUNT-BASED RANKING STARTED ===")
+            logger.info(f"🎯 === TREATMENT-SPECIFIC RANKING STARTED (SHOWING ALL PROVIDERS) ===")
             logger.info(f"📊 Total providers received: {len(npi_providers)}")
             logger.info(f"📋 Treatments to rank: {len(treatment_pinecone_data)}")
             
@@ -541,64 +461,61 @@ class LangChainRankingService:
                 logger.info(f"🔍 Ranking providers for treatment: {treatment_name}")
                 logger.info(f"📊 Pinecone data for {treatment_name}: {len(pinecone_data)} records")
                 
-                # Count Pinecone appearances for each provider
-                provider_scores = []
-                provider_links = {}
+                if not pinecone_data:
+                    # No Pinecone data - return all providers in original order
+                    logger.warning(f"⚠️  No Pinecone data for treatment {treatment_name}, returning all providers in original order")
+                    ranked_npis = [p.get('npi', '') for p in npi_providers if p.get('npi')]
+                    treatment_rankings[treatment_id] = {
+                        "name": treatment_name,
+                        "ranked_providers": ranked_npis,
+                        "explanation": f"No specialist information found for {treatment_name}. Showing all {len(ranked_npis)} providers in original order.",
+                        "provider_links": {}
+                    }
+                    continue
                 
-                for provider in npi_providers:
-                    doctor_name = provider.get('name', '')
-                    npi = provider.get('npi', '')
-                    
-                    if not doctor_name or not npi:
-                        continue
-                    
-                    # Count appearances in Pinecone data
-                    counts = self._count_pinecone_appearances(doctor_name, pinecone_data)
-                    
-                    provider_scores.append({
-                        'npi': npi,
-                        'name': doctor_name,
-                        'total_count': counts['total_count'],
-                        'vumedi_count': counts['vumedi_count'],
-                        'pubmed_count': counts['pubmed_count']
-                    })
-                    
-                    # Store links for providers with content
-                    if counts['total_count'] > 0:
-                        provider_links[doctor_name] = {
-                            'vumedi_content': counts['vumedi_content'],
-                            'pubmed_articles': counts['pubmed_articles']
-                        }
+                # Use GPT to rank providers with Pinecone matches
+                ranking_result = await self.rank_npi_providers(
+                    npi_providers=npi_providers,
+                    pinecone_data=pinecone_data,
+                    patient_profile=patient_profile,
+                    max_providers=max_providers
+                )
                 
-                # Sort providers by total count (descending), then alphabetically by name
-                provider_scores.sort(key=lambda x: (-x['total_count'], x['name']))
+                # Get the ranked NPIs from GPT
+                matched_npis = ranking_result.get("ranking", [])
+                provider_links = ranking_result.get("provider_links", {})
+                gpt_explanation = ranking_result.get("explanation", "")
                 
-                # Extract ranked NPIs
-                ranked_npis = [p['npi'] for p in provider_scores]
+                # Find providers that were NOT matched by GPT
+                matched_npi_set = set(matched_npis)
+                unmatched_npis = [
+                    p.get('npi', '') 
+                    for p in npi_providers 
+                    if p.get('npi') and p.get('npi') not in matched_npi_set
+                ]
                 
-                # Generate explanation
-                providers_with_content = sum(1 for p in provider_scores if p['total_count'] > 0)
-                total_vumedi = sum(p['vumedi_count'] for p in provider_scores)
-                total_pubmed = sum(p['pubmed_count'] for p in provider_scores)
+                # Combine: matched providers first, then unmatched
+                all_ranked_npis = matched_npis + unmatched_npis
                 
-                explanation = (
-                    f"Ranked {len(ranked_npis)} providers by Pinecone content. "
-                    f"{providers_with_content} providers found with {total_vumedi} Vumedi videos and {total_pubmed} PubMed articles related to {treatment_name}. "
-                    f"Providers with more content are ranked higher."
+                # Update explanation
+                updated_explanation = (
+                    f"{gpt_explanation} "
+                    f"Showing all {len(all_ranked_npis)} providers: "
+                    f"{len(matched_npis)} with relevant content ranked first, "
+                    f"{len(unmatched_npis)} without content listed after."
                 )
                 
                 # Store the results for this treatment
                 treatment_rankings[treatment_id] = {
                     "name": treatment_name,
-                    "ranked_providers": ranked_npis,
-                    "explanation": explanation,
+                    "ranked_providers": all_ranked_npis,
+                    "explanation": updated_explanation,
                     "provider_links": provider_links
                 }
                 
-                logger.info(f"✅ Ranked {len(ranked_npis)} providers for {treatment_name}")
-                logger.info(f"   📊 {providers_with_content} with content, {len(ranked_npis) - providers_with_content} without")
+                logger.info(f"✅ Completed ranking for {treatment_name}: {len(matched_npis)} matched + {len(unmatched_npis)} unmatched = {len(all_ranked_npis)} total")
             
-            logger.info(f"✅ === SIMPLE COUNT-BASED RANKING COMPLETED ===")
+            logger.info(f"✅ === TREATMENT-SPECIFIC RANKING COMPLETED ===")
             logger.info(f"📊 Total treatments ranked: {len(treatment_rankings)}")
             
             return {
@@ -607,5 +524,5 @@ class LangChainRankingService:
             }
             
         except Exception as e:
-            logger.error(f"❌ Error in simple count-based ranking: {str(e)}")
+            logger.error(f"❌ Error in treatment-specific ranking: {str(e)}")
             raise
