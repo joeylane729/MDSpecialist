@@ -58,10 +58,6 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                   {grade}
                 </div>
               )}
-              <div className="ml-3 flex items-center">
-                <Award className="h-4 w-4 text-gray-400" />
-                <span className="ml-1 text-sm text-gray-500 font-medium">Board Certified</span>
-              </div>
             </div>
 
             {/* Specialty and Experience */}
@@ -90,31 +86,31 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
 
             {/* Additional Info */}
             <div className="mt-4">
-              <span className="font-medium text-gray-700">Education:</span>
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">Education</h3>
               {provider.education && (provider.education.medicalSchool || provider.education.residency || provider.education.fellowship || provider.education.certifications) ? (
-                <div className="text-gray-600 mt-1 space-y-1">
+                <div className="text-gray-600 space-y-2">
                   {provider.education.medicalSchool && (
                     <div>
-                      <span className="text-gray-700 font-medium">Medical School: </span>
-                      <span className="break-words">{provider.education.medicalSchool}</span>
+                      <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Medical School</span>
+                      <div className="break-words mt-1">{provider.education.medicalSchool}</div>
                     </div>
                   )}
                   {provider.education.residency && (
                     <div>
-                      <span className="text-gray-700 font-medium">Residency: </span>
-                      <span className="break-words">{provider.education.residency}</span>
+                      <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Residency</span>
+                      <div className="break-words mt-1">{provider.education.residency}</div>
                     </div>
                   )}
                   {provider.education.fellowship && (
                     <div>
-                      <span className="text-gray-700 font-medium">Fellowship: </span>
-                      <span className="break-words">{provider.education.fellowship}</span>
+                      <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Fellowship</span>
+                      <div className="break-words mt-1">{provider.education.fellowship}</div>
                     </div>
                   )}
                   {provider.education.certifications && (
                     <div>
-                      <span className="text-gray-700 font-medium">Certifications: </span>
-                      <span className="break-words">{provider.education.certifications}</span>
+                      <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Certifications</span>
+                      <div className="break-words mt-1">{provider.education.certifications}</div>
                     </div>
                   )}
                 </div>

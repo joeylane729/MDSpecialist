@@ -843,39 +843,7 @@ const ResultsPage: React.FC = () => {
             </div>
             
             <div className="max-w-4xl mx-auto space-y-6">
-              {/* Diagnosis */}
-              <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Diagnosis</h2>
-              
-              {/* Primary Diagnosis */}
-              <div className="mb-4 pb-4 border-b border-gray-100">
-                <h3 className="text-base font-medium text-gray-900 mb-3">Primary</h3>
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <i className="fas fa-star text-gray-700 text-sm"></i>
-                    <p className="text-gray-700 text-sm">{searchParams.icd10_description || location.state?.aiRecommendations?.patient_profile?.icd10_description || 'Description not available'}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Differential Diagnosis */}
-              <div>
-                <h3 className="text-base font-medium text-gray-900 mb-3">Differential</h3>
-                <div className="space-y-2">
-                  {(searchParams.differential_diagnoses || location.state?.aiRecommendations?.patient_profile?.differential_diagnoses) && ((searchParams.differential_diagnoses?.length || 0) > 0 || (location.state?.aiRecommendations?.patient_profile?.differential_diagnoses?.length || 0) > 0) ? (
-                    (searchParams.differential_diagnoses || location.state?.aiRecommendations?.patient_profile?.differential_diagnoses || []).map((diagnosis: any, index: number) => (
-                      <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <span className="text-sm text-gray-700 font-bold">{index + 1}.</span>
-                        <span className="font-mono text-sm text-gray-900 font-medium">{diagnosis.code}</span>
-                        <span className="text-gray-500">-</span>
-                        <span className="text-gray-700 text-sm">{diagnosis.description || 'Description not available'}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-gray-500 text-sm italic">No differential diagnoses available</div>
-                  )}
-                </div>
-              </div>
+              {/* Diagnosis section removed - still generated in backend but not displayed */}
             </div>
 
             {/* Treatment Options with Outcomes and Complications */}
