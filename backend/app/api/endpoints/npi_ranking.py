@@ -5,9 +5,10 @@ This endpoint takes NPI providers and patient information, then uses LangChain
 to rank the providers based on Pinecone specialist data.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Form
+from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+from pydantic import BaseModel
 from ...database import get_db
 from ...services.langchain_specialist_recommendation_service import LangChainSpecialistRecommendationService
 import logging
@@ -17,11 +18,14 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+class NPIRankingRequest(BaseModel):
+    npi_providers: List[Dict[str, Any]]
+    patient_input: str
+    shared_specialist_information: Optional[Dict[str, Any]] = None
+
 @router.post("/rank-npi-providers")
 async def rank_npi_providers(
-    npi_providers: str = Form(...),
-    patient_input: str = Form(...),
-    shared_specialist_information: str = Form(default=None),
+    request: NPIRankingRequest = Body(...),
     db: Session = Depends(get_db)
 ):
     """
@@ -35,30 +39,19 @@ async def rank_npi_providers(
         List of NPI numbers in ranked order (most relevant first)
     """
     logger.info("🔍 [NPI Ranking] ===== ENDPOINT CALLED =====")
-    logger.info(f"📝 [NPI Ranking] Patient input length: {len(patient_input) if patient_input else 0} chars")
-    logger.info(f"📝 [NPI Ranking] shared_specialist_information type: {type(shared_specialist_information)}")
-    logger.info(f"📝 [NPI Ranking] shared_specialist_information value: {shared_specialist_information[:100] if shared_specialist_information else 'None'}")
+    logger.info(f"📝 [NPI Ranking] Patient input length: {len(request.patient_input) if request.patient_input else 0} chars")
+    logger.info(f"📥 [NPI Ranking] Received {len(request.npi_providers)} NPI providers")
     
     try:
-        # Parse the JSON strings
-        import json
-        npi_providers_list = json.loads(npi_providers)
-        logger.info(f"📥 [NPI Ranking] Received {len(npi_providers_list)} NPI providers")
-        
-        # Parse shared Pinecone data if provided
-        shared_data = None
-        if shared_specialist_information:
-            try:
-                shared_data = json.loads(shared_specialist_information)
-                if isinstance(shared_data, dict):
-                    logger.info(f"📊 [NPI Ranking] Received dict with {len(shared_data)} treatment groups: {list(shared_data.keys())}")
-                elif isinstance(shared_data, list):
-                    logger.info(f"📊 [NPI Ranking] Received list with {len(shared_data)} items")
-                else:
-                    logger.warning(f"⚠️ [NPI Ranking] Unexpected type: {type(shared_data)}")
-            except json.JSONDecodeError as e:
-                logger.error(f"❌ [NPI Ranking] JSON decode error: {e}")
-                raise HTTPException(status_code=400, detail=f"Invalid JSON in shared_specialist_information: {e}")
+        # Get shared Pinecone data if provided
+        shared_data = request.shared_specialist_information
+        if shared_data:
+            if isinstance(shared_data, dict):
+                logger.info(f"📊 [NPI Ranking] Received dict with {len(shared_data)} treatment groups: {list(shared_data.keys())}")
+            elif isinstance(shared_data, list):
+                logger.info(f"📊 [NPI Ranking] Received list with {len(shared_data)} items")
+            else:
+                logger.warning(f"⚠️ [NPI Ranking] Unexpected type: {type(shared_data)}")
         else:
             logger.info("⚠️ [NPI Ranking] No shared specialist information provided")
         
@@ -67,8 +60,8 @@ async def rank_npi_providers(
         
         # Rank the NPI providers using shared data if available
         ranking_result = await langchain_service.rank_npi_providers_with_pinecone(
-            npi_providers=npi_providers_list,
-            patient_input=patient_input,
+            npi_providers=request.npi_providers,
+            patient_input=request.patient_input,
             shared_specialist_information=shared_data
         )
         
@@ -83,9 +76,6 @@ async def rank_npi_providers(
             "message": f"Successfully ranked NPI providers for {total_treatments} treatments"
         }
         
-    except json.JSONDecodeError as e:
-        logger.error(f"❌ [NPI Ranking] JSON decode error: {e}")
-        raise HTTPException(status_code=400, detail=f"Invalid JSON: {e}")
     except ValueError as e:
         logger.error(f"❌ [NPI Ranking] Value error: {e}")
         raise HTTPException(status_code=400, detail=f"Invalid data: {e}")

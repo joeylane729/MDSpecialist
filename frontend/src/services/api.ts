@@ -323,23 +323,19 @@ export const rankNPIProviders = async (request: NPIRankingRequest): Promise<NPIR
       shared_info_keys: request.shared_specialist_information ? Object.keys(request.shared_specialist_information) : null
     });
     
-    const formData = new FormData();
-    formData.append('npi_providers', JSON.stringify(request.npi_providers));
-    formData.append('patient_input', request.patient_input);
+    // Send as JSON instead of FormData to avoid size limits
+    const payload = {
+      npi_providers: request.npi_providers,
+      patient_input: request.patient_input,
+      shared_specialist_information: request.shared_specialist_information
+    };
     
-    // Add shared Pinecone data if provided
-    if (request.shared_specialist_information) {
-      const sharedInfoStr = JSON.stringify(request.shared_specialist_information);
-      console.log('🔍 [Frontend] Appending shared_specialist_information:', sharedInfoStr.substring(0, 200) + '...');
-      formData.append('shared_specialist_information', sharedInfoStr);
-    } else {
-      console.log('⚠️ [Frontend] No shared_specialist_information - skipping');
-    }
+    const payloadSize = JSON.stringify(payload).length;
+    console.log(`🔍 [Frontend] Sending JSON payload (${(payloadSize / 1024).toFixed(2)} KB) to /api/v1/rank-npi-providers`);
     
-    console.log('🔍 [Frontend] Sending POST to /api/v1/rank-npi-providers');
-    const response = await api.post(`/api/v1/rank-npi-providers`, formData, {
+    const response = await api.post(`/api/v1/rank-npi-providers`, payload, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        'Content-Type': 'application/json',
       },
     });
     
