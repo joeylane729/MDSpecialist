@@ -192,6 +192,9 @@ class MedicalAnalysisService:
                 "location_preference": patient_profile.location_preference,
                 "additional_notes": patient_profile.additional_notes,
                 
+                # User input fields
+                "user_diagnosis": diagnosis,  # User-entered diagnosis text
+                
                 # Medical analysis data (flattened for frontend compatibility)
                 "predicted_icd10": primary_icd10,
                 "icd10_description": primary_description,

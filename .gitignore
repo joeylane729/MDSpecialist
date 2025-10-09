@@ -96,6 +96,9 @@ dist
 # Gatsby files
 .cache/
 public
+# Keep logo files in public folder
+!frontend/public/logo-dark.png
+!frontend/public/mdspecialist_logo_flatblue.png
 
 # Storybook build outputs
 .out
