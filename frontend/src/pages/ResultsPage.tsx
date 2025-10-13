@@ -843,7 +843,69 @@ const ResultsPage: React.FC = () => {
             </div>
             
             <div className="max-w-4xl mx-auto space-y-6">
-              {/* Diagnosis section removed - still generated in backend but not displayed */}
+              {/* Diagnosis Information */}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-4">Diagnosis Analysis</h2>
+                
+                <div className="space-y-4">
+                  {/* User-Entered Diagnosis */}
+                  <div className="border-l-4 border-blue-500 pl-4">
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">Your Diagnosis</h3>
+                    <p className="text-gray-700">{searchParams?.diagnosis || 'No diagnosis provided'}</p>
+                  </div>
+
+                  {/* Medical Analysis Results */}
+                  {searchParams?.icd10_description && (
+                    <div className="border-l-4 border-green-500 pl-4">
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Medical Analysis</h3>
+                      <div className="space-y-2">
+                        {searchParams.predicted_icd10 && (
+                          <div>
+                            <span className="font-medium text-gray-700">ICD-10 Code: </span>
+                            <code className="bg-gray-100 px-2 py-1 rounded text-sm">{searchParams.predicted_icd10}</code>
+                          </div>
+                        )}
+                        <div>
+                          <span className="font-medium text-gray-700">Description: </span>
+                          <span className="text-gray-700">{searchParams.icd10_description}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Differential Diagnoses */}
+                  {searchParams?.differential_diagnoses && searchParams.differential_diagnoses.length > 0 && (
+                    <div className="border-l-4 border-yellow-500 pl-4">
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Differential Diagnoses</h3>
+                      <div className="space-y-2">
+                        {searchParams.differential_diagnoses.map((diff, index) => (
+                          <div key={index} className="bg-gray-50 p-3 rounded-lg">
+                            <div className="flex items-start gap-2">
+                              <span className="text-sm font-medium text-gray-600">{index + 1}.</span>
+                              <div>
+                                <div className="font-medium text-gray-900">{diff.description}</div>
+                                {diff.code && (
+                                  <code className="text-xs text-gray-600 bg-gray-200 px-1 py-0.5 rounded">
+                                    {diff.code}
+                                  </code>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Determined Specialty */}
+                  {searchParams?.determined_specialty && (
+                    <div className="border-l-4 border-purple-500 pl-4">
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Recommended Specialty</h3>
+                      <p className="text-gray-700">{searchParams.determined_specialty}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Treatment Options with Outcomes and Complications */}
