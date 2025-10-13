@@ -1435,7 +1435,6 @@ const ResultsPage: React.FC = () => {
                     // Check multiple possible locations for Pinecone results
                     const pineconeResults = 
                       location.state?.aiRecommendations?.shared_specialist_information ||
-                      location.state?.aiRecommendations?.shared_specialist_information ||
                       (location.state?.aiRecommendations && Array.isArray(location.state.aiRecommendations.shared_specialist_information) ? location.state.aiRecommendations.shared_specialist_information : null);
                     
                     if (pineconeResults && Array.isArray(pineconeResults) && pineconeResults.length > 0) {
@@ -1484,11 +1483,14 @@ const ResultsPage: React.FC = () => {
                             <div className="mt-3 max-h-96 overflow-y-auto">
                               <pre className="text-xs text-gray-300 whitespace-pre-wrap">
                                 {JSON.stringify({
+                                  hasLocationState: !!location.state,
+                                  locationStateKeys: location.state ? Object.keys(location.state) : [],
                                   hasAiRecommendations: !!location.state?.aiRecommendations,
                                   aiRecommendationsKeys: location.state?.aiRecommendations ? Object.keys(location.state.aiRecommendations) : [],
                                   hasSharedSpecialistInfo: !!location.state?.aiRecommendations?.shared_specialist_information,
                                   sharedSpecialistInfoType: typeof location.state?.aiRecommendations?.shared_specialist_information,
-                                  sharedSpecialistInfoLength: Array.isArray(location.state?.aiRecommendations?.shared_specialist_information) ? location.state.aiRecommendations.shared_specialist_information.length : 'N/A'
+                                  sharedSpecialistInfoLength: Array.isArray(location.state?.aiRecommendations?.shared_specialist_information) ? location.state.aiRecommendations.shared_specialist_information.length : 'N/A',
+                                  fullAiRecommendationsStructure: location.state?.aiRecommendations
                                 }, null, 2)}
                               </pre>
                             </div>
@@ -1581,6 +1583,21 @@ const ResultsPage: React.FC = () => {
                         return query;
                       })()}
                     </p>
+                    <details className="bg-gray-900 rounded p-3 mt-3">
+                      <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold text-sm">
+                        Debug: Search query data sources
+                      </summary>
+                      <div className="mt-3 max-h-96 overflow-y-auto">
+                        <pre className="text-xs text-gray-300 whitespace-pre-wrap">
+                          {JSON.stringify({
+                            hasAiRecommendations: !!location.state?.aiRecommendations,
+                            hasSearchQuery: !!location.state?.aiRecommendations?.search_query,
+                            searchQueryValue: location.state?.aiRecommendations?.search_query,
+                            aiRecommendationsKeys: location.state?.aiRecommendations ? Object.keys(location.state.aiRecommendations) : []
+                          }, null, 2)}
+                        </pre>
+                      </div>
+                    </details>
                   </div>
                   <div className="bg-gray-900 rounded p-3">
                     <p className="text-gray-400 mb-2">Query Template Used:</p>
