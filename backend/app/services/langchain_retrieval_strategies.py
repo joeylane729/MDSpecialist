@@ -25,13 +25,12 @@ class LangChainRetrievalStrategies:
         
         self.query_prompt = PromptTemplate(
             input_variables=["icd10_description", "user_diagnosis"],
-            template="""
-            Generate a search query to find all PubMed articles that mention any of the diagnostic info below:
-                        
-            Medical Analysis Diagnosis: {icd10_description}
-            User-Entered Diagnosis: {user_diagnosis}
-            
-            """
+            template="""Generate a search query to find PubMed articles about this diagnosis:
+
+Medical Analysis Diagnosis: {icd10_description}
+User-Entered Diagnosis: {user_diagnosis}
+
+IMPORTANT: Return ONLY the search query string itself with NO explanations, NO markdown, NO code blocks, NO additional text. Just the query."""
         )
         
         self.query_chain = LLMChain(llm=self.llm, prompt=self.query_prompt)
