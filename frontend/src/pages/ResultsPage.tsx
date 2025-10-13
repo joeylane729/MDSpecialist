@@ -1611,17 +1611,6 @@ const ResultsPage: React.FC = () => {
                       </div>
                     </details>
                   </div>
-                  <div className="bg-gray-900 rounded p-3">
-                    <p className="text-gray-400 mb-2">Query Template Used:</p>
-                    <p className="text-white font-mono bg-gray-800 p-2 rounded text-xs whitespace-pre-wrap">
-                      {`Generate a search query to find all PubMed articles that mention any of the diagnostic info below:
-                        
-Medical Analysis Diagnosis: {icd10_description}
-User-Entered Diagnosis: {user_diagnosis}
-
-return only the search query, no other text.`}
-                    </p>
-                  </div>
                 </div>
               </div>
 
