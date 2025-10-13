@@ -1573,7 +1573,7 @@ const ResultsPage: React.FC = () => {
                 <div className="space-y-3">
                   <div className="bg-gray-900 rounded p-3">
                     <p className="text-gray-400 mb-2">Pinecone Search Query:</p>
-                    <p className="text-white font-mono bg-gray-800 p-2 rounded text-sm">
+                    <p className="text-white font-mono bg-gray-800 p-2 rounded text-sm whitespace-pre-wrap">
                       {(() => {
                         // Try to find the search query from various sources
                         const query = 
