@@ -79,6 +79,7 @@ const ResultsPage: React.FC = () => {
   const [treatmentRankings, setTreatmentRankings] = useState<{ [treatmentId: string]: any }>({});
   const [selectedTreatmentId, setSelectedTreatmentId] = useState<string>('');
   const [activeView, setActiveView] = useState<'assessment' | 'specialists' | 'ai-recommendations' | 'debug'>('assessment');
+  const [specialistRecommendationData, setSpecialistRecommendationData] = useState<any>(null);
   
   // Set initial view based on search options
   useEffect(() => {
@@ -535,6 +536,9 @@ const ResultsPage: React.FC = () => {
       };
 
       const specialistResponse = await getSpecialistRecommendations(specialistRequest);
+      
+      // Store the specialist response for debug display
+      setSpecialistRecommendationData(specialistResponse);
       
       // Step 2: Search for NPI providers
       const npiSearchRequest: NPISearchRequest = {
@@ -1433,9 +1437,22 @@ const ResultsPage: React.FC = () => {
                 <div className="space-y-3">
                   {(() => {
                     // Check multiple possible locations for Pinecone results
-                    const pineconeResults = 
-                      location.state?.aiRecommendations?.shared_specialist_information ||
-                      (location.state?.aiRecommendations && Array.isArray(location.state.aiRecommendations.shared_specialist_information) ? location.state.aiRecommendations.shared_specialist_information : null);
+                    const sharedInfo = 
+                      specialistRecommendationData?.shared_specialist_information ||
+                      location.state?.aiRecommendations?.shared_specialist_information;
+                    
+                    // Extract results array from the treatment groups
+                    let pineconeResults: any[] = [];
+                    if (sharedInfo && typeof sharedInfo === 'object') {
+                      // If it's a dictionary with treatment IDs, get results from first treatment
+                      const treatmentKeys = Object.keys(sharedInfo);
+                      if (treatmentKeys.length > 0) {
+                        const firstTreatment = sharedInfo[treatmentKeys[0]];
+                        pineconeResults = firstTreatment?.results || [];
+                      }
+                    } else if (Array.isArray(sharedInfo)) {
+                      pineconeResults = sharedInfo;
+                    }
                     
                     if (pineconeResults && Array.isArray(pineconeResults) && pineconeResults.length > 0) {
                       return (
@@ -1577,6 +1594,7 @@ const ResultsPage: React.FC = () => {
                       {(() => {
                         // Try to find the search query from various sources
                         const query = 
+                          specialistRecommendationData?.search_query ||
                           location.state?.aiRecommendations?.search_query ||
                           location.state?.search_query ||
                           'Search query not available in response data';
@@ -1590,11 +1608,11 @@ const ResultsPage: React.FC = () => {
                       <div className="mt-3 max-h-96 overflow-y-auto">
                         <pre className="text-xs text-gray-300 whitespace-pre-wrap">
                           {JSON.stringify({
-                            hasAiRecommendations: !!location.state?.aiRecommendations,
-                            hasSearchQuery: !!location.state?.aiRecommendations?.search_query,
-                            searchQueryValue: location.state?.aiRecommendations?.search_query,
-                            aiRecommendationsKeys: location.state?.aiRecommendations ? Object.keys(location.state.aiRecommendations) : [],
-                            fullAiRecommendations: location.state?.aiRecommendations
+                            hasSpecialistData: !!specialistRecommendationData,
+                            hasSearchQuery: !!specialistRecommendationData?.search_query,
+                            searchQueryValue: specialistRecommendationData?.search_query,
+                            specialistDataKeys: specialistRecommendationData ? Object.keys(specialistRecommendationData) : [],
+                            fullSpecialistData: specialistRecommendationData
                           }, null, 2)}
                         </pre>
                       </div>
@@ -1621,9 +1639,21 @@ const ResultsPage: React.FC = () => {
                 </h3>
                 <div className="space-y-3">
                   {(() => {
-                    const pineconeResults = 
-                      location.state?.aiRecommendations?.shared_specialist_information ||
-                      (location.state?.aiRecommendations && Array.isArray(location.state.aiRecommendations.shared_specialist_information) ? location.state.aiRecommendations.shared_specialist_information : null);
+                    // Extract results from shared specialist information
+                    const sharedInfo = 
+                      specialistRecommendationData?.shared_specialist_information ||
+                      location.state?.aiRecommendations?.shared_specialist_information;
+                    
+                    let pineconeResults: any[] = [];
+                    if (sharedInfo && typeof sharedInfo === 'object') {
+                      const treatmentKeys = Object.keys(sharedInfo);
+                      if (treatmentKeys.length > 0) {
+                        const firstTreatment = sharedInfo[treatmentKeys[0]];
+                        pineconeResults = firstTreatment?.results || [];
+                      }
+                    } else if (Array.isArray(sharedInfo)) {
+                      pineconeResults = sharedInfo;
+                    }
                     
                     if (pineconeResults && Array.isArray(pineconeResults)) {
                       const pubmedArticles = pineconeResults.filter((item: any) => item._source === 'pubmed');
