@@ -1560,42 +1560,99 @@ const ResultsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Treatment Rankings Section */}
-              {Object.keys(treatmentRankings).length > 0 && (
-                <div className="bg-gray-800 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-yellow-400 mb-3 flex items-center gap-2">
-                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    </svg>
-                    4. Treatment-Specific Rankings
-                  </h3>
-                  <div className="space-y-2">
-                    {Object.entries(treatmentRankings).map(([treatmentId, treatment]: [string, any]) => (
-                      <details key={treatmentId} className="bg-gray-900 rounded p-3">
-                        <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold">
-                          {treatment.name} ({treatment.providers?.length || 0} providers)
-                        </summary>
-                        <div className="mt-3 text-sm">
-                          <p className="text-gray-400">Search Query Used:</p>
-                          <p className="text-white font-mono bg-gray-800 p-2 rounded mt-1">{treatment.query || 'N/A'}</p>
-                          {treatment.providers && treatment.providers.length > 0 && (
-                            <div className="mt-3">
-                              <p className="text-gray-400 mb-2">Top 10 Providers:</p>
-                              <div className="text-xs text-gray-300 space-y-1">
-                                {treatment.providers.slice(0, 10).map((provider: any, idx: number) => (
-                                  <div key={idx} className="bg-gray-800 p-2 rounded">
-                                    {idx + 1}. {provider.name} (NPI: {provider.npi})
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </details>
-                    ))}
+              {/* GPT Search Queries Section */}
+              <div className="bg-gray-800 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-yellow-400 mb-3 flex items-center gap-2">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  4. GPT Search Queries Used
+                </h3>
+                <div className="space-y-3">
+                  <div className="bg-gray-900 rounded p-3">
+                    <p className="text-gray-400 mb-2">Pinecone Search Query:</p>
+                    <p className="text-white font-mono bg-gray-800 p-2 rounded text-sm">
+                      {(() => {
+                        // Try to find the search query from various sources
+                        const query = 
+                          location.state?.aiRecommendations?.search_query ||
+                          location.state?.search_query ||
+                          'Search query not available in response data';
+                        return query;
+                      })()}
+                    </p>
+                  </div>
+                  <div className="bg-gray-900 rounded p-3">
+                    <p className="text-gray-400 mb-2">Query Template Used:</p>
+                    <p className="text-white font-mono bg-gray-800 p-2 rounded text-xs">
+                      Generate a search query to find all PubMed articles that mention any of the diagnostic info below:<br/><br/>
+                      Medical Analysis Diagnosis: [ICD-10 description]<br/>
+                      User-Entered Diagnosis: [User diagnosis]
+                    </p>
                   </div>
                 </div>
-              )}
+              </div>
+
+              {/* PubMed Articles Section */}
+              <div className="bg-gray-800 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-orange-400 mb-3 flex items-center gap-2">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                  5. PubMed Articles Found
+                </h3>
+                <div className="space-y-3">
+                  {(() => {
+                    const pineconeResults = 
+                      location.state?.aiRecommendations?.shared_specialist_information ||
+                      (location.state?.aiRecommendations && Array.isArray(location.state.aiRecommendations.shared_specialist_information) ? location.state.aiRecommendations.shared_specialist_information : null);
+                    
+                    if (pineconeResults && Array.isArray(pineconeResults)) {
+                      const pubmedArticles = pineconeResults.filter((item: any) => item._source === 'pubmed');
+                      
+                      if (pubmedArticles.length > 0) {
+                        return (
+                          <>
+                            <p className="text-gray-400 mb-3">Found {pubmedArticles.length} PubMed articles:</p>
+                            <div className="space-y-2 max-h-96 overflow-y-auto">
+                              {pubmedArticles.map((article: any, idx: number) => (
+                                <div key={idx} className="bg-gray-900 rounded p-3">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1">
+                                      <h4 className="text-white font-medium text-sm mb-1">{article.title || 'No title'}</h4>
+                                      <p className="text-gray-300 text-xs mb-2">Authors: {article.authors || 'Unknown'}</p>
+                                      {article._id && (
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-gray-400 text-xs">PMID:</span>
+                                          <a 
+                                            href={`https://pubmed.ncbi.nlm.nih.gov/${article._id}/`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-300 hover:text-blue-200 text-xs underline"
+                                          >
+                                            {article._id}
+                                          </a>
+                                          <svg className="h-3 w-3 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                          </svg>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        );
+                      }
+                    }
+                    
+                    return (
+                      <p className="text-yellow-400">No PubMed articles found in Pinecone results</p>
+                    );
+                  })()}
+                </div>
+              </div>
 
               {/* Raw API Response Section */}
               <div className="bg-gray-800 rounded-lg p-4">
@@ -1603,7 +1660,7 @@ const ResultsPage: React.FC = () => {
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                   </svg>
-                  5. Raw API Response Data
+                  6. Raw API Response Data
                 </h3>
                 <details className="bg-gray-900 rounded p-3">
                   <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold">
