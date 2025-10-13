@@ -1426,216 +1426,13 @@ const ResultsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Pinecone Search Results Section */}
-              <div className="bg-gray-800 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-green-400 mb-3 flex items-center gap-2">
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                  </svg>
-                  2. Pinecone Search Results
-                </h3>
-                <div className="space-y-3">
-                  {(() => {
-                    // Check multiple possible locations for Pinecone results
-                    const sharedInfo = 
-                      specialistRecommendationData?.shared_specialist_information ||
-                      location.state?.aiRecommendations?.shared_specialist_information;
-                    
-                    // Extract results array from the treatment groups
-                    let pineconeResults: any[] = [];
-                    if (sharedInfo && typeof sharedInfo === 'object') {
-                      // If it's a dictionary with treatment IDs, get results from first treatment
-                      const treatmentKeys = Object.keys(sharedInfo);
-                      if (treatmentKeys.length > 0) {
-                        const firstTreatment = sharedInfo[treatmentKeys[0]];
-                        pineconeResults = firstTreatment?.results || [];
-                      }
-                    } else if (Array.isArray(sharedInfo)) {
-                      pineconeResults = sharedInfo;
-                    }
-                    
-                    if (pineconeResults && Array.isArray(pineconeResults) && pineconeResults.length > 0) {
-                      return (
-                        <>
-                          <div className="grid grid-cols-3 gap-4 text-sm mb-2">
-                            <div>
-                              <span className="text-gray-400">Total Results:</span>
-                              <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
-                                {pineconeResults.length}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-gray-400">Vumedi Results:</span>
-                              <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
-                                {pineconeResults.filter((item: any) => item._source === 'vumedi').length}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-gray-400">PubMed Results:</span>
-                              <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
-                                {pineconeResults.filter((item: any) => item._source === 'pubmed').length}
-                              </p>
-                            </div>
-                          </div>
-                          <details className="bg-gray-900 rounded p-3">
-                            <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold">
-                              View All Pinecone Results ({pineconeResults.length} items)
-                            </summary>
-                            <div className="mt-3 max-h-96 overflow-y-auto">
-                              <pre className="text-xs text-gray-300 whitespace-pre-wrap">
-                                {JSON.stringify(pineconeResults, null, 2)}
-                              </pre>
-                            </div>
-                          </details>
-                        </>
-                      );
-                    } else {
-                      return (
-                        <div>
-                          <p className="text-yellow-400 mb-2">No Pinecone search results found in expected locations.</p>
-                          <details className="bg-gray-900 rounded p-3">
-                            <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold">
-                              Debug: Check available data structures
-                            </summary>
-                            <div className="mt-3 max-h-96 overflow-y-auto">
-                              <pre className="text-xs text-gray-300 whitespace-pre-wrap">
-                                {JSON.stringify({
-                                  hasLocationState: !!location.state,
-                                  locationStateKeys: location.state ? Object.keys(location.state) : [],
-                                  hasAiRecommendations: !!location.state?.aiRecommendations,
-                                  aiRecommendationsKeys: location.state?.aiRecommendations ? Object.keys(location.state.aiRecommendations) : [],
-                                  hasSharedSpecialistInfo: !!location.state?.aiRecommendations?.shared_specialist_information,
-                                  sharedSpecialistInfoType: typeof location.state?.aiRecommendations?.shared_specialist_information,
-                                  sharedSpecialistInfoLength: Array.isArray(location.state?.aiRecommendations?.shared_specialist_information) ? location.state.aiRecommendations.shared_specialist_information.length : 'N/A',
-                                  fullAiRecommendationsStructure: location.state?.aiRecommendations
-                                }, null, 2)}
-                              </pre>
-                            </div>
-                          </details>
-                        </div>
-                      );
-                    }
-                  })()}
-                </div>
-              </div>
-
-              {/* NPI Search & Ranking Section */}
-              <div className="bg-gray-800 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-purple-400 mb-3 flex items-center gap-2">
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                  3. NPI Providers Found & Ranked
-                </h3>
-                <div className="space-y-3">
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-400">Total Providers:</span>
-                      <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">{providers.length}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">Filtered Providers:</span>
-                      <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">{filteredProviders.length}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">Top Ranked School:</span>
-                      <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1 truncate">
-                        {providers[0]?.medical_school_listed || 'N/A'}
-                      </p>
-                    </div>
-                  </div>
-                  <details className="bg-gray-900 rounded p-3">
-                    <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold">
-                      View All Provider NPIs ({providers.length} providers)
-                    </summary>
-                    <div className="mt-3 max-h-96 overflow-y-auto">
-                      <table className="w-full text-xs">
-                        <thead className="text-gray-400 border-b border-gray-700">
-                          <tr>
-                            <th className="text-left p-2">Rank</th>
-                            <th className="text-left p-2">NPI</th>
-                            <th className="text-left p-2">Name</th>
-                            <th className="text-left p-2">Specialty</th>
-                            <th className="text-left p-2">Medical School</th>
-                          </tr>
-                        </thead>
-                        <tbody className="text-gray-300">
-                          {providers.slice(0, 50).map((provider, idx) => (
-                            <tr key={provider.npi} className="border-b border-gray-800">
-                              <td className="p-2">{idx + 1}</td>
-                              <td className="p-2 font-mono">{provider.npi}</td>
-                              <td className="p-2">{provider.name}</td>
-                              <td className="p-2">{provider.specialty}</td>
-                              <td className="p-2 truncate max-w-xs">{provider.medical_school_listed || 'N/A'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      {providers.length > 50 && (
-                        <p className="text-gray-500 text-center mt-2">Showing first 50 of {providers.length} providers</p>
-                      )}
-                    </div>
-                  </details>
-                </div>
-              </div>
-
-              {/* GPT Search Queries Section */}
-              <div className="bg-gray-800 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-yellow-400 mb-3 flex items-center gap-2">
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                  4. GPT Search Queries Used
-                </h3>
-                <div className="space-y-3">
-                  <div className="bg-gray-900 rounded p-3">
-                    <p className="text-gray-400 mb-2">Pinecone Search Query:</p>
-                    <p className="text-white font-mono bg-gray-800 p-2 rounded text-sm whitespace-pre-wrap">
-                      {(() => {
-                        // Try to find the search query from various sources
-                        const query = 
-                          specialistRecommendationData?.search_query ||
-                          location.state?.aiRecommendations?.search_query ||
-                          location.state?.search_query ||
-                          'Search query not available in response data';
-                        return query;
-                      })()}
-                    </p>
-                    <details className="bg-gray-900 rounded p-3 mt-3">
-                      <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold text-sm">
-                        Debug: Search query data sources
-                      </summary>
-                      <div className="mt-3 max-h-96 overflow-y-auto">
-                        <pre className="text-xs text-gray-300 whitespace-pre-wrap">
-                          {JSON.stringify({
-                            hasSpecialistData: !!specialistRecommendationData,
-                            hasSearchQuery: !!specialistRecommendationData?.search_query,
-                            searchQueryValue: specialistRecommendationData?.search_query,
-                            specialistDataKeys: specialistRecommendationData ? Object.keys(specialistRecommendationData) : [],
-                            fullSpecialistData: specialistRecommendationData
-                          }, null, 2)}
-                        </pre>
-                      </div>
-                    </details>
-                  </div>
-                  <div className="bg-gray-900 rounded p-3">
-                    <p className="text-gray-400 mb-2">Query Template Used:</p>
-                    <p className="text-white font-mono bg-gray-800 p-2 rounded text-xs">
-                      Generate a search query to find all PubMed articles that mention any of the diagnostic info below:<br/><br/>
-                      Medical Analysis Diagnosis: [ICD-10 description]<br/>
-                      User-Entered Diagnosis: [User diagnosis]
-                    </p>
-                  </div>
-                </div>
-              </div>
-
               {/* PubMed Articles Section */}
               <div className="bg-gray-800 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-orange-400 mb-3 flex items-center gap-2">
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
-                  5. PubMed Articles Found
+                  2. PubMed Articles Found
                 </h3>
                 <div className="space-y-3">
                   {(() => {
@@ -1697,6 +1494,198 @@ const ResultsPage: React.FC = () => {
                     
                     return (
                       <p className="text-yellow-400">No PubMed articles found in Pinecone results</p>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Vumedi Videos Section */}
+              <div className="bg-gray-800 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-purple-400 mb-3 flex items-center gap-2">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  3. Vumedi Videos Found
+                </h3>
+                <div className="space-y-3">
+                  {(() => {
+                    // Extract results from shared specialist information
+                    const sharedInfo = 
+                      specialistRecommendationData?.shared_specialist_information ||
+                      location.state?.aiRecommendations?.shared_specialist_information;
+                    
+                    let pineconeResults: any[] = [];
+                    if (sharedInfo && typeof sharedInfo === 'object') {
+                      const treatmentKeys = Object.keys(sharedInfo);
+                      if (treatmentKeys.length > 0) {
+                        const firstTreatment = sharedInfo[treatmentKeys[0]];
+                        pineconeResults = firstTreatment?.results || [];
+                      }
+                    } else if (Array.isArray(sharedInfo)) {
+                      pineconeResults = sharedInfo;
+                    }
+                    
+                    if (pineconeResults && Array.isArray(pineconeResults)) {
+                      const vumediVideos = pineconeResults.filter((item: any) => item._source === 'vumedi');
+                      
+                      if (vumediVideos.length > 0) {
+                        return (
+                          <>
+                            <p className="text-gray-400 mb-3">Found {vumediVideos.length} Vumedi videos:</p>
+                            <div className="space-y-2 max-h-96 overflow-y-auto">
+                              {vumediVideos.map((video: any, idx: number) => (
+                                <div key={idx} className="bg-gray-900 rounded p-3">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1">
+                                      <h4 className="text-white font-medium text-sm mb-1">{video.title || 'No title'}</h4>
+                                      <p className="text-gray-300 text-xs mb-1">Featuring: {video.featuring || 'Unknown'}</p>
+                                      <p className="text-gray-300 text-xs mb-2">Author: {video.author || 'Unknown'}</p>
+                                      {video.link && (
+                                        <div className="flex items-center gap-2">
+                                          <a 
+                                            href={video.link}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-blue-300 hover:text-blue-200 text-xs underline flex items-center gap-1"
+                                          >
+                                            Watch Video
+                                            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            </svg>
+                                          </a>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        );
+                      }
+                    }
+                    
+                    return (
+                      <p className="text-yellow-400">No Vumedi videos found in Pinecone results</p>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* GPT Search Queries Section */}
+              <div className="bg-gray-800 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-yellow-400 mb-3 flex items-center gap-2">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  4. GPT Search Queries Used
+                </h3>
+                <div className="space-y-3">
+                  <div className="bg-gray-900 rounded p-3">
+                    <p className="text-gray-400 mb-2">Pinecone Search Query:</p>
+                    <p className="text-white font-mono bg-gray-800 p-2 rounded text-sm whitespace-pre-wrap">
+                      {(() => {
+                        // Try to find the search query from various sources
+                        const query = 
+                          specialistRecommendationData?.search_query ||
+                          location.state?.aiRecommendations?.search_query ||
+                          location.state?.search_query ||
+                          'Search query not available in response data';
+                        return query;
+                      })()}
+                    </p>
+                    <details className="bg-gray-900 rounded p-3 mt-3">
+                      <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold text-sm">
+                        Debug: Search query data sources
+                      </summary>
+                      <div className="mt-3 max-h-96 overflow-y-auto">
+                        <pre className="text-xs text-gray-300 whitespace-pre-wrap">
+                          {JSON.stringify({
+                            hasSpecialistData: !!specialistRecommendationData,
+                            hasSearchQuery: !!specialistRecommendationData?.search_query,
+                            searchQueryValue: specialistRecommendationData?.search_query,
+                            specialistDataKeys: specialistRecommendationData ? Object.keys(specialistRecommendationData) : [],
+                            fullSpecialistData: specialistRecommendationData
+                          }, null, 2)}
+                        </pre>
+                      </div>
+                    </details>
+                  </div>
+                  <div className="bg-gray-900 rounded p-3">
+                    <p className="text-gray-400 mb-2">Query Template Used:</p>
+                    <p className="text-white font-mono bg-gray-800 p-2 rounded text-xs">
+                      Generate a search query to find all PubMed articles that mention any of the diagnostic info below:<br/><br/>
+                      Medical Analysis Diagnosis: [ICD-10 description]<br/>
+                      User-Entered Diagnosis: [User diagnosis]
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pinecone Summary Section */}
+              <div className="bg-gray-800 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-green-400 mb-3 flex items-center gap-2">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  5. Pinecone Search Results Summary
+                </h3>
+                <div className="space-y-3">
+                  {(() => {
+                    const sharedInfo = 
+                      specialistRecommendationData?.shared_specialist_information ||
+                      location.state?.aiRecommendations?.shared_specialist_information;
+                    
+                    let pineconeResults: any[] = [];
+                    if (sharedInfo && typeof sharedInfo === 'object') {
+                      const treatmentKeys = Object.keys(sharedInfo);
+                      if (treatmentKeys.length > 0) {
+                        const firstTreatment = sharedInfo[treatmentKeys[0]];
+                        pineconeResults = firstTreatment?.results || [];
+                      }
+                    } else if (Array.isArray(sharedInfo)) {
+                      pineconeResults = sharedInfo;
+                    }
+                    
+                    if (pineconeResults && Array.isArray(pineconeResults) && pineconeResults.length > 0) {
+                      return (
+                        <>
+                          <div className="grid grid-cols-3 gap-4 text-sm mb-2">
+                            <div>
+                              <span className="text-gray-400">Total Results:</span>
+                              <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
+                                {pineconeResults.length}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Vumedi Results:</span>
+                              <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
+                                {pineconeResults.filter((item: any) => item._source === 'vumedi').length}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">PubMed Results:</span>
+                              <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
+                                {pineconeResults.filter((item: any) => item._source === 'pubmed').length}
+                              </p>
+                            </div>
+                          </div>
+                          <details className="bg-gray-900 rounded p-3">
+                            <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold">
+                              View All Pinecone Results ({pineconeResults.length} items)
+                            </summary>
+                            <div className="mt-3 max-h-96 overflow-y-auto">
+                              <pre className="text-xs text-gray-300 whitespace-pre-wrap">
+                                {JSON.stringify(pineconeResults, null, 2)}
+                              </pre>
+                            </div>
+                          </details>
+                        </>
+                      );
+                    }
+                    
+                    return (
+                      <p className="text-yellow-400">No Pinecone search results available</p>
                     );
                   })()}
                 </div>
