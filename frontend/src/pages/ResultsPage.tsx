@@ -1120,6 +1120,245 @@ const ResultsPage: React.FC = () => {
           </div>
         )}
 
+        {/* Search Process Debug Section */}
+        {activeView === 'specialists' && searchParams?.searchOptions?.specialists && (
+          <div className="mt-12 bg-gray-900 text-gray-100 rounded-lg p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <svg className="h-6 w-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+                Search Process Debugging
+              </h2>
+              <button
+                onClick={() => {
+                  const debugData = {
+                    searchInputs: {
+                      userDiagnosis: searchParams?.diagnosis,
+                      medicalAnalysisDiagnosis: searchParams?.icd10_description,
+                      icd10Code: searchParams?.predicted_icd10,
+                      city: searchParams?.city,
+                      state: searchParams?.state,
+                      specialty: searchParams?.determined_specialty
+                    },
+                    searchResults: location.state?.aiRecommendations,
+                    providers: providers,
+                    treatmentRankings: treatmentRankings
+                  };
+                  navigator.clipboard.writeText(JSON.stringify(debugData, null, 2));
+                  alert('Debug data copied to clipboard!');
+                }}
+                className="text-sm px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+              >
+                Copy All Debug Data
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Search Inputs Section */}
+              <div className="bg-gray-800 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-blue-400 mb-3 flex items-center gap-2">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  1. Search Inputs
+                </h3>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-400">User-Entered Diagnosis:</span>
+                    <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">{searchParams?.diagnosis || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Medical Analysis Diagnosis:</span>
+                    <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">{searchParams?.icd10_description || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">ICD-10 Code:</span>
+                    <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">{searchParams?.predicted_icd10 || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Determined Specialty:</span>
+                    <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">{searchParams?.determined_specialty || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Location:</span>
+                    <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">{searchParams?.city}, {searchParams?.state}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-400">Treatment Options Count:</span>
+                    <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">{searchParams?.treatment_options?.length || 0}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pinecone Search Results Section */}
+              <div className="bg-gray-800 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-green-400 mb-3 flex items-center gap-2">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                  2. Pinecone Search Results
+                </h3>
+                <div className="space-y-3">
+                  {location.state?.aiRecommendations?.shared_specialist_information ? (
+                    <>
+                      <div className="grid grid-cols-3 gap-4 text-sm mb-2">
+                        <div>
+                          <span className="text-gray-400">Total Results:</span>
+                          <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
+                            {location.state.aiRecommendations.shared_specialist_information.length}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">Vumedi Results:</span>
+                          <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
+                            {location.state.aiRecommendations.shared_specialist_information.filter((item: any) => item._source === 'vumedi').length}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-gray-400">PubMed Results:</span>
+                          <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
+                            {location.state.aiRecommendations.shared_specialist_information.filter((item: any) => item._source === 'pubmed').length}
+                          </p>
+                        </div>
+                      </div>
+                      <details className="bg-gray-900 rounded p-3">
+                        <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold">
+                          View All Pinecone Results ({location.state.aiRecommendations.shared_specialist_information.length} items)
+                        </summary>
+                        <div className="mt-3 max-h-96 overflow-y-auto">
+                          <pre className="text-xs text-gray-300 whitespace-pre-wrap">
+                            {JSON.stringify(location.state.aiRecommendations.shared_specialist_information, null, 2)}
+                          </pre>
+                        </div>
+                      </details>
+                    </>
+                  ) : (
+                    <p className="text-yellow-400">No Pinecone search results available</p>
+                  )}
+                </div>
+              </div>
+
+              {/* NPI Search & Ranking Section */}
+              <div className="bg-gray-800 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-purple-400 mb-3 flex items-center gap-2">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  3. NPI Providers Found & Ranked
+                </h3>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-400">Total Providers:</span>
+                      <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">{providers.length}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Filtered Providers:</span>
+                      <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">{filteredProviders.length}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-400">Top Ranked School:</span>
+                      <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1 truncate">
+                        {providers[0]?.medical_school_listed || 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                  <details className="bg-gray-900 rounded p-3">
+                    <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold">
+                      View All Provider NPIs ({providers.length} providers)
+                    </summary>
+                    <div className="mt-3 max-h-96 overflow-y-auto">
+                      <table className="w-full text-xs">
+                        <thead className="text-gray-400 border-b border-gray-700">
+                          <tr>
+                            <th className="text-left p-2">Rank</th>
+                            <th className="text-left p-2">NPI</th>
+                            <th className="text-left p-2">Name</th>
+                            <th className="text-left p-2">Specialty</th>
+                            <th className="text-left p-2">Medical School</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-gray-300">
+                          {providers.slice(0, 50).map((provider, idx) => (
+                            <tr key={provider.npi} className="border-b border-gray-800">
+                              <td className="p-2">{idx + 1}</td>
+                              <td className="p-2 font-mono">{provider.npi}</td>
+                              <td className="p-2">{provider.name}</td>
+                              <td className="p-2">{provider.specialty}</td>
+                              <td className="p-2 truncate max-w-xs">{provider.medical_school_listed || 'N/A'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {providers.length > 50 && (
+                        <p className="text-gray-500 text-center mt-2">Showing first 50 of {providers.length} providers</p>
+                      )}
+                    </div>
+                  </details>
+                </div>
+              </div>
+
+              {/* Treatment Rankings Section */}
+              {Object.keys(treatmentRankings).length > 0 && (
+                <div className="bg-gray-800 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-yellow-400 mb-3 flex items-center gap-2">
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    4. Treatment-Specific Rankings
+                  </h3>
+                  <div className="space-y-2">
+                    {Object.entries(treatmentRankings).map(([treatmentId, treatment]: [string, any]) => (
+                      <details key={treatmentId} className="bg-gray-900 rounded p-3">
+                        <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold">
+                          {treatment.name} ({treatment.providers?.length || 0} providers)
+                        </summary>
+                        <div className="mt-3 text-sm">
+                          <p className="text-gray-400">Search Query Used:</p>
+                          <p className="text-white font-mono bg-gray-800 p-2 rounded mt-1">{treatment.query || 'N/A'}</p>
+                          {treatment.providers && treatment.providers.length > 0 && (
+                            <div className="mt-3">
+                              <p className="text-gray-400 mb-2">Top 10 Providers:</p>
+                              <div className="text-xs text-gray-300 space-y-1">
+                                {treatment.providers.slice(0, 10).map((provider: any, idx: number) => (
+                                  <div key={idx} className="bg-gray-800 p-2 rounded">
+                                    {idx + 1}. {provider.name} (NPI: {provider.npi})
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </details>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Raw API Response Section */}
+              <div className="bg-gray-800 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-red-400 mb-3 flex items-center gap-2">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                  </svg>
+                  5. Raw API Response Data
+                </h3>
+                <details className="bg-gray-900 rounded p-3">
+                  <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold">
+                    View Full AI Recommendations Response
+                  </summary>
+                  <div className="mt-3 max-h-96 overflow-y-auto">
+                    <pre className="text-xs text-gray-300 whitespace-pre-wrap">
+                      {JSON.stringify(location.state?.aiRecommendations, null, 2)}
+                    </pre>
+                  </div>
+                </details>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* AI Recommendations Section */}
         {activeView === 'ai-recommendations' && (
           <>
