@@ -25,7 +25,7 @@ class LangChainRetrievalStrategies:
         
         self.query_prompt = PromptTemplate(
             input_variables=["icd10_description", "user_diagnosis"],
-            template="""Generate a search query to find PubMed articles and medical lectures from our vector database about this diagnosis:
+            template="""Generate a search query to find PubMed articles and medical lectures from our vector database using both the user-entered diagnosis and the medical analysis diagnosis:
 
 Medical Analysis Diagnosis: {icd10_description}
 User-Entered Diagnosis: {user_diagnosis}
@@ -92,7 +92,7 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
             icd10_description = medical_analysis_results.get("icd10_description", "")
             
             # 2. User-entered diagnosis from the first screen
-            user_diagnosis = medical_analysis_results.get("conditions", "")
+            user_diagnosis = medical_analysis_results.get("user_diagnosis", "")
             
             query_input = {
                 "icd10_description": icd10_description,
