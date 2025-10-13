@@ -1593,7 +1593,8 @@ const ResultsPage: React.FC = () => {
                             hasAiRecommendations: !!location.state?.aiRecommendations,
                             hasSearchQuery: !!location.state?.aiRecommendations?.search_query,
                             searchQueryValue: location.state?.aiRecommendations?.search_query,
-                            aiRecommendationsKeys: location.state?.aiRecommendations ? Object.keys(location.state.aiRecommendations) : []
+                            aiRecommendationsKeys: location.state?.aiRecommendations ? Object.keys(location.state.aiRecommendations) : [],
+                            fullAiRecommendations: location.state?.aiRecommendations
                           }, null, 2)}
                         </pre>
                       </div>
