@@ -885,7 +885,6 @@ const ResultsPage: React.FC = () => {
                 }
               })()}
             </div>
-          </div>
         </>
         )}
 
