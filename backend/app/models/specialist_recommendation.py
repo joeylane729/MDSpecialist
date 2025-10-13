@@ -41,3 +41,4 @@ class RecommendationResponse:
     retrieval_strategies_used: List[str]
     timestamp: datetime
     shared_specialist_information: Optional[List[Dict[str, Any]]] = None
+    search_query: Optional[str] = None  # GPT-generated search query used for Pinecone

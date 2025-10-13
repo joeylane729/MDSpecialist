@@ -206,7 +206,12 @@ class LangChainRetrievalStrategies:
             logger.info(f"   📋 Total: {total_results} results ({vumedi_total} Vumedi, {pubmed_total} PubMed)")
             logger.info(f"✅ LangChain retrieval completed using single diagnosis-based query")
             logger.debug(f"🔍 Returning results grouped under treatment_id: {treatment_id}")
-            return treatment_results
+            
+            # Return both the treatment results and the search query
+            return {
+                "treatment_results": treatment_results,
+                "search_query": query
+            }
             
         except Exception as e:
             logger.error(f"❌ Error in LangChain retrieval: {str(e)}")

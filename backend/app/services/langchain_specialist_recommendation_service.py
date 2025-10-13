@@ -44,14 +44,19 @@ class LangChainSpecialistRecommendationService:
             logger.debug(f"🔍 Medical analysis results type: {type(medical_analysis_results)}")
             logger.debug(f"🔍 Medical analysis results keys: {list(medical_analysis_results.keys()) if isinstance(medical_analysis_results, dict) else 'Not a dict'}")
             
-            treatment_specialist_information = await self.retrieval_strategies.retrieve_specialist_information(
+            retrieval_result = await self.retrieval_strategies.retrieve_specialist_information(
                 medical_analysis_results=medical_analysis_results,
                 top_k=200  # Use same value as NPI ranking
             )
             
+            # Extract treatment results and search query from the retrieval result
+            treatment_specialist_information = retrieval_result.get("treatment_results", {})
+            search_query = retrieval_result.get("search_query", "")
+            
             # Debug logging to see what we actually got
             logger.debug(f"🔍 Treatment specialist information type: {type(treatment_specialist_information)}")
             logger.debug(f"🔍 Treatment specialist information keys: {list(treatment_specialist_information.keys()) if isinstance(treatment_specialist_information, dict) else 'Not a dict'}")
+            logger.debug(f"🔍 Search query: {search_query[:100] if search_query else 'None'}...")
             
             # Step 3: Convert treatment-specific specialist information to recommendations
             logger.info("🔍 Step 3: Converting treatment-specific specialist information to recommendations...")
@@ -112,7 +117,8 @@ class LangChainSpecialistRecommendationService:
                 processing_time_ms=int(processing_time),
                 retrieval_strategies_used=["langchain_vector_search"],
                 timestamp=datetime.now(),
-                shared_specialist_information=treatment_specialist_information
+                shared_specialist_information=treatment_specialist_information,
+                search_query=search_query
             )
             
             # Debug logging for treatment options
