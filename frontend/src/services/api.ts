@@ -150,6 +150,7 @@ export interface SpecialistRecommendationResponse {
   retrieval_strategies_used: string[];
   timestamp: string;
   shared_specialist_information?: any[];
+  search_query?: string;
 }
 
 export interface SpecialistRecommendationRequest {
