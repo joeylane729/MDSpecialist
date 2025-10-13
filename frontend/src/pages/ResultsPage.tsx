@@ -1431,42 +1431,72 @@ const ResultsPage: React.FC = () => {
                   2. Pinecone Search Results
                 </h3>
                 <div className="space-y-3">
-                  {location.state?.aiRecommendations?.shared_specialist_information ? (
-                    <>
-                      <div className="grid grid-cols-3 gap-4 text-sm mb-2">
+                  {(() => {
+                    // Check multiple possible locations for Pinecone results
+                    const pineconeResults = 
+                      location.state?.aiRecommendations?.shared_specialist_information ||
+                      location.state?.aiRecommendations?.shared_specialist_information ||
+                      (location.state?.aiRecommendations && Array.isArray(location.state.aiRecommendations.shared_specialist_information) ? location.state.aiRecommendations.shared_specialist_information : null);
+                    
+                    if (pineconeResults && Array.isArray(pineconeResults) && pineconeResults.length > 0) {
+                      return (
+                        <>
+                          <div className="grid grid-cols-3 gap-4 text-sm mb-2">
+                            <div>
+                              <span className="text-gray-400">Total Results:</span>
+                              <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
+                                {pineconeResults.length}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">Vumedi Results:</span>
+                              <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
+                                {pineconeResults.filter((item: any) => item._source === 'vumedi').length}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-gray-400">PubMed Results:</span>
+                              <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
+                                {pineconeResults.filter((item: any) => item._source === 'pubmed').length}
+                              </p>
+                            </div>
+                          </div>
+                          <details className="bg-gray-900 rounded p-3">
+                            <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold">
+                              View All Pinecone Results ({pineconeResults.length} items)
+                            </summary>
+                            <div className="mt-3 max-h-96 overflow-y-auto">
+                              <pre className="text-xs text-gray-300 whitespace-pre-wrap">
+                                {JSON.stringify(pineconeResults, null, 2)}
+                              </pre>
+                            </div>
+                          </details>
+                        </>
+                      );
+                    } else {
+                      return (
                         <div>
-                          <span className="text-gray-400">Total Results:</span>
-                          <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
-                            {location.state.aiRecommendations.shared_specialist_information.length}
-                          </p>
+                          <p className="text-yellow-400 mb-2">No Pinecone search results found in expected locations.</p>
+                          <details className="bg-gray-900 rounded p-3">
+                            <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold">
+                              Debug: Check available data structures
+                            </summary>
+                            <div className="mt-3 max-h-96 overflow-y-auto">
+                              <pre className="text-xs text-gray-300 whitespace-pre-wrap">
+                                {JSON.stringify({
+                                  hasAiRecommendations: !!location.state?.aiRecommendations,
+                                  aiRecommendationsKeys: location.state?.aiRecommendations ? Object.keys(location.state.aiRecommendations) : [],
+                                  hasSharedSpecialistInfo: !!location.state?.aiRecommendations?.shared_specialist_information,
+                                  sharedSpecialistInfoType: typeof location.state?.aiRecommendations?.shared_specialist_information,
+                                  sharedSpecialistInfoLength: Array.isArray(location.state?.aiRecommendations?.shared_specialist_information) ? location.state.aiRecommendations.shared_specialist_information.length : 'N/A'
+                                }, null, 2)}
+                              </pre>
+                            </div>
+                          </details>
                         </div>
-                        <div>
-                          <span className="text-gray-400">Vumedi Results:</span>
-                          <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
-                            {location.state.aiRecommendations.shared_specialist_information.filter((item: any) => item._source === 'vumedi').length}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-gray-400">PubMed Results:</span>
-                          <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
-                            {location.state.aiRecommendations.shared_specialist_information.filter((item: any) => item._source === 'pubmed').length}
-                          </p>
-                        </div>
-                      </div>
-                      <details className="bg-gray-900 rounded p-3">
-                        <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold">
-                          View All Pinecone Results ({location.state.aiRecommendations.shared_specialist_information.length} items)
-                        </summary>
-                        <div className="mt-3 max-h-96 overflow-y-auto">
-                          <pre className="text-xs text-gray-300 whitespace-pre-wrap">
-                            {JSON.stringify(location.state.aiRecommendations.shared_specialist_information, null, 2)}
-                          </pre>
-                        </div>
-                      </details>
-                    </>
-                  ) : (
-                    <p className="text-yellow-400">No Pinecone search results available</p>
-                  )}
+                      );
+                    }
+                  })()}
                 </div>
               </div>
 
