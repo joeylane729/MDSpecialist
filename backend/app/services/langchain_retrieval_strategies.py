@@ -30,6 +30,8 @@ class LangChainRetrievalStrategies:
 Medical Analysis Diagnosis: {icd10_description}
 User-Entered Diagnosis: {user_diagnosis}
 
+The query should include the diagnosis info above as well as all other possible ways to phrase the diagnosis (separated by the OR operator).
+
 IMPORTANT: Return ONLY the search query string itself with NO explanations, NO markdown, NO code blocks, NO additional text. Just the query."""
         )
         
