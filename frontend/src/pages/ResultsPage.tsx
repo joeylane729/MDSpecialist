@@ -925,10 +925,7 @@ const ResultsPage: React.FC = () => {
                   )}
                 </div>
               </div>
-            </div>
-
-            {/* Treatment Options with Outcomes and Complications */}
-            <div className="max-w-4xl mx-auto">
+              {/* Treatment Options with Outcomes and Complications */}
               <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Treatment Options</h2>
               {(() => {
