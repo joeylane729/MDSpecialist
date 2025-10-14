@@ -861,7 +861,7 @@ const ResultsPage: React.FC = () => {
               </button>
             </div>
             
-            <div className="max-w-4xl mx-auto space-y-6">
+            <div className="mx-auto space-y-6">
               {/* Diagnosis Information */}
               <div className="bg-white border border-gray-200 rounded-lg p-6">
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">Diagnosis Analysis</h2>
