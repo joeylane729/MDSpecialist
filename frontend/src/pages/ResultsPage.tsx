@@ -1411,16 +1411,8 @@ const ResultsPage: React.FC = () => {
                     <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">{searchParams?.predicted_icd10 || 'N/A'}</p>
                   </div>
                   <div>
-                    <span className="text-gray-400">Determined Specialty:</span>
-                    <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">{searchParams?.determined_specialty || 'N/A'}</p>
-                  </div>
-                  <div>
                     <span className="text-gray-400">Location:</span>
                     <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">{searchParams?.city}, {searchParams?.state}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-400">Treatment Options Count:</span>
-                    <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">{searchParams?.treatment_options?.length || 0}</p>
                   </div>
                 </div>
               </div>
