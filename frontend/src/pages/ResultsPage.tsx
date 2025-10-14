@@ -812,7 +812,7 @@ const ResultsPage: React.FC = () => {
               </svg>
               <span>AI Recommendations</span>
             </button>
-            {(searchParams?.searchOptions?.specialists || searchParams?.searchOptions?.diagnosis) && (
+            {(searchParams?.searchOptions?.specialists && specialistRecommendationData) && (
               <button
                 onClick={() => setActiveView('debug')}
                 className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -928,7 +928,8 @@ const ResultsPage: React.FC = () => {
             </div>
 
             {/* Treatment Options with Outcomes and Complications */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Treatment Options</h2>
               {(() => {
                 const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
@@ -965,6 +966,7 @@ const ResultsPage: React.FC = () => {
                   );
                 }
               })()}
+              </div>
             </div>
         </>
         )}
