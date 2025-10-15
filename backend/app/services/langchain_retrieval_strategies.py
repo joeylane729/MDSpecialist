@@ -32,11 +32,53 @@ User-Entered Diagnosis: {user_diagnosis}
 
 The query should include the diagnosis info above as well as all other possible ways to phrase the diagnosis (separated by the OR operator).
 
+Example: variation 1 OR variation 2 OR variation 3 OR ...
+
 IMPORTANT: Return ONLY the search query string itself with NO explanations, NO markdown, NO code blocks, NO additional text. Just the query."""
         )
         
         self.query_chain = LLMChain(llm=self.llm, prompt=self.query_prompt)
         logger.info("LangChainRetrievalStrategies initialized successfully")
+    
+    def _verify_result(self, result: dict, query_variations: list, source: str) -> bool:
+        """
+        Verify if a result contains any of the query variations.
+        
+        Args:
+            result: Pinecone result with fields
+            query_variations: List of query variations to match against
+            source: Explicit source type ("vumedi" or "pubmed")
+            
+        Returns:
+            True if result contains any variation, False otherwise
+        """
+        # Get content based on explicit source type
+        content_parts = []
+        
+        # Always include title if available
+        if result.get('title'):
+            content_parts.append(result['title'])
+        
+        # Add source-specific content based on explicit source
+        if source == 'vumedi':
+            # For Vumedi: use title only (as requested)
+            pass
+        elif source == 'pubmed':
+            # For PubMed: use title + abstract (as requested)
+            if result.get('abstract'):
+                content_parts.append(result['abstract'])
+        
+        # Combine all content
+        full_content = " ".join(content_parts).lower()
+        
+        # Check for exact matches (case-insensitive)
+        for variation in query_variations:
+            if variation.lower() in full_content:
+                logger.debug(f"✅ Match found: '{variation}' in {source} result")
+                return True
+        
+        logger.debug(f"❌ No match found in {source} result: {result.get('title', 'No title')[:50]}...")
+        return False
     
     def _parse_patient_input(self, patient_input: str) -> tuple:
         """
@@ -118,6 +160,12 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
                 logger.error("❌ Failed to generate search query from LLM")
                 raise ValueError("Failed to generate search query from LLM")
             
+            # Parse query variations for verification
+            query_variations = [variation.strip() for variation in query.split(" OR ")]
+            logger.info(f"🔍 Parsed {len(query_variations)} query variations for verification:")
+            for i, variation in enumerate(query_variations, 1):
+                logger.info(f"   {i}. {variation}")
+            
             # Execute single search and group results
             treatment_results = {}
             seen_ids = set()
@@ -163,6 +211,7 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
                 
                 # Parse Vumedi results
                 vumedi_count = 0
+                vumedi_filtered = 0
                 if hasattr(vumedi_results, 'result') and hasattr(vumedi_results.result, 'hits'):
                     for hit in vumedi_results.result.hits:
                         candidate_id = hit.fields.get("link", f"{hit.fields.get('title', '')}_{hit.fields.get('author', '')}")
@@ -171,12 +220,24 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
                             hit.fields["_source"] = "vumedi"
                             hit.fields["_treatment_id"] = treatment_id
                             hit.fields["_treatment_name"] = treatment_name
+                            
+                            # Verify the result contains query variations
+                            is_verified = self._verify_result(hit.fields, query_variations, source="vumedi")
+                            hit.fields["_verified"] = is_verified
+                            
+                            # Store all results (both verified and unverified)
                             treatment_results[treatment_id]["results"].append(hit.fields)
                             seen_ids.add(candidate_id)
-                            vumedi_count += 1
+                            
+                            if is_verified:
+                                vumedi_count += 1
+                            else:
+                                vumedi_filtered += 1
+                                logger.debug(f"❌ Filtered Vumedi result: {hit.fields.get('title', 'No title')[:50]}...")
                 
                 # Parse PubMed results
                 pubmed_count = 0
+                pubmed_filtered = 0
                 if hasattr(pubmed_results, 'result') and hasattr(pubmed_results.result, 'hits'):
                     for hit in pubmed_results.result.hits:
                         # Get PMID from hit._id (newer API) or hit.id (older API)
@@ -188,24 +249,43 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
                             hit.fields["_treatment_id"] = treatment_id
                             hit.fields["_treatment_name"] = treatment_name
                             hit.fields["_id"] = pmid  # Store the PMID for later use
+                            
+                            # Verify the result contains query variations
+                            is_verified = self._verify_result(hit.fields, query_variations, source="pubmed")
+                            hit.fields["_verified"] = is_verified
+                            
+                            # Store all results (both verified and unverified)
                             treatment_results[treatment_id]["results"].append(hit.fields)
                             seen_ids.add(candidate_id)
-                            pubmed_count += 1
+                            
+                            if is_verified:
+                                pubmed_count += 1
+                            else:
+                                pubmed_filtered += 1
+                                logger.debug(f"❌ Filtered PubMed result: {hit.fields.get('title', 'No title')[:50]}...")
                 
-                logger.info(f"✅ Search returned {vumedi_count} Vumedi + {pubmed_count} PubMed = {vumedi_count + pubmed_count} total results")
+                total_stored = vumedi_count + vumedi_filtered + pubmed_count + pubmed_filtered
+                logger.info(f"✅ Search returned {vumedi_count} verified Vumedi + {pubmed_count} verified PubMed = {vumedi_count + pubmed_count} verified results")
+                logger.info(f"📊 Stored total: {total_stored} results ({vumedi_count + vumedi_filtered} Vumedi, {pubmed_count + pubmed_filtered} PubMed)")
+                if vumedi_filtered > 0 or pubmed_filtered > 0:
+                    logger.info(f"🔍 Including {vumedi_filtered} Vumedi + {pubmed_filtered} PubMed unverified results for debug display")
                             
             except Exception as e:
                 logger.error(f"❌ Search failed for '{treatment_name}': {str(e)}")
                 raise
             
-            # Count total results by source
+            # Count total results by source and verification status
             total_results = len(treatment_results[treatment_id]["results"])
             vumedi_total = sum(1 for result in treatment_results[treatment_id]["results"] if result.get("_source") == "vumedi")
             pubmed_total = sum(1 for result in treatment_results[treatment_id]["results"] if result.get("_source") == "pubmed")
+            verified_total = sum(1 for result in treatment_results[treatment_id]["results"] if result.get("_verified") == True)
             
             logger.info(f"📊 Results summary:")
-            logger.info(f"   📋 Total: {total_results} results ({vumedi_total} Vumedi, {pubmed_total} PubMed)")
+            logger.info(f"   📋 Total stored: {total_results} results ({vumedi_total} Vumedi, {pubmed_total} PubMed)")
+            logger.info(f"   ✅ Verified: {verified_total} results")
+            logger.info(f"   ❌ Unverified: {total_results - verified_total} results")
             logger.info(f"✅ LangChain retrieval completed using single diagnosis-based query")
+            logger.info(f"🔍 All results stored with verification status for debug display")
             logger.debug(f"🔍 Returning results grouped under treatment_id: {treatment_id}")
             
             # Return both the treatment results and the search query

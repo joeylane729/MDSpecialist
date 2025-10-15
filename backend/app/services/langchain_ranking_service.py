@@ -457,10 +457,14 @@ class LangChainRankingService:
             # Rank providers for each treatment option
             for treatment_id, treatment_data in treatment_pinecone_data.items():
                 treatment_name = treatment_data.get("name", f"Treatment {treatment_id}")
-                pinecone_data = treatment_data.get("results", [])
+                all_pinecone_data = treatment_data.get("results", [])
+                
+                # Filter to only verified results for ranking
+                pinecone_data = [result for result in all_pinecone_data if result.get("_verified") == True]
                 
                 logger.info(f"🔍 Ranking providers for treatment: {treatment_name}")
-                logger.info(f"📊 Pinecone data for {treatment_name}: {len(pinecone_data)} records")
+                logger.info(f"📊 Total Pinecone data for {treatment_name}: {len(all_pinecone_data)} records")
+                logger.info(f"✅ Using verified results for ranking: {len(pinecone_data)} records")
                 
                 if not pinecone_data:
                     # No Pinecone data - return all providers with zero scores

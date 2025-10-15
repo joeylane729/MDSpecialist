@@ -1631,9 +1631,12 @@ const ResultsPage: React.FC = () => {
                     }
                     
                     if (pineconeResults && Array.isArray(pineconeResults) && pineconeResults.length > 0) {
+                      const verifiedResults = pineconeResults.filter((item: any) => item._verified === true);
+                      const unverifiedResults = pineconeResults.filter((item: any) => item._verified !== true);
+                      
                       return (
                         <>
-                          <div className="grid grid-cols-3 gap-4 text-sm mb-2">
+                          <div className="grid grid-cols-4 gap-4 text-sm mb-2">
                             <div>
                               <span className="text-gray-400">Total Results:</span>
                               <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
@@ -1652,15 +1655,46 @@ const ResultsPage: React.FC = () => {
                                 {pineconeResults.filter((item: any) => item._source === 'pubmed').length}
                               </p>
                             </div>
+                            <div>
+                              <span className="text-gray-400">Verification Status:</span>
+                              <div className="mt-1 space-y-1">
+                                <p className="text-green-400 font-mono bg-gray-900 p-1 rounded text-xs">
+                                  ✅ Verified: {verifiedResults.length}
+                                </p>
+                                <p className="text-red-400 font-mono bg-gray-900 p-1 rounded text-xs">
+                                  ❌ Unverified: {unverifiedResults.length}
+                                </p>
+                              </div>
+                            </div>
                           </div>
                           <details className="bg-gray-900 rounded p-3">
                             <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold">
                               View All Pinecone Results ({pineconeResults.length} items)
                             </summary>
-                            <div className="mt-3 max-h-96 overflow-y-auto">
-                              <pre className="text-xs text-gray-300 whitespace-pre-wrap">
-                                {JSON.stringify(pineconeResults, null, 2)}
-                              </pre>
+                            <div className="mt-3 max-h-96 overflow-y-auto space-y-2">
+                              {pineconeResults.map((result: any, index: number) => (
+                                <div key={index} className={`p-3 rounded border-l-4 ${
+                                  result._verified === true 
+                                    ? 'bg-green-900/20 border-green-500' 
+                                    : 'bg-red-900/20 border-red-500'
+                                }`}>
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                      result._verified === true 
+                                        ? 'bg-green-600 text-white' 
+                                        : 'bg-red-600 text-white'
+                                    }`}>
+                                      {result._verified === true ? '✅ VERIFIED' : '❌ UNVERIFIED'}
+                                    </span>
+                                    <span className="px-2 py-1 bg-blue-600 text-white rounded text-xs font-semibold">
+                                      {result._source?.toUpperCase()}
+                                    </span>
+                                  </div>
+                                  <pre className="text-xs text-gray-300 whitespace-pre-wrap">
+                                    {JSON.stringify(result, null, 2)}
+                                  </pre>
+                                </div>
+                              ))}
                             </div>
                           </details>
                         </>
