@@ -1460,12 +1460,12 @@ const ResultsPage: React.FC = () => {
                                   <div className="flex items-start justify-between gap-3">
                                     <div className="flex-1">
                                       <div className="flex items-center gap-2 mb-2">
-                                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                        <span className={`px-1.5 py-0.5 rounded text-xs ${
                                           article._verified === true 
-                                            ? 'bg-green-600 text-white' 
-                                            : 'bg-red-600 text-white'
+                                            ? 'bg-green-100 text-green-800 border border-green-200' 
+                                            : 'bg-red-100 text-red-800 border border-red-200'
                                         }`}>
-                                          {article._verified === true ? '✅ VERIFIED' : '❌ UNVERIFIED'}
+                                          {article._verified === true ? '✓ Verified' : '✗ Unverified'}
                                         </span>
                                         {article._score !== null && article._score !== undefined ? (
                                           <span className="px-2 py-1 bg-blue-600 text-white rounded text-xs font-semibold">
@@ -1555,12 +1555,12 @@ const ResultsPage: React.FC = () => {
                                   <div className="flex items-start justify-between gap-3">
                                     <div className="flex-1">
                                       <div className="flex items-center gap-2 mb-2">
-                                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                        <span className={`px-1.5 py-0.5 rounded text-xs ${
                                           video._verified === true 
-                                            ? 'bg-green-600 text-white' 
-                                            : 'bg-red-600 text-white'
+                                            ? 'bg-green-100 text-green-800 border border-green-200' 
+                                            : 'bg-red-100 text-red-800 border border-red-200'
                                         }`}>
-                                          {video._verified === true ? '✅ VERIFIED' : '❌ UNVERIFIED'}
+                                          {video._verified === true ? '✓ Verified' : '✗ Unverified'}
                                         </span>
                                         {video._score !== null && video._score !== undefined ? (
                                           <span className="px-2 py-1 bg-blue-600 text-white rounded text-xs font-semibold">
