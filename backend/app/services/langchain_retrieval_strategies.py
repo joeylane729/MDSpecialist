@@ -220,7 +220,7 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
                             hit.fields["_source"] = "vumedi"
                             hit.fields["_treatment_id"] = treatment_id
                             hit.fields["_treatment_name"] = treatment_name
-                            hit.fields["_score"] = getattr(hit, 'score', None)
+                            hit.fields["_score"] = getattr(hit, '_score', None)
                             
                             # Verify the result contains query variations
                             is_verified = self._verify_result(hit.fields, query_variations, source="vumedi")
@@ -250,7 +250,7 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
                             hit.fields["_treatment_id"] = treatment_id
                             hit.fields["_treatment_name"] = treatment_name
                             hit.fields["_id"] = pmid  # Store the PMID for later use
-                            hit.fields["_score"] = getattr(hit, 'score', None)
+                            hit.fields["_score"] = getattr(hit, '_score', None)
                             
                             # Verify the result contains query variations
                             is_verified = self._verify_result(hit.fields, query_variations, source="pubmed")
