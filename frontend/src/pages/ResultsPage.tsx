@@ -1467,9 +1467,13 @@ const ResultsPage: React.FC = () => {
                                         }`}>
                                           {article._verified === true ? '✅ VERIFIED' : '❌ UNVERIFIED'}
                                         </span>
-                                        {article._score && (
+                                        {article._score !== null && article._score !== undefined ? (
                                           <span className="px-2 py-1 bg-blue-600 text-white rounded text-xs font-semibold">
                                             Score: {article._score.toFixed(3)}
+                                          </span>
+                                        ) : (
+                                          <span className="px-2 py-1 bg-gray-600 text-white rounded text-xs font-semibold">
+                                            No Score
                                           </span>
                                         )}
                                       </div>
@@ -1558,9 +1562,13 @@ const ResultsPage: React.FC = () => {
                                         }`}>
                                           {video._verified === true ? '✅ VERIFIED' : '❌ UNVERIFIED'}
                                         </span>
-                                        {video._score && (
+                                        {video._score !== null && video._score !== undefined ? (
                                           <span className="px-2 py-1 bg-blue-600 text-white rounded text-xs font-semibold">
                                             Score: {video._score.toFixed(3)}
+                                          </span>
+                                        ) : (
+                                          <span className="px-2 py-1 bg-gray-600 text-white rounded text-xs font-semibold">
+                                            No Score
                                           </span>
                                         )}
                                       </div>
