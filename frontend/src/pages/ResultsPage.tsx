@@ -1452,9 +1452,27 @@ const ResultsPage: React.FC = () => {
                             <p className="text-gray-400 mb-3">Found {pubmedArticles.length} PubMed articles:</p>
                             <div className="space-y-2 max-h-96 overflow-y-auto">
                               {pubmedArticles.map((article: any, idx: number) => (
-                                <div key={idx} className="bg-gray-900 rounded p-3">
+                                <div key={idx} className={`rounded p-3 border-l-4 ${
+                                  article._verified === true 
+                                    ? 'bg-gray-900 border-green-500' 
+                                    : 'bg-gray-900 border-red-500'
+                                }`}>
                                   <div className="flex items-start justify-between gap-3">
                                     <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                          article._verified === true 
+                                            ? 'bg-green-600 text-white' 
+                                            : 'bg-red-600 text-white'
+                                        }`}>
+                                          {article._verified === true ? '✅ VERIFIED' : '❌ UNVERIFIED'}
+                                        </span>
+                                        {article._score && (
+                                          <span className="px-2 py-1 bg-blue-600 text-white rounded text-xs font-semibold">
+                                            Score: {article._score.toFixed(3)}
+                                          </span>
+                                        )}
+                                      </div>
                                       <h4 className="text-white font-medium text-sm mb-1">{article.title || 'No title'}</h4>
                                       <p className="text-gray-300 text-xs mb-2">Authors: {article.authors || 'Unknown'}</p>
                                       {article._id && (
@@ -1525,9 +1543,27 @@ const ResultsPage: React.FC = () => {
                             <p className="text-gray-400 mb-3">Found {vumediVideos.length} Vumedi videos:</p>
                             <div className="space-y-2 max-h-96 overflow-y-auto">
                               {vumediVideos.map((video: any, idx: number) => (
-                                <div key={idx} className="bg-gray-900 rounded p-3">
+                                <div key={idx} className={`rounded p-3 border-l-4 ${
+                                  video._verified === true 
+                                    ? 'bg-gray-900 border-green-500' 
+                                    : 'bg-gray-900 border-red-500'
+                                }`}>
                                   <div className="flex items-start justify-between gap-3">
                                     <div className="flex-1">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                          video._verified === true 
+                                            ? 'bg-green-600 text-white' 
+                                            : 'bg-red-600 text-white'
+                                        }`}>
+                                          {video._verified === true ? '✅ VERIFIED' : '❌ UNVERIFIED'}
+                                        </span>
+                                        {video._score && (
+                                          <span className="px-2 py-1 bg-blue-600 text-white rounded text-xs font-semibold">
+                                            Score: {video._score.toFixed(3)}
+                                          </span>
+                                        )}
+                                      </div>
                                       <h4 className="text-white font-medium text-sm mb-1">{video.title || 'No title'}</h4>
                                       <p className="text-gray-300 text-xs mb-1">Featuring: {video.featuring || 'Unknown'}</p>
                                       <p className="text-gray-300 text-xs mb-2">Author: {video.author || 'Unknown'}</p>
