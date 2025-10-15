@@ -31,6 +31,7 @@ async def get_specialist_recommendations(
     """
     try:
         # Log endpoint call
+        logger.info("🚀 [Backend] /api/v1/specialist-recommendations endpoint called")
         log_endpoint_call("Specialist recommendations", symptoms, diagnosis)
         
         # Initialize the LangChain service with database session
@@ -53,6 +54,7 @@ async def get_specialist_recommendations(
         
         # Log response information
         logger.info("Python type of recommendations: %s", type(recommendations))
+        logger.info("✅ [Backend] /api/v1/specialist-recommendations returning response")
         log_response_info("Specialist recommendations", recommendations)
         
         return recommendations

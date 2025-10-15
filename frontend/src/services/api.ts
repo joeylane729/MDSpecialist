@@ -189,12 +189,19 @@ export const getSpecialistRecommendations = async (
       });
     }
     
+    console.log('🔍 [Frontend] Calling /api/v1/specialist-recommendations endpoint');
     const response = await api.post('/api/v1/specialist-recommendations', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    
+
+    console.log('✅ [Frontend] /api/v1/specialist-recommendations response received:', {
+      status: response.status,
+      hasSharedSpecialistInfo: !!response.data?.shared_specialist_information,
+      sharedInfoKeys: response.data?.shared_specialist_information ? Object.keys(response.data.shared_specialist_information) : []
+    });
+
     return response.data;
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -332,12 +339,23 @@ export const rankNPIProviders = async (request: NPIRankingRequest): Promise<NPIR
     };
     
     const payloadSize = JSON.stringify(payload).length;
-    console.log(`🔍 [Frontend] Sending JSON payload (${(payloadSize / 1024).toFixed(2)} KB) to /api/v1/rank-npi-providers`);
+    console.log(`🔍 [Frontend] Calling /api/v1/rank-npi-providers with payload size: ${(payloadSize / 1024).toFixed(2)} KB`);
+    console.log(`🔍 [Frontend] Payload contains:`, {
+      npiProvidersCount: payload.npi_providers?.length || 0,
+      hasPatientInput: !!payload.patient_input,
+      hasSharedSpecialistInfo: !!payload.shared_specialist_information
+    });
     
     const response = await api.post(`/api/v1/rank-npi-providers`, payload, {
       headers: {
         'Content-Type': 'application/json',
       },
+    });
+
+    console.log('✅ [Frontend] /api/v1/rank-npi-providers response received:', {
+      status: response.status,
+      hasTreatmentRankings: !!response.data?.treatment_rankings,
+      totalTreatments: response.data?.total_treatments || 0
     });
     
     console.log('✅ [Frontend] Ranking successful:', response.data.message);
