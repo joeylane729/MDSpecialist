@@ -18,11 +18,6 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
   const [isPreAuthModalOpen, setIsPreAuthModalOpen] = useState(false);
   const [isInsuranceModalOpen, setIsInsuranceModalOpen] = useState(false);
 
-  const handleClick = () => {
-    if (onClick) {
-      onClick(provider);
-    }
-  };
 
   const openSchedulingModal = () => {
     setIsSchedulingModalOpen(true);
@@ -40,12 +35,11 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
   return (
     <>
       <div 
-        className={`rounded-lg shadow-sm border p-6 hover:shadow-md transition-all cursor-pointer ${
+        className={`rounded-lg shadow-sm border p-6 hover:shadow-md transition-all ${
           isHighlighted 
             ? 'bg-white border-2 border-yellow-400 shadow-lg' 
             : 'bg-white border border-gray-200'
         }`}
-        onClick={handleClick}
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
