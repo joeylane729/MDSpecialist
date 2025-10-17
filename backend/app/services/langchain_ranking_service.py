@@ -12,14 +12,17 @@ from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from ..models.specialist_recommendation import SpecialistRecommendation
+from sqlalchemy.orm import Session
+from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
 
 class LangChainRankingService:
     """Service for ranking NPI providers based on Pinecone specialist information."""
     
-    def __init__(self):
+    def __init__(self, db: Session = None):
         self.llm = ChatOpenAI(model="gpt-5-mini", temperature=0.1, request_timeout=300)
+        self.db = db
         
         # Prompt for ranking NPI providers based on Pinecone data
         self.ranking_prompt = PromptTemplate(
@@ -80,6 +83,47 @@ class LangChainRankingService:
         )
         
         self.ranking_chain = LLMChain(llm=self.llm, prompt=self.ranking_prompt)
+    
+    def _get_medical_school_score(self, npi: str) -> int:
+        """Get medical school ranking score for an NPI provider."""
+        if not self.db:
+            logger.warning("No database session available for medical school lookup")
+            return 0
+            
+        try:
+            # Query to get the best medical school ranking for this NPI
+            query = text("""
+                SELECT msr.rank 
+                FROM npi_medical_school_mapping_results nmr
+                JOIN medical_school_rankings msr ON nmr."Medical_School_ID" = msr.id
+                WHERE nmr."NPI" = :npi
+                ORDER BY msr.rank ASC
+                LIMIT 1
+            """)
+            
+            result = self.db.execute(query, {"npi": npi})
+            row = result.fetchone()
+            
+            if row:
+                rank = row[0]
+                logger.debug(f"Medical school rank for NPI {npi}: {rank}")
+                
+                # Convert rank to points: 1-25 = 3 points, 26-50 = 2 points, 51-75 = 1 point
+                if rank <= 25:
+                    return 3
+                elif rank <= 50:
+                    return 2
+                elif rank <= 75:
+                    return 1
+                else:
+                    return 0
+            else:
+                logger.debug(f"No medical school data found for NPI {npi}")
+                return 0
+                
+        except Exception as e:
+            logger.error(f"Error looking up medical school for NPI {npi}: {e}")
+            return 0
     
     async def rank_npi_providers(
         self, 
@@ -365,10 +409,69 @@ class LangChainRankingService:
                     total_pubmed = sum(len(links['pubmed_articles']) for links in doctor_links.values())
                     logger.info(f"Returning {len(doctor_links)} doctor content entries: {total_vumedi} Vumedi links, {total_pubmed} PubMed articles")
                     
+                    # Calculate scores and re-sort doctors by content count + medical school
+                    logger.info("🎯 Calculating content scores and medical school scores...")
+                    doctor_scores = {}
+                    
+                    for doctor_name, content in doctor_links.items():
+                        vumedi_count = len(content['vumedi_content'])
+                        pubmed_count = len(content['pubmed_articles'])
+                        content_score = (vumedi_count + pubmed_count) * 3  # Each result counts as 3 points
+                        
+                        # Get medical school score for this doctor
+                        # Find the NPI for this doctor name
+                        doctor_npi = None
+                        for provider in providers:
+                            if provider.get('name', '').upper() == doctor_name:
+                                doctor_npi = provider.get('npi', '')
+                                break
+                        
+                        med_school_score = 0
+                        if doctor_npi:
+                            med_school_score = self._get_medical_school_score(doctor_npi)
+                        
+                        total_score = content_score + med_school_score
+                        doctor_scores[doctor_name] = {
+                            'score': total_score,
+                            'content_score': content_score,
+                            'vumedi_count': vumedi_count,
+                            'pubmed_count': pubmed_count,
+                            'med_school_score': med_school_score
+                        }
+                        logger.info(f"📊 {doctor_name}: {vumedi_count} Vumedi + {pubmed_count} PubMed (×3) + {med_school_score} Med School = {total_score} total")
+                    
+                    # Re-sort the NPI ranking based on content scores
+                    if doctor_scores:
+                        # Create a mapping from doctor names back to NPIs
+                        name_to_npi = {}
+                        for provider in providers:
+                            provider_name = provider.get('name', '').upper()
+                            if provider_name in doctor_scores:
+                                name_to_npi[provider_name] = provider.get('npi', '')
+                        
+                        # Sort doctors by score (highest first)
+                        sorted_doctors = sorted(doctor_scores.items(), key=lambda x: x[1]['score'], reverse=True)
+                        logger.info(f"🏆 Top 5 doctors by total score (content + medical school):")
+                        for i, (name, score_data) in enumerate(sorted_doctors[:5]):
+                            logger.info(f"   {i+1}. {name}: {score_data['score']} total ({score_data['content_score']} content + {score_data['med_school_score']} med school)")
+                        
+                        # Rebuild NPI ranking in score order
+                        re_sorted_npis = []
+                        for doctor_name, score_data in sorted_doctors:
+                            if doctor_name in name_to_npi and name_to_npi[doctor_name]:
+                                re_sorted_npis.append(name_to_npi[doctor_name])
+                        
+                        # Update the ranking with the re-sorted NPIs
+                        npi_ranking = re_sorted_npis
+                        logger.info(f"✅ Re-sorted {len(npi_ranking)} NPIs by total score (content + medical school)")
+                    else:
+                        logger.warning("⚠️ No doctor scores calculated, keeping original GPT ranking")
+                    
                     return {
                         'ranking': npi_ranking,
                         'explanation': result['explanation'],
-                        'provider_links': doctor_links  # Include both Vumedi and PubMed content for UI display
+                        'provider_links': doctor_links,  # Include both Vumedi and PubMed content for UI display
+                        'provider_scores': doctor_scores  # Include scores for UI display
                     }
                 else:
                     logger.warning("JSON response missing 'providers' or 'explanation' fields")
@@ -383,7 +486,8 @@ class LangChainRankingService:
                 return {
                     'ranking': found_npis,
                     'explanation': 'Ranking completed successfully.',
-                    'provider_links': {}
+                    'provider_links': {},
+                    'provider_scores': {}
                 }
             
             # If no NPIs found, return original order
@@ -392,7 +496,8 @@ class LangChainRankingService:
             return {
                 'ranking': fallback_ranking,
                 'explanation': 'Could not parse ranking response - showing providers in original order.',
-                'provider_links': {}
+                'provider_links': {},
+                'provider_scores': {}
             }
             
         except Exception as e:
@@ -401,7 +506,8 @@ class LangChainRankingService:
             return {
                 'ranking': fallback_ranking,
                 'explanation': 'Error parsing ranking response - showing providers in original order.',
-                'provider_links': {}
+                'provider_links': {},
+                'provider_scores': {}
             }
     
     def _convert_names_to_npis(self, doctor_names: List[str], providers: List[Dict[str, Any]]) -> List[str]:

@@ -76,6 +76,7 @@ const ResultsPage: React.FC = () => {
   const [rankedProviders, setRankedProviders] = useState<Provider[]>([]);
   const [filteredProviders, setFilteredProviders] = useState<Provider[]>([]);
   const [providerLinks, setProviderLinks] = useState<{ [doctorName: string]: ProviderContent }>({});
+  const [providerScores, setProviderScores] = useState<{ [doctorName: string]: any }>({});
   const [treatmentRankings, setTreatmentRankings] = useState<{ [treatmentId: string]: any }>({});
   const [selectedTreatmentId, setSelectedTreatmentId] = useState<string>('');
   const [activeView, setActiveView] = useState<'assessment' | 'specialists' | 'ai-recommendations' | 'debug'>('assessment');
@@ -125,36 +126,19 @@ const ResultsPage: React.FC = () => {
 
 
 
-  // Convert rank to letter grade (A+ to F)
-  const getLetterGrade = (rank: number, totalResults: number): string => {
-    if (totalResults === 0) return 'F';
+  // Get provider score and breakdown
+  const getProviderScore = (provider: any): { score: number; breakdown: string } => {
+    const providerName = provider.name?.toUpperCase();
+    const scoreData = providerScores[providerName];
     
-    // New grading scale:
-    // Rank 1: A+
-    // Ranks 2-4: A (next 3)
-    // Ranks 5-9: A- (next 5)
-    // Ranks 10-14: B+ (next 5)
-    // Ranks 15-19: B (next 5)
-    // Ranks 20-24: B- (next 5)
-    // Ranks 25-29: C+ (next 5)
-    // Ranks 30-34: C (next 5)
-    // Ranks 35-39: C- (next 5)
-    // Ranks 40-44: D+ (next 5)
-    // Ranks 45-49: D (next 5)
-    // Ranks 50+: F
+    if (!scoreData) {
+      return { score: 0, breakdown: 'No score data available' };
+    }
     
-    if (rank === 1) return 'A+';
-    if (rank >= 2 && rank <= 4) return 'A';
-    if (rank >= 5 && rank <= 9) return 'A-';
-    if (rank >= 10 && rank <= 14) return 'B+';
-    if (rank >= 15 && rank <= 19) return 'B';
-    if (rank >= 20 && rank <= 24) return 'B-';
-    if (rank >= 25 && rank <= 29) return 'C+';
-    if (rank >= 30 && rank <= 34) return 'C';
-    if (rank >= 35 && rank <= 39) return 'C-';
-    if (rank >= 40 && rank <= 44) return 'D+';
-    if (rank >= 45 && rank <= 49) return 'D';
-    return 'F';
+    const { score, content_score, vumedi_count, pubmed_count, med_school_score } = scoreData;
+    const breakdown = `${content_score} content (${vumedi_count} Vumedi + ${pubmed_count} PubMed × 3) + ${med_school_score} med school`;
+    
+    return { score, breakdown };
   };
 
 
@@ -586,15 +570,17 @@ const ResultsPage: React.FC = () => {
         
         const rankedNPIs = firstTreatment.ranked_providers;
         if (Array.isArray(rankedNPIs)) {
-          rankedNPIProviders = rankedNPIs.map(npi => 
-            npiData.providers.find(provider => provider.npi === npi)
+          rankedNPIProviders = rankedNPIs.map((npi: any) => 
+            npiData.providers.find((provider: any) => provider.npi === npi)
           ).filter((provider): provider is NPIProvider => provider !== undefined);
         }
         
         console.log('🔍 Initial ranked providers:', rankedNPIProviders.length);
         
-        // Capture the provider links
+        // Capture the provider links and scores
         providerLinks = firstTreatment.provider_links || {};
+        const providerScores = firstTreatment.provider_scores || {};
+        setProviderScores(providerScores);
       }
       
       // Update state with ranked providers and original NPI data
@@ -1076,7 +1062,7 @@ const ResultsPage: React.FC = () => {
         <div className="space-y-6">
           {currentProviders.map((provider, index) => {
             const rank = indexOfFirstProvider + index + 1;
-            const grade = getLetterGrade(rank, filteredProviders.length);
+            const { score, breakdown } = getProviderScore(provider);
             const isTopResult = rank === 1;
             
             return (
@@ -1095,7 +1081,8 @@ const ResultsPage: React.FC = () => {
                   provider={provider}
                   onClick={handleProviderClick}
                   isHighlighted={isTopResult}
-                  grade={grade}
+                  score={score}
+                  scoreBreakdown={breakdown}
                   providerContent={(() => {
                     const contentData = providerLinks[provider.name?.toUpperCase()];
                     console.log(`DEBUG: Looking for content for provider "${provider.name}" (uppercase: "${provider.name?.toUpperCase()}") - found:`, contentData);

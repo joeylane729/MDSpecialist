@@ -22,7 +22,7 @@ class LangChainSpecialistRecommendationService:
         self.pinecone_service = PineconeService()
         self.retrieval_strategies = LangChainRetrievalStrategies(self.pinecone_service)
         self.medical_analysis = MedicalAnalysisService(db)
-        self.ranking_service = LangChainRankingService()
+        self.ranking_service = LangChainRankingService(db)
 
         logger.info("LangChainSpecialistRecommendationService initialized successfully")
     

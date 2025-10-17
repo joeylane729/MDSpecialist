@@ -1,0 +1,51 @@
+State,Total_Mentions,Without_Explicit_US,With_Explicit_US
+Delaware,1966,1930,36
+Washington,236,53,183
+New York,511,49,462
+Colorado,286,186,100
+Indiana,436,262,174
+Wisconsin,116,6,110
+Virginia,130,19,111
+North Carolina,216,8,208
+Ohio,230,21,209
+Arkansas,51,37,14
+California,967,292,675
+Connecticut,121,10,111
+Maryland,374,39,335
+Massachusetts,459,38,421
+Arizona,55,9,46
+Kansas,64,3,61
+Tennessee,106,12,94
+Pennsylvania,319,15,304
+Nebraska,67,26,41
+Illinois,258,47,211
+Michigan,182,18,164
+Rhode Island,32,6,26
+Texas,296,38,258
+Missouri,106,20,86
+Alabama,78,33,45
+South Carolina,66,27,39
+Florida,171,12,159
+New Jersey,96,6,90
+Minnesota,132,13,119
+Louisiana,127,71,56
+Kentucky,53,1,52
+Vermont,18,2,16
+Oregon,61,14,47
+Utah,48,4,44
+North Dakota,9,0,9
+New Mexico,30,7,23
+Iowa,63,1,62
+Nevada,14,4,10
+Georgia,159,20,139
+Mississippi,35,11,24
+Oklahoma,21,0,21
+Maine,16,8,8
+Montana,15,0,15
+Hawaii,18,2,16
+New Hampshire,22,4,18
+South Dakota,5,0,5
+Idaho,6,3,3
+West Virginia,7,1,6
+Wyoming,3,1,2
+Alaska,4,1,3

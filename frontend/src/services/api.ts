@@ -307,11 +307,20 @@ export interface ProviderContent {
   pubmed_articles: PubMedArticle[];
 }
 
+export interface ProviderScore {
+  score: number;
+  content_score: number;
+  vumedi_count: number;
+  pubmed_count: number;
+  med_school_score: number;
+}
+
 export interface TreatmentRanking {
   name: string;
   ranked_providers: string[];
   explanation: string;
   provider_links: { [doctorName: string]: ProviderContent };
+  provider_scores: { [doctorName: string]: ProviderScore };
 }
 
 export interface NPIRankingResponse {

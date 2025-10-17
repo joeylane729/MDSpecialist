@@ -7,11 +7,12 @@ interface NPIProviderCardProps {
   provider: NPIProvider;
   onClick?: (provider: NPIProvider) => void;
   isHighlighted?: boolean;
-  grade?: string;
+  score?: number;
+  scoreBreakdown?: string;
   providerContent?: ProviderContent;
 }
 
-export default function NPIProviderCard({ provider, onClick, isHighlighted = false, grade, providerContent }: NPIProviderCardProps) {
+export default function NPIProviderCard({ provider, onClick, isHighlighted = false, score, scoreBreakdown, providerContent }: NPIProviderCardProps) {
   const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
   const [isQuestionsModalOpen, setIsQuestionsModalOpen] = useState(false);
   const [isPreAuthModalOpen, setIsPreAuthModalOpen] = useState(false);
@@ -27,13 +28,13 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
     setIsSchedulingModalOpen(true);
   };
 
-  // Get grade color based on letter grade
-  const getGradeColor = (grade: string): string => {
-    if (grade.startsWith('A')) return 'bg-gradient-to-r from-emerald-500 to-green-600';
-    if (grade.startsWith('B')) return 'bg-gradient-to-r from-blue-500 to-indigo-600';
-    if (grade.startsWith('C')) return 'bg-gradient-to-r from-amber-500 to-orange-500';
-    if (grade.startsWith('D')) return 'bg-gradient-to-r from-orange-500 to-red-500';
-    return 'bg-gradient-to-r from-red-500 to-pink-600';
+  // Get score color based on score value (updated for 3x content scoring)
+  const getScoreColor = (score: number): string => {
+    if (score >= 8) return 'bg-gradient-to-r from-emerald-500 to-green-600';  // Excellent (5+ results)
+    if (score >= 5) return 'bg-gradient-to-r from-blue-500 to-indigo-600';      // Good (3+ results)
+    if (score >= 3) return 'bg-gradient-to-r from-amber-500 to-orange-500';     // Fair (2+ results)
+    if (score >= 1) return 'bg-gradient-to-r from-orange-500 to-red-500';       // Poor (1+ result)
+    return 'bg-gradient-to-r from-red-500 to-pink-600';                         // Very poor (0 results)
   };
 
   return (
@@ -53,9 +54,12 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
               <h2 className="text-xl font-semibold text-gray-900 mr-3">
                 {provider.name}
               </h2>
-              {grade && (
-                <div className={`inline-flex items-center justify-center w-8 h-8 ${getGradeColor(grade)} text-white text-sm font-bold rounded-lg shadow-sm`}>
-                  {grade}
+              {score !== undefined && (
+                <div 
+                  className={`inline-flex items-center justify-center w-12 h-8 ${getScoreColor(score)} text-white text-sm font-bold rounded-lg shadow-sm cursor-help`}
+                  title={scoreBreakdown}
+                >
+                  {score}
                 </div>
               )}
             </div>
