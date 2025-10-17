@@ -632,8 +632,12 @@ class LangChainRankingService:
                             'med_school_score': med_school_score
                         }
                 
-                # Combine: matched providers (by score), then unmatched
-                all_ranked_npis = matched_npis_by_score + unmatched_npis
+                # Sort ALL providers (matched + unmatched) by their total scores
+                all_providers_with_scores = [
+                    (name, scores) for name, scores in provider_scores.items()
+                ]
+                all_providers_with_scores.sort(key=lambda x: (-x[1]['score'], x[0]))
+                all_ranked_npis = [scores['npi'] for _, scores in all_providers_with_scores]
                 
                 # Update explanation
                 doctors_with_content = len(matched_doctors_with_scores)

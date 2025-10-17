@@ -136,7 +136,22 @@ const ResultsPage: React.FC = () => {
     }
     
     const { score, content_score, vumedi_count, pubmed_count, med_school_score } = scoreData;
-    const breakdown = `${content_score} content (${vumedi_count} Vumedi + ${pubmed_count} PubMed × 3) + ${med_school_score} med school`;
+    
+    // Create a more readable breakdown
+    const breakdownParts = [];
+    if (vumedi_count > 0) {
+      breakdownParts.push(`${vumedi_count} Vumedi video${vumedi_count > 1 ? 's' : ''} = ${vumedi_count} point${vumedi_count > 1 ? 's' : ''}`);
+    }
+    if (pubmed_count > 0) {
+      breakdownParts.push(`${pubmed_count} PubMed article${pubmed_count > 1 ? 's' : ''} = ${pubmed_count * 3} point${pubmed_count * 3 > 1 ? 's' : ''} (${pubmed_count} × 3)`);
+    }
+    if (med_school_score > 0) {
+      breakdownParts.push(`Medical school ranking = ${med_school_score} point${med_school_score > 1 ? 's' : ''}`);
+    }
+    
+    const breakdown = breakdownParts.length > 0 
+      ? breakdownParts.join('\n') + `\n\nTotal: ${score} points`
+      : 'No score data available';
     
     return { score, breakdown };
   };
