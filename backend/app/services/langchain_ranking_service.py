@@ -593,36 +593,11 @@ class LangChainRankingService:
                     max_providers=max_providers
                 )
                 
-                # Get the ranked NPIs from GPT
+                # Get the ranked NPIs and scores from GPT (already calculated with new scoring system)
                 matched_npis = ranking_result.get("ranking", [])
                 provider_links = ranking_result.get("provider_links", {})
+                provider_scores = ranking_result.get("provider_scores", {})  # Use scores from rank_npi_providers
                 gpt_explanation = ranking_result.get("explanation", "")
-                
-                # Calculate scores for matched doctors using new scoring system
-                provider_scores = {}
-                for doctor_name, content in provider_links.items():
-                    vumedi_count = len(content.get('vumedi_content', []))
-                    pubmed_count = len(content.get('pubmed_articles', []))
-                    content_score = (vumedi_count + pubmed_count) * 3  # Each result counts as 3 points
-                    
-                    # Find NPI for this doctor
-                    npi = next((p.get('npi') for p in npi_providers if p.get('name') == doctor_name), '')
-                    
-                    # Get medical school score for this doctor
-                    med_school_score = 0
-                    if npi:
-                        med_school_score = self._get_medical_school_score(npi)
-                    
-                    total_score = content_score + med_school_score
-                    
-                    provider_scores[doctor_name] = {
-                        'npi': npi,
-                        'score': total_score,
-                        'content_score': content_score,
-                        'vumedi_count': vumedi_count,
-                        'pubmed_count': pubmed_count,
-                        'med_school_score': med_school_score
-                    }
                 
                 # Sort matched doctors by score (descending), then alphabetically
                 matched_doctors_with_scores = [
@@ -641,10 +616,10 @@ class LangChainRankingService:
                     if p.get('npi') and p.get('npi') not in matched_npi_set
                 ]
                 
-                # Add zero scores for unmatched doctors
+                # Add scores for unmatched doctors (only medical school score since no content)
                 for npi in unmatched_npis:
                     doctor_name = next((p.get('name') for p in npi_providers if p.get('npi') == npi), '')
-                    if doctor_name:
+                    if doctor_name and doctor_name not in provider_scores:
                         # Get medical school score even for unmatched doctors
                         med_school_score = self._get_medical_school_score(npi)
                         provider_scores[doctor_name] = {
