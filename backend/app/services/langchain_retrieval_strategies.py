@@ -128,7 +128,7 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
     ) -> Dict[str, Any]:
         """Retrieve specialist information from Pinecone using LangChain-generated queries based on medical analysis results.
         
-        Uses fixed limits: 50 for Vumedi, 200 for PubMed per query.
+        Uses fixed limits: 100 for Vumedi, 1000 for PubMed per query.
         """
         try:
             # Extract only the two required inputs:
@@ -178,8 +178,8 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
                 logger.info(f"🔍 Executing Pinecone search for '{treatment_name}': '{query[:80]}{'...' if len(query) > 80 else ''}'")
                 
                 # Use separate limits for Vumedi and PubMed
-                vumedi_top_k = 50  # Max 50 total for Vumedi
-                pubmed_top_k = 200  # Max 200 total for PubMed
+                vumedi_top_k = 100  # Max 100 total for Vumedi
+                pubmed_top_k = 1000  # Max 1000 total for PubMed
                 logger.debug(f"   📊 Using top_k={vumedi_top_k} for Vumedi, {pubmed_top_k} for PubMed")
                 
                 # Query Vumedi index
