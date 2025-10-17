@@ -598,27 +598,37 @@ class LangChainRankingService:
                 provider_links = ranking_result.get("provider_links", {})
                 gpt_explanation = ranking_result.get("explanation", "")
                 
-                # Calculate scores for matched doctors by counting their content
+                # Calculate scores for matched doctors using new scoring system
                 provider_scores = {}
                 for doctor_name, content in provider_links.items():
                     vumedi_count = len(content.get('vumedi_content', []))
                     pubmed_count = len(content.get('pubmed_articles', []))
-                    total_score = vumedi_count + pubmed_count
+                    content_score = (vumedi_count + pubmed_count) * 3  # Each result counts as 3 points
                     
                     # Find NPI for this doctor
                     npi = next((p.get('npi') for p in npi_providers if p.get('name') == doctor_name), '')
+                    
+                    # Get medical school score for this doctor
+                    med_school_score = 0
+                    if npi:
+                        med_school_score = self._get_medical_school_score(npi)
+                    
+                    total_score = content_score + med_school_score
+                    
                     provider_scores[doctor_name] = {
                         'npi': npi,
-                        'total_score': total_score,
+                        'score': total_score,
+                        'content_score': content_score,
                         'vumedi_count': vumedi_count,
-                        'pubmed_count': pubmed_count
+                        'pubmed_count': pubmed_count,
+                        'med_school_score': med_school_score
                     }
                 
                 # Sort matched doctors by score (descending), then alphabetically
                 matched_doctors_with_scores = [
                     (name, scores) for name, scores in provider_scores.items()
                 ]
-                matched_doctors_with_scores.sort(key=lambda x: (-x[1]['total_score'], x[0]))
+                matched_doctors_with_scores.sort(key=lambda x: (-x[1]['score'], x[0]))
                 
                 # Reorder matched NPIs by score
                 matched_npis_by_score = [scores['npi'] for _, scores in matched_doctors_with_scores]
@@ -635,11 +645,15 @@ class LangChainRankingService:
                 for npi in unmatched_npis:
                     doctor_name = next((p.get('name') for p in npi_providers if p.get('npi') == npi), '')
                     if doctor_name:
+                        # Get medical school score even for unmatched doctors
+                        med_school_score = self._get_medical_school_score(npi)
                         provider_scores[doctor_name] = {
                             'npi': npi,
-                            'total_score': 0,
+                            'score': med_school_score,
+                            'content_score': 0,
                             'vumedi_count': 0,
-                            'pubmed_count': 0
+                            'pubmed_count': 0,
+                            'med_school_score': med_school_score
                         }
                 
                 # Combine: matched providers (by score), then unmatched
@@ -649,11 +663,13 @@ class LangChainRankingService:
                 doctors_with_content = len(matched_doctors_with_scores)
                 total_vumedi = sum(scores['vumedi_count'] for _, scores in matched_doctors_with_scores)
                 total_pubmed = sum(scores['pubmed_count'] for _, scores in matched_doctors_with_scores)
+                total_content_score = sum(scores['content_score'] for _, scores in matched_doctors_with_scores)
+                total_med_school_score = sum(scores['med_school_score'] for _, scores in matched_doctors_with_scores)
                 
                 explanation = (
-                    f"Ranked {len(all_ranked_npis)} providers by publication and video count. "
-                    f"{doctors_with_content} providers found with {total_vumedi} Vumedi videos and {total_pubmed} PubMed articles related to {treatment_name}. "
-                    f"Providers with more content are ranked higher."
+                    f"Ranked {len(all_ranked_npis)} providers by content score (×3) and medical school ranking. "
+                    f"{doctors_with_content} providers found with {total_vumedi} Vumedi videos and {total_pubmed} PubMed articles (×3 = {total_content_score} points) plus {total_med_school_score} medical school points related to {treatment_name}. "
+                    f"Providers with higher total scores (content + medical school) are ranked higher."
                 )
                 
                 # Store the results for this treatment
