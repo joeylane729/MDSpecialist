@@ -416,7 +416,7 @@ class LangChainRankingService:
                     for doctor_name, content in doctor_links.items():
                         vumedi_count = len(content['vumedi_content'])
                         pubmed_count = len(content['pubmed_articles'])
-                        content_score = (vumedi_count + pubmed_count) * 3  # Each result counts as 3 points
+                        content_score = (vumedi_count + pubmed_count) * 4  # Each result counts as 4 points
                         
                         # Get medical school score for this doctor
                         # Find the NPI for this doctor name
@@ -439,7 +439,7 @@ class LangChainRankingService:
                             'pubmed_count': pubmed_count,
                             'med_school_score': med_school_score
                         }
-                        logger.info(f"📊 {doctor_name}: {vumedi_count} Vumedi + {pubmed_count} PubMed (×3) + {med_school_score} Med School = {total_score} total")
+                        logger.info(f"📊 {doctor_name}: {vumedi_count} Vumedi + {pubmed_count} PubMed (×4) + {med_school_score} Med School = {total_score} total")
                     
                     # Re-sort the NPI ranking based on content scores
                     if doctor_scores:
@@ -647,8 +647,8 @@ class LangChainRankingService:
                 total_med_school_score = sum(scores['med_school_score'] for _, scores in matched_doctors_with_scores)
                 
                 explanation = (
-                    f"Ranked {len(all_ranked_npis)} providers by content score (×3) and medical school ranking. "
-                    f"{doctors_with_content} providers found with {total_vumedi} Vumedi videos and {total_pubmed} PubMed articles (×3 = {total_content_score} points) plus {total_med_school_score} medical school points related to {treatment_name}. "
+                    f"Ranked {len(all_ranked_npis)} providers by content score (×4) and medical school ranking. "
+                    f"{doctors_with_content} providers found with {total_vumedi} Vumedi videos and {total_pubmed} PubMed articles (×4 = {total_content_score} points) plus {total_med_school_score} medical school points related to {treatment_name}. "
                     f"Providers with higher total scores (content + medical school) are ranked higher."
                 )
                 
