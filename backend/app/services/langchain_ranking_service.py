@@ -432,6 +432,7 @@ class LangChainRankingService:
                         
                         total_score = content_score + med_school_score
                         doctor_scores[doctor_name] = {
+                            'npi': doctor_npi,
                             'score': total_score,
                             'content_score': content_score,
                             'vumedi_count': vumedi_count,
