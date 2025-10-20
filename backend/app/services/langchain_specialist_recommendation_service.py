@@ -19,12 +19,26 @@ class LangChainSpecialistRecommendationService:
     """LangChain-powered specialist recommendation service."""
     
     def __init__(self, db=None):
-        self.pinecone_service = PineconeService()
-        self.retrieval_strategies = LangChainRetrievalStrategies(self.pinecone_service)
+        self._pinecone_service = None
+        self._retrieval_strategies = None
         self.medical_analysis = MedicalAnalysisService(db)
         self.ranking_service = LangChainRankingService(db)
 
         logger.info("LangChainSpecialistRecommendationService initialized successfully")
+    
+    @property
+    def pinecone_service(self):
+        """Lazy initialization of PineconeService to avoid startup failures."""
+        if self._pinecone_service is None:
+            self._pinecone_service = PineconeService()
+        return self._pinecone_service
+    
+    @property
+    def retrieval_strategies(self):
+        """Lazy initialization of LangChainRetrievalStrategies."""
+        if self._retrieval_strategies is None:
+            self._retrieval_strategies = LangChainRetrievalStrategies(self.pinecone_service)
+        return self._retrieval_strategies
     
     async def get_specialist_recommendations(
         self,
