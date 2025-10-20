@@ -11,4 +11,5 @@ langchain>=0.3.0
 langchain-core>=0.3.0
 langchain-openai
 langchain-pinecone
+langchain-community
 PyPDF2

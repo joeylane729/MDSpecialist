@@ -6,7 +6,7 @@ import logging
 from typing import List, Dict, Any
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
-from langchain.chains.llm import LLMChain
+from langchain_community.chains.llm import LLMChain
 
 from ..models.specialist_recommendation import PatientProfile
 from .pinecone_service import PineconeService
