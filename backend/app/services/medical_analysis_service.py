@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
-from langchain_core.chains import LLMChain
+from langchain.chains import LLMChain
 from ..models.specialist_recommendation import PatientProfile
 
 logger = logging.getLogger(__name__)
