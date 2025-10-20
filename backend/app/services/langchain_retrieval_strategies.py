@@ -5,8 +5,8 @@ LangChain Retrieval Strategies
 import logging
 from typing import List, Dict, Any
 from langchain_openai import ChatOpenAI
-from langchain_core.prompts import PromptTemplate
-from langchain_core.chains import LLMChain
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
 
 from ..models.specialist_recommendation import PatientProfile
 from .pinecone_service import PineconeService

@@ -9,8 +9,8 @@ import logging
 import time
 from typing import List, Dict, Any, Optional
 from langchain_openai import ChatOpenAI
-from langchain_core.prompts import PromptTemplate
-from langchain_core.chains import LLMChain
+from langchain.prompts import PromptTemplate
+from langchain.chains import LLMChain
 from ..models.specialist_recommendation import SpecialistRecommendation
 from sqlalchemy.orm import Session
 from sqlalchemy import text
