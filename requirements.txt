@@ -7,9 +7,8 @@ python-dotenv
 psycopg2-binary
 openai
 pinecone
-# Force rebuild - fix langchain imports
-langchain>=0.1.0
-langchain-core>=0.1.0
+langchain>=0.3.0
+langchain-core>=0.3.0
 langchain-openai
 langchain-pinecone
 PyPDF2
