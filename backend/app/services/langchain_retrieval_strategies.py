@@ -6,7 +6,6 @@ import logging
 from typing import List, Dict, Any
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
-from langchain_community.chains.llm import LLMChain
 
 from ..models.specialist_recommendation import PatientProfile
 from .pinecone_service import PineconeService
@@ -37,7 +36,7 @@ Example: variation 1 OR variation 2 OR variation 3 OR ...
 IMPORTANT: Return ONLY the search query string itself with NO explanations, NO markdown, NO code blocks, NO additional text. Just the query."""
         )
         
-        self.query_chain = LLMChain(llm=self.llm, prompt=self.query_prompt)
+        self.query_chain = self.query_prompt | self.llm
         logger.info("LangChainRetrievalStrategies initialized successfully")
     
     def _verify_result(self, result: dict, query_variations: list, source: str) -> bool:
@@ -147,7 +146,7 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
             logger.info(f"   Medical Analysis Diagnosis: {icd10_description}")
             logger.info(f"   User-Entered Diagnosis: {user_diagnosis}")
             
-            query_response = await self.query_chain.arun(**query_input)
+            query_response = await self.query_chain.ainvoke(query_input)
             query = query_response.strip()
             
             # Log the generated query

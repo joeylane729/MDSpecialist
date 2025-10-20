@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
-from langchain_community.chains.llm import LLMChain
 from ..models.specialist_recommendation import PatientProfile
 
 logger = logging.getLogger(__name__)
@@ -379,16 +378,16 @@ class MedicalAnalysisService:
                 """
             )
             
-            chain = LLMChain(llm=self.llm, prompt=prompt)
+            chain = prompt | self.llm
             
-            response = await chain.arun(
-                symptoms=symptoms,
-                diagnosis=diagnosis,
-                medical_history=medical_history,
-                medications=medications,
-                surgical_history=surgical_history,
-                pdf_content=pdf_content
-            )
+            response = await chain.ainvoke({
+                "symptoms": symptoms,
+                "diagnosis": diagnosis,
+                "medical_history": medical_history,
+                "medications": medications,
+                "surgical_history": surgical_history,
+                "pdf_content": pdf_content
+            })
             
             # Extract the ICD-10 code from the response
             icd_code = response.strip()
@@ -486,16 +485,16 @@ class MedicalAnalysisService:
                 """
             )
             
-            chain = LLMChain(llm=self.llm, prompt=prompt)
+            chain = prompt | self.llm
             
-            response = await chain.arun(
-                symptoms=symptoms,
-                diagnosis=diagnosis,
-                medical_history=medical_history,
-                medications=medications,
-                surgical_history=surgical_history,
-                pdf_content=pdf_content
-            )
+            response = await chain.ainvoke({
+                "symptoms": symptoms,
+                "diagnosis": diagnosis,
+                "medical_history": medical_history,
+                "medications": medications,
+                "surgical_history": surgical_history,
+                "pdf_content": pdf_content
+            })
             
             # Extract the JSON response
             response_text = response.strip()

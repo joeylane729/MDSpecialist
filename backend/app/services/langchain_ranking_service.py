@@ -10,7 +10,6 @@ import time
 from typing import List, Dict, Any, Optional
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
-from langchain_community.chains.llm import LLMChain
 from ..models.specialist_recommendation import SpecialistRecommendation
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -82,7 +81,7 @@ class LangChainRankingService:
             """
         )
         
-        self.ranking_chain = LLMChain(llm=self.llm, prompt=self.ranking_prompt)
+        self.ranking_chain = self.ranking_prompt | self.llm
     
     def _get_medical_school_score(self, npi: str) -> int:
         """Get medical school ranking score for an NPI provider."""
@@ -194,11 +193,11 @@ class LangChainRankingService:
             logger.info("🚀 Making LLM call without timeout...")
             llm_start_time = time.time()
             
-            response = await self.ranking_chain.arun(
-                npi_providers=npi_formatted,
-                pinecone_data=pinecone_formatted,
-                patient_profile=patient_formatted
-            )
+            response = await self.ranking_chain.ainvoke({
+                "npi_providers": npi_formatted,
+                "pinecone_data": pinecone_formatted,
+                "patient_profile": patient_formatted
+            })
             
             llm_end_time = time.time()
             llm_duration = llm_end_time - llm_start_time
