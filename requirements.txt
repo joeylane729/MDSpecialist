@@ -8,6 +8,7 @@ psycopg2-binary
 openai
 pinecone
 langchain
+langchain-core
 langchain-openai
 langchain-pinecone
 PyPDF2
