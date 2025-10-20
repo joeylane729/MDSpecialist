@@ -179,7 +179,7 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
                 
                 # Use separate limits for Vumedi and PubMed
                 vumedi_top_k = 100  # Max 100 total for Vumedi
-                pubmed_top_k = 1000  # Max 1000 total for PubMed
+                pubmed_top_k = 100000  # Max 100000 total for PubMed
                 logger.debug(f"   📊 Using top_k={vumedi_top_k} for Vumedi, {pubmed_top_k} for PubMed")
                 
                 # Query Vumedi index
