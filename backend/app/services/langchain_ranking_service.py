@@ -199,15 +199,18 @@ class LangChainRankingService:
                 "patient_profile": patient_formatted
             })
             
+            # Extract content from AIMessage object
+            response_content = response.content if hasattr(response, 'content') else str(response)
+            
             llm_end_time = time.time()
             llm_duration = llm_end_time - llm_start_time
             logger.info(f"✅ LLM call completed in {llm_duration:.2f} seconds")
             
             # Log response details
-            response_size = len(response) if response else 0
+            response_size = len(response_content) if response_content else 0
             logger.info(f"📊 LLM Response details:")
             logger.info(f"  - Response size: {response_size:,} characters")
-            logger.info(f"  - Response preview: {response[:200] if response else 'None'}...")
+            logger.info(f"  - Response preview: {response_content[:200] if response_content else 'None'}...")
             
             # Log completion and attempt to get usage info
             end_time = time.time()
@@ -245,7 +248,7 @@ class LangChainRankingService:
             # Parse the response
             logger.info("🔍 Parsing LLM response...")
             parse_start = time.time()
-            ranking_result = self._parse_ranking_response(response, providers_to_rank)
+            ranking_result = self._parse_ranking_response(response_content, providers_to_rank)
             parse_end = time.time()
             logger.info(f"🔍 Response parsing completed in {parse_end - parse_start:.2f} seconds")
             

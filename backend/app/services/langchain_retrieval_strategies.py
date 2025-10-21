@@ -147,7 +147,7 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
             logger.info(f"   User-Entered Diagnosis: {user_diagnosis}")
             
             query_response = await self.query_chain.ainvoke(query_input)
-            query = query_response.strip()
+            query = query_response.content.strip() if hasattr(query_response, 'content') else str(query_response).strip()
             
             # Log the generated query
             logger.info(f"🔍 Generated single diagnosis-based search query:")
