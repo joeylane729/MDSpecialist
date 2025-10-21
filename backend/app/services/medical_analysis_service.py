@@ -135,6 +135,11 @@ class MedicalAnalysisService:
                 "diagnoses": await self.predict_diagnoses(symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content)
             }
             
+            # Ensure diagnoses is not None
+            if medical_analysis["diagnoses"] is None:
+                logger.warning("⚠️  predict_diagnoses returned None, setting to empty dict")
+                medical_analysis["diagnoses"] = {}
+            
             # Add ICD-10 description if we have the code
             if medical_analysis["predicted_icd10"] and self.db:
                 logger.info(f"🔍 Looking up ICD-10 description for: {medical_analysis['predicted_icd10']}")
@@ -389,8 +394,8 @@ class MedicalAnalysisService:
                 "pdf_content": pdf_content
             })
             
-            # Extract the ICD-10 code from the response
-            icd_code = response.strip()
+            # Extract the ICD-10 code from the response - LCEL returns AIMessage object
+            icd_code = response.content.strip() if hasattr(response, 'content') else str(response).strip()
             
             # Clean up the response (remove quotes, extra punctuation, etc.)
             icd_code = icd_code.replace('"', '').replace("'", "").strip()
@@ -399,11 +404,11 @@ class MedicalAnalysisService:
             if len(icd_code) >= 3 and icd_code[0].isalpha() and any(c.isdigit() for c in icd_code):
                 return icd_code
             else:
-                print(f"Warning: GPT returned '{icd_code}' which doesn't look like a valid ICD-10 code")
+                logger.warning(f"GPT returned '{icd_code}' which doesn't look like a valid ICD-10 code")
                 return None
                 
         except Exception as e:
-            print(f"Error in GPT ICD-10 prediction: {e}")
+            logger.error(f"Error in GPT ICD-10 prediction: {e}")
             return None
 
     async def predict_diagnoses(
@@ -496,8 +501,8 @@ class MedicalAnalysisService:
                 "pdf_content": pdf_content
             })
             
-            # Extract the JSON response
-            response_text = response.strip()
+            # Extract the JSON response - LCEL returns AIMessage object
+            response_text = response.content.strip() if hasattr(response, 'content') else str(response).strip()
             
             # Clean up the response (remove markdown formatting if present)
             if response_text.startswith('```json'):
@@ -527,9 +532,9 @@ class MedicalAnalysisService:
                 
                 return diagnoses
             else:
-                print(f"Warning: GPT returned invalid response structure: {diagnoses}")
-                return None
+                logger.warning(f"GPT returned invalid response structure: {diagnoses}")
+                return {"primary": {}, "differential": [], "treatment_options": []}
                 
         except Exception as e:
-            print(f"Error in GPT diagnosis prediction: {e}")
-            return None
+            logger.error(f"Error in GPT diagnosis prediction: {e}")
+            return {"primary": {}, "differential": [], "treatment_options": []}
