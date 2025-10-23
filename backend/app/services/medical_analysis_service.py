@@ -150,6 +150,18 @@ class MedicalAnalysisService:
                 else:
                     logger.warning(f"⚠️  Could not find ICD-10 description for: {medical_analysis['predicted_icd10']}")
             
+            # Generate search query for Pinecone using the same prompt as LangChainRetrievalStrategies
+            search_query = ""
+            if medical_analysis.get("icd10_description") and diagnosis:
+                logger.info(f"🔍 Generating search query for Pinecone...")
+                search_query = await self.generate_search_query(
+                    medical_analysis.get("icd10_description", ""),
+                    diagnosis
+                )
+                logger.info(f"✅ Generated search query: {search_query[:100]}{'...' if len(search_query) > 100 else ''}")
+            else:
+                logger.warning("⚠️  Cannot generate search query - missing ICD-10 description or user diagnosis")
+            
             # Extract treatment options from diagnoses if available
             treatment_options = []
             if medical_analysis["diagnoses"] and "treatment_options" in medical_analysis["diagnoses"]:
@@ -204,6 +216,7 @@ class MedicalAnalysisService:
                 "icd10_description": primary_description,
                 "differential_diagnoses": differential_diagnoses,
                 "treatment_options": treatment_options,
+                "search_query": search_query,  # Pre-generated search query for Pinecone
                 
                 # Keep original nested structure for backward compatibility
                 "diagnoses": medical_analysis["diagnoses"]
@@ -410,6 +423,59 @@ class MedicalAnalysisService:
         except Exception as e:
             logger.error(f"Error in GPT ICD-10 prediction: {e}")
             return None
+
+    async def generate_search_query(
+        self,
+        icd10_description: str,
+        user_diagnosis: str
+    ) -> str:
+        """
+        Generate a search query for Pinecone using the exact same prompt as LangChainRetrievalStrategies.
+        
+        Args:
+            icd10_description: Medical analysis diagnosis description
+            user_diagnosis: User-entered diagnosis
+            
+        Returns:
+            Search query string with OR-separated variations
+        """
+        try:
+            prompt = PromptTemplate(
+                input_variables=["icd10_description", "user_diagnosis"],
+                template="""Generate a search query to find PubMed articles and medical lectures from our vector database using both the user-entered diagnosis and the medical analysis diagnosis:
+
+Medical Analysis Diagnosis: {icd10_description}
+User-Entered Diagnosis: {user_diagnosis}
+
+The query should include the diagnosis info above as well as all other possible ways to phrase the diagnosis (separated by the OR operator).
+
+Example: variation 1 OR variation 2 OR variation 3 OR ...
+
+IMPORTANT: Return ONLY the search query string itself with NO explanations, NO markdown, NO code blocks, NO additional text. Just the query."""
+            )
+            
+            chain = prompt | self.llm
+            
+            response = await chain.ainvoke({
+                "icd10_description": icd10_description,
+                "user_diagnosis": user_diagnosis
+            })
+            
+            # Extract the query response
+            query = response.content.strip() if hasattr(response, 'content') else str(response).strip()
+            
+            # Clean up the response (remove markdown formatting if present)
+            if query.startswith('```json'):
+                query = query.replace('```json', '').replace('```', '').strip()
+            elif query.startswith('```'):
+                query = query.replace('```', '').strip()
+            
+            logger.info(f"🔍 Generated search query: {query}")
+            return query
+            
+        except Exception as e:
+            logger.error(f"Error generating search query: {e}")
+            return ""
 
     async def predict_diagnoses(
         self, 

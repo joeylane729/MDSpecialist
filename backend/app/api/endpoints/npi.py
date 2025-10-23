@@ -103,6 +103,7 @@ async def search_providers_by_criteria(
     proximity: str = Form(...),
     diagnosis: str = Form(...),
     symptoms: str = Form(...),
+    search_query: Optional[str] = Form(None),  # Pre-generated search query from medical analysis
     limit: int = Form(10000),
     files: List[UploadFile] = File([]),
     db: Session = Depends(get_db)

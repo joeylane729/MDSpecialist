@@ -4,8 +4,6 @@ LangChain Retrieval Strategies
 
 import logging
 from typing import List, Dict, Any
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import PromptTemplate
 
 from ..models.specialist_recommendation import PatientProfile
 from .pinecone_service import PineconeService
@@ -20,23 +18,8 @@ class LangChainRetrievalStrategies:
         self.vumedi_index = self.pinecone_service.pc.Index(self.pinecone_service.default_index_name)
         self.pubmed_index = self.pinecone_service.pc.Index(self.pinecone_service.pubmed_index_name)
         
-        self.llm = ChatOpenAI(model="gpt-4o", temperature=0.1)
-        
-        self.query_prompt = PromptTemplate(
-            input_variables=["icd10_description", "user_diagnosis"],
-            template="""Generate a search query to find PubMed articles and medical lectures from our vector database using both the user-entered diagnosis and the medical analysis diagnosis:
-
-Medical Analysis Diagnosis: {icd10_description}
-User-Entered Diagnosis: {user_diagnosis}
-
-The query should include the diagnosis info above as well as all other possible ways to phrase the diagnosis (separated by the OR operator).
-
-Example: variation 1 OR variation 2 OR variation 3 OR ...
-
-IMPORTANT: Return ONLY the search query string itself with NO explanations, NO markdown, NO code blocks, NO additional text. Just the query."""
-        )
-        
-        self.query_chain = self.query_prompt | self.llm
+        # Note: Query generation is now handled by MedicalAnalysisService
+        # This service only uses pre-generated search queries
         logger.info("LangChainRetrievalStrategies initialized successfully")
     
     def _verify_result(self, result: dict, query_variations: list, source: str) -> bool:
@@ -130,34 +113,16 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
         Uses fixed limits: 100 for Vumedi, 1000 for PubMed per query.
         """
         try:
-            # Extract only the two required inputs:
-            # 1. Medical analysis diagnosis description (not the ICD code)
-            icd10_description = medical_analysis_results.get("icd10_description", "")
+            # Use pre-generated search query from medical analysis
+            query = medical_analysis_results.get("search_query", "")
             
-            # 2. User-entered diagnosis from the first screen
-            user_diagnosis = medical_analysis_results.get("user_diagnosis", "")
+            if not query:
+                logger.error("❌ No pre-generated search query found in medical analysis results")
+                raise ValueError("No pre-generated search query available - search query must be generated during medical analysis")
             
-            query_input = {
-                "icd10_description": icd10_description,
-                "user_diagnosis": user_diagnosis,
-            }
-            
-            logger.info(f"🔍 Query inputs:")
-            logger.info(f"   Medical Analysis Diagnosis: {icd10_description}")
-            logger.info(f"   User-Entered Diagnosis: {user_diagnosis}")
-            
-            query_response = await self.query_chain.ainvoke(query_input)
-            query = query_response.content.strip() if hasattr(query_response, 'content') else str(query_response).strip()
-            
-            # Log the generated query
-            logger.info(f"🔍 Generated single diagnosis-based search query:")
+            logger.info(f"🔍 Using pre-generated search query from medical analysis:")
             logger.info(f"📊 Query limits: 50 Vumedi + 200 PubMed = 250 max results total")
             logger.info(f"   Query: {query}")
-            
-            # Ensure we have a query
-            if not query:
-                logger.error("❌ Failed to generate search query from LLM")
-                raise ValueError("Failed to generate search query from LLM")
             
             # Parse query variations for verification
             query_variations = [variation.strip() for variation in query.split(" OR ")]
@@ -171,7 +136,7 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
             
             # Use primary diagnosis as the single treatment group
             treatment_id = "primary_diagnosis"
-            treatment_name = icd10_description or "Primary Diagnosis"
+            treatment_name = medical_analysis_results.get("icd10_description", "Primary Diagnosis")
             
             try:
                 logger.info(f"🔍 Executing Pinecone search for '{treatment_name}': '{query[:80]}{'...' if len(query) > 80 else ''}'")

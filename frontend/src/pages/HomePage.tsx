@@ -670,6 +670,7 @@ const HomePage: React.FC = () => {
           icd10_description: npiData?.search_criteria?.icd10_description || aiRecommendations?.patient_profile?.icd10_description,
           differential_diagnoses: npiData?.search_criteria?.differential_diagnoses || aiRecommendations?.patient_profile?.differential_diagnoses,
           treatment_options: aiRecommendations?.patient_profile?.treatment_options,
+          search_query: aiRecommendations?.patient_profile?.search_query,
           searchOptions: searchOptions
         },
         providers: rankedNPIProviders,

@@ -140,6 +140,7 @@ export interface PatientProfile {
     outcomes: string;
     complications: string;
   }>;
+  search_query?: string;  // Pre-generated search query for Pinecone
 }
 
 export interface SpecialistRecommendationResponse {

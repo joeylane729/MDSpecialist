@@ -26,6 +26,7 @@ interface SearchParams {
     outcomes: string;
     complications: string;
   }>;
+  search_query?: string;  // Pre-generated search query for Pinecone
   searchOptions?: {
     diagnosis: boolean;
     specialists: boolean;
@@ -913,6 +914,19 @@ const ResultsPage: React.FC = () => {
                             </div>
                           </div>
                         ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Search Query */}
+                  {searchParams?.search_query && (
+                    <div className="border-l-4 border-indigo-500 pl-4">
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Search Query Variations</h3>
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-sm text-gray-600 mb-2">The following search terms will be used to find relevant specialists:</p>
+                        <div className="text-sm text-gray-800 font-mono break-words">
+                          {searchParams.search_query}
+                        </div>
                       </div>
                     </div>
                   )}
