@@ -241,8 +241,8 @@ class LangChainRankingService:
             
             # Log full GPT response for debugging
             logger.info(f"=== GPT RANKING RESPONSE ===")
-            logger.info(f"Response length: {len(response)} characters")
-            logger.info(f"Full response: {response}")
+            logger.info(f"Response length: {len(response_content)} characters")
+            logger.info(f"Full response: {response_content}")
             logger.info(f"=== END GPT RESPONSE ===")
             
             # Parse the response
