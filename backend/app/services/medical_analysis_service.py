@@ -442,16 +442,16 @@ class MedicalAnalysisService:
         try:
             prompt = PromptTemplate(
                 input_variables=["icd10_description", "user_diagnosis"],
-                template="""Generate a search query to find PubMed articles and medical lectures from our vector database using both the user-entered diagnosis and the medical analysis diagnosis:
+                template="""Generate a concise search query to find PubMed articles and medical lectures from our vector database using both the user-entered diagnosis and the medical analysis diagnosis:
 
 Medical Analysis Diagnosis: {icd10_description}
 User-Entered Diagnosis: {user_diagnosis}
 
-The query should include the diagnosis info above as well as all other possible ways to phrase the diagnosis (separated by the OR operator).
+The query should include the most important variations (maximum 5-7 terms) separated by the OR operator. Focus on the most common medical terms and synonyms.
 
-Example: variation 1 OR variation 2 OR variation 3 OR ...
+Example: term1 OR term2 OR term3 OR term4 OR term5
 
-IMPORTANT: Return ONLY the search query string itself with NO explanations, NO markdown, NO code blocks, NO additional text. Just the query."""
+IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the search query string itself with NO explanations, NO markdown, NO code blocks, NO additional text. Just the query."""
             )
             
             chain = prompt | self.llm
