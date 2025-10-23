@@ -470,14 +470,6 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
             elif query.startswith('```'):
                 query = query.replace('```', '').strip()
             
-            # Limit query length to prevent Pinecone payload errors (max ~1000 characters)
-            if len(query) > 1000:
-                # Truncate to first 5 terms if too long
-                terms = query.split(' OR ')
-                if len(terms) > 5:
-                    query = ' OR '.join(terms[:5])
-                    logger.warning(f"⚠️  Search query too long ({len(query)} chars), truncated to first 5 terms: {query}")
-            
             logger.info(f"🔍 Generated search query: {query}")
             return query
             
