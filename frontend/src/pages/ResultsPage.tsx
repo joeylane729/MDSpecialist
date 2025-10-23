@@ -110,6 +110,13 @@ const ResultsPage: React.FC = () => {
       } else {
         console.log('🔍 DEBUG: ResultsPage - No treatment_options in aiRecommendations patient_profile');
       }
+      
+      // Debug search_query specifically
+      if (location.state.aiRecommendations.patient_profile?.search_query) {
+        console.log('🔍 DEBUG: ResultsPage found search_query in aiRecommendations patient_profile:', location.state.aiRecommendations.patient_profile.search_query);
+      } else {
+        console.log('🔍 DEBUG: ResultsPage - No search_query in aiRecommendations patient_profile');
+      }
     }
     if (location.state?.providers) {
       console.log('ResultsPage - providers received:', location.state.providers.length);
@@ -122,6 +129,14 @@ const ResultsPage: React.FC = () => {
     } else {
       console.log('🔍 DEBUG: ResultsPage - No treatment_options in searchParams');
       console.log('🔍 DEBUG: searchParams keys:', searchParams ? Object.keys(searchParams) : 'searchParams is null');
+    }
+    
+    // Debug search_query specifically
+    if (searchParams?.search_query) {
+      console.log('🔍 DEBUG: ResultsPage found search_query in searchParams:', searchParams.search_query);
+    } else {
+      console.log('🔍 DEBUG: ResultsPage - No search_query in searchParams');
+      console.log('🔍 DEBUG: searchParams search_query:', searchParams?.search_query);
     }
   }, [location.state, searchParams]);
 
@@ -166,6 +181,8 @@ const ResultsPage: React.FC = () => {
     
     // Try to get data from location.state first (direct navigation)
     if (location.state?.searchParams && location.state.providers) {
+      console.log('🔍 DEBUG: ResultsPage - location.state.searchParams:', location.state.searchParams);
+      console.log('🔍 DEBUG: ResultsPage - search_query in searchParams:', location.state.searchParams.search_query);
       setSearchParams(location.state.searchParams);
       setProviders(location.state.providers);
       
