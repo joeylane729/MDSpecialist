@@ -180,13 +180,7 @@ class MedicalAnalysisService:
             if medical_analysis.get("diagnoses"):
                 logger.debug(f"🔍 Diagnosis content: {medical_analysis['diagnoses']}")
             
-            # Extract and flatten diagnosis data for frontend compatibility
-            differential_diagnoses = []
-            if medical_analysis["diagnoses"] and "differential" in medical_analysis["diagnoses"]:
-                differential_diagnoses = medical_analysis["diagnoses"]["differential"]
-                logger.info(f"🔍 DEBUG: Found {len(differential_diagnoses)} differential diagnoses")
-            else:
-                logger.warning(f"🔍 DEBUG: No differential diagnoses found. diagnoses structure: {medical_analysis['diagnoses']}")
+            # Extract diagnosis data for frontend compatibility
             
             # Use primary diagnosis from the diagnoses structure if available
             primary_icd10 = medical_analysis["predicted_icd10"]
@@ -214,7 +208,6 @@ class MedicalAnalysisService:
                 # Medical analysis data (flattened for frontend compatibility)
                 "predicted_icd10": primary_icd10,
                 "icd10_description": primary_description,
-                "differential_diagnoses": differential_diagnoses,
                 "treatment_options": treatment_options,
                 "search_query": search_query,  # Pre-generated search query for Pinecone
                 
@@ -225,7 +218,6 @@ class MedicalAnalysisService:
             logger.info(f"✅ Comprehensive analysis completed: ICD-10={comprehensive_result['predicted_icd10']}")
             logger.info(f"📋 Analysis includes {len(treatment_options)} treatment options")
             logger.debug(f"🔍 Analysis result keys: {list(comprehensive_result.keys())}")
-            logger.debug(f"🔍 Differential diagnoses count: {len(comprehensive_result.get('differential_diagnoses', []))}")
             logger.debug(f"🔍 Primary description: {comprehensive_result.get('icd10_description', 'None')}")
             return comprehensive_result
             
@@ -487,7 +479,7 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
         pdf_content: str = ""
     ) -> Dict[str, Any]:
         """
-        Use GPT to predict primary diagnosis, differential diagnoses, and treatment options based on patient information.
+        Use GPT to predict primary diagnosis and treatment options based on patient information.
         
         Args:
             symptoms: Patient symptoms
@@ -498,7 +490,7 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
             pdf_content: Extracted content from uploaded PDF files (optional)
             
         Returns:
-            Dictionary containing primary diagnosis, differential diagnoses, and exactly 3 treatment options
+            Dictionary containing primary diagnosis and exactly 3 treatment options
         """
         try:
             prompt = PromptTemplate(
@@ -516,8 +508,7 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
                 
                 Analyze the information above and provide:
                 1. Primary diagnosis (most likely ICD-10 code and description based on symptoms and diagnosis)
-                2. Additional diagnoses (additional diagnoses with ICD-10 codes that could explain the symptoms)
-                3. Treatment options
+                2. Treatment options
                 
                 Consider the symptoms carefully when determining the most likely diagnosis and alternatives.
                 For treatment options, provide evidence-based treatment approaches with realistic outcomes and complications.
@@ -528,12 +519,6 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
                         "code": "ICD10_CODE",
                         "description": "Medical description"
                     }},
-                    "differential": [
-                        {{
-                            "code": "ICD10_CODE",
-                            "description": "Medical description"
-                        }}
-                    ],
                     "treatment_options": [
                         {{
                             "name": "Treatment name",
@@ -580,7 +565,7 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
             diagnoses = json.loads(response_text)
             
             # Validate the response structure
-            if 'primary' in diagnoses and 'differential' in diagnoses:
+            if 'primary' in diagnoses:
                 # Look up descriptions for all codes from our database
                 if self.db:
                     # Look up primary diagnosis description
@@ -588,18 +573,11 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
                         primary_desc = self.lookup_icd10_description(diagnoses['primary']['code'])
                         if primary_desc:
                             diagnoses['primary']['description'] = primary_desc
-                    
-                    # Look up differential diagnosis descriptions
-                    for diff in diagnoses['differential']:
-                        if 'code' in diff:
-                            diff_desc = self.lookup_icd10_description(diff['code'])
-                            if diff_desc:
-                                diff['description'] = diff_desc
                 
                 return diagnoses
             else:
                 logger.warning(f"GPT returned invalid response structure: {diagnoses}")
-                return {"primary": {}, "differential": [], "treatment_options": []}
+                return {"primary": {}, "treatment_options": []}
                 
         except Exception as e:
             logger.error(f"Error in GPT diagnosis prediction: {e}")

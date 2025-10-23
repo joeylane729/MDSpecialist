@@ -17,10 +17,6 @@ interface SearchParams {
   determined_specialty?: string;
   predicted_icd10?: string;
   icd10_description?: string;
-  differential_diagnoses?: Array<{
-    code: string;
-    description: string;
-  }>;
   treatment_options?: Array<{
     name: string;
     outcomes: string;
@@ -911,29 +907,6 @@ const ResultsPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Differential Diagnoses */}
-                  {searchParams?.differential_diagnoses && searchParams.differential_diagnoses.length > 0 && (
-                    <div className="border-l-4 border-yellow-500 pl-4">
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Differential Diagnoses</h3>
-                      <div className="space-y-2">
-                        {searchParams.differential_diagnoses.map((diff, index) => (
-                          <div key={index} className="bg-gray-50 p-3 rounded-lg">
-                            <div className="flex items-start gap-2">
-                              <span className="text-sm font-medium text-gray-600">{index + 1}.</span>
-                              <div>
-                                <div className="font-medium text-gray-900">{diff.description}</div>
-                                {diff.code && (
-                                  <code className="text-xs text-gray-600 bg-gray-200 px-1 py-0.5 rounded">
-                                    {diff.code}
-                                  </code>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
                   {/* Search Query */}
                   {searchParams?.search_query && (

@@ -166,13 +166,12 @@ async def search_providers_by_criteria(
         
         print(f"GPT determined specialty: '{determined_specialty}'")
         
-        # Use GPT to predict both primary and differential diagnoses from the combined input
-        print(f"Using GPT to predict diagnoses for combined input: '{combined_input[:200]}...'")
+        # Use GPT to predict primary diagnosis from the combined input
+        print(f"Using GPT to predict diagnosis for combined input: '{combined_input[:200]}...'")
         predicted_diagnoses = await gpt_service.predict_diagnoses(symptoms, diagnosis)
         
         predicted_icd10 = None
         icd10_description = None
-        differential_diagnoses = []
         
         if predicted_diagnoses:
             print(f"GPT predicted diagnoses: {predicted_diagnoses}")
@@ -182,11 +181,6 @@ async def search_providers_by_criteria(
                 predicted_icd10 = predicted_diagnoses['primary']['code']
                 icd10_description = predicted_diagnoses['primary'].get('description', 'Description not available')
                 print(f"Primary diagnosis: {predicted_icd10} - {icd10_description}")
-            
-            # Extract differential diagnoses
-            if 'differential' in predicted_diagnoses:
-                differential_diagnoses = predicted_diagnoses['differential']
-                print(f"Found {len(differential_diagnoses)} differential diagnoses")
         else:
             print("GPT failed to predict diagnoses, falling back to single code prediction")
             # Fallback to the old method
@@ -369,8 +363,7 @@ async def search_providers_by_criteria(
                 "diagnosis": diagnosis,
                 "determined_specialty": determined_specialty,
                 "predicted_icd10": predicted_icd10,
-                "icd10_description": icd10_description,
-                "differential_diagnoses": differential_diagnoses
+                "icd10_description": icd10_description
             }
         }
         

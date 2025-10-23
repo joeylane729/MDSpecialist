@@ -75,10 +75,6 @@ export interface NPISearchResponse {
     determined_specialty: string;
     predicted_icd10?: string;
     icd10_description?: string;
-    differential_diagnoses?: Array<{
-      code: string;
-      description: string;
-    }>;
   };
 }
 
