@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Script to create the npi_medical_school_mapping table using Railway CLI.
+Script to create the npi_medical_school_mapping table using AWS Aurora.
 
-Run this with: railway run python scripts/run_with_railway.py
+Run this with: python scripts/run_with_aws.py
 """
 
 import os
@@ -19,18 +19,18 @@ from app.models.base import Base
 def create_table():
     """Create the npi_medical_school_mapping table."""
     
-    # Get database URL from environment (Railway sets this automatically)
+    # Get database URL from environment (AWS Aurora)
     database_url = os.getenv('DATABASE_URL')
     if not database_url:
         print("❌ Error: DATABASE_URL environment variable not set")
-        print("Make sure you're running this with: railway run python scripts/run_with_railway.py")
+        print("Make sure you're running this with DATABASE_URL set to your AWS Aurora connection string")
         return False
     
     try:
         # Create engine
         engine = create_engine(database_url)
         
-        print("🔗 Connecting to Railway database...")
+        print("🔗 Connecting to AWS Aurora database...")
         
         # Test connection
         with engine.connect() as conn:
