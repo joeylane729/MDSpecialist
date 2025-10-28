@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 # Database URL from environment variable - default to PostgreSQL
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:MDspecialist2025!@database-1.cluster-c89cakwoosvz.us-east-1.rds.amazonaws.com:5432/postgres")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://username:password@your-aurora-endpoint:5432/your-database")
 print(f"DEBUG: Using DATABASE_URL: {DATABASE_URL}")
 
 # Create engine

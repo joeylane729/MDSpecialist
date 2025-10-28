@@ -8,7 +8,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://postgres:MDspecialist2025!@database-1.cluster-c89cakwoosvz.us-east-1.rds.amazonaws.com:5432/postgres
+      - DATABASE_URL=postgresql://username:password@your-aurora-endpoint:5432/your-database
       - CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
     volumes:
       - ./backend:/app
