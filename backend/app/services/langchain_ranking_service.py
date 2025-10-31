@@ -303,6 +303,19 @@ class LangChainRankingService:
                 vumedi_count = len(matches['vumedi_content'])
                 pubmed_count = len(matches['pubmed_articles'])
                 
+                # Log matched PubMed articles for top providers
+                if pubmed_count > 0 and len(provider_links) < 20:
+                    # Get provider name for logging
+                    provider_info = None
+                    for p in providers_to_rank:
+                        if p.get('npi') == npi:
+                            provider_info = p
+                            break
+                    provider_name = provider_info.get('name', '') if provider_info else npi
+                    pubmed_titles = [art.get('title', 'No title')[:80] for art in matches['pubmed_articles'][:3]]
+                    pmids = [art.get('pmid', '') for art in matches['pubmed_articles']]
+                    logger.info(f"📋 Provider {provider_name} (NPI {npi}) matched {pubmed_count} PubMed articles: PMIDs={pmids[:5]}")
+                
                 provider_links[npi] = {
                     'vumedi_content': matches['vumedi_content'],
                     'pubmed_articles': matches['pubmed_articles']
