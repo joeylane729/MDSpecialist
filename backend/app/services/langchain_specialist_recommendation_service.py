@@ -98,7 +98,9 @@ class LangChainSpecialistRecommendationService:
                 logger.info(f"📋 Processing {len(specialist_information)} specialists for treatment: {treatment_name}")
                 
                 # Convert specialist information to recommendations for this treatment
-                for i, info in enumerate(specialist_information):
+                # Limit to top 50 results to avoid response size issues
+                limited_info = specialist_information[:50]
+                for i, info in enumerate(limited_info):
                     # Extract specialist name from featuring field
                     featuring = info.get('featuring', '')
                     specialist_name = featuring.split(',')[0].strip() if featuring else f"Specialist {i+1}"
@@ -106,7 +108,7 @@ class LangChainSpecialistRecommendationService:
                     # Calculate scores that stay positive (0.9 down to 0.1)
                     max_score = 0.9
                     min_score = 0.1
-                    total_items = len(specialist_information)
+                    total_items = len(limited_info)
                     if total_items > 1:
                         score = max_score - (i * (max_score - min_score) / (total_items - 1))
                     else:
