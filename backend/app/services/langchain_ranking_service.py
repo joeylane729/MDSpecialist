@@ -83,62 +83,57 @@ class LangChainRankingService:
         
         self.ranking_chain = self.ranking_prompt | self.llm
     
-    def _get_medical_school_score(self, npi: str) -> int:
-        """Get medical school ranking score for an NPI provider."""
-        if not self.db:
-            logger.warning("No database session available for medical school lookup")
-            return 0
+    def _batch_get_medical_school_scores(self, npi_list: List[str]) -> Dict[str, int]:
+        """Batch get medical school ranking scores for multiple NPI providers."""
+        if not self.db or not npi_list:
+            return {}
             
         try:
-            # Query to get the best medical school ranking for this NPI
+            # Use DISTINCT ON to get the best (lowest rank) medical school for each NPI
             query = text("""
-                SELECT msr.rank 
+                SELECT DISTINCT ON (nmr."NPI") nmr."NPI", msr.rank 
                 FROM npi_medical_school_mapping_results nmr
                 JOIN medical_school_rankings msr ON nmr."Medical_School_ID" = msr.id
-                WHERE nmr."NPI" = :npi
-                ORDER BY msr.rank ASC
-                LIMIT 1
+                WHERE nmr."NPI" = ANY(:npi_list)
+                ORDER BY nmr."NPI", msr.rank ASC
             """)
             
-            query_params = {"npi": npi}
+            query_params = {"npi_list": npi_list}
             
             # Log the exact SQL query being executed
             query_sql = str(query.compile(compile_kwargs={"literal_binds": False}))
-            logger.info(f"📋 Medical School Query SQL:\n{query_sql}")
-            logger.info(f"📋 Query Parameters: {query_params}")
-            
-            # Try to render the query with parameters
-            try:
-                rendered_query = query_sql
-                for param, value in query_params.items():
-                    rendered_query = rendered_query.replace(f":{param}", f"'{value}'" if isinstance(value, str) else str(value))
-                logger.info(f"📋 Rendered Query (approximate):\n{rendered_query}")
-            except Exception as render_error:
-                logger.debug(f"Could not render query: {render_error}")
+            logger.info(f"📋 Batch Medical School Query SQL:\n{query_sql}")
+            logger.info(f"📋 Query Parameters: {len(npi_list)} NPIs")
             
             result = self.db.execute(query, query_params)
-            row = result.fetchone()
+            rows = result.fetchall()
             
-            if row:
-                rank = row[0]
-                logger.debug(f"Medical school rank for NPI {npi}: {rank}")
+            scores = {}
+            for row in rows:
+                npi = row[0]
+                rank = row[1]
                 
                 # Convert rank to points: 1-25 = 3 points, 26-50 = 2 points, 51-75 = 1 point
                 if rank <= 25:
-                    return 3
+                    scores[npi] = 3
                 elif rank <= 50:
-                    return 2
+                    scores[npi] = 2
                 elif rank <= 75:
-                    return 1
+                    scores[npi] = 1
                 else:
-                    return 0
-            else:
-                logger.debug(f"No medical school data found for NPI {npi}")
-                return 0
+                    scores[npi] = 0
+            
+            logger.info(f"✅ Fetched medical school scores for {len(scores)} NPIs")
+            return scores
                 
         except Exception as e:
-            logger.error(f"Error looking up medical school for NPI {npi}: {e}")
-            return 0
+            logger.error(f"Error batch looking up medical schools: {e}")
+            return {}
+    
+    def _get_medical_school_score(self, npi: str) -> int:
+        """Get medical school ranking score for a single NPI provider (deprecated, use batch version)."""
+        scores = self._batch_get_medical_school_scores([npi])
+        return scores.get(npi, 0)
     
     async def rank_npi_providers(
         self, 
@@ -262,6 +257,18 @@ class LangChainRankingService:
             
             logger.info(f"✅ Found {len(provider_matches)} providers with matches")
             
+            # Batch fetch all medical school scores for all NPIs at once
+            all_npis = set()
+            for npi in provider_matches.keys():
+                all_npis.add(npi)
+            for provider in providers_to_rank:
+                npi = provider.get('npi', '')
+                if npi:
+                    all_npis.add(npi)
+            
+            med_school_scores = self._batch_get_medical_school_scores(list(all_npis))
+            logger.info(f"📊 Fetched medical school scores for {len(med_school_scores)} NPIs in batch")
+            
             # Build provider links and scores
             provider_links = {}
             provider_scores = {}
@@ -277,7 +284,7 @@ class LangChainRankingService:
                 
                 # Calculate score: Vumedi + PubMed (×4 for content score)
                 content_score = (vumedi_count + pubmed_count) * 4
-                med_school_score = self._get_medical_school_score(npi)
+                med_school_score = med_school_scores.get(npi, 0)
                 total_score = content_score + med_school_score
                 
                 provider_scores[npi] = {
@@ -310,7 +317,7 @@ class LangChainRankingService:
             for provider in providers_to_rank:
                 npi = provider.get('npi', '')
                 if npi and npi not in matched_npis:
-                    med_school_score = self._get_medical_school_score(npi)
+                    med_school_score = med_school_scores.get(npi, 0)
                     provider_scores[npi] = {
                         'score': med_school_score,
                         'content_score': 0,
