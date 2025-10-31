@@ -261,12 +261,17 @@ def parse_article(article_el: ET.Element) -> Optional[Dict[str, Any]]:
         # Authors JSONB
         authors_json: List[Dict[str, Any]] = []
         for a in article.findall('.//AuthorList/Author') if article is not None else []:
-            name = f"{safe_text(a.find('ForeName'))} {safe_text(a.find('LastName'))}".strip()
+            lastname = safe_text(a.find('LastName'))
+            forename = safe_text(a.find('ForeName'))
+            initials = safe_text(a.find('Initials'))
             orcid = safe_text(a.find("Identifier[@Source='ORCID']"))
             affiliations = [safe_text(aff) for aff in a.findall('.//Affiliation') if safe_text(aff)]
-            if name or affiliations or orcid:
+            # Include author if any name field or affiliations or orcid exist
+            if lastname or forename or initials or affiliations or orcid:
                 authors_json.append({
-                    "name": name,
+                    "lastname": lastname,
+                    "forename": forename,
+                    "initials": initials,
                     "orcid": orcid,
                     "affiliations": affiliations
                 })

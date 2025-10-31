@@ -132,134 +132,200 @@ class LangChainRankingService:
         max_providers: int = 10000
     ) -> Dict[str, Any]:
         """
-        Rank NPI providers based on Pinecone specialist information.
+        Rank NPI providers based on simple exact name matching with Pinecone data.
         
         Args:
             npi_providers: List of NPI provider dictionaries
-            pinecone_data: List of specialist information from Pinecone
-            patient_profile: Patient profile with symptoms, diagnosis, etc.
+            pinecone_data: List of specialist information from Pinecone (Vumedi/PubMed)
+            patient_profile: Patient profile with symptoms, diagnosis, etc. (not used, kept for compatibility)
             max_providers: Maximum number of providers to rank (default: 10000)
             
         Returns:
-            Dictionary with 'ranking' (list of NPI numbers) and 'explanation' (string)
+            Dictionary with 'ranking' (list of NPI numbers), 'provider_links', 'provider_scores', and 'explanation'
         """
         try:
-            logger.info(f"🎯 === SINGLE-STAGE RANKING STARTED ===")
+            logger.info(f"🎯 === SIMPLE NAME MATCHING RANKING STARTED ===")
             logger.info(f"📊 Total providers received: {len(npi_providers)}")
             logger.info(f"📊 Max providers to rank: {max_providers}")
             logger.info(f"📊 Pinecone records: {len(pinecone_data)}")
             
             # Take only the first max_providers for ranking
             providers_to_rank = npi_providers[:max_providers]
-            logger.info(f"🔍 Actually ranking {len(providers_to_rank)} providers (limited by max_providers)")
             
-            if len(npi_providers) > max_providers:
-                logger.warning(f"⚠️  Provider list truncated from {len(npi_providers)} to {max_providers}")
-            else:
-                logger.info(f"✅ Processing all {len(providers_to_rank)} providers (no truncation needed)")
+            # Build lookup maps for NPI providers
+            # Map: (first_name.lower, last_name.lower) -> provider_dict
+            npi_by_name = {}
+            # Map: full_name.lower -> provider_dict (for Vumedi matching)
+            npi_by_full_name = {}
             
-            # Format data and log sizes
-            logger.info("📊 Formatting data for LLM...")
-            format_start = time.time()
+            for provider in providers_to_rank:
+                npi = provider.get('npi', '')
+                if not npi:
+                    continue
+                
+                # Try multiple field name variations
+                first_name = (provider.get('first_name') or provider.get('provider_first_name') or '').strip()
+                last_name = (provider.get('last_name') or provider.get('provider_last_name') or '').strip()
+                full_name = (provider.get('name') or provider.get('full_name') or '').strip()
+                
+                # Build name-based lookup
+                # Normalize: use only the first word of first_name to handle middle initials
+                # e.g., "Theodore" matches "Theodore H" from PubMed
+                if first_name and last_name:
+                    first_name_normalized = first_name.split()[0].lower() if first_name else ''
+                    last_name_normalized = last_name.lower()
+                    name_key = (first_name_normalized, last_name_normalized)
+                    if name_key not in npi_by_name:
+                        npi_by_name[name_key] = []
+                    npi_by_name[name_key].append(provider)
+                
+                # Build full name lookup for Vumedi
+                if full_name:
+                    npi_by_full_name[full_name.lower()] = provider
             
-            pinecone_formatted = self._format_pinecone_data(pinecone_data)
-            patient_formatted = self._format_patient_profile(patient_profile)
-            npi_formatted = self._format_npi_providers(providers_to_rank)
+            logger.info(f"📊 Built lookup maps: {len(npi_by_name)} first+last name combinations, {len(npi_by_full_name)} full names")
             
-            format_end = time.time()
-            logger.info(f"📊 Data formatting completed in {format_end - format_start:.2f} seconds")
+            # Track matches: npi -> {vumedi_content: [], pubmed_articles: []}
+            provider_matches = {}
             
-            # Log data sizes
-            pinecone_size = len(pinecone_formatted)
-            patient_size = len(patient_formatted)
-            npi_size = len(npi_formatted)
-            total_size = pinecone_size + patient_size + npi_size
+            # Process Pinecone data for matches
+            for record in pinecone_data:
+                source = record.get('_source', 'unknown')
+                
+                if source == 'vumedi':
+                    # Vumedi: Match by full name from "featuring" field
+                    featuring = (record.get('featuring') or '').strip()
+                    if featuring:
+                        featuring_lower = featuring.lower()
+                        if featuring_lower in npi_by_full_name:
+                            provider = npi_by_full_name[featuring_lower]
+                            npi = provider.get('npi', '')
+                            if npi:
+                                if npi not in provider_matches:
+                                    provider_matches[npi] = {
+                                        'vumedi_content': [],
+                                        'pubmed_articles': []
+                                    }
+                                provider_matches[npi]['vumedi_content'].append({
+                                    'link': record.get('link', ''),
+                                    'title': record.get('title', '')
+                                })
+                
+                elif source == 'pubmed':
+                    # PubMed: Match by exact first name + last name from authors JSONB
+                    authors_jsonb = record.get('authors_jsonb', [])
+                    
+                    if authors_jsonb and isinstance(authors_jsonb, list):
+                        # Use JSONB format with separate forename/lastname fields
+                        for author_obj in authors_jsonb:
+                            if isinstance(author_obj, dict):
+                                forename = (author_obj.get('forename') or '').strip()
+                                lastname = (author_obj.get('lastname') or '').strip()
+                                
+                                # Normalize: use only the first word of forename to handle middle initials
+                                # e.g., "Theodore H" -> "theodore" to match "Theodore" from NPI
+                                if forename and lastname:
+                                    forename_normalized = forename.split()[0].lower() if forename else ''
+                                    lastname_normalized = lastname.lower()
+                                    name_key = (forename_normalized, lastname_normalized)
+                                    
+                                    if name_key in npi_by_name:
+                                        # Match found - add to all providers with this name
+                                        for provider in npi_by_name[name_key]:
+                                            npi = provider.get('npi', '')
+                                            if npi:
+                                                if npi not in provider_matches:
+                                                    provider_matches[npi] = {
+                                                        'vumedi_content': [],
+                                                        'pubmed_articles': []
+                                                    }
+                                                provider_matches[npi]['pubmed_articles'].append({
+                                                    'pmid': record.get('_id', record.get('pmid', '')),
+                                                    'title': record.get('title', '')
+                                                })
             
-            logger.info(f"📊 Data sizes:")
-            logger.info(f"  - Pinecone data: {pinecone_size:,} characters")
-            logger.info(f"  - Patient profile: {patient_size:,} characters")
-            logger.info(f"  - NPI providers: {npi_size:,} characters")
-            logger.info(f"  - Total prompt size: {total_size:,} characters")
-            logger.info(f"  - Estimated tokens: ~{total_size // 4:,} tokens (rough estimate)")
+            logger.info(f"✅ Found {len(provider_matches)} providers with matches")
             
-            logger.info(f"Calling LLM for ranking...")
-            logger.info(f"📊 Sending to LLM: {len(providers_to_rank)} providers, {len(pinecone_data)} Pinecone records")
+            # Build provider links and scores
+            provider_links = {}
+            provider_scores = {}
             
-            # Track usage before the call
-            start_time = time.time()
-            logger.info(f"🚀 Starting GPT ranking call at {start_time}")
+            for npi, matches in provider_matches.items():
+                vumedi_count = len(matches['vumedi_content'])
+                pubmed_count = len(matches['pubmed_articles'])
+                
+                provider_links[npi] = {
+                    'vumedi_content': matches['vumedi_content'],
+                    'pubmed_articles': matches['pubmed_articles']
+                }
+                
+                # Calculate score: Vumedi + PubMed (×4 for content score)
+                content_score = (vumedi_count + pubmed_count) * 4
+                med_school_score = self._get_medical_school_score(npi)
+                total_score = content_score + med_school_score
+                
+                provider_scores[npi] = {
+                    'score': total_score,
+                    'content_score': content_score,
+                    'med_school_score': med_school_score,
+                    'vumedi_count': vumedi_count,
+                    'pubmed_count': pubmed_count,
+                    'npi': npi
+                }
             
-            # Call LLM without timeout wrapper to see actual performance
-            logger.info("🚀 Making LLM call without timeout...")
-            llm_start_time = time.time()
+            # Sort providers by score (descending), then by name
+            providers_with_scores = []
+            for provider in providers_to_rank:
+                npi = provider.get('npi', '')
+                if npi in provider_scores:
+                    providers_with_scores.append((
+                        provider.get('name', ''),
+                        provider_scores[npi]
+                    ))
             
-            response = await self.ranking_chain.ainvoke({
-                "npi_providers": npi_formatted,
-                "pinecone_data": pinecone_formatted,
-                "patient_profile": patient_formatted
-            })
+            # Sort by score descending, then name ascending
+            providers_with_scores.sort(key=lambda x: (-x[1]['score'], x[0]))
             
-            # Extract content from AIMessage object
-            response_content = response.content if hasattr(response, 'content') else str(response)
+            # Extract ranked NPI list
+            ranked_npis = [score['npi'] for _, score in providers_with_scores]
             
-            llm_end_time = time.time()
-            llm_duration = llm_end_time - llm_start_time
-            logger.info(f"✅ LLM call completed in {llm_duration:.2f} seconds")
+            # Add unmatched providers with zero scores
+            matched_npis = set(ranked_npis)
+            for provider in providers_to_rank:
+                npi = provider.get('npi', '')
+                if npi and npi not in matched_npis:
+                    med_school_score = self._get_medical_school_score(npi)
+                    provider_scores[npi] = {
+                        'score': med_school_score,
+                        'content_score': 0,
+                        'med_school_score': med_school_score,
+                        'vumedi_count': 0,
+                        'pubmed_count': 0,
+                        'npi': npi
+                    }
+                    provider_links[npi] = {
+                        'vumedi_content': [],
+                        'pubmed_articles': []
+                    }
+                    ranked_npis.append(npi)
             
-            # Log response details
-            response_size = len(response_content) if response_content else 0
-            logger.info(f"📊 LLM Response details:")
-            logger.info(f"  - Response size: {response_size:,} characters")
-            logger.info(f"  - Response preview: {response_content[:200] if response_content else 'None'}...")
+            logger.info(f"✅ === SIMPLE NAME MATCHING COMPLETED ===")
+            logger.info(f"✅ Matched {len(matched_npis)} providers, {len(ranked_npis) - len(matched_npis)} unmatched")
+            logger.info(f"🏆 Top 10 ranked NPIs: {ranked_npis[:10]}")
             
-            # Log completion and attempt to get usage info
-            end_time = time.time()
-            duration = end_time - start_time
-            logger.info(f"✅ GPT ranking call completed in {duration:.2f} seconds")
+            explanation = f"Matched {len(matched_npis)} providers using exact name matching. " \
+                         f"Found {sum(score['vumedi_count'] for score in provider_scores.values())} Vumedi matches " \
+                         f"and {sum(score['pubmed_count'] for score in provider_scores.values())} PubMed matches."
             
-            # Try to get usage information from the LLM response
-            try:
-                # Check if the response has usage information
-                if hasattr(response, 'usage_metadata'):
-                    usage = response.usage_metadata
-                    logger.info(f"💰 GPT Usage - Tokens: {usage.total_tokens}, Input: {usage.input_tokens}, Output: {usage.output_tokens}")
-                elif hasattr(response, 'usage'):
-                    usage = response.usage
-                    logger.info(f"💰 GPT Usage - Tokens: {usage.total_tokens}, Input: {usage.prompt_tokens}, Output: {usage.completion_tokens}")
-                else:
-                    logger.info(f"💰 GPT Usage - No usage metadata available in response")
-            except Exception as e:
-                logger.warning(f"Could not extract usage information: {e}")
-            
-            # Also try to get usage from the LLM object itself
-            try:
-                if hasattr(self.llm, 'get_num_tokens'):
-                    input_tokens = self.llm.get_num_tokens(npi_formatted + pinecone_formatted + patient_formatted)
-                    logger.info(f"📊 Estimated input tokens: {input_tokens}")
-            except Exception as e:
-                logger.warning(f"Could not estimate input tokens: {e}")
-            
-            # Log full GPT response for debugging
-            logger.info(f"=== GPT RANKING RESPONSE ===")
-            logger.info(f"Response length: {len(response_content)} characters")
-            logger.info(f"Full response: {response_content}")
-            logger.info(f"=== END GPT RESPONSE ===")
-            
-            # Parse the response
-            logger.info("🔍 Parsing LLM response...")
-            parse_start = time.time()
-            ranking_result = self._parse_ranking_response(response_content, providers_to_rank)
-            parse_end = time.time()
-            logger.info(f"🔍 Response parsing completed in {parse_end - parse_start:.2f} seconds")
-            
-            logger.info(f"✅ === SINGLE-STAGE RANKING COMPLETED ===")
-            logger.info(f"✅ Successfully ranked {len(ranking_result['ranking'])} providers")
-            logger.info(f"🏆 Top 10 ranked NPIs: {ranking_result['ranking'][:10]}")
-            logger.info(f"📝 Ranking explanation: {ranking_result['explanation']}")
-            return ranking_result
+            return {
+                'ranking': ranked_npis,
+                'provider_links': provider_links,
+                'provider_scores': {npi: score for npi, score in provider_scores.items()},
+                'explanation': explanation
+            }
             
         except Exception as e:
-            logger.error(f"❌ Error in single-stage ranking: {str(e)}")
+            logger.error(f"❌ Error in simple name matching: {str(e)}")
             logger.error(f"❌ Error type: {type(e).__name__}")
             import traceback
             logger.error(f"❌ Full traceback: {traceback.format_exc()}")
@@ -268,7 +334,8 @@ class LangChainRankingService:
             return {
                 'ranking': fallback_ranking,
                 'explanation': 'Ranking failed - showing providers in original order.',
-                'provider_links': {}
+                'provider_links': {},
+                'provider_scores': {}
             }
     
     def _format_npi_providers(self, providers: List[Dict[str, Any]]) -> str:

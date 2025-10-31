@@ -95,12 +95,17 @@ class LangChainRetrievalStrategies:
                     COALESCE(doi, '') as doi,
                     COALESCE(language, '') as language,
                     COALESCE(journal_country, '') as journal_country,
-                    -- Convert authors JSONB to string format
+                    -- Return authors JSONB directly for matching (keep string version for display)
+                    authors as authors_jsonb,
+                    -- Also keep string format for backward compatibility
                     CASE 
                         WHEN authors::text = '[]' OR authors IS NULL THEN ''
                         ELSE (
                             SELECT string_agg(
-                                COALESCE(a->>'name', ''),
+                                TRIM(
+                                    COALESCE(a->>'forename', '') || ' ' ||
+                                    COALESCE(a->>'lastname', '')
+                                ),
                                 '; '
                             )
                             FROM jsonb_array_elements(authors) a
@@ -157,12 +162,22 @@ class LangChainRetrievalStrategies:
             # Convert results to format matching Pinecone hits
             hits = []
             for row in rows:
+                # Get authors_jsonb (may not exist if query is old)
+                authors_jsonb = None
+                if hasattr(row, 'authors_jsonb'):
+                    import json
+                    try:
+                        authors_jsonb = row.authors_jsonb if isinstance(row.authors_jsonb, list) else json.loads(row.authors_jsonb) if row.authors_jsonb else []
+                    except:
+                        authors_jsonb = []
+                
                 hit_fields = {
                     "_id": str(row.pmid),  # Store as string for consistency
                     "pmid": str(row.pmid),
                     "title": row.title or "",
                     "abstract": row.abstract or "",
-                    "authors": row.authors or "",
+                    "authors": row.authors or "",  # String format for display
+                    "authors_jsonb": authors_jsonb or [],  # JSONB format for matching
                     "journal_title": row.journal_title or "",
                     "journal_abbrev": row.journal_abbrev or "",
                     "issn": row.issn or "",
