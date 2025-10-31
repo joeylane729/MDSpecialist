@@ -133,6 +133,7 @@ npidata.csv
 *.csv
 *.json
 *.md
+*.xml
 
 # Keep essential project config JSON files tracked
 !package.json

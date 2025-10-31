@@ -21,6 +21,7 @@ class LangChainSpecialistRecommendationService:
     def __init__(self, db=None):
         self._pinecone_service = None
         self._retrieval_strategies = None
+        self._db = db  # Store db session for retrieval strategies
         self.medical_analysis = MedicalAnalysisService(db)
         self.ranking_service = LangChainRankingService(db)
 
@@ -37,8 +38,16 @@ class LangChainSpecialistRecommendationService:
     def retrieval_strategies(self):
         """Lazy initialization of LangChainRetrievalStrategies."""
         if self._retrieval_strategies is None:
-            self._retrieval_strategies = LangChainRetrievalStrategies(self.pinecone_service)
+            # Pass database session to retrieval strategies for Postgres PubMed queries
+            self._retrieval_strategies = LangChainRetrievalStrategies(self.pinecone_service, db=self._db)
         return self._retrieval_strategies
+    
+    def set_db(self, db):
+        """Set database session for services that need it."""
+        self._db = db
+        self.medical_analysis.set_db(db)
+        # Reset retrieval strategies to use new db session
+        self._retrieval_strategies = None
     
     async def get_specialist_recommendations(
         self,

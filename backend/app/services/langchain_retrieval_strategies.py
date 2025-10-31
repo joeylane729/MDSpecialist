@@ -3,7 +3,11 @@ LangChain Retrieval Strategies
 """
 
 import logging
-from typing import List, Dict, Any
+import os
+import json
+from typing import List, Dict, Any, Optional
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import Session
 
 from ..models.specialist_recommendation import PatientProfile
 from .pinecone_service import PineconeService
@@ -13,14 +17,173 @@ logger = logging.getLogger(__name__)
 class LangChainRetrievalStrategies:
     """LangChain-powered retrieval strategies."""
     
-    def __init__(self, pinecone_service: PineconeService):
+    def __init__(self, pinecone_service: PineconeService, db: Optional[Session] = None):
         self.pinecone_service = pinecone_service
         self.vumedi_index = self.pinecone_service.pc.Index(self.pinecone_service.default_index_name)
-        self.pubmed_index = self.pinecone_service.pc.Index(self.pinecone_service.pubmed_index_name)
+        # No longer using self.pubmed_index - replaced with Postgres queries
+        self.db = db
+        if not db:
+            # Create database connection if not provided
+            database_url = os.getenv('DATABASE_URL')
+            if database_url:
+                self.engine = create_engine(database_url)
+            else:
+                self.engine = None
+                logger.warning("⚠️ DATABASE_URL not set - PubMed queries will use Postgres connection")
+        else:
+            self.engine = None
         
         # Note: Query generation is now handled by MedicalAnalysisService
         # This service only uses pre-generated search queries
         logger.info("LangChainRetrievalStrategies initialized successfully")
+    
+    def _query_pubmed_from_postgres(self, query: str, top_k: int = 10000) -> List[Dict[str, Any]]:
+        """
+        Query PubMed articles from Postgres using full-text search.
+        
+        Args:
+            query: Search query string (can contain " OR " separated variations)
+            top_k: Maximum number of results to return
+            
+        Returns:
+            List of dictionaries matching the format expected from Pinecone hits
+        """
+        if not self.engine and not self.db:
+            logger.error("❌ No database connection available for PubMed query")
+            return []
+        
+        try:
+            # Split query variations if " OR " is present
+            query_variations = [v.strip() for v in query.split(" OR ")]
+            
+            # Build Postgres full-text search query
+            # Use tsvector for title + abstract search
+            # Convert query terms to tsquery format (handle OR terms)
+            search_terms = []
+            for variation in query_variations:
+                # Escape special characters and convert to tsquery format
+                # Split by spaces and join with & for AND logic
+                terms = variation.split()
+                # For each variation, use OR logic
+                if terms:
+                    # Convert each term to proper tsquery format
+                    escaped_terms = [term.replace(':', '').replace('!', '').replace('&', '').replace('|', '') for term in terms if term]
+                    if escaped_terms:
+                        # Join terms with & for AND within variation, we'll use OR between variations
+                        search_terms.extend(escaped_terms)
+            
+            if not search_terms:
+                logger.warning("⚠️ No valid search terms extracted from query")
+                return []
+            
+            # Build Postgres full-text search query that handles OR variations
+            # Use parameterized queries for safety
+            # For simplicity, use the first variation or combine all with OR in tsquery
+            valid_variations = [v.strip() for v in query_variations if v.strip()]
+            
+            if not valid_variations:
+                logger.warning("⚠️ No valid query variations after processing")
+                return []
+            
+            # For OR logic in Postgres tsquery, we'll build the query string
+            # Escape single quotes in query variations for SQL safety
+            escaped_variations = [v.replace("'", "''") for v in valid_variations]
+            
+            # Build tsquery: combine all variations with OR operator (|)
+            if len(escaped_variations) == 1:
+                tsquery_expr = f"plainto_tsquery('english', '{escaped_variations[0]}')"
+            else:
+                # Combine multiple variations with OR (|)
+                tsqueries = [f"plainto_tsquery('english', '{v}')" for v in escaped_variations]
+                tsquery_expr = " | ".join(tsqueries)
+            
+            # Build SQL query with full-text search
+            # Search both title and abstract, rank by relevance
+            sql_query = text(f"""
+                SELECT 
+                    pmid::text as _id,
+                    pmid,
+                    title,
+                    COALESCE(abstract, '') as abstract,
+                    COALESCE(journal_title, '') as journal_title,
+                    COALESCE(journal_abbrev, '') as journal_abbrev,
+                    COALESCE(issn, '') as issn,
+                    COALESCE(doi, '') as doi,
+                    COALESCE(language, '') as language,
+                    COALESCE(journal_country, '') as journal_country,
+                    -- Convert authors JSONB to string format
+                    CASE 
+                        WHEN authors::text = '[]' OR authors IS NULL THEN ''
+                        ELSE (
+                            SELECT string_agg(
+                                COALESCE(a->>'name', ''),
+                                '; '
+                            )
+                            FROM jsonb_array_elements(authors) a
+                        )
+                    END as authors,
+                    -- Convert other JSONB fields to strings for compatibility
+                    COALESCE(mesh_terms::text, '[]') as mesh_terms,
+                    COALESCE(chemicals::text, '[]') as chemicals,
+                    COALESCE(grants::text, '[]') as grants,
+                    COALESCE(citations::text, '[]') as citations,
+                    COALESCE(publication_types::text, '[]') as publication_types,
+                    -- Calculate relevance score based on full-text search
+                    ts_rank_cd(
+                        setweight(to_tsvector('english', COALESCE(title, '')), 'A') ||
+                        setweight(to_tsvector('english', COALESCE(abstract, '')), 'B'),
+                        ({tsquery_expr})
+                    ) as relevance_score
+                FROM pubmed_articles
+                WHERE 
+                    -- Full-text search on title and abstract with OR logic
+                    (
+                        to_tsvector('english', COALESCE(title, '')) ||
+                        to_tsvector('english', COALESCE(abstract, ''))
+                    ) @@ ({tsquery_expr})
+                ORDER BY relevance_score DESC, pmid DESC
+                LIMIT :limit
+            """)
+            
+            # Execute query with limit parameter
+            if self.db:
+                result = self.db.execute(sql_query, {"limit": top_k})
+            else:
+                with self.engine.connect() as conn:
+                    result = conn.execute(sql_query, {"limit": top_k})
+            
+            # Convert results to format matching Pinecone hits
+            hits = []
+            for row in result:
+                hit_fields = {
+                    "_id": str(row.pmid),  # Store as string for consistency
+                    "pmid": str(row.pmid),
+                    "title": row.title or "",
+                    "abstract": row.abstract or "",
+                    "authors": row.authors or "",
+                    "journal_title": row.journal_title or "",
+                    "journal_abbrev": row.journal_abbrev or "",
+                    "issn": row.issn or "",
+                    "doi": row.doi or "",
+                    "language": row.language or "",
+                    "journal_country": row.journal_country or "",
+                    "mesh_terms": row.mesh_terms or "[]",
+                    "chemicals": row.chemicals or "[]",
+                    "grants": row.grants or "[]",
+                    "citations": row.citations or "[]",
+                    "publication_types": row.publication_types or "[]",
+                    "_score": float(row.relevance_score) if row.relevance_score else 0.0
+                }
+                hits.append(hit_fields)
+            
+            logger.info(f"✅ Postgres query returned {len(hits)} PubMed articles for query: '{query[:80]}{'...' if len(query) > 80 else ''}'")
+            return hits
+            
+        except Exception as e:
+            logger.error(f"❌ Error querying PubMed from Postgres: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return []
     
     def _verify_result(self, result: dict, query_variations: list, source: str) -> bool:
         """
@@ -146,7 +309,7 @@ class LangChainRetrievalStrategies:
                 pubmed_top_k = 10000  # Max 10000 total for PubMed
                 logger.debug(f"   📊 Using top_k={vumedi_top_k} for Vumedi, {pubmed_top_k} for PubMed")
                 
-                # Query Vumedi index
+                # Query Vumedi index (still using Pinecone)
                 vumedi_results = self.vumedi_index.search(
                     namespace="__default__",
                     query={
@@ -156,15 +319,8 @@ class LangChainRetrievalStrategies:
                     fields=["*"]
                 )
                 
-                # Query PubMed index
-                pubmed_results = self.pubmed_index.search(
-                    namespace="__default__",
-                    query={
-                        "inputs": {"text": query},
-                        "top_k": pubmed_top_k
-                    },
-                    fields=["*"]
-                )
+                # Query PubMed from Postgres database (replacing Pinecone)
+                pubmed_hits = self._query_pubmed_from_postgres(query, pubmed_top_k)
                 
                 # Initialize treatment results
                 treatment_results[treatment_id] = {
@@ -200,35 +356,34 @@ class LangChainRetrievalStrategies:
                                 vumedi_filtered += 1
                                 logger.debug(f"❌ Filtered Vumedi result: {hit.fields.get('title', 'No title')[:50]}...")
                 
-                # Parse PubMed results
+                # Parse PubMed results from Postgres
                 pubmed_count = 0
                 pubmed_filtered = 0
-                if hasattr(pubmed_results, 'result') and hasattr(pubmed_results.result, 'hits'):
-                    for hit in pubmed_results.result.hits:
-                        # Get PMID from hit._id (newer API) or hit.id (older API)
-                        pmid = getattr(hit, '_id', None) or getattr(hit, 'id', None)
-                        candidate_id = pmid or f"{hit.fields.get('title', '')}_{hit.fields.get('authors', '')}"
-                        if candidate_id and candidate_id not in seen_ids:
-                            # Add source information and treatment metadata
-                            hit.fields["_source"] = "pubmed"
-                            hit.fields["_treatment_id"] = treatment_id
-                            hit.fields["_treatment_name"] = treatment_name
-                            hit.fields["_id"] = pmid  # Store the PMID for later use
-                            hit.fields["_score"] = getattr(hit, '_score', None)
-                            
-                            # Verify the result contains query variations
-                            is_verified = self._verify_result(hit.fields, query_variations, source="pubmed")
-                            hit.fields["_verified"] = is_verified
-                            
-                            # Store all results (both verified and unverified)
-                            treatment_results[treatment_id]["results"].append(hit.fields)
-                            seen_ids.add(candidate_id)
-                            
-                            if is_verified:
-                                pubmed_count += 1
-                            else:
-                                pubmed_filtered += 1
-                                logger.debug(f"❌ Filtered PubMed result: {hit.fields.get('title', 'No title')[:50]}...")
+                for hit_fields in pubmed_hits:
+                    # Get PMID from _id field (already in hit_fields dict from Postgres)
+                    pmid = hit_fields.get('_id') or hit_fields.get('pmid')
+                    candidate_id = pmid or f"{hit_fields.get('title', '')}_{hit_fields.get('authors', '')}"
+                    if candidate_id and candidate_id not in seen_ids:
+                        # Add source information and treatment metadata
+                        hit_fields["_source"] = "pubmed"
+                        hit_fields["_treatment_id"] = treatment_id
+                        hit_fields["_treatment_name"] = treatment_name
+                        hit_fields["_id"] = str(pmid) if pmid else None  # Store the PMID for later use
+                        # _score already set by Postgres query
+                        
+                        # Verify the result contains query variations
+                        is_verified = self._verify_result(hit_fields, query_variations, source="pubmed")
+                        hit_fields["_verified"] = is_verified
+                        
+                        # Store all results (both verified and unverified)
+                        treatment_results[treatment_id]["results"].append(hit_fields)
+                        seen_ids.add(candidate_id)
+                        
+                        if is_verified:
+                            pubmed_count += 1
+                        else:
+                            pubmed_filtered += 1
+                            logger.debug(f"❌ Filtered PubMed result: {hit_fields.get('title', 'No title')[:50]}...")
                 
                 total_stored = vumedi_count + vumedi_filtered + pubmed_count + pubmed_filtered
                 logger.info(f"✅ Search returned {vumedi_count} verified Vumedi + {pubmed_count} verified PubMed = {vumedi_count + pubmed_count} verified results")
