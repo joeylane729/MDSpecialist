@@ -340,7 +340,7 @@ class LangChainRetrievalStrategies:
                 
                 # Use separate limits for Vumedi and PubMed
                 vumedi_top_k = 100  # Max 100 total for Vumedi
-                pubmed_top_k = 200  # Max 200 total for PubMed (was 10000, causing timeout issues)
+                pubmed_top_k = 10000  # Max 10000 total for PubMed
                 logger.debug(f"   📊 Using top_k={vumedi_top_k} for Vumedi, {pubmed_top_k} for PubMed")
                 
                 # Query Vumedi index (still using Pinecone)
