@@ -180,8 +180,16 @@ class LangChainRankingService:
                 last_name = (provider.get('last_name') or provider.get('provider_last_name') or '').strip()
                 full_name = (provider.get('name') or provider.get('full_name') or '').strip()
                 
+                # If we have a full name but not first/last, parse it
+                if full_name and not (first_name and last_name):
+                    name_parts = full_name.strip().split()
+                    if len(name_parts) >= 2:
+                        # Assume first part(s) are first name, last part is last name
+                        first_name = ' '.join(name_parts[:-1])
+                        last_name = name_parts[-1]
+                
                 # Log provider data for first few to debug
-                if len(npi_by_name) < 3 and (first_name or last_name):
+                if len(npi_by_name) < 3:
                     logger.info(f"📋 Provider sample: npi={npi}, first_name={first_name}, last_name={last_name}, full_name={full_name}")
                 
                 # Build name-based lookup
