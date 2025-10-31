@@ -76,29 +76,26 @@ class LangChainRetrievalStrategies:
                 logger.warning("⚠️ No valid search terms extracted from query")
                 return []
             
-            # Build Postgres full-text search query that handles OR variations
-            # Use parameterized queries for safety
-            # For simplicity, use the first variation or combine all with OR in tsquery
+            # Build simple WHERE clause that checks if search terms appear in title or abstract
             valid_variations = [v.strip() for v in query_variations if v.strip()]
             
             if not valid_variations:
                 logger.warning("⚠️ No valid query variations after processing")
                 return []
             
-            # For OR logic in Postgres tsquery, we'll build the query string
-            # Escape single quotes in query variations for SQL safety
-            escaped_variations = [v.replace("'", "''") for v in valid_variations]
+            # Escape single quotes and build simple ILIKE conditions
+            where_conditions = []
+            for v in valid_variations:
+                escaped = v.replace("'", "''")
+                # Check if term appears in title or abstract (case-insensitive)
+                where_conditions.append(
+                    f"(title ILIKE '%{escaped}%' OR abstract ILIKE '%{escaped}%')"
+                )
             
-            # Build tsquery: combine all variations with OR operator (|)
-            if len(escaped_variations) == 1:
-                tsquery_expr = f"plainto_tsquery('english', '{escaped_variations[0]}')"
-            else:
-                # Combine multiple variations with OR (|)
-                tsqueries = [f"plainto_tsquery('english', '{v}')" for v in escaped_variations]
-                tsquery_expr = " | ".join(tsqueries)
+            # Combine WHERE conditions with OR
+            where_clause = " OR ".join(where_conditions)
             
-            # Build SQL query with full-text search
-            # Search both title and abstract, rank by relevance
+            # Build SQL query - simple text matching
             sql_query = text(f"""
                 SELECT 
                     pmid::text as _id,
@@ -128,20 +125,11 @@ class LangChainRetrievalStrategies:
                     COALESCE(grants::text, '[]') as grants,
                     COALESCE(citations::text, '[]') as citations,
                     COALESCE(publication_types::text, '[]') as publication_types,
-                    -- Calculate relevance score based on full-text search
-                    ts_rank_cd(
-                        setweight(to_tsvector('english', COALESCE(title, '')), 'A') ||
-                        setweight(to_tsvector('english', COALESCE(abstract, '')), 'B'),
-                        ({tsquery_expr})
-                    ) as relevance_score
+                    -- Simple relevance score: 1.0 for all matches (we'll sort by pmid DESC)
+                    1.0 as relevance_score
                 FROM pubmed_articles
-                WHERE 
-                    -- Full-text search on title and abstract with OR logic
-                    (
-                        to_tsvector('english', COALESCE(title, '')) ||
-                        to_tsvector('english', COALESCE(abstract, ''))
-                    ) @@ ({tsquery_expr})
-                ORDER BY relevance_score DESC, pmid DESC
+                WHERE {where_clause}
+                ORDER BY pmid DESC
                 LIMIT :limit
             """)
             

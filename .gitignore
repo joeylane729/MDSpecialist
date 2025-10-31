@@ -135,6 +135,9 @@ npidata.csv
 *.md
 *.xml
 
+# Test files
+test_query.sql
+
 # Keep essential project config JSON files tracked
 !package.json
 !package-lock.json
