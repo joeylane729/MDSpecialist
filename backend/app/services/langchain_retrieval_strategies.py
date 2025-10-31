@@ -53,28 +53,11 @@ class LangChainRetrievalStrategies:
             return []
         
         try:
+            logger.info(f"🔍 Starting Postgres PubMed query for: '{query[:100]}{'...' if len(query) > 100 else ''}'")
+            
             # Split query variations if " OR " is present
             query_variations = [v.strip() for v in query.split(" OR ")]
-            
-            # Build Postgres full-text search query
-            # Use tsvector for title + abstract search
-            # Convert query terms to tsquery format (handle OR terms)
-            search_terms = []
-            for variation in query_variations:
-                # Escape special characters and convert to tsquery format
-                # Split by spaces and join with & for AND logic
-                terms = variation.split()
-                # For each variation, use OR logic
-                if terms:
-                    # Convert each term to proper tsquery format
-                    escaped_terms = [term.replace(':', '').replace('!', '').replace('&', '').replace('|', '') for term in terms if term]
-                    if escaped_terms:
-                        # Join terms with & for AND within variation, we'll use OR between variations
-                        search_terms.extend(escaped_terms)
-            
-            if not search_terms:
-                logger.warning("⚠️ No valid search terms extracted from query")
-                return []
+            logger.info(f"📋 Parsed {len(query_variations)} query variations")
             
             # Build simple WHERE clause that checks if search terms appear in title or abstract
             valid_variations = [v.strip() for v in query_variations if v.strip()]
@@ -82,6 +65,8 @@ class LangChainRetrievalStrategies:
             if not valid_variations:
                 logger.warning("⚠️ No valid query variations after processing")
                 return []
+            
+            logger.info(f"✅ Using {len(valid_variations)} valid variations for search")
             
             # Escape single quotes and build simple ILIKE conditions
             where_conditions = []
@@ -96,6 +81,8 @@ class LangChainRetrievalStrategies:
             where_clause = " OR ".join(where_conditions)
             
             # Build SQL query - simple text matching
+            logger.info(f"🔧 Building SQL query with {len(where_conditions)} WHERE conditions")
+            
             sql_query = text(f"""
                 SELECT 
                     pmid::text as _id,
@@ -133,16 +120,43 @@ class LangChainRetrievalStrategies:
                 LIMIT :limit
             """)
             
+            logger.info(f"🚀 Executing Postgres query with limit={top_k}")
+            
             # Execute query with limit parameter
             if self.db:
+                logger.info("📊 Using database session from context")
                 result = self.db.execute(sql_query, {"limit": top_k})
             else:
+                logger.info("📊 Using new database connection")
                 with self.engine.connect() as conn:
                     result = conn.execute(sql_query, {"limit": top_k})
             
+            logger.info("✅ Query executed, fetching results...")
+            
+            # Fetch all results - result.execute() returns a cursor-like object
+            # For SQLAlchemy, we need to iterate or use fetchall()
+            try:
+                if hasattr(result, 'fetchall'):
+                    rows = result.fetchall()
+                    logger.info(f"📊 Fetched {len(rows)} rows from query")
+                else:
+                    rows = list(result)
+                    logger.info(f"📊 Converted result to list: {len(rows)} rows")
+            except Exception as fetch_error:
+                logger.error(f"❌ Error fetching results: {str(fetch_error)}")
+                # Try iterating directly
+                rows = []
+                try:
+                    for row in result:
+                        rows.append(row)
+                    logger.info(f"📊 Iterated to get {len(rows)} rows")
+                except Exception as iter_error:
+                    logger.error(f"❌ Error iterating results: {str(iter_error)}")
+                    return []
+            
             # Convert results to format matching Pinecone hits
             hits = []
-            for row in result:
+            for row in rows:
                 hit_fields = {
                     "_id": str(row.pmid),  # Store as string for consistency
                     "pmid": str(row.pmid),
@@ -169,8 +183,9 @@ class LangChainRetrievalStrategies:
             
         except Exception as e:
             logger.error(f"❌ Error querying PubMed from Postgres: {str(e)}")
+            logger.error(f"❌ Error type: {type(e).__name__}")
             import traceback
-            logger.error(traceback.format_exc())
+            logger.error(f"❌ Full traceback:\n{traceback.format_exc()}")
             return []
     
     def _verify_result(self, result: dict, query_variations: list, source: str) -> bool:
