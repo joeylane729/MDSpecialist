@@ -243,10 +243,15 @@ class MedicalAnalysisService:
             logger.debug(f"🔍 Looking up ICD-10 code: {code}")
             
             # Try the original code first
-            result = self.db.execute(
-                text("SELECT description FROM icd10_codes WHERE code = :code"),
-                {"code": code}
-            )
+            query = text("SELECT description FROM icd10_codes WHERE code = :code")
+            query_params = {"code": code}
+            
+            # Log the exact SQL query being executed
+            query_sql = str(query.compile(compile_kwargs={"literal_binds": False}))
+            logger.info(f"📋 ICD-10 Query SQL:\n{query_sql}")
+            logger.info(f"📋 Query Parameters: {query_params}")
+            
+            result = self.db.execute(query, query_params)
             row = result.fetchone()
             if row:
                 logger.debug(f"✅ Found description for {code}: {row[0][:50]}...")
@@ -256,10 +261,15 @@ class MedicalAnalysisService:
             code_without_dot = code.replace('.', '')
             if code_without_dot != code:
                 logger.debug(f"🔄 Trying normalized code: {code_without_dot}")
-                result = self.db.execute(
-                    text("SELECT description FROM icd10_codes WHERE code = :code"),
-                    {"code": code_without_dot}
-                )
+                query = text("SELECT description FROM icd10_codes WHERE code = :code")
+                query_params = {"code": code_without_dot}
+                
+                # Log the exact SQL query being executed
+                query_sql = str(query.compile(compile_kwargs={"literal_binds": False}))
+                logger.info(f"📋 ICD-10 Query SQL (normalized):\n{query_sql}")
+                logger.info(f"📋 Query Parameters: {query_params}")
+                
+                result = self.db.execute(query, query_params)
                 row = result.fetchone()
                 if row:
                     logger.info(f"✅ Found description for normalized code '{code_without_dot}' (original: '{code}')")

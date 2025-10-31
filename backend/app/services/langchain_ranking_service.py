@@ -100,7 +100,23 @@ class LangChainRankingService:
                 LIMIT 1
             """)
             
-            result = self.db.execute(query, {"npi": npi})
+            query_params = {"npi": npi}
+            
+            # Log the exact SQL query being executed
+            query_sql = str(query.compile(compile_kwargs={"literal_binds": False}))
+            logger.info(f"📋 Medical School Query SQL:\n{query_sql}")
+            logger.info(f"📋 Query Parameters: {query_params}")
+            
+            # Try to render the query with parameters
+            try:
+                rendered_query = query_sql
+                for param, value in query_params.items():
+                    rendered_query = rendered_query.replace(f":{param}", f"'{value}'" if isinstance(value, str) else str(value))
+                logger.info(f"📋 Rendered Query (approximate):\n{rendered_query}")
+            except Exception as render_error:
+                logger.debug(f"Could not render query: {render_error}")
+            
+            result = self.db.execute(query, query_params)
             row = result.fetchone()
             
             if row:

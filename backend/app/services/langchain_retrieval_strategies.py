@@ -127,14 +127,30 @@ class LangChainRetrievalStrategies:
             
             logger.info(f"🚀 Executing Postgres query with limit={top_k}")
             
+            # Log the exact SQL query being executed
+            query_params = {"limit": top_k}
+            query_sql = str(sql_query.compile(compile_kwargs={"literal_binds": False}))
+            logger.info(f"📋 SQL Query:\n{query_sql}")
+            logger.info(f"📋 Query Parameters: {query_params}")
+            
+            # Also log the full rendered query for debugging
+            try:
+                # Try to render the query with parameters
+                rendered_query = query_sql
+                for param, value in query_params.items():
+                    rendered_query = rendered_query.replace(f":{param}", str(value))
+                logger.info(f"📋 Rendered Query (approximate):\n{rendered_query}")
+            except Exception as render_error:
+                logger.debug(f"Could not render query: {render_error}")
+            
             # Execute query with limit parameter
             if self.db:
                 logger.info("📊 Using database session from context")
-                result = self.db.execute(sql_query, {"limit": top_k})
+                result = self.db.execute(sql_query, query_params)
             else:
                 logger.info("📊 Using new database connection")
                 with self.engine.connect() as conn:
-                    result = conn.execute(sql_query, {"limit": top_k})
+                    result = conn.execute(sql_query, query_params)
             
             logger.info("✅ Query executed, fetching results...")
             
