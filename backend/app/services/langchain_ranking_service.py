@@ -90,11 +90,12 @@ class LangChainRankingService:
             
         try:
             # Use DISTINCT ON to get the best (lowest rank) medical school for each NPI
+            # Cast npi_list to text[] to match the text type of the "NPI" column
             query = text("""
                 SELECT DISTINCT ON (nmr."NPI") nmr."NPI", msr.rank 
                 FROM npi_medical_school_mapping_results nmr
                 JOIN medical_school_rankings msr ON nmr."Medical_School_ID" = msr.id
-                WHERE nmr."NPI" = ANY(:npi_list)
+                WHERE nmr."NPI"::text = ANY(:npi_list)
                 ORDER BY nmr."NPI", msr.rank ASC
             """)
             
@@ -179,6 +180,10 @@ class LangChainRankingService:
                 last_name = (provider.get('last_name') or provider.get('provider_last_name') or '').strip()
                 full_name = (provider.get('name') or provider.get('full_name') or '').strip()
                 
+                # Log provider data for first few to debug
+                if len(npi_by_name) < 3 and (first_name or last_name):
+                    logger.info(f"📋 Provider sample: npi={npi}, first_name={first_name}, last_name={last_name}, full_name={full_name}")
+                
                 # Build name-based lookup
                 # Normalize: use only the first word of first_name to handle middle initials
                 # e.g., "Theodore" matches "Theodore H" from PubMed
@@ -195,6 +200,11 @@ class LangChainRankingService:
                     npi_by_full_name[full_name.lower()] = provider
             
             logger.info(f"📊 Built lookup maps: {len(npi_by_name)} first+last name combinations, {len(npi_by_full_name)} full names")
+            
+            # Log sample keys for debugging
+            if npi_by_name:
+                sample_keys = list(npi_by_name.keys())[:3]
+                logger.info(f"📋 Sample name keys: {sample_keys}")
             
             # Track matches: npi -> {vumedi_content: [], pubmed_articles: []}
             provider_matches = {}
@@ -227,6 +237,10 @@ class LangChainRankingService:
                     authors_jsonb = record.get('authors_jsonb', [])
                     
                     if authors_jsonb and isinstance(authors_jsonb, list):
+                        # Log first PubMed article authors for debugging
+                        if len(provider_matches) == 0:
+                            logger.info(f"📋 First PubMed article authors: {authors_jsonb[:3] if authors_jsonb else 'No authors'}")
+                        
                         # Use JSONB format with separate forename/lastname fields
                         for author_obj in authors_jsonb:
                             if isinstance(author_obj, dict):
@@ -239,6 +253,10 @@ class LangChainRankingService:
                                     forename_normalized = forename.split()[0].lower() if forename else ''
                                     lastname_normalized = lastname.lower()
                                     name_key = (forename_normalized, lastname_normalized)
+                                    
+                                    # Log first few attempts for debugging
+                                    if len(provider_matches) == 0:
+                                        logger.info(f"📋 Attempting match: ('{forename_normalized}', '{lastname_normalized}') -> in map? {name_key in npi_by_name}")
                                     
                                     if name_key in npi_by_name:
                                         # Match found - add to all providers with this name
