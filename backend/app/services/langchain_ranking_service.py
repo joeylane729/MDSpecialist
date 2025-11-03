@@ -761,19 +761,20 @@ class LangChainRankingService:
                 # Get the ranked NPIs and scores from GPT (already calculated with new scoring system)
                 matched_npis = ranking_result.get("ranking", [])
                 provider_links = ranking_result.get("provider_links", {})
-                provider_scores = ranking_result.get("provider_scores", {})  # Use scores from rank_npi_providers
+                provider_scores = ranking_result.get("provider_scores", {})  # Keyed by NPI from rank_npi_providers
                 gpt_explanation = ranking_result.get("explanation", "")
                 
-                # Sort matched doctors by score (descending), then alphabetically
-                matched_doctors_with_scores = [
-                    (name, scores) for name, scores in provider_scores.items()
+                # Note: provider_scores is keyed by NPI (string), not by name
+                # Sort matched providers by score (descending), then by NPI
+                matched_providers_with_scores = [
+                    (npi, scores) for npi, scores in provider_scores.items() if npi in matched_npis
                 ]
-                matched_doctors_with_scores.sort(key=lambda x: (-x[1]['score'], x[0]))
+                matched_providers_with_scores.sort(key=lambda x: (-x[1]['score'], x[0]))
                 
                 # Reorder matched NPIs by score
-                matched_npis_by_score = [scores['npi'] for _, scores in matched_doctors_with_scores]
+                matched_npis_by_score = [npi for npi, _ in matched_providers_with_scores]
                 
-                # Find providers that were NOT matched by GPT
+                # Find providers that were NOT matched
                 matched_npi_set = set(matched_npis_by_score)
                 unmatched_npis = [
                     p.get('npi', '') 
@@ -782,12 +783,12 @@ class LangChainRankingService:
                 ]
                 
                 # Add scores for unmatched doctors (only medical school score since no content)
+                # Key by NPI to keep consistency
                 for npi in unmatched_npis:
-                    doctor_name = next((p.get('name') for p in npi_providers if p.get('npi') == npi), '')
-                    if doctor_name and doctor_name not in provider_scores:
+                    if npi and npi not in provider_scores:
                         # Get medical school score even for unmatched doctors
                         med_school_score = self._get_medical_school_score(npi)
-                        provider_scores[doctor_name] = {
+                        provider_scores[npi] = {
                             'npi': npi,
                             'score': med_school_score,
                             'content_score': 0,
@@ -797,18 +798,19 @@ class LangChainRankingService:
                         }
                 
                 # Sort ALL providers (matched + unmatched) by their total scores
+                # provider_scores is keyed by NPI, so iterate correctly
                 all_providers_with_scores = [
-                    (name, scores) for name, scores in provider_scores.items()
+                    (npi, scores) for npi, scores in provider_scores.items()
                 ]
                 all_providers_with_scores.sort(key=lambda x: (-x[1]['score'], x[0]))
-                all_ranked_npis = [scores['npi'] for _, scores in all_providers_with_scores]
+                all_ranked_npis = [npi for npi, _ in all_providers_with_scores]
                 
                 # Update explanation
-                doctors_with_content = len(matched_doctors_with_scores)
-                total_vumedi = sum(scores['vumedi_count'] for _, scores in matched_doctors_with_scores)
-                total_pubmed = sum(scores['pubmed_count'] for _, scores in matched_doctors_with_scores)
-                total_content_score = sum(scores['content_score'] for _, scores in matched_doctors_with_scores)
-                total_med_school_score = sum(scores['med_school_score'] for _, scores in matched_doctors_with_scores)
+                doctors_with_content = len(matched_providers_with_scores)
+                total_vumedi = sum(scores['vumedi_count'] for _, scores in matched_providers_with_scores)
+                total_pubmed = sum(scores['pubmed_count'] for _, scores in matched_providers_with_scores)
+                total_content_score = sum(scores['content_score'] for _, scores in matched_providers_with_scores)
+                total_med_school_score = sum(scores['med_school_score'] for _, scores in matched_providers_with_scores)
                 
                 explanation = (
                     f"Ranked {len(all_ranked_npis)} providers by content score (×4) and medical school ranking. "
