@@ -299,41 +299,74 @@ class LangChainRankingService:
             provider_links = {}
             provider_scores = {}
             
-            for npi, matches in provider_matches.items():
-                vumedi_count = len(matches['vumedi_content'])
-                pubmed_count = len(matches['pubmed_articles'])
-                
-                # Log matched PubMed articles for top providers
-                if pubmed_count > 0 and len(provider_links) < 20:
-                    # Get provider name for logging
-                    provider_info = None
-                    for p in providers_to_rank:
-                        if p.get('npi') == npi:
-                            provider_info = p
-                            break
-                    provider_name = provider_info.get('name', '') if provider_info else npi
-                    pubmed_titles = [art.get('title', 'No title')[:80] for art in matches['pubmed_articles'][:3]]
-                    pmids = [art.get('pmid', '') for art in matches['pubmed_articles']]
-                    logger.info(f"📋 Provider {provider_name} (NPI {npi}) matched {pubmed_count} PubMed articles: PMIDs={pmids[:5]}")
-                
-                provider_links[npi] = {
-                    'vumedi_content': matches['vumedi_content'],
-                    'pubmed_articles': matches['pubmed_articles']
-                }
-                
-                # Calculate score: Vumedi + PubMed (×4 for content score)
-                content_score = (vumedi_count + pubmed_count) * 4
-                med_school_score = med_school_scores.get(npi, 0)
-                total_score = content_score + med_school_score
-                
-                provider_scores[npi] = {
-                    'score': total_score,
-                    'content_score': content_score,
-                    'med_school_score': med_school_score,
-                    'vumedi_count': vumedi_count,
-                    'pubmed_count': pubmed_count,
-                    'npi': npi
-                }
+            logger.info(f"🔍 DEBUG: Processing {len(provider_matches)} providers with matches")
+            logger.info(f"🔍 DEBUG: Building provider_links and scores...")
+            
+            for idx, (npi, matches) in enumerate(provider_matches.items()):
+                try:
+                    logger.debug(f"🔍 DEBUG: Processing provider {idx+1}/{len(provider_matches)}: NPI={npi}")
+                    
+                    vumedi_count = len(matches.get('vumedi_content', []))
+                    pubmed_count = len(matches.get('pubmed_articles', []))
+                    
+                    logger.debug(f"🔍 DEBUG: NPI {npi} - Vumedi: {vumedi_count}, PubMed: {pubmed_count}")
+                    
+                    # Log matched PubMed articles for top providers
+                    if pubmed_count > 0 and len(provider_links) < 20:
+                        # Get provider name for logging
+                        provider_info = None
+                        try:
+                            for p in providers_to_rank:
+                                if p.get('npi') == npi:
+                                    provider_info = p
+                                    break
+                        except Exception as e:
+                            logger.error(f"❌ DEBUG: Error finding provider info for NPI {npi}: {e}")
+                        
+                        provider_name = provider_info.get('name', '') if provider_info else npi
+                        try:
+                            pubmed_titles = [art.get('title', 'No title')[:80] for art in matches['pubmed_articles'][:3]]
+                            pmids = [art.get('pmid', '') for art in matches['pubmed_articles']]
+                            logger.info(f"📋 Provider {provider_name} (NPI {npi}) matched {pubmed_count} PubMed articles: PMIDs={pmids[:5]}")
+                        except Exception as e:
+                            logger.error(f"❌ DEBUG: Error extracting PMIDs for NPI {npi}: {e}")
+                            logger.error(f"❌ DEBUG: matches['pubmed_articles'] type: {type(matches.get('pubmed_articles'))}")
+                    
+                    try:
+                        provider_links[npi] = {
+                            'vumedi_content': matches.get('vumedi_content', []),
+                            'pubmed_articles': matches.get('pubmed_articles', [])
+                        }
+                        logger.debug(f"🔍 DEBUG: Successfully added provider_links for NPI {npi}")
+                    except Exception as e:
+                        logger.error(f"❌ DEBUG: Error building provider_links for NPI {npi}: {e}")
+                        logger.error(f"❌ DEBUG: matches structure: {list(matches.keys())}")
+                        raise
+                        
+                    # Calculate score: Vumedi + PubMed (×4 for content score)
+                    content_score = (vumedi_count + pubmed_count) * 4
+                    med_school_score = med_school_scores.get(npi, 0)
+                    total_score = content_score + med_school_score
+                    
+                    logger.debug(f"🔍 DEBUG: NPI {npi} - Content score: {content_score}, Med school: {med_school_score}, Total: {total_score}")
+                    
+                    provider_scores[npi] = {
+                        'score': total_score,
+                        'content_score': content_score,
+                        'med_school_score': med_school_score,
+                        'vumedi_count': vumedi_count,
+                        'pubmed_count': pubmed_count,
+                        'npi': npi
+                    }
+                    
+                    logger.debug(f"🔍 DEBUG: Successfully built scores for NPI {npi}")
+                        
+                except Exception as e:
+                    logger.error(f"❌ DEBUG: Error processing provider NPI {npi}: {e}")
+                    import traceback
+                    logger.error(f"❌ DEBUG: Traceback:\n{traceback.format_exc()}")
+                    # Continue with next provider instead of crashing
+                    continue
             
             # Sort providers by score (descending), then by name
             providers_with_scores = []
