@@ -414,8 +414,8 @@ class LangChainRankingService:
             
             return {
                 'ranking': ranked_npis,
-                'provider_links': provider_links,
-                'provider_scores': {npi: score for npi, score in provider_scores.items()},
+                'provider_links': provider_links,  # NPI-keyed
+                'provider_scores': {npi: score for npi, score in provider_scores.items()},  # NPI-keyed
                 'explanation': explanation
             }
             

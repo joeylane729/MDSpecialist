@@ -607,7 +607,7 @@ const HomePage: React.FC = () => {
       // Step 2: Rank NPI providers only if specialists are requested
       let rankedNPIProviders: NPIProvider[] = [];
       let rankingExplanation = '';
-      let providerLinks: { [doctorName: string]: ProviderContent } = {};
+      let providerLinks: { [npi: string]: ProviderContent } = {};
       let rankingResponse: any = null;
       
       if (searchOptions.specialists && npiData) {

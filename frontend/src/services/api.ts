@@ -316,8 +316,8 @@ export interface TreatmentRanking {
   name: string;
   ranked_providers: string[];
   explanation: string;
-  provider_links: { [doctorName: string]: ProviderContent };
-  provider_scores: { [doctorName: string]: ProviderScore };
+  provider_links: { [npi: string]: ProviderContent };
+  provider_scores: { [npi: string]: ProviderScore };
 }
 
 export interface NPIRankingResponse {

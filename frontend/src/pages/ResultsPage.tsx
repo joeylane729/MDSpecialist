@@ -72,8 +72,8 @@ const ResultsPage: React.FC = () => {
   const [isBackNavigation, setIsBackNavigation] = useState(false);
   const [rankedProviders, setRankedProviders] = useState<Provider[]>([]);
   const [filteredProviders, setFilteredProviders] = useState<Provider[]>([]);
-  const [providerLinks, setProviderLinks] = useState<{ [doctorName: string]: ProviderContent }>({});
-  const [providerScores, setProviderScores] = useState<{ [doctorName: string]: any }>({});
+  const [providerLinks, setProviderLinks] = useState<{ [npi: string]: ProviderContent }>({});
+  const [providerScores, setProviderScores] = useState<{ [npi: string]: any }>({});
   const [treatmentRankings, setTreatmentRankings] = useState<{ [treatmentId: string]: any }>({});
   const [selectedTreatmentId, setSelectedTreatmentId] = useState<string>('');
   const [activeView, setActiveView] = useState<'assessment' | 'specialists' | 'ai-recommendations' | 'debug'>('assessment');
@@ -140,8 +140,8 @@ const ResultsPage: React.FC = () => {
 
   // Get provider score and breakdown
   const getProviderScore = (provider: any): { score: number; breakdown: string } => {
-    const providerName = provider.name?.toUpperCase();
-    const scoreData = providerScores[providerName];
+    const npi = provider.npi;
+    const scoreData = providerScores[npi];
     
     if (!scoreData) {
       return { score: 0, breakdown: 'No score data available' };
@@ -579,7 +579,7 @@ const ResultsPage: React.FC = () => {
       // Handle new treatment-specific ranking structure
       const treatmentRankingsData = rankingResponse.treatment_rankings;
       let rankedNPIProviders: NPIProvider[] = [];
-      let providerLinks: { [doctorName: string]: ProviderContent } = {};
+      let providerLinks: { [npi: string]: ProviderContent } = {};
       
       if (treatmentRankingsData && Object.keys(treatmentRankingsData).length > 0) {
         console.log('🔍 Treatment rankings data received:', treatmentRankingsData);
@@ -1103,8 +1103,8 @@ const ResultsPage: React.FC = () => {
                   score={score}
                   scoreBreakdown={breakdown}
                   providerContent={(() => {
-                    const contentData = providerLinks[provider.name?.toUpperCase()];
-                    console.log(`DEBUG: Looking for content for provider "${provider.name}" (uppercase: "${provider.name?.toUpperCase()}") - found:`, contentData);
+                    const contentData = providerLinks[provider.npi];
+                    console.log(`DEBUG: Looking for content for provider "${provider.name}" (NPI: "${provider.npi}") - found:`, contentData);
                     console.log('DEBUG: Available provider content:', providerLinks);
                     return contentData;
                   })()}
