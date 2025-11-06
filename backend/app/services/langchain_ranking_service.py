@@ -122,9 +122,9 @@ class LangChainRankingService:
                         FROM npi_medical_school_mapping_results nmr
                         JOIN medical_school_rankings msr ON nmr."Medical_School_ID" = msr.id
                         WHERE nmr."NPI"::text = '1649209008'
-                        ORDER BY msr.rank ASC
-                        LIMIT 1
-                    """)
+                ORDER BY msr.rank ASC
+                LIMIT 1
+            """)
                     test_result = self.db.execute(test_query)
                     test_row = test_result.fetchone()
                     if test_row:
@@ -487,6 +487,10 @@ class LangChainRankingService:
                             'med_school_score': med_school_score,
                             'vumedi_count': 0,
                             'pubmed_count': 0,
+                            'pubmed_first_author_count': 0,
+                            'pubmed_middle_author_count': 0,
+                            'pubmed_last_author_count': 0,
+                            'pubmed_weighted_points': 0,
                             'npi': npi
                         }
                         provider_links[npi] = {
@@ -885,6 +889,10 @@ class LangChainRankingService:
                             'content_score': 0,
                             'vumedi_count': 0,
                             'pubmed_count': 0,
+                            'pubmed_first_author_count': 0,
+                            'pubmed_middle_author_count': 0,
+                            'pubmed_last_author_count': 0,
+                            'pubmed_weighted_points': 0,
                             'med_school_score': med_school_score
                         }
                 

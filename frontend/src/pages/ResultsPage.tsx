@@ -147,16 +147,44 @@ const ResultsPage: React.FC = () => {
       return { score: 0, breakdown: 'No score data available' };
     }
     
-    const { score, content_score, vumedi_count, pubmed_count, med_school_score } = scoreData;
+    const { 
+      score, 
+      content_score, 
+      vumedi_count, 
+      pubmed_count, 
+      pubmed_first_author_count = 0,
+      pubmed_middle_author_count = 0,
+      pubmed_last_author_count = 0,
+      pubmed_weighted_points = 0,
+      med_school_score 
+    } = scoreData;
     
     // Create a more readable breakdown
     const breakdownParts = [];
     if (vumedi_count > 0) {
       breakdownParts.push(`${vumedi_count} Vumedi video${vumedi_count > 1 ? 's' : ''} = ${vumedi_count} point${vumedi_count > 1 ? 's' : ''}`);
     }
+    
+    // Show weighted PubMed breakdown - always show first/middle/last counts
     if (pubmed_count > 0) {
-      breakdownParts.push(`${pubmed_count} PubMed article${pubmed_count > 1 ? 's' : ''} = ${pubmed_count * 4} point${pubmed_count * 4 > 1 ? 's' : ''} (${pubmed_count} × 4)`);
+      // Always show the weighted breakdown with all author positions
+      const pubmedBreakdownParts = [];
+      
+      // First author: always show, even if 0
+      const firstPoints = (pubmed_first_author_count || 0) * 2;
+      pubmedBreakdownParts.push(`First author: ${pubmed_first_author_count || 0} appearance${(pubmed_first_author_count || 0) !== 1 ? 's' : ''} = ${firstPoints} point${firstPoints !== 1 ? 's' : ''} (${pubmed_first_author_count || 0} × 2)`);
+      
+      // Middle author: always show, even if 0
+      const middlePoints = (pubmed_middle_author_count || 0) * 1;
+      pubmedBreakdownParts.push(`Middle author: ${pubmed_middle_author_count || 0} appearance${(pubmed_middle_author_count || 0) !== 1 ? 's' : ''} = ${middlePoints} point${middlePoints !== 1 ? 's' : ''} (${pubmed_middle_author_count || 0} × 1)`);
+      
+      // Last author: always show, even if 0
+      const lastPoints = (pubmed_last_author_count || 0) * 3;
+      pubmedBreakdownParts.push(`Last author: ${pubmed_last_author_count || 0} appearance${(pubmed_last_author_count || 0) !== 1 ? 's' : ''} = ${lastPoints} point${lastPoints !== 1 ? 's' : ''} (${pubmed_last_author_count || 0} × 3)`);
+      
+      breakdownParts.push(`PubMed articles (${pubmed_count} total):\n  ${pubmedBreakdownParts.join('\n  ')}\n  Total PubMed: ${pubmed_weighted_points || 0} point${(pubmed_weighted_points || 0) !== 1 ? 's' : ''}`);
     }
+    
     if (med_school_score > 0) {
       breakdownParts.push(`Medical school ranking = ${med_school_score} point${med_school_score > 1 ? 's' : ''}`);
     }
