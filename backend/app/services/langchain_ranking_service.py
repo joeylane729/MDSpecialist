@@ -114,21 +114,25 @@ class LangChainRankingService:
             logger.info(f"📋 Sample NPIs being queried: {npi_list_str[:5]}")
             
             # Test query: Check if a specific NPI exists (for debugging)
+            # Wrap in try-except so it doesn't break the main query if it fails
             if '1649209008' in npi_list_str:
-                test_query = text("""
-                    SELECT nmr."NPI", msr.rank, msr.name
-                    FROM npi_medical_school_mapping_results nmr
-                    JOIN medical_school_rankings msr ON nmr."Medical_School_ID" = msr.id
-                    WHERE nmr."NPI"::text = '1649209008'
-                ORDER BY msr.rank ASC
-                LIMIT 1
-            """)
-                test_result = self.db.execute(test_query)
-                test_row = test_result.fetchone()
-                if test_row:
-                    logger.info(f"🔍 TEST: NPI 1649209008 found in mapping - School: {test_row[2]}, Rank: {test_row[1]}")
-                else:
-                    logger.warning(f"⚠️  TEST: NPI 1649209008 NOT found in npi_medical_school_mapping_results table")
+                try:
+                    test_query = text("""
+                        SELECT nmr."NPI", msr.rank, msr.school_listed
+                        FROM npi_medical_school_mapping_results nmr
+                        JOIN medical_school_rankings msr ON nmr."Medical_School_ID" = msr.id
+                        WHERE nmr."NPI"::text = '1649209008'
+                        ORDER BY msr.rank ASC
+                        LIMIT 1
+                    """)
+                    test_result = self.db.execute(test_query)
+                    test_row = test_result.fetchone()
+                    if test_row:
+                        logger.info(f"🔍 TEST: NPI 1649209008 found in mapping - School: {test_row[2]}, Rank: {test_row[1]}")
+                    else:
+                        logger.warning(f"⚠️  TEST: NPI 1649209008 NOT found in npi_medical_school_mapping_results table")
+                except Exception as test_error:
+                    logger.warning(f"⚠️  TEST query failed (non-fatal): {test_error}")
             
             result = self.db.execute(query, query_params)
             rows = result.fetchall()
