@@ -250,7 +250,9 @@ class LangChainRankingService:
                             logger.info(f"📋 First PubMed article authors: {authors_jsonb[:3] if authors_jsonb else 'No authors'}")
                         
                         # Use JSONB format with separate forename/lastname fields
-                        for author_obj in authors_jsonb:
+                        # Track author position for weighted scoring
+                        total_authors = len(authors_jsonb)
+                        for author_idx, author_obj in enumerate(authors_jsonb):
                             if isinstance(author_obj, dict):
                                 forename = (author_obj.get('forename') or '').strip()
                                 lastname = (author_obj.get('lastname') or '').strip()
@@ -261,6 +263,17 @@ class LangChainRankingService:
                                     forename_normalized = forename.split()[0].lower() if forename else ''
                                     lastname_normalized = lastname.lower()
                                     name_key = (forename_normalized, lastname_normalized)
+                                    
+                                    # Determine author position for weighted scoring
+                                    # Last author: 3 points, First author: 2 points, Middle: 1 point
+                                    if total_authors == 1:
+                                        author_position = 'last'  # Only one author gets last author weight (3 points)
+                                    elif author_idx == 0:
+                                        author_position = 'first'
+                                    elif author_idx == total_authors - 1:
+                                        author_position = 'last'
+                                    else:
+                                        author_position = 'middle'
                                     
                                     # Log first few attempts for debugging
                                     if len(provider_matches) == 0:
@@ -278,7 +291,8 @@ class LangChainRankingService:
                                                     }
                                                 provider_matches[npi]['pubmed_articles'].append({
                                                     'pmid': record.get('_id', record.get('pmid', '')),
-                                                    'title': record.get('title', '')
+                                                    'title': record.get('title', ''),
+                                                    'author_position': author_position  # Track position for weighted scoring
                                                 })
             
             logger.info(f"✅ Found {len(provider_matches)} providers with matches")
@@ -307,9 +321,29 @@ class LangChainRankingService:
                     logger.debug(f"🔍 DEBUG: Processing provider {idx+1}/{len(provider_matches)}: NPI={npi}")
                     
                     vumedi_count = len(matches.get('vumedi_content', []))
-                    pubmed_count = len(matches.get('pubmed_articles', []))
+                    pubmed_articles = matches.get('pubmed_articles', [])
+                    pubmed_count = len(pubmed_articles)
                     
-                    logger.debug(f"🔍 DEBUG: NPI {npi} - Vumedi: {vumedi_count}, PubMed: {pubmed_count}")
+                    # Calculate weighted PubMed score based on author position
+                    # Last author: 3 points, First author: 2 points, Middle: 1 point
+                    pubmed_weighted_points = 0
+                    first_author_count = 0
+                    middle_author_count = 0
+                    last_author_count = 0
+                    
+                    for article in pubmed_articles:
+                        position = article.get('author_position', 'middle')  # Default to middle if not specified
+                        if position == 'last':
+                            pubmed_weighted_points += 3
+                            last_author_count += 1
+                        elif position == 'first':
+                            pubmed_weighted_points += 2
+                            first_author_count += 1
+                        else:  # middle
+                            pubmed_weighted_points += 1
+                            middle_author_count += 1
+                    
+                    logger.debug(f"🔍 DEBUG: NPI {npi} - Vumedi: {vumedi_count}, PubMed: {pubmed_count} (First: {first_author_count}, Middle: {middle_author_count}, Last: {last_author_count}, Weighted: {pubmed_weighted_points} points)")
                     
                     # Log matched PubMed articles for top providers
                     if pubmed_count > 0 and len(provider_links) < 20:
@@ -343,8 +377,9 @@ class LangChainRankingService:
                         logger.error(f"❌ DEBUG: matches structure: {list(matches.keys())}")
                         raise
                         
-                    # Calculate score: Vumedi + PubMed (×4 for content score)
-                    content_score = (vumedi_count + pubmed_count) * 4
+                    # Calculate score: Vumedi (×4) + PubMed weighted points
+                    # Vumedi articles count as 4 points each, PubMed uses weighted scoring
+                    content_score = (vumedi_count * 4) + pubmed_weighted_points
                     med_school_score = med_school_scores.get(npi, 0)
                     total_score = content_score + med_school_score
                     
@@ -356,6 +391,10 @@ class LangChainRankingService:
                         'med_school_score': med_school_score,
                         'vumedi_count': vumedi_count,
                         'pubmed_count': pubmed_count,
+                        'pubmed_first_author_count': first_author_count,
+                        'pubmed_middle_author_count': middle_author_count,
+                        'pubmed_last_author_count': last_author_count,
+                        'pubmed_weighted_points': pubmed_weighted_points,
                         'npi': npi
                     }
                     
