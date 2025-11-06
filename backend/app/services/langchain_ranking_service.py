@@ -90,41 +90,77 @@ class LangChainRankingService:
             
         try:
             # Use DISTINCT ON to get the best (lowest rank) medical school for each NPI
+            # Ensure all NPIs are strings for the query
+            npi_list_str = [str(npi) for npi in npi_list]
+            
+            # Use DISTINCT ON to get the best (lowest rank) medical school for each NPI
             # Cast npi_list to text[] to match the text type of the "NPI" column
+            # Use bindparam to explicitly specify array type for SQLAlchemy
+            from sqlalchemy import bindparam, ARRAY, String
             query = text("""
                 SELECT DISTINCT ON (nmr."NPI") nmr."NPI", msr.rank 
                 FROM npi_medical_school_mapping_results nmr
                 JOIN medical_school_rankings msr ON nmr."Medical_School_ID" = msr.id
                 WHERE nmr."NPI"::text = ANY(:npi_list)
                 ORDER BY nmr."NPI", msr.rank ASC
-            """)
+            """).bindparams(bindparam("npi_list", type_=ARRAY(String)))
             
-            query_params = {"npi_list": npi_list}
+            query_params = {"npi_list": npi_list_str}
             
             # Log the exact SQL query being executed
             query_sql = str(query.compile(compile_kwargs={"literal_binds": False}))
             logger.info(f"📋 Batch Medical School Query SQL:\n{query_sql}")
-            logger.info(f"📋 Query Parameters: {len(npi_list)} NPIs")
+            logger.info(f"📋 Query Parameters: {len(npi_list_str)} NPIs")
+            logger.info(f"📋 Sample NPIs being queried: {npi_list_str[:5]}")
+            
+            # Test query: Check if a specific NPI exists (for debugging)
+            if '1649209008' in npi_list_str:
+                test_query = text("""
+                    SELECT nmr."NPI", msr.rank, msr.name
+                    FROM npi_medical_school_mapping_results nmr
+                    JOIN medical_school_rankings msr ON nmr."Medical_School_ID" = msr.id
+                    WHERE nmr."NPI"::text = '1649209008'
+                ORDER BY msr.rank ASC
+                LIMIT 1
+            """)
+                test_result = self.db.execute(test_query)
+                test_row = test_result.fetchone()
+                if test_row:
+                    logger.info(f"🔍 TEST: NPI 1649209008 found in mapping - School: {test_row[2]}, Rank: {test_row[1]}")
+                else:
+                    logger.warning(f"⚠️  TEST: NPI 1649209008 NOT found in npi_medical_school_mapping_results table")
             
             result = self.db.execute(query, query_params)
             rows = result.fetchall()
             
+            logger.info(f"📊 Query returned {len(rows)} rows from database")
+            
             scores = {}
             for row in rows:
-                npi = row[0]
+                npi = str(row[0])  # Ensure NPI is a string
                 rank = row[1]
                 
                 # Convert rank to points: 1-25 = 3 points, 26-50 = 2 points, 51-75 = 1 point
                 if rank <= 25:
-                    scores[npi] = 3
+                    points = 3
                 elif rank <= 50:
-                    scores[npi] = 2
+                    points = 2
                 elif rank <= 75:
-                    scores[npi] = 1
+                    points = 1
                 else:
-                    scores[npi] = 0
+                    points = 0
+                
+                scores[npi] = points
+                logger.debug(f"📋 NPI {npi}: rank {rank} = {points} points")
             
-            logger.info(f"✅ Fetched medical school scores for {len(scores)} NPIs")
+            # Log which NPIs were found vs not found
+            found_npis = set(scores.keys())
+            queried_npis = set(npi_list_str)
+            missing_npis = queried_npis - found_npis
+            if missing_npis:
+                logger.warning(f"⚠️  {len(missing_npis)} NPIs not found in medical school mapping: {list(missing_npis)[:10]}")
+            
+            logger.info(f"✅ Fetched medical school scores for {len(scores)} NPIs (queried {len(npi_list_str)})")
             return scores
                 
         except Exception as e:
@@ -298,13 +334,14 @@ class LangChainRankingService:
             logger.info(f"✅ Found {len(provider_matches)} providers with matches")
             
             # Batch fetch all medical school scores for all NPIs at once
+            # Normalize all NPIs to strings for consistent lookup
             all_npis = set()
             for npi in provider_matches.keys():
-                all_npis.add(npi)
+                all_npis.add(str(npi))  # Ensure string format
             for provider in providers_to_rank:
                 npi = provider.get('npi', '')
                 if npi:
-                    all_npis.add(npi)
+                    all_npis.add(str(npi))  # Ensure string format
             
             med_school_scores = self._batch_get_medical_school_scores(list(all_npis))
             logger.info(f"📊 Fetched medical school scores for {len(med_school_scores)} NPIs in batch")
@@ -380,8 +417,16 @@ class LangChainRankingService:
                     # Calculate score: Vumedi (×4) + PubMed weighted points
                     # Vumedi articles count as 4 points each, PubMed uses weighted scoring
                     content_score = (vumedi_count * 4) + pubmed_weighted_points
-                    med_school_score = med_school_scores.get(npi, 0)
+                    # Normalize NPI to string for consistent lookup
+                    npi_str = str(npi)
+                    med_school_score = med_school_scores.get(npi_str, 0)
                     total_score = content_score + med_school_score
+                    
+                    # Log if medical school score is missing
+                    if med_school_score == 0 and npi_str in med_school_scores:
+                        logger.debug(f"🔍 DEBUG: NPI {npi_str} found in med_school_scores but score is 0")
+                    elif med_school_score == 0:
+                        logger.debug(f"🔍 DEBUG: NPI {npi_str} not found in med_school_scores (available keys: {list(med_school_scores.keys())[:5]})")
                     
                     logger.debug(f"🔍 DEBUG: NPI {npi} - Content score: {content_score}, Med school: {med_school_score}, Total: {total_score}")
                     
@@ -424,24 +469,27 @@ class LangChainRankingService:
             ranked_npis = [score['npi'] for _, score in providers_with_scores]
             
             # Add unmatched providers with zero scores
-            matched_npis = set(ranked_npis)
+            # Normalize matched_npis to strings for consistent comparison
+            matched_npis = set(str(npi) for npi in ranked_npis)
             for provider in providers_to_rank:
                 npi = provider.get('npi', '')
-                if npi and npi not in matched_npis:
-                    med_school_score = med_school_scores.get(npi, 0)
-                    provider_scores[npi] = {
-                        'score': med_school_score,
-                        'content_score': 0,
-                        'med_school_score': med_school_score,
-                        'vumedi_count': 0,
-                        'pubmed_count': 0,
-                        'npi': npi
-                    }
-                    provider_links[npi] = {
-                        'vumedi_content': [],
-                        'pubmed_articles': []
-                    }
-                    ranked_npis.append(npi)
+                if npi:
+                    npi_str = str(npi)  # Normalize to string
+                    if npi_str not in matched_npis:
+                        med_school_score = med_school_scores.get(npi_str, 0)
+                        provider_scores[npi] = {  # Keep original npi format for key consistency
+                            'score': med_school_score,
+                            'content_score': 0,
+                            'med_school_score': med_school_score,
+                            'vumedi_count': 0,
+                            'pubmed_count': 0,
+                            'npi': npi
+                        }
+                        provider_links[npi] = {
+                            'vumedi_content': [],
+                            'pubmed_articles': []
+                        }
+                        ranked_npis.append(npi)
             
             logger.info(f"✅ === SIMPLE NAME MATCHING COMPLETED ===")
             logger.info(f"✅ Matched {len(matched_npis)} providers, {len(ranked_npis) - len(matched_npis)} unmatched")
