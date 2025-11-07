@@ -18,6 +18,11 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
   const [isPreAuthModalOpen, setIsPreAuthModalOpen] = useState(false);
   const [isInsuranceModalOpen, setIsInsuranceModalOpen] = useState(false);
 
+  const yearsExperienceValue = provider.yearsExperience;
+  const yearsExperienceLabel = typeof yearsExperienceValue === 'number' && !Number.isNaN(yearsExperienceValue)
+    ? `${yearsExperienceValue} year${yearsExperienceValue === 1 ? '' : 's'} of experience`
+    : '-- years of experience';
+
 
   const openSchedulingModal = () => {
     setIsSchedulingModalOpen(true);
@@ -63,7 +68,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
               <span className="font-medium">{provider.specialty}</span>
               <span className="mx-2">•</span>
               <Calendar className="h-4 w-4 mr-1" />
-              <span>-- years of experience</span>
+              <span>{yearsExperienceLabel}</span>
             </div>
 
             {/* Location */}

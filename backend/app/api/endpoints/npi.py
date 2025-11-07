@@ -8,6 +8,8 @@ from ...services.medical_analysis_service import MedicalAnalysisService
 import PyPDF2
 import io
 import math
+import re
+from datetime import datetime
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -44,6 +46,20 @@ def is_within_search_radius(provider_state: str, search_state: str, proximity: s
     else:
         # Default to statewide if unknown proximity
         return provider_state.upper() == search_state.upper()
+
+def extract_latest_year_from_residency(residency_text: Optional[str]) -> Optional[int]:
+    """Extract the most recent 4-digit year from residency text."""
+    if not residency_text:
+        return None
+    # Find all 4-digit years (handles ranges like 1982-1987)
+    year_matches = re.findall(r'(?:19|20)\d{2}', residency_text)
+    if not year_matches:
+        return None
+    current_year = datetime.utcnow().year + 1  # allow upcoming completions
+    valid_years = [int(year) for year in year_matches if 1900 <= int(year) <= current_year]
+    if not valid_years:
+        return None
+    return max(valid_years)
 
 # Initialize GPT service
 gpt_service = MedicalAnalysisService()
@@ -321,6 +337,13 @@ async def search_providers_by_criteria(
             except Exception as e:
                 logger.error(f"Error enriching education for NPI {provider.npi}: {e}")
 
+            graduation_year = extract_latest_year_from_residency(edu_residency)
+            years_experience = None
+            if graduation_year:
+                current_year = datetime.utcnow().year
+                if graduation_year <= current_year:
+                    years_experience = max(0, current_year - graduation_year)
+
             formatted_provider = {
                 "id": provider.npi,  # Use NPI as ID
                 "npi": provider.npi,
@@ -332,7 +355,7 @@ async def search_providers_by_criteria(
                 "zip": provider.provider_business_practice_location_address_postal_code or '',
                 "phone": provider.provider_business_practice_location_address_telephone_number or '',
                 "rating": 5.0,  # Default rating
-                "yearsExperience": None,  # No experience data available
+                "yearsExperience": years_experience,
                 "boardCertified": None,  # No certification data available
                 "acceptingPatients": True,  # Default to accepting patients
                 "languages": [],  # No language data available

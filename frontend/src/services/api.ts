@@ -45,6 +45,7 @@ export interface NPIProvider {
   zip: string;
   phone: string;
   boardCertified: boolean;
+  yearsExperience?: number | null;
   acceptingPatients: boolean;
   education?: {
     medicalSchool?: string | null;
@@ -309,6 +310,10 @@ export interface ProviderScore {
   content_score: number;
   vumedi_count: number;
   pubmed_count: number;
+  pubmed_first_author_count?: number;
+  pubmed_middle_author_count?: number;
+  pubmed_last_author_count?: number;
+  pubmed_weighted_points?: number;
   med_school_score: number;
 }
 
