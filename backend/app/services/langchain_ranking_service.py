@@ -7,7 +7,7 @@ then uses LangChain to rank the NPI providers based on relevance to the Pinecone
 
 import logging
 import time
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from ..models.specialist_recommendation import SpecialistRecommendation
@@ -175,6 +175,20 @@ class LangChainRankingService:
         """Get medical school ranking score for a single NPI provider (deprecated, use batch version)."""
         scores = self._batch_get_medical_school_scores([npi])
         return scores.get(npi, 0)
+    
+    def _calculate_experience_points(self, years_experience_raw: Optional[Any]) -> Tuple[Optional[int], int]:
+        """Normalize years of experience and return the bonus points."""
+        if years_experience_raw in (None, "", "--"):
+            return None, 0
+        try:
+            years = int(float(years_experience_raw))
+        except (TypeError, ValueError):
+            return None, 0
+        if years < 0:
+            return None, 0
+        if 10 <= years <= 45:
+            return years, 5
+        return years, 0
     
     async def rank_npi_providers(
         self, 
@@ -388,7 +402,6 @@ class LangChainRankingService:
                     
                     # Log matched PubMed articles for top providers
                     if pubmed_count > 0 and len(provider_links) < 20:
-                        # Get provider name for logging
                         provider_info = None
                         try:
                             for p in providers_to_rank:
@@ -397,7 +410,12 @@ class LangChainRankingService:
                                     break
                         except Exception as e:
                             logger.error(f"❌ DEBUG: Error finding provider info for NPI {npi}: {e}")
-                        
+                            provider_info = None
+                        years_experience_raw = None
+                        if provider_info:
+                            years_experience_raw = provider_info.get('yearsExperience', provider_info.get('years_experience'))
+                        years_experience, experience_points = self._calculate_experience_points(years_experience_raw)
+
                         provider_name = provider_info.get('name', '') if provider_info else npi
                         try:
                             pubmed_titles = [art.get('title', 'No title')[:80] for art in matches['pubmed_articles'][:3]]
@@ -418,13 +436,12 @@ class LangChainRankingService:
                         logger.error(f"❌ DEBUG: matches structure: {list(matches.keys())}")
                         raise
                         
-                    # Calculate score: Vumedi (×4) + PubMed weighted points
-                    # Vumedi articles count as 4 points each, PubMed uses weighted scoring
+                    # Calculate score: Vumedi (×4) + PubMed weighted points + experience bonus
                     content_score = (vumedi_count * 4) + pubmed_weighted_points
                     # Normalize NPI to string for consistent lookup
                     npi_str = str(npi)
                     med_school_score = med_school_scores.get(npi_str, 0)
-                    total_score = content_score + med_school_score
+                    total_score = content_score + med_school_score + experience_points
                     
                     # Log if medical school score is missing
                     if med_school_score == 0 and npi_str in med_school_scores:
@@ -432,12 +449,17 @@ class LangChainRankingService:
                     elif med_school_score == 0:
                         logger.debug(f"🔍 DEBUG: NPI {npi_str} not found in med_school_scores (available keys: {list(med_school_scores.keys())[:5]})")
                     
-                    logger.debug(f"🔍 DEBUG: NPI {npi} - Content score: {content_score}, Med school: {med_school_score}, Total: {total_score}")
+                    logger.debug(
+                        f"🔍 DEBUG: NPI {npi} - Content score: {content_score}, Med school: {med_school_score}, "
+                        f"Experience: {experience_points} (from {years_experience} years), Total: {total_score}"
+                    )
                     
                     provider_scores[npi] = {
                         'score': total_score,
                         'content_score': content_score,
                         'med_school_score': med_school_score,
+                        'experience_points': experience_points,
+                        'years_experience': years_experience,
                         'vumedi_count': vumedi_count,
                         'pubmed_count': pubmed_count,
                         'pubmed_first_author_count': first_author_count,
@@ -481,10 +503,15 @@ class LangChainRankingService:
                     npi_str = str(npi)  # Normalize to string
                     if npi_str not in matched_npis:
                         med_school_score = med_school_scores.get(npi_str, 0)
+                        years_experience_raw = provider.get('yearsExperience', provider.get('years_experience'))
+                        years_experience, experience_points = self._calculate_experience_points(years_experience_raw)
+                        total_score = med_school_score + experience_points
                         provider_scores[npi] = {  # Keep original npi format for key consistency
-                            'score': med_school_score,
+                            'score': total_score,
                             'content_score': 0,
                             'med_school_score': med_school_score,
+                            'experience_points': experience_points,
+                            'years_experience': years_experience,
                             'vumedi_count': 0,
                             'pubmed_count': 0,
                             'pubmed_first_author_count': 0,
@@ -883,9 +910,15 @@ class LangChainRankingService:
                     if npi and npi not in provider_scores:
                         # Get medical school score even for unmatched doctors
                         med_school_score = self._get_medical_school_score(npi)
+                        provider_info = next((p for p in npi_providers if p.get('npi') == npi), None)
+                        years_experience_raw = None
+                        if provider_info:
+                            years_experience_raw = provider_info.get('yearsExperience', provider_info.get('years_experience'))
+                        years_experience, experience_points = self._calculate_experience_points(years_experience_raw)
+                        total_score = med_school_score + experience_points
                         provider_scores[npi] = {
                             'npi': npi,
-                            'score': med_school_score,
+                            'score': total_score,
                             'content_score': 0,
                             'vumedi_count': 0,
                             'pubmed_count': 0,
@@ -893,6 +926,8 @@ class LangChainRankingService:
                             'pubmed_middle_author_count': 0,
                             'pubmed_last_author_count': 0,
                             'pubmed_weighted_points': 0,
+                            'experience_points': experience_points,
+                            'years_experience': years_experience,
                             'med_school_score': med_school_score
                         }
                 
@@ -910,11 +945,12 @@ class LangChainRankingService:
                 total_pubmed = sum(scores['pubmed_count'] for _, scores in matched_providers_with_scores)
                 total_content_score = sum(scores['content_score'] for _, scores in matched_providers_with_scores)
                 total_med_school_score = sum(scores['med_school_score'] for _, scores in matched_providers_with_scores)
+                total_experience_points = sum(scores.get('experience_points', 0) for _, scores in matched_providers_with_scores)
                 
                 explanation = (
-                    f"Ranked {len(all_ranked_npis)} providers by content score (×4) and medical school ranking. "
-                    f"{doctors_with_content} providers found with {total_vumedi} Vumedi videos and {total_pubmed} PubMed articles (×4 = {total_content_score} points) plus {total_med_school_score} medical school points related to {treatment_name}. "
-                    f"Providers with higher total scores (content + medical school) are ranked higher."
+                    f"Ranked {len(all_ranked_npis)} providers by content score (×4), medical school ranking, and experience bonus. "
+                    f"{doctors_with_content} providers found with {total_vumedi} Vumedi videos and {total_pubmed} PubMed articles (×4 = {total_content_score} points) plus {total_med_school_score} medical school points and {total_experience_points} experience points related to {treatment_name}. "
+                    f"Providers with higher total scores (content + medical school + experience) are ranked higher."
                 )
                 
                 # Store the results for this treatment

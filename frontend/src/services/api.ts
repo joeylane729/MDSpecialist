@@ -46,6 +46,9 @@ export interface NPIProvider {
   phone: string;
   boardCertified: boolean;
   yearsExperience?: number | null;
+  rating?: number;
+  languages?: string[];
+  insurance?: string[];
   acceptingPatients: boolean;
   education?: {
     medicalSchool?: string | null;
@@ -315,6 +318,8 @@ export interface ProviderScore {
   pubmed_last_author_count?: number;
   pubmed_weighted_points?: number;
   med_school_score: number;
+  experience_points?: number;
+  years_experience?: number | null;
 }
 
 export interface TreatmentRanking {

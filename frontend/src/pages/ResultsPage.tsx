@@ -7,6 +7,9 @@ import NPIProviderCard from '../components/NPIProviderCard';
 interface Provider extends NPIProvider {
   email?: string;
   website?: string;
+  rating?: number;
+  languages?: string[];
+  insurance?: string[];
 }
 
 interface SearchParams {
@@ -149,14 +152,15 @@ const ResultsPage: React.FC = () => {
     
     const { 
       score, 
-      content_score, 
       vumedi_count, 
       pubmed_count, 
       pubmed_first_author_count = 0,
       pubmed_middle_author_count = 0,
       pubmed_last_author_count = 0,
       pubmed_weighted_points = 0,
-      med_school_score 
+      med_school_score,
+      experience_points = 0,
+      years_experience
     } = scoreData;
     
     // Create a more readable breakdown
@@ -187,6 +191,15 @@ const ResultsPage: React.FC = () => {
     
     if (med_school_score > 0) {
       breakdownParts.push(`Medical school ranking = ${med_school_score} point${med_school_score > 1 ? 's' : ''}`);
+    }
+    
+    if (typeof years_experience === 'number' && !Number.isNaN(years_experience)) {
+      const experienceSuffix = years_experience === 1 ? '' : 's';
+      if (experience_points > 0) {
+        breakdownParts.push(`Experience: ${years_experience} year${experienceSuffix} = ${experience_points} point${experience_points !== 1 ? 's' : ''} (bonus)`);
+      } else {
+        breakdownParts.push(`Experience: ${years_experience} year${experienceSuffix} = 0 points`);
+      }
     }
     
     const breakdown = breakdownParts.length > 0 
@@ -223,9 +236,9 @@ const ResultsPage: React.FC = () => {
         // Get ranked providers for the first treatment
         const rankedNPIs = firstTreatment.ranked_providers;
         if (Array.isArray(rankedNPIs)) {
-          const rankedNPIProviders = rankedNPIs.map(npi => 
-            location.state.providers.find(provider => provider.npi === npi)
-          ).filter((provider): provider is NPIProvider => provider !== undefined);
+          const rankedNPIProviders = rankedNPIs.map((npi: string) => 
+            location.state.providers.find((provider: Provider) => provider.npi === npi)
+          ).filter((provider: Provider | undefined): provider is NPIProvider => provider !== undefined);
           setRankedProviders(rankedNPIProviders);
           console.log('🔍 Initial ranked providers from treatment rankings:', rankedNPIProviders.length);
         }
@@ -431,7 +444,6 @@ const ResultsPage: React.FC = () => {
           insurance: ['Blue Cross', 'Aetna', 'Cigna'],
           education: {
             medicalSchool: 'Stanford University School of Medicine',
-            graduationYear: 2008,
             residency: 'UCLA Medical Center'
           }
         },
@@ -455,7 +467,6 @@ const ResultsPage: React.FC = () => {
           insurance: ['Blue Cross', 'Kaiser', 'UnitedHealth'],
           education: {
             medicalSchool: 'UC San Francisco School of Medicine',
-            graduationYear: 2011,
             residency: 'Cedars-Sinai Medical Center'
           }
         },
@@ -479,7 +490,6 @@ const ResultsPage: React.FC = () => {
           insurance: ['Blue Cross', 'Aetna', 'Humana'],
           education: {
             medicalSchool: 'Harvard Medical School',
-            graduationYear: 2005,
             residency: 'Johns Hopkins Hospital'
           }
         },
@@ -503,7 +513,6 @@ const ResultsPage: React.FC = () => {
           insurance: ['Blue Cross', 'Cigna', 'Anthem'],
           education: {
             medicalSchool: 'UCLA David Geffen School of Medicine',
-            graduationYear: 2013,
             residency: 'UCLA Medical Center'
           }
         },
@@ -527,7 +536,6 @@ const ResultsPage: React.FC = () => {
           insurance: ['Blue Cross', 'Aetna', 'UnitedHealth'],
           education: {
             medicalSchool: 'UC Davis School of Medicine',
-            graduationYear: 2009,
             residency: 'UC Davis Medical Center'
           }
         }
@@ -627,12 +635,12 @@ const ResultsPage: React.FC = () => {
         
         const rankedNPIs = firstTreatment.ranked_providers;
         if (Array.isArray(rankedNPIs)) {
-          rankedNPIProviders = rankedNPIs.map((npi: any) => 
-            npiData.providers.find((provider: any) => provider.npi === npi)
-          ).filter((provider): provider is NPIProvider => provider !== undefined);
-        }
-        
+          const rankedNPIProviders = rankedNPIs.map((npi: string) => 
+            location.state.providers.find((provider: Provider) => provider.npi === npi)
+          ).filter((provider: Provider | undefined): provider is NPIProvider => provider !== undefined);
+          setRankedProviders(rankedNPIProviders);
         console.log('🔍 Initial ranked providers:', rankedNPIProviders.length);
+        }
         
         // Capture the provider links and scores
         providerLinks = firstTreatment.provider_links || {};
@@ -692,9 +700,9 @@ const ResultsPage: React.FC = () => {
       
       // Find the original NPI providers from the current providers state
       const originalProviders = providers || [];
-      const rankedNPIProviders = rankedNPIs.map(npi => 
-        originalProviders.find(provider => provider.npi === npi)
-      ).filter((provider): provider is NPIProvider => provider !== undefined);
+      const rankedNPIProviders = rankedNPIs.map((npi: string) => 
+        originalProviders.find((provider: Provider) => provider.npi === npi)
+      ).filter((provider: Provider | undefined): provider is NPIProvider => provider !== undefined);
       
       console.log('🔍 Filtered providers:', rankedNPIProviders.length);
       

@@ -402,7 +402,7 @@ def main():
             cur.execute("SET synchronous_commit = off")
             cur.execute("SET work_mem = '128MB'")
             create_stage_table(cur)
-            
+
             logger.info('📤 Streaming parse + COPY into staging from multiple files...')
             columns = [
                 'pmid','title','journal_title','journal_abbrev','issn','pub_date','doi','abstract',
@@ -431,52 +431,52 @@ def main():
                 buffer = io.StringIO()
                 batch_rows = 0
 
-                for event, elem in ET.iterparse(xml_path, events=("end",)):
-                    tag = elem.tag if isinstance(elem.tag, str) else ""
-                    if tag.endswith('PubmedArticle'):
-                        rec = parse_article(elem)
-                        if rec:
-                            row = [
-                                str(rec['pmid']),
-                                sanitize(rec['title']),
-                                sanitize(rec['journal_title']),
-                                sanitize(rec['journal_abbrev']),
-                                sanitize(rec['issn']),
-                                sanitize(rec['pub_date'] or ''),
-                                sanitize(rec['doi']),
-                                sanitize(rec['abstract']),
-                                sanitize(rec['authors']),
-                                sanitize(rec['mesh_terms']),
-                                sanitize(rec['chemicals']),
-                                sanitize(rec['grants']),
-                                sanitize(rec['citations']),
-                                sanitize(rec['publication_types']),
-                                sanitize(rec['journal_country']),
-                                sanitize(rec['language']),
-                                sanitize(rec['date_completed'] or ''),
-                                sanitize(rec['date_revised'] or '')
-                            ]
-                            buffer.write('\t'.join(row) + '\n')
-                            batch_rows += 1
-                            total_rows += 1
-                            if total_rows % 1000 == 0:
+            for event, elem in ET.iterparse(xml_path, events=("end",)):
+                tag = elem.tag if isinstance(elem.tag, str) else ""
+                if tag.endswith('PubmedArticle'):
+                    rec = parse_article(elem)
+                    if rec:
+                        row = [
+                            str(rec['pmid']),
+                            sanitize(rec['title']),
+                            sanitize(rec['journal_title']),
+                            sanitize(rec['journal_abbrev']),
+                            sanitize(rec['issn']),
+                            sanitize(rec['pub_date'] or ''),
+                            sanitize(rec['doi']),
+                            sanitize(rec['abstract']),
+                            sanitize(rec['authors']),
+                            sanitize(rec['mesh_terms']),
+                            sanitize(rec['chemicals']),
+                            sanitize(rec['grants']),
+                            sanitize(rec['citations']),
+                            sanitize(rec['publication_types']),
+                            sanitize(rec['journal_country']),
+                            sanitize(rec['language']),
+                            sanitize(rec['date_completed'] or ''),
+                            sanitize(rec['date_revised'] or '')
+                        ]
+                        buffer.write('\t'.join(row) + '\n')
+                        batch_rows += 1
+                        total_rows += 1
+                        if total_rows % 1000 == 0:
                                 logger.info(f'   Parsed {total_rows} total records...')
-                        # free memory for processed subtree
-                        elem.clear()
+                    # free memory for processed subtree
+                    elem.clear()
 
-                        if batch_rows >= batch_size_rows:
-                            buffer.seek(0)
-                            cur.copy_from(buffer, 'pubmed_stage', sep='\t', null='\\N', columns=columns)
-                            pgconn.commit()
+                    if batch_rows >= batch_size_rows:
+                        buffer.seek(0)
+                        cur.copy_from(buffer, 'pubmed_stage', sep='\t', null='\\N', columns=columns)
+                        pgconn.commit()
                             logger.info(f'✅ COPY batch -> staging. Total rows copied so far: {total_rows}')
-                            buffer = io.StringIO()
-                            batch_rows = 0
+                        buffer = io.StringIO()
+                        batch_rows = 0
 
                 # flush remaining for this file
-                if batch_rows > 0:
-                    buffer.seek(0)
-                    cur.copy_from(buffer, 'pubmed_stage', sep='\t', null='\\N', columns=columns)
-                    pgconn.commit()
+            if batch_rows > 0:
+                buffer.seek(0)
+                cur.copy_from(buffer, 'pubmed_stage', sep='\t', null='\\N', columns=columns)
+                pgconn.commit()
                     logger.info(f'✅ COPY final batch for {os.path.basename(xml_path)} -> staging. Total rows copied so far: {total_rows}')
                 # Merge from staging to final with proper casts (per-file) in 100k pmid chunks
                 logger.info('🔄 Merging this file from staging -> pubmed_articles in 100k pmid chunks...')
@@ -493,60 +493,60 @@ def main():
                     while current <= max_pmid:
                         end = current + chunk_size - 1
                         logger.info(f"   Merging pmid {max(current, min_pmid):,}–{min(end, max_pmid):,}")
-                        cur.execute(
-                            """
-                            WITH dedup AS (
-                                SELECT *,
-                                       ROW_NUMBER() OVER (PARTITION BY pmid ORDER BY COALESCE(LENGTH(title),0) DESC) AS rn
-                                FROM pubmed_stage
+            cur.execute(
+                """
+                WITH dedup AS (
+                    SELECT *,
+                           ROW_NUMBER() OVER (PARTITION BY pmid ORDER BY COALESCE(LENGTH(title),0) DESC) AS rn
+                    FROM pubmed_stage
                                 WHERE pmid BETWEEN %s AND %s
-                            )
-                            INSERT INTO pubmed_articles (
-                                pmid, title, journal_title, journal_abbrev, issn, pub_date, doi, abstract,
-                                authors, mesh_terms, chemicals, grants, citations, publication_types,
-                                journal_country, language, date_completed, date_revised
-                            )
-                            SELECT
-                                pmid,
-                                title,
-                                journal_title,
-                                journal_abbrev,
-                                issn,
-                                NULLIF(pub_date,'')::date,
-                                doi,
-                                abstract,
-                                authors::jsonb,
-                                mesh_terms::jsonb,
-                                chemicals::jsonb,
-                                grants::jsonb,
-                                citations::jsonb,
-                                publication_types::jsonb,
-                                journal_country,
-                                language,
-                                NULLIF(date_completed,'')::date,
-                                NULLIF(date_revised,'')::date
-                            FROM dedup
-                            WHERE rn = 1
-                            ON CONFLICT (pmid) DO UPDATE SET
-                                title = EXCLUDED.title,
-                                abstract = EXCLUDED.abstract,
-                                journal_title = EXCLUDED.journal_title,
-                                doi = EXCLUDED.doi,
-                                authors = EXCLUDED.authors,
-                                mesh_terms = EXCLUDED.mesh_terms,
-                                chemicals = EXCLUDED.chemicals,
-                                grants = EXCLUDED.grants,
-                                citations = EXCLUDED.citations,
-                                publication_types = EXCLUDED.publication_types,
-                                pub_date = COALESCE(EXCLUDED.pub_date, pubmed_articles.pub_date),
-                                journal_country = EXCLUDED.journal_country,
-                                language = EXCLUDED.language,
-                                date_completed = COALESCE(EXCLUDED.date_completed, pubmed_articles.date_completed),
-                                date_revised   = COALESCE(EXCLUDED.date_revised,   pubmed_articles.date_revised)
+                )
+                INSERT INTO pubmed_articles (
+                    pmid, title, journal_title, journal_abbrev, issn, pub_date, doi, abstract,
+                    authors, mesh_terms, chemicals, grants, citations, publication_types,
+                    journal_country, language, date_completed, date_revised
+                )
+                SELECT
+                    pmid,
+                    title,
+                    journal_title,
+                    journal_abbrev,
+                    issn,
+                    NULLIF(pub_date,'')::date,
+                    doi,
+                    abstract,
+                    authors::jsonb,
+                    mesh_terms::jsonb,
+                    chemicals::jsonb,
+                    grants::jsonb,
+                    citations::jsonb,
+                    publication_types::jsonb,
+                    journal_country,
+                    language,
+                    NULLIF(date_completed,'')::date,
+                    NULLIF(date_revised,'')::date
+                FROM dedup
+                WHERE rn = 1
+                ON CONFLICT (pmid) DO UPDATE SET
+                    title = EXCLUDED.title,
+                    abstract = EXCLUDED.abstract,
+                    journal_title = EXCLUDED.journal_title,
+                    doi = EXCLUDED.doi,
+                    authors = EXCLUDED.authors,
+                    mesh_terms = EXCLUDED.mesh_terms,
+                    chemicals = EXCLUDED.chemicals,
+                    grants = EXCLUDED.grants,
+                    citations = EXCLUDED.citations,
+                    publication_types = EXCLUDED.publication_types,
+                    pub_date = COALESCE(EXCLUDED.pub_date, pubmed_articles.pub_date),
+                    journal_country = EXCLUDED.journal_country,
+                    language = EXCLUDED.language,
+                    date_completed = COALESCE(EXCLUDED.date_completed, pubmed_articles.date_completed),
+                    date_revised   = COALESCE(EXCLUDED.date_revised,   pubmed_articles.date_revised)
                             """,
                             (max(current, min_pmid), min(end, max_pmid))
-                        )
-                        pgconn.commit()
+            )
+            pgconn.commit()
                         current += chunk_size
                 else:
                     logger.info('   No rows found in staging for this file.')
