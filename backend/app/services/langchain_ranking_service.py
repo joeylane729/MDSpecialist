@@ -171,6 +171,63 @@ class LangChainRankingService:
             logger.error(f"Error batch looking up medical schools: {e}")
             return {}
     
+    def _batch_get_residency_scores(self, npi_list: List[str]) -> Dict[str, int]:
+        """Batch get residency ranking scores for multiple NPI providers."""
+        if not self.db or not npi_list:
+            return {}
+
+        try:
+            npi_list_str = [str(npi) for npi in npi_list]
+            from sqlalchemy import bindparam, ARRAY, String
+            query = text("""
+                SELECT DISTINCT ON (nrr.npi) nrr.npi, rr.id
+                FROM npi_residency_mapping_results nrr
+                JOIN residency_rankings rr ON nrr.residency_program_id = rr.id
+                WHERE nrr.npi = ANY(:npi_list)
+                ORDER BY nrr.npi, rr.id ASC
+            """).bindparams(bindparam("npi_list", type_=ARRAY(String)))
+
+            logger.info("📋 Fetching residency ranking scores for NPIs")
+            logger.info(f"📋 Query Parameters: {len(npi_list_str)} NPIs")
+            logger.info(f"📋 Sample NPIs for residency lookup: {npi_list_str[:5]}")
+
+            result = self.db.execute(query, {"npi_list": npi_list_str})
+            rows = result.fetchall()
+
+            logger.info(f"📊 Residency query returned {len(rows)} rows from database")
+
+            scores: Dict[str, int] = {}
+            for row in rows:
+                npi = str(row[0])
+                rank = row[1]
+                if rank is None:
+                    continue
+
+                if rank <= 25:
+                    points = 3
+                elif rank <= 50:
+                    points = 2
+                elif rank <= 75:
+                    points = 1
+                else:
+                    points = 0
+
+                scores[npi] = points
+                logger.debug(f"📋 Residency NPI {npi}: rank {rank} = {points} points")
+
+            found_npis = set(scores.keys())
+            queried_npis = set(npi_list_str)
+            missing_npis = queried_npis - found_npis
+            if missing_npis:
+                logger.warning(f"⚠️  {len(missing_npis)} NPIs not found in residency mapping: {list(missing_npis)[:10]}")
+
+            logger.info(f"✅ Fetched residency scores for {len(scores)} NPIs (queried {len(npi_list_str)})")
+            return scores
+
+        except Exception as e:
+            logger.error(f"Error batch looking up residencies: {e}")
+            return {}
+
     def _get_medical_school_score(self, npi: str) -> int:
         """Get medical school ranking score for a single NPI provider (deprecated, use batch version)."""
         scores = self._batch_get_medical_school_scores([npi])
@@ -317,7 +374,7 @@ class LangChainRankingService:
                                     forename_normalized = forename.split()[0].lower() if forename else ''
                                     lastname_normalized = lastname.lower()
                                     name_key = (forename_normalized, lastname_normalized)
-                                    
+            
                                     # Determine author position for weighted scoring
                                     # Last author: 3 points, First author: 2 points, Middle: 1 point
                                     if total_authors == 1:
@@ -363,6 +420,8 @@ class LangChainRankingService:
             
             med_school_scores = self._batch_get_medical_school_scores(list(all_npis))
             logger.info(f"📊 Fetched medical school scores for {len(med_school_scores)} NPIs in batch")
+            residency_scores = self._batch_get_residency_scores(list(all_npis))
+            logger.info(f"📊 Fetched residency scores for {len(residency_scores)} NPIs in batch")
             
             # Build provider links and scores
             provider_links = {}
@@ -378,7 +437,7 @@ class LangChainRankingService:
                     vumedi_count = len(matches.get('vumedi_content', []))
                     pubmed_articles = matches.get('pubmed_articles', [])
                     pubmed_count = len(pubmed_articles)
-                    
+            
                     # Calculate weighted PubMed score based on author position
                     # Last author: 3 points, First author: 2 points, Middle: 1 point
                     pubmed_weighted_points = 0
@@ -399,7 +458,7 @@ class LangChainRankingService:
                             middle_author_count += 1
                     
                     logger.debug(f"🔍 DEBUG: NPI {npi} - Vumedi: {vumedi_count}, PubMed: {pubmed_count} (First: {first_author_count}, Middle: {middle_author_count}, Last: {last_author_count}, Weighted: {pubmed_weighted_points} points)")
-                    
+            
                     # Log matched PubMed articles for top providers
                     if pubmed_count > 0 and len(provider_links) < 20:
                         provider_info = None
@@ -441,7 +500,8 @@ class LangChainRankingService:
                     # Normalize NPI to string for consistent lookup
                     npi_str = str(npi)
                     med_school_score = med_school_scores.get(npi_str, 0)
-                    total_score = content_score + med_school_score + experience_points
+                    residency_score = residency_scores.get(npi_str, 0)
+                    total_score = content_score + med_school_score + residency_score + experience_points
                     
                     # Log if medical school score is missing
                     if med_school_score == 0 and npi_str in med_school_scores:
@@ -449,15 +509,21 @@ class LangChainRankingService:
                     elif med_school_score == 0:
                         logger.debug(f"🔍 DEBUG: NPI {npi_str} not found in med_school_scores (available keys: {list(med_school_scores.keys())[:5]})")
                     
+                    if residency_score == 0 and npi_str in residency_scores:
+                        logger.debug(f"🔍 DEBUG: NPI {npi_str} found in residency_scores but score is 0")
+                    elif residency_score == 0:
+                        logger.debug(f"🔍 DEBUG: NPI {npi_str} not found in residency_scores (available keys: {list(residency_scores.keys())[:5]})")
+                    
                     logger.debug(
                         f"🔍 DEBUG: NPI {npi} - Content score: {content_score}, Med school: {med_school_score}, "
-                        f"Experience: {experience_points} (from {years_experience} years), Total: {total_score}"
+                        f"Residency: {residency_score}, Experience: {experience_points} (from {years_experience} years), Total: {total_score}"
                     )
                     
                     provider_scores[npi] = {
                         'score': total_score,
                         'content_score': content_score,
                         'med_school_score': med_school_score,
+                        'residency_score': residency_score,
                         'experience_points': experience_points,
                         'years_experience': years_experience,
                         'vumedi_count': vumedi_count,
@@ -471,7 +537,7 @@ class LangChainRankingService:
                     
                     logger.debug(f"🔍 DEBUG: Successfully built scores for NPI {npi}")
                         
-                except Exception as e:
+            except Exception as e:
                     logger.error(f"❌ DEBUG: Error processing provider NPI {npi}: {e}")
                     import traceback
                     logger.error(f"❌ DEBUG: Traceback:\n{traceback.format_exc()}")
@@ -503,13 +569,15 @@ class LangChainRankingService:
                     npi_str = str(npi)  # Normalize to string
                     if npi_str not in matched_npis:
                         med_school_score = med_school_scores.get(npi_str, 0)
+                        residency_score = residency_scores.get(npi_str, 0)
                         years_experience_raw = provider.get('yearsExperience', provider.get('years_experience'))
                         years_experience, experience_points = self._calculate_experience_points(years_experience_raw)
-                        total_score = med_school_score + experience_points
+                        total_score = med_school_score + residency_score + experience_points
                         provider_scores[npi] = {  # Keep original npi format for key consistency
                             'score': total_score,
                             'content_score': 0,
                             'med_school_score': med_school_score,
+                            'residency_score': residency_score,
                             'experience_points': experience_points,
                             'years_experience': years_experience,
                             'vumedi_count': 0,

@@ -159,6 +159,7 @@ const ResultsPage: React.FC = () => {
       pubmed_last_author_count = 0,
       pubmed_weighted_points = 0,
       med_school_score,
+      residency_score = 0,
       experience_points = 0,
       years_experience
     } = scoreData;
@@ -191,6 +192,10 @@ const ResultsPage: React.FC = () => {
     
     if (med_school_score > 0) {
       breakdownParts.push(`Medical school ranking = ${med_school_score} point${med_school_score > 1 ? 's' : ''}`);
+    }
+    
+    if (residency_score > 0) {
+      breakdownParts.push(`Residency ranking = ${residency_score} point${residency_score > 1 ? 's' : ''}`);
     }
     
     if (typeof years_experience === 'number' && !Number.isNaN(years_experience)) {
