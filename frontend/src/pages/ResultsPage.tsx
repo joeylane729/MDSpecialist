@@ -621,6 +621,7 @@ const ResultsPage: React.FC = () => {
       const treatmentRankingsData = rankingResponse.treatment_rankings;
       let rankedNPIProviders: NPIProvider[] = [];
       let providerLinks: { [npi: string]: ProviderContent } = {};
+      const providerLookup = new Map(npiData.providers.map((provider: Provider) => [provider.npi, provider]));
       
       if (treatmentRankingsData && Object.keys(treatmentRankingsData).length > 0) {
         console.log('🔍 Treatment rankings data received:', treatmentRankingsData);
@@ -641,7 +642,7 @@ const ResultsPage: React.FC = () => {
         const rankedNPIs = firstTreatment.ranked_providers;
         if (Array.isArray(rankedNPIs)) {
           rankedNPIProviders = rankedNPIs.map((npi: string) => 
-            location.state.providers.find((provider: Provider) => provider.npi === npi)
+            providerLookup.get(npi)
           ).filter((provider: Provider | undefined): provider is NPIProvider => provider !== undefined);
           setRankedProviders(rankedNPIProviders);
           console.log('🔍 Initial ranked providers:', rankedNPIProviders.length);
