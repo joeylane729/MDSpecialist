@@ -640,11 +640,11 @@ const ResultsPage: React.FC = () => {
         
         const rankedNPIs = firstTreatment.ranked_providers;
         if (Array.isArray(rankedNPIs)) {
-          const rankedNPIProviders = rankedNPIs.map((npi: string) => 
+          rankedNPIProviders = rankedNPIs.map((npi: string) => 
             location.state.providers.find((provider: Provider) => provider.npi === npi)
           ).filter((provider: Provider | undefined): provider is NPIProvider => provider !== undefined);
           setRankedProviders(rankedNPIProviders);
-        console.log('🔍 Initial ranked providers:', rankedNPIProviders.length);
+          console.log('🔍 Initial ranked providers:', rankedNPIProviders.length);
         }
         
         // Capture the provider links and scores
