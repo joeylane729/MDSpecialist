@@ -554,8 +554,8 @@ def main():
                 cur.execute('TRUNCATE TABLE pubmed_stage')
                 pgconn.commit()
                 files_processed += 1
-                if files_processed % 5 == 0:
-                    logger.info('🧽 Running VACUUM pubmed_articles after 5 files to free temp space')
+                if files_processed % 10 == 0:
+                    logger.info('🧽 Running VACUUM pubmed_articles after 10 files to free temp space')
                     # VACUUM must run outside transaction block - use separate connection
                     pgconn.commit()  # Ensure all pending work is committed
                     vac_conn = psycopg2.connect(dsn)

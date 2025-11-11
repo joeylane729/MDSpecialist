@@ -537,7 +537,7 @@ class LangChainRankingService:
                     
                     logger.debug(f"🔍 DEBUG: Successfully built scores for NPI {npi}")
                         
-            except Exception as e:
+                except Exception as e:
                     logger.error(f"❌ DEBUG: Error processing provider NPI {npi}: {e}")
                     import traceback
                     logger.error(f"❌ DEBUG: Traceback:\n{traceback.format_exc()}")
