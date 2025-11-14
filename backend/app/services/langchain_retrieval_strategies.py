@@ -123,7 +123,26 @@ class LangChainRetrievalStrategies:
                     -- Simple relevance score: 1.0 for all matches (we'll sort by pmid DESC)
                     1.0 as relevance_score
                 FROM pubmed_articles
-                LEFT JOIN journals ON pubmed_articles.issn = journals.issn
+                LEFT JOIN journals ON 
+                    -- Normalize ISSNs by removing dashes and spaces, then compare
+                    -- Handles format differences: 
+                    --   - pubmed "1933-0693" vs journals "19330693" (exact match)
+                    --   - pubmed "1933-0693" vs journals "19330693,00223085" (contained in comma-separated list)
+                    -- Normalize both sides: remove dashes and spaces
+                    (
+                        -- Exact match after normalization
+                        REPLACE(REPLACE(COALESCE(pubmed_articles.issn, ''), '-', ''), ' ', '') = 
+                        REPLACE(REPLACE(COALESCE(journals.issn, ''), '-', ''), ' ', '')
+                        OR
+                        -- Pattern match for comma-separated ISSNs in journals table
+                        -- After normalization, check if normalized pubmed ISSN appears as a whole value
+                        -- Regex ensures it's at word boundaries (start/end or surrounded by commas)
+                        REPLACE(REPLACE(COALESCE(journals.issn, ''), '-', ''), ' ', '') ~ 
+                        ('(^|,)' || REPLACE(REPLACE(COALESCE(pubmed_articles.issn, ''), '-', ''), ' ', '') || '(,|$)')
+                    )
+                    -- Only match if both have non-empty ISSNs after normalization
+                    AND REPLACE(REPLACE(COALESCE(pubmed_articles.issn, ''), '-', ''), ' ', '') != ''
+                    AND REPLACE(REPLACE(COALESCE(journals.issn, ''), '-', ''), ' ', '') != ''
                 WHERE {where_clause}
                 ORDER BY pubmed_articles.pmid DESC
                 LIMIT :limit
