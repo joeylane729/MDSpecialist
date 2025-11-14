@@ -91,7 +91,7 @@ class LangChainRetrievalStrategies:
                     COALESCE(abstract, '') as abstract,
                     COALESCE(journal_title, '') as journal_title,
                     COALESCE(journal_abbrev, '') as journal_abbrev,
-                    COALESCE(issn, '') as issn,
+                    COALESCE(pubmed_articles.issn, '') as issn,
                     COALESCE(doi, '') as doi,
                     COALESCE(language, '') as language,
                     COALESCE(journal_country, '') as journal_country,
@@ -117,9 +117,12 @@ class LangChainRetrievalStrategies:
                     COALESCE(grants::text, '[]') as grants,
                     COALESCE(citations::text, '[]') as citations,
                     COALESCE(publication_types::text, '[]') as publication_types,
+                    -- Get journal quartile for scoring (NULL if not found)
+                    journals.sjr_quartile as sjr_quartile,
                     -- Simple relevance score: 1.0 for all matches (we'll sort by pmid DESC)
                     1.0 as relevance_score
                 FROM pubmed_articles
+                LEFT JOIN journals ON pubmed_articles.issn = journals.issn
                 WHERE {where_clause}
                 ORDER BY pmid DESC
                 LIMIT :limit
@@ -205,6 +208,7 @@ class LangChainRetrievalStrategies:
                     "grants": row.grants or "[]",
                     "citations": row.citations or "[]",
                     "publication_types": row.publication_types or "[]",
+                    "sjr_quartile": row.sjr_quartile if hasattr(row, 'sjr_quartile') else None,  # Journal quartile for scoring
                     "_score": float(row.relevance_score) if row.relevance_score else 0.0
                 }
                 hits.append(hit_fields)

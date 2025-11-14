@@ -316,7 +316,13 @@ export interface ProviderScore {
   pubmed_first_author_count?: number;
   pubmed_middle_author_count?: number;
   pubmed_last_author_count?: number;
+  pubmed_base_points?: number;
   pubmed_weighted_points?: number;
+  pubmed_quartile_q1_count?: number;
+  pubmed_quartile_q2_count?: number;
+  pubmed_quartile_q3_count?: number;
+  pubmed_quartile_q4_count?: number;
+  pubmed_quartile_no_data_count?: number;
   med_school_score: number;
   residency_score?: number;
   experience_points?: number;

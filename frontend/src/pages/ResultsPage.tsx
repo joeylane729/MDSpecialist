@@ -157,7 +157,13 @@ const ResultsPage: React.FC = () => {
       pubmed_first_author_count = 0,
       pubmed_middle_author_count = 0,
       pubmed_last_author_count = 0,
+      pubmed_base_points = 0,
       pubmed_weighted_points = 0,
+      pubmed_quartile_q1_count = 0,
+      pubmed_quartile_q2_count = 0,
+      pubmed_quartile_q3_count = 0,
+      pubmed_quartile_q4_count = 0,
+      pubmed_quartile_no_data_count = 0,
       med_school_score,
       residency_score = 0,
       experience_points = 0,
@@ -167,27 +173,59 @@ const ResultsPage: React.FC = () => {
     // Create a more readable breakdown
     const breakdownParts = [];
     if (vumedi_count > 0) {
-      breakdownParts.push(`${vumedi_count} Vumedi video${vumedi_count > 1 ? 's' : ''} = ${vumedi_count} point${vumedi_count > 1 ? 's' : ''}`);
+      breakdownParts.push(`${vumedi_count} Vumedi video${vumedi_count > 1 ? 's' : ''} = ${vumedi_count * 4} point${vumedi_count * 4 !== 1 ? 's' : ''} (${vumedi_count} × 4)`);
     }
     
-    // Show weighted PubMed breakdown - always show first/middle/last counts
+    // Show weighted PubMed breakdown with quartile multipliers
     if (pubmed_count > 0) {
-      // Always show the weighted breakdown with all author positions
       const pubmedBreakdownParts = [];
       
-      // First author: always show, even if 0
-      const firstPoints = (pubmed_first_author_count || 0) * 2;
-      pubmedBreakdownParts.push(`First author: ${pubmed_first_author_count || 0} appearance${(pubmed_first_author_count || 0) !== 1 ? 's' : ''} = ${firstPoints} point${firstPoints !== 1 ? 's' : ''} (${pubmed_first_author_count || 0} × 2)`);
+      // Show author position breakdown with base points
+      if (pubmed_first_author_count > 0) {
+        pubmedBreakdownParts.push(`First author: ${pubmed_first_author_count} appearance${pubmed_first_author_count !== 1 ? 's' : ''} = ${pubmed_first_author_count * 2} base point${pubmed_first_author_count * 2 !== 1 ? 's' : ''} (${pubmed_first_author_count} × 2)`);
+      }
       
-      // Middle author: always show, even if 0
-      const middlePoints = (pubmed_middle_author_count || 0) * 1;
-      pubmedBreakdownParts.push(`Middle author: ${pubmed_middle_author_count || 0} appearance${(pubmed_middle_author_count || 0) !== 1 ? 's' : ''} = ${middlePoints} point${middlePoints !== 1 ? 's' : ''} (${pubmed_middle_author_count || 0} × 1)`);
+      if (pubmed_middle_author_count > 0) {
+        pubmedBreakdownParts.push(`Middle author: ${pubmed_middle_author_count} appearance${pubmed_middle_author_count !== 1 ? 's' : ''} = ${pubmed_middle_author_count} base point${pubmed_middle_author_count !== 1 ? 's' : ''} (${pubmed_middle_author_count} × 1)`);
+      }
       
-      // Last author: always show, even if 0
-      const lastPoints = (pubmed_last_author_count || 0) * 3;
-      pubmedBreakdownParts.push(`Last author: ${pubmed_last_author_count || 0} appearance${(pubmed_last_author_count || 0) !== 1 ? 's' : ''} = ${lastPoints} point${lastPoints !== 1 ? 's' : ''} (${pubmed_last_author_count || 0} × 3)`);
+      if (pubmed_last_author_count > 0) {
+        pubmedBreakdownParts.push(`Last author: ${pubmed_last_author_count} appearance${pubmed_last_author_count !== 1 ? 's' : ''} = ${pubmed_last_author_count * 3} base point${pubmed_last_author_count * 3 !== 1 ? 's' : ''} (${pubmed_last_author_count} × 3)`);
+      }
       
-      breakdownParts.push(`PubMed articles (${pubmed_count} total):\n  ${pubmedBreakdownParts.join('\n  ')}\n  Total PubMed: ${pubmed_weighted_points || 0} point${(pubmed_weighted_points || 0) !== 1 ? 's' : ''}`);
+      // Show quartile breakdown
+      const quartileBreakdownParts = [];
+      if (pubmed_quartile_q1_count > 0) {
+        quartileBreakdownParts.push(`Q1: ${pubmed_quartile_q1_count} article${pubmed_quartile_q1_count !== 1 ? 's' : ''} (×1.0 multiplier)`);
+      }
+      if (pubmed_quartile_q2_count > 0) {
+        quartileBreakdownParts.push(`Q2: ${pubmed_quartile_q2_count} article${pubmed_quartile_q2_count !== 1 ? 's' : ''} (×0.75 multiplier)`);
+      }
+      if (pubmed_quartile_q3_count > 0) {
+        quartileBreakdownParts.push(`Q3: ${pubmed_quartile_q3_count} article${pubmed_quartile_q3_count !== 1 ? 's' : ''} (×0.5 multiplier)`);
+      }
+      if (pubmed_quartile_q4_count > 0) {
+        quartileBreakdownParts.push(`Q4: ${pubmed_quartile_q4_count} article${pubmed_quartile_q4_count !== 1 ? 's' : ''} (×0.25 multiplier)`);
+      }
+      if (pubmed_quartile_no_data_count > 0) {
+        quartileBreakdownParts.push(`No quartile data: ${pubmed_quartile_no_data_count} article${pubmed_quartile_no_data_count !== 1 ? 's' : ''} (×1.0 multiplier)`);
+      }
+      
+      // Build the full PubMed breakdown
+      let pubmedBreakdown = `PubMed articles (${pubmed_count} total):`;
+      
+      if (pubmedBreakdownParts.length > 0) {
+        pubmedBreakdown += `\n  Author positions:\n    ${pubmedBreakdownParts.join('\n    ')}`;
+        pubmedBreakdown += `\n  Base points: ${pubmed_base_points || 0} point${(pubmed_base_points || 0) !== 1 ? 's' : ''}`;
+      }
+      
+      if (quartileBreakdownParts.length > 0) {
+        pubmedBreakdown += `\n  Journal quartiles:\n    ${quartileBreakdownParts.join('\n    ')}`;
+      }
+      
+      pubmedBreakdown += `\n  Weighted total: ${pubmed_weighted_points || 0} point${(pubmed_weighted_points || 0) !== 1 ? 's' : ''} (after quartile multipliers)`;
+      
+      breakdownParts.push(pubmedBreakdown);
     }
     
     if (med_school_score > 0) {

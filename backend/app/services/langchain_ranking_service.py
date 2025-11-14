@@ -438,24 +438,60 @@ class LangChainRankingService:
                     pubmed_articles = matches.get('pubmed_articles', [])
                     pubmed_count = len(pubmed_articles)
             
-                    # Calculate weighted PubMed score based on author position
+                    # Calculate weighted PubMed score based on author position and journal quartile
                     # Last author: 3 points, First author: 2 points, Middle: 1 point
+                    # Quartile multipliers: Q1=1.0, Q2=0.75, Q3=0.5, Q4=0.25, NULL/missing=1.0
                     pubmed_weighted_points = 0
+                    pubmed_base_points = 0  # Points before quartile multiplier
                     first_author_count = 0
                     middle_author_count = 0
                     last_author_count = 0
                     
+                    # Track quartile counts
+                    quartile_counts = {
+                        'Q1': 0,
+                        'Q2': 0,
+                        'Q3': 0,
+                        'Q4': 0,
+                        'no_quartile': 0  # Articles without quartile data
+                    }
+                    
+                    # Quartile multiplier mapping
+                    quartile_multipliers = {
+                        'Q1': 1.0,
+                        'Q2': 0.75,
+                        'Q3': 0.5,
+                        'Q4': 0.25
+                    }
+                    
                     for article in pubmed_articles:
                         position = article.get('author_position', 'middle')  # Default to middle if not specified
+                        sjr_quartile = article.get('sjr_quartile')  # Get quartile from article data
+                        
+                        # Get base points based on author position
                         if position == 'last':
-                            pubmed_weighted_points += 3
+                            base_points = 3
                             last_author_count += 1
                         elif position == 'first':
-                            pubmed_weighted_points += 2
+                            base_points = 2
                             first_author_count += 1
                         else:  # middle
-                            pubmed_weighted_points += 1
+                            base_points = 1
                             middle_author_count += 1
+                        
+                        # Track base points (before quartile multiplier)
+                        pubmed_base_points += base_points
+                        
+                        # Track quartile count
+                        if sjr_quartile in quartile_counts:
+                            quartile_counts[sjr_quartile] += 1
+                        else:
+                            quartile_counts['no_quartile'] += 1
+                        
+                        # Apply quartile multiplier (default to 1.0 if quartile is missing/null)
+                        quartile_multiplier = quartile_multipliers.get(sjr_quartile, 1.0) if sjr_quartile else 1.0
+                        weighted_points = base_points * quartile_multiplier
+                        pubmed_weighted_points += weighted_points
                     
                     logger.debug(f"🔍 DEBUG: NPI {npi} - Vumedi: {vumedi_count}, PubMed: {pubmed_count} (First: {first_author_count}, Middle: {middle_author_count}, Last: {last_author_count}, Weighted: {pubmed_weighted_points} points)")
             
@@ -531,7 +567,13 @@ class LangChainRankingService:
                         'pubmed_first_author_count': first_author_count,
                         'pubmed_middle_author_count': middle_author_count,
                         'pubmed_last_author_count': last_author_count,
-                        'pubmed_weighted_points': pubmed_weighted_points,
+                        'pubmed_base_points': pubmed_base_points,  # Points before quartile multiplier
+                        'pubmed_weighted_points': pubmed_weighted_points,  # Points after quartile multiplier
+                        'pubmed_quartile_q1_count': quartile_counts['Q1'],
+                        'pubmed_quartile_q2_count': quartile_counts['Q2'],
+                        'pubmed_quartile_q3_count': quartile_counts['Q3'],
+                        'pubmed_quartile_q4_count': quartile_counts['Q4'],
+                        'pubmed_quartile_no_data_count': quartile_counts['no_quartile'],
                         'npi': npi
                     }
                     
@@ -585,7 +627,13 @@ class LangChainRankingService:
                             'pubmed_first_author_count': 0,
                             'pubmed_middle_author_count': 0,
                             'pubmed_last_author_count': 0,
+                            'pubmed_base_points': 0,
                             'pubmed_weighted_points': 0,
+                            'pubmed_quartile_q1_count': 0,
+                            'pubmed_quartile_q2_count': 0,
+                            'pubmed_quartile_q3_count': 0,
+                            'pubmed_quartile_q4_count': 0,
+                            'pubmed_quartile_no_data_count': 0,
                             'npi': npi
                         }
                         provider_links[npi] = {
@@ -993,7 +1041,13 @@ class LangChainRankingService:
                             'pubmed_first_author_count': 0,
                             'pubmed_middle_author_count': 0,
                             'pubmed_last_author_count': 0,
+                            'pubmed_base_points': 0,
                             'pubmed_weighted_points': 0,
+                            'pubmed_quartile_q1_count': 0,
+                            'pubmed_quartile_q2_count': 0,
+                            'pubmed_quartile_q3_count': 0,
+                            'pubmed_quartile_q4_count': 0,
+                            'pubmed_quartile_no_data_count': 0,
                             'experience_points': experience_points,
                             'years_experience': years_experience,
                             'med_school_score': med_school_score
