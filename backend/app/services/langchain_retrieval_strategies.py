@@ -85,22 +85,47 @@ class LangChainRetrievalStrategies:
             logger.info(f"🔧 Building SQL query with {len(where_conditions)} WHERE conditions")
             
             sql_query = text(f"""
+                WITH filtered_articles AS (
+                    -- First, filter and limit pubmed_articles to reduce JOIN size
+                    SELECT 
+                        pmid,
+                        title,
+                        abstract,
+                        journal_title,
+                        journal_abbrev,
+                        issn,
+                        doi,
+                        language,
+                        journal_country,
+                        authors,
+                        mesh_terms,
+                        chemicals,
+                        grants,
+                        citations,
+                        publication_types,
+                        -- Pre-normalize ISSN once for JOIN
+                        REPLACE(REPLACE(COALESCE(issn, ''), '-', ''), ' ', '') as normalized_issn
+                    FROM pubmed_articles
+                    WHERE {where_clause}
+                    ORDER BY pmid DESC
+                    LIMIT :limit
+                )
                 SELECT 
-                    pubmed_articles.pmid::text as _id,
-                    pubmed_articles.pmid,
-                    pubmed_articles.title,
-                    COALESCE(pubmed_articles.abstract, '') as abstract,
-                    COALESCE(pubmed_articles.journal_title, '') as journal_title,
-                    COALESCE(pubmed_articles.journal_abbrev, '') as journal_abbrev,
-                    COALESCE(pubmed_articles.issn, '') as issn,
-                    COALESCE(pubmed_articles.doi, '') as doi,
-                    COALESCE(pubmed_articles.language, '') as language,
-                    COALESCE(pubmed_articles.journal_country, '') as journal_country,
+                    filtered_articles.pmid::text as _id,
+                    filtered_articles.pmid,
+                    filtered_articles.title,
+                    COALESCE(filtered_articles.abstract, '') as abstract,
+                    COALESCE(filtered_articles.journal_title, '') as journal_title,
+                    COALESCE(filtered_articles.journal_abbrev, '') as journal_abbrev,
+                    COALESCE(filtered_articles.issn, '') as issn,
+                    COALESCE(filtered_articles.doi, '') as doi,
+                    COALESCE(filtered_articles.language, '') as language,
+                    COALESCE(filtered_articles.journal_country, '') as journal_country,
                     -- Return authors JSONB directly for matching (keep string version for display)
-                    pubmed_articles.authors as authors_jsonb,
+                    filtered_articles.authors as authors_jsonb,
                     -- Also keep string format for backward compatibility
                     CASE 
-                        WHEN pubmed_articles.authors::text = '[]' OR pubmed_articles.authors IS NULL THEN ''
+                        WHEN filtered_articles.authors::text = '[]' OR filtered_articles.authors IS NULL THEN ''
                         ELSE (
                             SELECT string_agg(
                                 TRIM(
@@ -109,43 +134,39 @@ class LangChainRetrievalStrategies:
                                 ),
                                 '; '
                             )
-                            FROM jsonb_array_elements(pubmed_articles.authors) a
+                            FROM jsonb_array_elements(filtered_articles.authors) a
                         )
                     END as authors,
                     -- Convert other JSONB fields to strings for compatibility
-                    COALESCE(pubmed_articles.mesh_terms::text, '[]') as mesh_terms,
-                    COALESCE(pubmed_articles.chemicals::text, '[]') as chemicals,
-                    COALESCE(pubmed_articles.grants::text, '[]') as grants,
-                    COALESCE(pubmed_articles.citations::text, '[]') as citations,
-                    COALESCE(pubmed_articles.publication_types::text, '[]') as publication_types,
+                    COALESCE(filtered_articles.mesh_terms::text, '[]') as mesh_terms,
+                    COALESCE(filtered_articles.chemicals::text, '[]') as chemicals,
+                    COALESCE(filtered_articles.grants::text, '[]') as grants,
+                    COALESCE(filtered_articles.citations::text, '[]') as citations,
+                    COALESCE(filtered_articles.publication_types::text, '[]') as publication_types,
                     -- Get journal quartile for scoring (NULL if not found)
                     journals.sjr_quartile as sjr_quartile,
                     -- Simple relevance score: 1.0 for all matches (we'll sort by pmid DESC)
                     1.0 as relevance_score
-                FROM pubmed_articles
+                FROM filtered_articles
                 LEFT JOIN journals ON 
-                    -- Normalize ISSNs by removing dashes and spaces, then compare
-                    -- Handles format differences: 
-                    --   - pubmed "1933-0693" vs journals "19330693" (exact match)
-                    --   - pubmed "1933-0693" vs journals "19330693,00223085" (contained in comma-separated list)
-                    -- Normalize both sides: remove dashes and spaces
-                    (
-                        -- Exact match after normalization
-                        REPLACE(REPLACE(COALESCE(pubmed_articles.issn, ''), '-', ''), ' ', '') = 
-                        REPLACE(REPLACE(COALESCE(journals.issn, ''), '-', ''), ' ', '')
+                    -- Join on normalized ISSN (pre-computed in CTE for efficiency)
+                    filtered_articles.normalized_issn != ''
+                    AND journals.issn IS NOT NULL 
+                    AND journals.issn != ''
+                    AND (
+                        -- Fast exact match (most common case)
+                        filtered_articles.normalized_issn = REPLACE(REPLACE(journals.issn, '-', ''), ' ', '')
                         OR
-                        -- Pattern match for comma-separated ISSNs in journals table
-                        -- After normalization, check if normalized pubmed ISSN appears as a whole value
-                        -- Regex ensures it's at word boundaries (start/end or surrounded by commas)
-                        REPLACE(REPLACE(COALESCE(journals.issn, ''), '-', ''), ' ', '') ~ 
-                        ('(^|,)' || REPLACE(REPLACE(COALESCE(pubmed_articles.issn, ''), '-', ''), ' ', '') || '(,|$)')
+                        -- Comma-separated ISSNs: check if normalized ISSN appears as whole value
+                        (REPLACE(REPLACE(journals.issn, '-', ''), ' ', '') LIKE 
+                         filtered_articles.normalized_issn || ',%'
+                         OR
+                         REPLACE(REPLACE(journals.issn, '-', ''), ' ', '') LIKE 
+                         '%,' || filtered_articles.normalized_issn || ',%'
+                         OR
+                         REPLACE(REPLACE(journals.issn, '-', ''), ' ', '') LIKE 
+                         '%,' || filtered_articles.normalized_issn || '%')
                     )
-                    -- Only match if both have non-empty ISSNs after normalization
-                    AND REPLACE(REPLACE(COALESCE(pubmed_articles.issn, ''), '-', ''), ' ', '') != ''
-                    AND REPLACE(REPLACE(COALESCE(journals.issn, ''), '-', ''), ' ', '') != ''
-                WHERE {where_clause}
-                ORDER BY pubmed_articles.pmid DESC
-                LIMIT :limit
             """)
             
             logger.info(f"🚀 Executing Postgres query with limit={top_k}")
