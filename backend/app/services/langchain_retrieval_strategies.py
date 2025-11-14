@@ -214,7 +214,26 @@ class LangChainRetrievalStrategies:
                 }
                 hits.append(hit_fields)
             
+            # Log quartile statistics
+            quartile_stats = {'Q1': 0, 'Q2': 0, 'Q3': 0, 'Q4': 0, 'None': 0}
+            for hit in hits:
+                quartile = hit.get('sjr_quartile')
+                if quartile in quartile_stats:
+                    quartile_stats[quartile] += 1
+                else:
+                    quartile_stats['None'] += 1
+            
             logger.info(f"✅ Postgres query returned {len(hits)} PubMed articles for query: '{query[:80]}{'...' if len(query) > 80 else ''}'")
+            logger.info(f"📊 Quartile breakdown: Q1={quartile_stats['Q1']}, Q2={quartile_stats['Q2']}, Q3={quartile_stats['Q3']}, Q4={quartile_stats['Q4']}, None={quartile_stats['None']}")
+            
+            # Log sample quartile values for debugging
+            if hits:
+                sample_with_quartile = [h for h in hits[:10] if h.get('sjr_quartile')]
+                if sample_with_quartile:
+                    logger.info(f"📋 Sample articles with quartile data: {[(h.get('pmid'), h.get('issn'), h.get('sjr_quartile')) for h in sample_with_quartile[:5]]}")
+                else:
+                    logger.warning(f"⚠️  No quartile data found in first 10 articles. Sample ISSNs: {[h.get('issn') for h in hits[:5] if h.get('issn')]}")
+            
             return hits
             
         except Exception as e:

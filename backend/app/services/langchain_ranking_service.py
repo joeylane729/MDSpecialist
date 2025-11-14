@@ -403,7 +403,8 @@ class LangChainRankingService:
                                                 provider_matches[npi]['pubmed_articles'].append({
                                                     'pmid': record.get('_id', record.get('pmid', '')),
                                                     'title': record.get('title', ''),
-                                                    'author_position': author_position  # Track position for weighted scoring
+                                                    'author_position': author_position,  # Track position for weighted scoring
+                                                    'sjr_quartile': record.get('sjr_quartile')  # Journal quartile for scoring
                                                 })
             
             logger.info(f"✅ Found {len(provider_matches)} providers with matches")
