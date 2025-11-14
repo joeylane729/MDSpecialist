@@ -73,8 +73,9 @@ class LangChainRetrievalStrategies:
             for v in valid_variations:
                 escaped = v.replace("'", "''")
                 # Check if term appears in title or abstract (case-insensitive)
+                # Qualify column names with table name to avoid ambiguity with JOIN
                 where_conditions.append(
-                    f"(title ILIKE '%{escaped}%' OR abstract ILIKE '%{escaped}%')"
+                    f"(pubmed_articles.title ILIKE '%{escaped}%' OR pubmed_articles.abstract ILIKE '%{escaped}%')"
                 )
             
             # Combine WHERE conditions with OR
@@ -85,21 +86,21 @@ class LangChainRetrievalStrategies:
             
             sql_query = text(f"""
                 SELECT 
-                    pmid::text as _id,
-                    pmid,
-                    title,
-                    COALESCE(abstract, '') as abstract,
-                    COALESCE(journal_title, '') as journal_title,
-                    COALESCE(journal_abbrev, '') as journal_abbrev,
+                    pubmed_articles.pmid::text as _id,
+                    pubmed_articles.pmid,
+                    pubmed_articles.title,
+                    COALESCE(pubmed_articles.abstract, '') as abstract,
+                    COALESCE(pubmed_articles.journal_title, '') as journal_title,
+                    COALESCE(pubmed_articles.journal_abbrev, '') as journal_abbrev,
                     COALESCE(pubmed_articles.issn, '') as issn,
-                    COALESCE(doi, '') as doi,
-                    COALESCE(language, '') as language,
-                    COALESCE(journal_country, '') as journal_country,
+                    COALESCE(pubmed_articles.doi, '') as doi,
+                    COALESCE(pubmed_articles.language, '') as language,
+                    COALESCE(pubmed_articles.journal_country, '') as journal_country,
                     -- Return authors JSONB directly for matching (keep string version for display)
-                    authors as authors_jsonb,
+                    pubmed_articles.authors as authors_jsonb,
                     -- Also keep string format for backward compatibility
                     CASE 
-                        WHEN authors::text = '[]' OR authors IS NULL THEN ''
+                        WHEN pubmed_articles.authors::text = '[]' OR pubmed_articles.authors IS NULL THEN ''
                         ELSE (
                             SELECT string_agg(
                                 TRIM(
@@ -108,15 +109,15 @@ class LangChainRetrievalStrategies:
                                 ),
                                 '; '
                             )
-                            FROM jsonb_array_elements(authors) a
+                            FROM jsonb_array_elements(pubmed_articles.authors) a
                         )
                     END as authors,
                     -- Convert other JSONB fields to strings for compatibility
-                    COALESCE(mesh_terms::text, '[]') as mesh_terms,
-                    COALESCE(chemicals::text, '[]') as chemicals,
-                    COALESCE(grants::text, '[]') as grants,
-                    COALESCE(citations::text, '[]') as citations,
-                    COALESCE(publication_types::text, '[]') as publication_types,
+                    COALESCE(pubmed_articles.mesh_terms::text, '[]') as mesh_terms,
+                    COALESCE(pubmed_articles.chemicals::text, '[]') as chemicals,
+                    COALESCE(pubmed_articles.grants::text, '[]') as grants,
+                    COALESCE(pubmed_articles.citations::text, '[]') as citations,
+                    COALESCE(pubmed_articles.publication_types::text, '[]') as publication_types,
                     -- Get journal quartile for scoring (NULL if not found)
                     journals.sjr_quartile as sjr_quartile,
                     -- Simple relevance score: 1.0 for all matches (we'll sort by pmid DESC)
@@ -124,7 +125,7 @@ class LangChainRetrievalStrategies:
                 FROM pubmed_articles
                 LEFT JOIN journals ON pubmed_articles.issn = journals.issn
                 WHERE {where_clause}
-                ORDER BY pmid DESC
+                ORDER BY pubmed_articles.pmid DESC
                 LIMIT :limit
             """)
             
