@@ -558,13 +558,16 @@ def main():
                     logger.info('🧽 Running VACUUM pubmed_articles after 10 files to free temp space')
                     # VACUUM must run outside transaction block - use separate connection
                     pgconn.commit()  # Ensure all pending work is committed
-                    vac_conn = psycopg2.connect(dsn)
-                    vac_conn.autocommit = True
                     try:
-                        with vac_conn.cursor() as vac_cur:
-                            vac_cur.execute("VACUUM pubmed_articles;")
-                    finally:
-                        vac_conn.close()
+                        vac_conn = psycopg2.connect(dsn)
+                        vac_conn.autocommit = True
+                        try:
+                            with vac_conn.cursor() as vac_cur:
+                                vac_cur.execute("VACUUM pubmed_articles;")
+                        finally:
+                            vac_conn.close()
+                    except psycopg2.OperationalError as e:
+                        logger.warning(f'⚠️ VACUUM skipped due to connection error: {e}')
 
     with engine.connect() as conn:
         cnt = conn.execute(text('SELECT COUNT(*) FROM pubmed_articles')).scalar()
