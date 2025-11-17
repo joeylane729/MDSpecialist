@@ -104,28 +104,30 @@ class LangChainRetrievalStrategies:
                         citations,
                         publication_types,
                         -- Pre-normalize ISSN once for JOIN
-                        REPLACE(REPLACE(COALESCE(issn, ''), '-', ''), ' ', '') as normalized_issn
+                        replace(replace(lower(issn), '-'::text, ''::text), ' '::text, ''::text) AS normalized_issn
                     FROM pubmed_articles
                     WHERE {where_clause}
                     ORDER BY pmid DESC
                     LIMIT :limit
+                ), filtered as materialized (
+                    SELECT * FROM filtered_articles
                 )
                 SELECT 
-                    filtered_articles.pmid::text as _id,
-                    filtered_articles.pmid,
-                    filtered_articles.title,
-                    COALESCE(filtered_articles.abstract, '') as abstract,
-                    COALESCE(filtered_articles.journal_title, '') as journal_title,
-                    COALESCE(filtered_articles.journal_abbrev, '') as journal_abbrev,
-                    COALESCE(filtered_articles.issn, '') as issn,
-                    COALESCE(filtered_articles.doi, '') as doi,
-                    COALESCE(filtered_articles.language, '') as language,
-                    COALESCE(filtered_articles.journal_country, '') as journal_country,
+                    f.pmid::text as _id,
+                    f.pmid,
+                    f.title,
+                    COALESCE(f.abstract, '') as abstract,
+                    COALESCE(f.journal_title, '') as journal_title,
+                    COALESCE(f.journal_abbrev, '') as journal_abbrev,
+                    COALESCE(f.issn, '') as issn,
+                    COALESCE(f.doi, '') as doi,
+                    COALESCE(f.language, '') as language,
+                    COALESCE(f.journal_country, '') as journal_country,
                     -- Return authors JSONB directly for matching (keep string version for display)
-                    filtered_articles.authors as authors_jsonb,
+                    f.authors as authors_jsonb,
                     -- Also keep string format for backward compatibility
                     CASE 
-                        WHEN filtered_articles.authors::text = '[]' OR filtered_articles.authors IS NULL THEN ''
+                        WHEN f.authors::text = '[]' OR f.authors IS NULL THEN ''
                         ELSE (
                             SELECT string_agg(
                                 TRIM(
@@ -134,39 +136,22 @@ class LangChainRetrievalStrategies:
                                 ),
                                 '; '
                             )
-                            FROM jsonb_array_elements(filtered_articles.authors) a
+                            FROM jsonb_array_elements(f.authors) a
                         )
                     END as authors,
                     -- Convert other JSONB fields to strings for compatibility
-                    COALESCE(filtered_articles.mesh_terms::text, '[]') as mesh_terms,
-                    COALESCE(filtered_articles.chemicals::text, '[]') as chemicals,
-                    COALESCE(filtered_articles.grants::text, '[]') as grants,
-                    COALESCE(filtered_articles.citations::text, '[]') as citations,
-                    COALESCE(filtered_articles.publication_types::text, '[]') as publication_types,
+                    COALESCE(f.mesh_terms::text, '[]') as mesh_terms,
+                    COALESCE(f.chemicals::text, '[]') as chemicals,
+                    COALESCE(f.grants::text, '[]') as grants,
+                    COALESCE(f.citations::text, '[]') as citations,
+                    COALESCE(f.publication_types::text, '[]') as publication_types,
                     -- Get journal quartile for scoring (NULL if not found)
-                    journals.sjr_quartile as sjr_quartile,
+                    j.sjr_quartile as sjr_quartile,
                     -- Simple relevance score: 1.0 for all matches (we'll sort by pmid DESC)
                     1.0 as relevance_score
-                FROM filtered_articles
-                LEFT JOIN journals ON 
-                    -- Join on normalized ISSN (pre-computed in CTE for efficiency)
-                    filtered_articles.normalized_issn != ''
-                    AND journals.issn IS NOT NULL 
-                    AND journals.issn != ''
-                    AND (
-                        -- Fast exact match (most common case)
-                        filtered_articles.normalized_issn = REPLACE(REPLACE(journals.issn, '-', ''), ' ', '')
-                        OR
-                        -- Comma-separated ISSNs: check if normalized ISSN appears as whole value
-                        (REPLACE(REPLACE(journals.issn, '-', ''), ' ', '') LIKE 
-                         filtered_articles.normalized_issn || ',%'
-                         OR
-                         REPLACE(REPLACE(journals.issn, '-', ''), ' ', '') LIKE 
-                         '%,' || filtered_articles.normalized_issn || ',%'
-                         OR
-                         REPLACE(REPLACE(journals.issn, '-', ''), ' ', '') LIKE 
-                         '%,' || filtered_articles.normalized_issn || '%')
-                    )
+                FROM filtered f
+                LEFT JOIN journals j ON 
+                    f.normalized_issn = j.normalized_issn
             """)
             
             logger.info(f"🚀 Executing Postgres query with limit={top_k}")
