@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Phone, Star, Award, Calendar, Building, HelpCircle, Clock, FileText, Shield, ExternalLink, BookOpen } from 'lucide-react';
+import { MapPin, Phone, Star, Award, Calendar, Building, HelpCircle, Clock, FileText, Shield, ExternalLink, BookOpen, Flag } from 'lucide-react';
 import { NPIProvider, ProviderContent, VumediContent, PubMedArticle } from '../services/api';
 import SchedulingModal from './SchedulingModal';
 
@@ -18,6 +18,10 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
   const [isQuestionsModalOpen, setIsQuestionsModalOpen] = useState(false);
   const [isPreAuthModalOpen, setIsPreAuthModalOpen] = useState(false);
   const [isInsuranceModalOpen, setIsInsuranceModalOpen] = useState(false);
+  const [showAllVumedi, setShowAllVumedi] = useState(false);
+  const [showAllPubMed, setShowAllPubMed] = useState(false);
+  
+  const MAX_ITEMS_TO_SHOW = 5;
 
   const yearsExperienceValue = provider.yearsExperience;
   const yearsExperienceLabel = typeof yearsExperienceValue === 'number' && !Number.isNaN(yearsExperienceValue)
@@ -74,6 +78,15 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                 <div className="flex items-center gap-1 ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
                   <Shield className="h-3 w-3" />
                   <span>Board Certified</span>
+                </div>
+              )}
+              {!isCertified && (
+                <div 
+                  className="flex items-center gap-1 ml-2 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium cursor-help"
+                  title="Not board certified"
+                >
+                  <Flag className="h-3 w-3" />
+                  <span>Not Certified</span>
                 </div>
               )}
             </div>
@@ -144,10 +157,10 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
                       <ExternalLink className="w-4 h-4 mr-1" />
-                      Educational Videos
+                      Educational Videos ({providerContent.vumedi_content.length})
                     </h4>
                     <div className="space-y-2">
-                      {providerContent.vumedi_content.map((content, index) => (
+                      {(showAllVumedi ? providerContent.vumedi_content : providerContent.vumedi_content.slice(0, MAX_ITEMS_TO_SHOW)).map((content, index) => (
                         <a
                           key={index}
                           href={content.link}
@@ -165,6 +178,31 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                         </a>
                       ))}
                     </div>
+                    {providerContent.vumedi_content.length > MAX_ITEMS_TO_SHOW && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowAllVumedi(!showAllVumedi);
+                        }}
+                        className="mt-2 text-sm text-purple-600 hover:text-purple-800 font-medium flex items-center gap-1"
+                      >
+                        {showAllVumedi ? (
+                          <>
+                            <span>Show less</span>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            </svg>
+                          </>
+                        ) : (
+                          <>
+                            <span>Show all {providerContent.vumedi_content.length} videos</span>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -173,10 +211,10 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                   <div>
                     <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
                       <BookOpen className="w-4 h-4 mr-1" />
-                      Research Articles
+                      Research Articles ({providerContent.pubmed_articles.length})
                     </h4>
                     <div className="space-y-2">
-                      {providerContent.pubmed_articles.map((article, index) => (
+                      {(showAllPubMed ? providerContent.pubmed_articles : providerContent.pubmed_articles.slice(0, MAX_ITEMS_TO_SHOW)).map((article, index) => (
                         <a
                           key={index}
                           href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}/`}
@@ -194,6 +232,31 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                         </a>
                       ))}
                     </div>
+                    {providerContent.pubmed_articles.length > MAX_ITEMS_TO_SHOW && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowAllPubMed(!showAllPubMed);
+                        }}
+                        className="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+                      >
+                        {showAllPubMed ? (
+                          <>
+                            <span>Show less</span>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                            </svg>
+                          </>
+                        ) : (
+                          <>
+                            <span>Show all {providerContent.pubmed_articles.length} articles</span>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </>
+                        )}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
