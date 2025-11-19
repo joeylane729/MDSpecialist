@@ -9,10 +9,11 @@ interface NPIProviderCardProps {
   isHighlighted?: boolean;
   score?: number;
   scoreBreakdown?: string;
+  isCertified?: boolean;
   providerContent?: ProviderContent;
 }
 
-export default function NPIProviderCard({ provider, onClick, isHighlighted = false, score, scoreBreakdown, providerContent }: NPIProviderCardProps) {
+export default function NPIProviderCard({ provider, onClick, isHighlighted = false, score, scoreBreakdown, isCertified = false, providerContent }: NPIProviderCardProps) {
   const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
   const [isQuestionsModalOpen, setIsQuestionsModalOpen] = useState(false);
   const [isPreAuthModalOpen, setIsPreAuthModalOpen] = useState(false);
@@ -64,11 +65,17 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
             </div>
 
             {/* Specialty and Experience */}
-            <div className="flex items-center text-gray-600 mb-3">
+            <div className="flex items-center text-gray-600 mb-3 flex-wrap gap-2">
               <span className="font-medium">{provider.specialty}</span>
               <span className="mx-2">•</span>
               <Calendar className="h-4 w-4 mr-1" />
               <span>{yearsExperienceLabel}</span>
+              {isCertified && (
+                <div className="flex items-center gap-1 ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                  <Shield className="h-3 w-3" />
+                  <span>Board Certified</span>
+                </div>
+              )}
             </div>
 
             {/* Location */}

@@ -228,6 +228,73 @@ class LangChainRankingService:
             logger.error(f"Error batch looking up residencies: {e}")
             return {}
 
+    def _batch_get_certification_scores(self, npi_list: List[str]) -> Dict[str, Dict[str, Any]]:
+        """
+        Batch get board certification scores for multiple NPI providers.
+        Returns dict with keys: 'certification_points', 'is_certified', 'has_abns', 'has_aoa'
+        Scoring: ABNS (has_abns=TRUE OR results_count>0) = 5 points, AOA (has_aoa=TRUE) = 2 points
+        """
+        if not self.db or not npi_list:
+            return {}
+            
+        try:
+            npi_list_str = [str(npi) for npi in npi_list]
+            from sqlalchemy import bindparam, ARRAY, String
+            query = text("""
+                SELECT npi, has_abns, has_aoa, results_count
+                FROM npi_certification_mapping_results
+                WHERE npi = ANY(:npi_list)
+            """).bindparams(bindparam("npi_list", type_=ARRAY(String)))
+            
+            result = self.db.execute(query, {"npi_list": npi_list_str})
+            rows = result.fetchall()
+            
+            scores: Dict[str, Dict[str, Any]] = {}
+            for row in rows:
+                npi = str(row[0])
+                has_abns = row[1]
+                has_aoa = row[2]
+                results_count = row[3]
+                
+                # Determine ABNS: has_abns = 'TRUE' OR results_count > 0
+                # Handle results_count which might be string, int, or empty
+                results_count_int = 0
+                if results_count:
+                    try:
+                        if isinstance(results_count, str):
+                            results_count_int = int(results_count.strip()) if results_count.strip() else 0
+                        else:
+                            results_count_int = int(results_count)
+                    except (ValueError, TypeError):
+                        results_count_int = 0
+                is_abns = (has_abns == 'TRUE' or has_abns is True) or results_count_int > 0
+                # Determine AOA: has_aoa = 'TRUE'
+                is_aoa = (has_aoa == 'TRUE' or has_aoa is True)
+                
+                # Calculate points: ABNS = 5 points, AOA = 2 points
+                abns_points = 5 if is_abns else 0
+                aoa_points = 2 if is_aoa else 0
+                total_points = abns_points + aoa_points
+                
+                # is_certified is True if either ABNS or AOA is true
+                is_certified = is_abns or is_aoa
+                
+                scores[npi] = {
+                    'certification_points': total_points,
+                    'is_certified': is_certified,
+                    'has_abns': is_abns,
+                    'has_aoa': is_aoa,
+                    'abns_points': abns_points,
+                    'aoa_points': aoa_points
+                }
+            
+            logger.info(f"✅ Fetched certification scores for {len(scores)} NPIs (queried {len(npi_list_str)})")
+            return scores
+                
+        except Exception as e:
+            logger.error(f"Error batch looking up certifications: {e}")
+            return {}
+    
     def _get_medical_school_score(self, npi: str) -> int:
         """Get medical school ranking score for a single NPI provider (deprecated, use batch version)."""
         scores = self._batch_get_medical_school_scores([npi])
@@ -423,6 +490,8 @@ class LangChainRankingService:
             logger.info(f"📊 Fetched medical school scores for {len(med_school_scores)} NPIs in batch")
             residency_scores = self._batch_get_residency_scores(list(all_npis))
             logger.info(f"📊 Fetched residency scores for {len(residency_scores)} NPIs in batch")
+            certification_scores = self._batch_get_certification_scores(list(all_npis))
+            logger.info(f"📊 Fetched certification scores for {len(certification_scores)} NPIs in batch")
             
             # Build provider links and scores
             provider_links = {}
@@ -538,7 +607,9 @@ class LangChainRankingService:
                     npi_str = str(npi)
                     med_school_score = med_school_scores.get(npi_str, 0)
                     residency_score = residency_scores.get(npi_str, 0)
-                    total_score = content_score + med_school_score + residency_score + experience_points
+                    cert_info = certification_scores.get(npi_str, {})
+                    certification_points = cert_info.get('certification_points', 0) if isinstance(cert_info, dict) else 0
+                    total_score = content_score + med_school_score + residency_score + experience_points + certification_points
                     
                     # Log if medical school score is missing
                     if med_school_score == 0 and npi_str in med_school_scores:
@@ -551,9 +622,17 @@ class LangChainRankingService:
                     elif residency_score == 0:
                         logger.debug(f"🔍 DEBUG: NPI {npi_str} not found in residency_scores (available keys: {list(residency_scores.keys())[:5]})")
                     
+                    # Extract certification details
+                    is_certified = cert_info.get('is_certified', False) if isinstance(cert_info, dict) else False
+                    has_abns = cert_info.get('has_abns', False) if isinstance(cert_info, dict) else False
+                    has_aoa = cert_info.get('has_aoa', False) if isinstance(cert_info, dict) else False
+                    abns_points = cert_info.get('abns_points', 0) if isinstance(cert_info, dict) else 0
+                    aoa_points = cert_info.get('aoa_points', 0) if isinstance(cert_info, dict) else 0
+                    
                     logger.debug(
                         f"🔍 DEBUG: NPI {npi} - Content score: {content_score}, Med school: {med_school_score}, "
-                        f"Residency: {residency_score}, Experience: {experience_points} (from {years_experience} years), Total: {total_score}"
+                        f"Residency: {residency_score}, Experience: {experience_points} (from {years_experience} years), "
+                        f"Certification: {certification_points} (ABNS: {abns_points}, AOA: {aoa_points}), Total: {total_score}"
                     )
                     
                     provider_scores[npi] = {
@@ -562,6 +641,12 @@ class LangChainRankingService:
                         'med_school_score': med_school_score,
                         'residency_score': residency_score,
                         'experience_points': experience_points,
+                        'certification_points': certification_points,
+                        'is_certified': is_certified,
+                        'has_abns': has_abns,
+                        'has_aoa': has_aoa,
+                        'abns_points': abns_points,
+                        'aoa_points': aoa_points,
                         'years_experience': years_experience,
                         'vumedi_count': vumedi_count,
                         'pubmed_count': pubmed_count,
@@ -613,15 +698,28 @@ class LangChainRankingService:
                     if npi_str not in matched_npis:
                         med_school_score = med_school_scores.get(npi_str, 0)
                         residency_score = residency_scores.get(npi_str, 0)
+                        cert_info = certification_scores.get(npi_str, {})
+                        certification_points = cert_info.get('certification_points', 0) if isinstance(cert_info, dict) else 0
+                        is_certified = cert_info.get('is_certified', False) if isinstance(cert_info, dict) else False
+                        has_abns = cert_info.get('has_abns', False) if isinstance(cert_info, dict) else False
+                        has_aoa = cert_info.get('has_aoa', False) if isinstance(cert_info, dict) else False
+                        abns_points = cert_info.get('abns_points', 0) if isinstance(cert_info, dict) else 0
+                        aoa_points = cert_info.get('aoa_points', 0) if isinstance(cert_info, dict) else 0
                         years_experience_raw = provider.get('yearsExperience', provider.get('years_experience'))
                         years_experience, experience_points = self._calculate_experience_points(years_experience_raw)
-                        total_score = med_school_score + residency_score + experience_points
+                        total_score = med_school_score + residency_score + experience_points + certification_points
                         provider_scores[npi] = {  # Keep original npi format for key consistency
                             'score': total_score,
                             'content_score': 0,
                             'med_school_score': med_school_score,
                             'residency_score': residency_score,
                             'experience_points': experience_points,
+                            'certification_points': certification_points,
+                            'is_certified': is_certified,
+                            'has_abns': has_abns,
+                            'has_aoa': has_aoa,
+                            'abns_points': abns_points,
+                            'aoa_points': aoa_points,
                             'years_experience': years_experience,
                             'vumedi_count': 0,
                             'pubmed_count': 0,
@@ -1023,16 +1121,27 @@ class LangChainRankingService:
                 
                 # Add scores for unmatched doctors (only medical school score since no content)
                 # Key by NPI to keep consistency
+                # Get certification scores for unmatched providers
+                all_unmatched_npis = [str(npi) for npi in unmatched_npis if npi]
+                certification_scores_unmatched = self._batch_get_certification_scores(all_unmatched_npis) if all_unmatched_npis else {}
+                
                 for npi in unmatched_npis:
                     if npi and npi not in provider_scores:
                         # Get medical school score even for unmatched doctors
                         med_school_score = self._get_medical_school_score(npi)
+                        cert_info = certification_scores_unmatched.get(str(npi), {})
+                        certification_points = cert_info.get('certification_points', 0) if isinstance(cert_info, dict) else 0
+                        is_certified = cert_info.get('is_certified', False) if isinstance(cert_info, dict) else False
+                        has_abns = cert_info.get('has_abns', False) if isinstance(cert_info, dict) else False
+                        has_aoa = cert_info.get('has_aoa', False) if isinstance(cert_info, dict) else False
+                        abns_points = cert_info.get('abns_points', 0) if isinstance(cert_info, dict) else 0
+                        aoa_points = cert_info.get('aoa_points', 0) if isinstance(cert_info, dict) else 0
                         provider_info = next((p for p in npi_providers if p.get('npi') == npi), None)
                         years_experience_raw = None
                         if provider_info:
                             years_experience_raw = provider_info.get('yearsExperience', provider_info.get('years_experience'))
                         years_experience, experience_points = self._calculate_experience_points(years_experience_raw)
-                        total_score = med_school_score + experience_points
+                        total_score = med_school_score + experience_points + certification_points
                         provider_scores[npi] = {
                             'npi': npi,
                             'score': total_score,
@@ -1051,7 +1160,13 @@ class LangChainRankingService:
                             'pubmed_quartile_no_data_count': 0,
                             'experience_points': experience_points,
                             'years_experience': years_experience,
-                            'med_school_score': med_school_score
+                            'med_school_score': med_school_score,
+                            'certification_points': certification_points,
+                            'is_certified': is_certified,
+                            'has_abns': has_abns,
+                            'has_aoa': has_aoa,
+                            'abns_points': abns_points,
+                            'aoa_points': aoa_points
                         }
                 
                 # Sort ALL providers (matched + unmatched) by their total scores

@@ -4,11 +4,12 @@
 import os
 import sys
 import csv
-import time
 import re
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from urllib.parse import urlencode
 from firecrawl import Firecrawl
 from dotenv import load_dotenv
-from collections import defaultdict
 from sqlalchemy import text
 
 # Add parent directory to path for imports
@@ -18,9 +19,13 @@ from backend.app.database import get_db
 load_dotenv()
 
 def has_certification_proof(db, npi):
-    """Check if we already have proof of certification in usnews_data or healthgrades_data"""
+    """
+    Check if we already have proof of certification in usnews_data or healthgrades_data.
+    Returns a dict with 'has_proof' (bool), 'has_abns' (bool), and 'has_aoa' (bool).
+    """
     try:
-        result = db.execute(text("""
+        # Check for ABNS (American Board of Neurological Surgery)
+        abns_result = db.execute(text("""
             SELECT COUNT(*) as count
             FROM (
                 SELECT npi FROM usnews_data 
@@ -32,11 +37,33 @@ def has_certification_proof(db, npi):
                 AND certifications LIKE '%American Board of Neurological Surgery%'
             ) combined
         """), {"npi": npi})
-        row = result.fetchone()
-        return row.count > 0 if row else False
+        abns_row = abns_result.fetchone()
+        has_abns = abns_row.count > 0 if abns_row else False
+        
+        # Check for AOA (American Osteopathic Association)
+        aoa_result = db.execute(text("""
+            SELECT COUNT(*) as count
+            FROM (
+                SELECT npi FROM usnews_data 
+                WHERE npi = :npi 
+                AND certifications LIKE '%AOA Board of Surgery%'
+                UNION
+                SELECT npi FROM healthgrades_data 
+                WHERE npi = :npi 
+                AND (certifications LIKE '%American Osteopathic Association%' AND certifications LIKE '%Neurology%')
+            ) combined
+        """), {"npi": npi})
+        aoa_row = aoa_result.fetchone()
+        has_aoa = aoa_row.count > 0 if aoa_row else False
+        
+        return {
+            'has_proof': has_abns or has_aoa,
+            'has_abns': has_abns,
+            'has_aoa': has_aoa
+        }
     except Exception as e:
         print(f"   ⚠️  Error checking certification proof for NPI {npi}: {e}")
-        return False  # If error, assume no proof and proceed with scraping
+        return {'has_proof': False, 'has_abns': False, 'has_aoa': False}  # If error, assume no proof and proceed with scraping
 
 def get_neurosurgeons():
     """Get all neurosurgeons from database"""
@@ -62,7 +89,7 @@ def get_neurosurgeons():
         db.close()
 
 def build_url(doctor, use_state=False):
-    """Build certificationmatters.org URL"""
+    """Build certificationmatters.org URL with proper URL encoding"""
     base_url = "https://www.certificationmatters.org/find-my-doctor/"
     params = {
         'dsearch': '1',
@@ -72,7 +99,8 @@ def build_url(doctor, use_state=False):
     }
     # Always omit state from the search URL per updated requirement
     
-    query_string = '&'.join([f"{k}={v}" for k, v in params.items()])
+    # Use urlencode to properly encode parameters (spaces become +, special chars encoded)
+    query_string = urlencode(params)
     return f"{base_url}?{query_string}"
 
 def extract_results_data(filepath):
@@ -192,46 +220,41 @@ def scrape_doctor(firecrawl, doctor, use_state, output_dir):
         print(f"   ❌ Error scraping {doctor['first_name']} {doctor['last_name']}: {e}")
         return None, False, None, [], [], []
 
-def main():
-    print("🏥 Starting Certification Matters Scraper...")
+def process_doctor(doctor, worker_id, total_doctors, output_dir, print_lock, stats_lock):
+    """Process a single doctor - worker function for parallel processing"""
+    npi = doctor['npi']
+    first_name = doctor['first_name']
+    last_name = doctor['last_name']
     
-    # Setup
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    firecrawl = Firecrawl(api_key=os.getenv('FIRECRAWL_API_KEY'))
-    output_dir = os.path.join(script_dir, 'scraped_pages')
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # Get database connection for certification checks
+    # Each worker gets its own DB connection and Firecrawl client
     db = next(get_db())
+    firecrawl = Firecrawl(api_key=os.getenv('FIRECRAWL_API_KEY'))
     
-    # Get all neurosurgeons
-    neurosurgeons = get_neurosurgeons()
-    print(f"📊 Found {len(neurosurgeons)} neurosurgeons")
-    
-    # Scrape each doctor
-    results = []
-    skipped_with_proof = 0
-    firecrawl_requests_made = 0
-    MAX_FIRECRAWL_REQUESTS = 10
-    
-    for i, doctor in enumerate(neurosurgeons, 1):
-        npi = doctor['npi']
-        first_name = doctor['first_name']
-        last_name = doctor['last_name']
-        
+    try:
         # Check if we already have certification proof
-        has_proof = has_certification_proof(db, npi)
+        cert_info = has_certification_proof(db, npi)
+        has_proof = cert_info['has_proof']
+        has_abns = cert_info['has_abns']
+        has_aoa = cert_info['has_aoa']
         
         if has_proof:
-            print(f"[{i}/{len(neurosurgeons)}] ⏭️  {first_name} {last_name} - Already have certification proof, skipping...")
-            skipped_with_proof += 1
-            # Still add to results but mark as skipped
-            results.append({
+            cert_types = []
+            if has_abns:
+                cert_types.append('ABNS')
+            if has_aoa:
+                cert_types.append('AOA')
+            cert_summary = ', '.join(cert_types) if cert_types else 'Unknown'
+            
+            with print_lock:
+                print(f"[Worker {worker_id}] ⏭️  {first_name} {last_name} - Already have certification proof ({cert_summary}), skipping...")
+            return {
                 'npi': npi,
                 'first_name': first_name,
                 'last_name': last_name,
                 'state': doctor['state'],
                 'npi_city': doctor.get('npi_city', ''),
+                'has_abns': 'TRUE' if has_abns else 'FALSE',
+                'has_aoa': 'TRUE' if has_aoa else 'FALSE',
                 'results_count': '',
                 'doctor_urls': '',
                 'reported_location': '',
@@ -242,47 +265,24 @@ def main():
                 'specialty': '',
                 'md_file': '',
                 'search_url': '',
-                'skipped_reason': 'Already have certification proof'
-            })
-            continue
+                'skipped_reason': 'Already have certification proof',
+                'firecrawl_request': False
+            }
         
-        print(f"[{i}/{len(neurosurgeons)}] Scraping {first_name} {last_name}...", end=' ')
+        with print_lock:
+            print(f"[Worker {worker_id}] Scraping {first_name} {last_name}...", end=' ', flush=True)
         
         # Check if file already exists before making request
-        # Build filepath the same way scrape_doctor does
         filename = f"{doctor['npi']}_{doctor['first_name']}_{doctor['last_name']}.md"
         filepath = os.path.join(output_dir, filename)
         file_exists = os.path.exists(filepath)
         
-        # Only count as a firecrawl request if we're actually going to make one
+        firecrawl_request_made = False
         if not file_exists:
-            firecrawl_requests_made += 1
-            
-            # Check if we've reached the firecrawl request limit AFTER incrementing
-            if firecrawl_requests_made > MAX_FIRECRAWL_REQUESTS:
-                print(f"\n⏹️  Reached limit of {MAX_FIRECRAWL_REQUESTS} firecrawl requests. Stopping...")
-                print(f"   Processed {i-1} doctors, {MAX_FIRECRAWL_REQUESTS} firecrawl requests made")
-                # Add remaining doctors to CSV with skipped_reason
-                for remaining_doctor in neurosurgeons[i-1:]:
-                    results.append({
-                        'npi': remaining_doctor['npi'],
-                        'first_name': remaining_doctor['first_name'],
-                        'last_name': remaining_doctor['last_name'],
-                        'state': remaining_doctor['state'],
-                        'npi_city': remaining_doctor.get('npi_city', ''),
-                        'results_count': '',
-                        'doctor_urls': '',
-                        'reported_location': '',
-                        'reported_city': '',
-                        'reported_state': '',
-                        'state_match': '',
-                        'city_match': '',
-                        'specialty': '',
-                        'md_file': '',
-                        'search_url': '',
-                        'skipped_reason': 'Not processed - firecrawl request limit reached'
-                    })
-                break
+            firecrawl_request_made = True
+            with stats_lock:
+                # This will be tracked globally
+                pass
         
         filepath, success, results_count, doctor_urls, reported_locations, specialties = scrape_doctor(firecrawl, doctor, False, output_dir)
         
@@ -326,12 +326,23 @@ def main():
             state_match = '; '.join(state_matches) if state_matches else ''
             city_match = '; '.join(city_matches) if city_matches else ''
             
-            results.append({
+            count_text = f" ({results_count} results)" if results_count is not None else ""
+            with print_lock:
+                print(f"✅{count_text}")
+            
+            # Check certification info for all doctors (not just skipped ones)
+            cert_info = has_certification_proof(db, doctor['npi'])
+            has_abns = cert_info['has_abns']
+            has_aoa = cert_info['has_aoa']
+            
+            return {
                 'npi': doctor['npi'],
                 'first_name': doctor['first_name'],
                 'last_name': doctor['last_name'],
                 'state': doctor['state'],
                 'npi_city': doctor.get('npi_city', ''),
+                'has_abns': 'TRUE' if has_abns else 'FALSE',
+                'has_aoa': 'TRUE' if has_aoa else 'FALSE',
                 'results_count': results_count if results_count is not None else '',
                 'doctor_urls': doctor_urls_str,
                 'reported_location': reported_locations_str,
@@ -342,18 +353,25 @@ def main():
                 'specialty': specialties_str,
                 'md_file': filepath if filepath else '',
                 'search_url': build_url(doctor, False),
-                'skipped_reason': ''
-            })
-            count_text = f" ({results_count} results)" if results_count is not None else ""
-            print(f"✅{count_text}")
+                'skipped_reason': '',
+                'firecrawl_request': firecrawl_request_made
+            }
         else:
-            print("❌")
-            results.append({
+            with print_lock:
+                print("❌")
+            # Check certification info even for failed scrapes
+            cert_info = has_certification_proof(db, doctor['npi'])
+            has_abns = cert_info['has_abns']
+            has_aoa = cert_info['has_aoa']
+            
+            return {
                 'npi': doctor['npi'],
                 'first_name': doctor['first_name'],
                 'last_name': doctor['last_name'],
                 'state': doctor['state'],
                 'npi_city': doctor.get('npi_city', ''),
+                'has_abns': 'TRUE' if has_abns else 'FALSE',
+                'has_aoa': 'TRUE' if has_aoa else 'FALSE',
                 'results_count': '',
                 'doctor_urls': '',
                 'reported_location': '',
@@ -364,14 +382,103 @@ def main():
                 'specialty': '',
                 'md_file': '',
                 'search_url': build_url(doctor, False),
-                'skipped_reason': ''
-            })
-        
-        # Rate limiting
-        time.sleep(1)
+                'skipped_reason': '',
+                'firecrawl_request': firecrawl_request_made
+            }
+    finally:
+        db.close()
+
+def main():
+    print("🏥 Starting Certification Matters Scraper with 10 parallel workers...")
     
-    # Close database connection
-    db.close()
+    # Setup
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(script_dir, 'scraped_pages')
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Get all neurosurgeons
+    neurosurgeons = get_neurosurgeons()
+    print(f"📊 Found {len(neurosurgeons)} neurosurgeons")
+    
+    # Thread-safe locks for printing and stats
+    print_lock = threading.Lock()
+    stats_lock = threading.Lock()
+    
+    # Track stats
+    firecrawl_requests_made = 0
+    skipped_with_proof = 0
+    
+    # Process doctors in parallel with 10 workers
+    results = []
+    NUM_WORKERS = 10
+    
+    print(f"🚀 Starting {NUM_WORKERS} parallel workers...")
+    
+    with ThreadPoolExecutor(max_workers=NUM_WORKERS) as executor:
+        # Submit all tasks
+        future_to_doctor = {}
+        for i, doctor in enumerate(neurosurgeons):
+            worker_id = (i % NUM_WORKERS) + 1
+            future = executor.submit(process_doctor, doctor, worker_id, len(neurosurgeons), output_dir, print_lock, stats_lock)
+            future_to_doctor[future] = doctor
+        
+        # Collect results as they complete
+        for future in as_completed(future_to_doctor):
+            try:
+                result = future.result()
+                results.append(result)
+                
+                # Update stats
+                if result.get('skipped_reason') == 'Already have certification proof':
+                    with stats_lock:
+                        skipped_with_proof += 1
+                if result.get('firecrawl_request'):
+                    with stats_lock:
+                        firecrawl_requests_made += 1
+            except Exception as e:
+                doctor = future_to_doctor[future]
+                with print_lock:
+                    print(f"❌ Error processing {doctor['first_name']} {doctor['last_name']}: {e}")
+                # Add error result - try to get certification info if possible
+                has_abns = 'FALSE'
+                has_aoa = 'FALSE'
+                try:
+                    db = next(get_db())
+                    cert_info = has_certification_proof(db, doctor['npi'])
+                    has_abns = 'TRUE' if cert_info['has_abns'] else 'FALSE'
+                    has_aoa = 'TRUE' if cert_info['has_aoa'] else 'FALSE'
+                    db.close()
+                except:
+                    pass  # If we can't get cert info, use defaults
+                
+                results.append({
+                    'npi': doctor['npi'],
+                    'first_name': doctor['first_name'],
+                    'last_name': doctor['last_name'],
+                    'state': doctor['state'],
+                    'npi_city': doctor.get('npi_city', ''),
+                    'has_abns': has_abns,
+                    'has_aoa': has_aoa,
+                    'results_count': '',
+                    'doctor_urls': '',
+                    'reported_location': '',
+                    'reported_city': '',
+                    'reported_state': '',
+                    'state_match': '',
+                    'city_match': '',
+                    'specialty': '',
+                    'md_file': '',
+                    'search_url': build_url(doctor, False),
+                    'skipped_reason': f'Error: {str(e)}',
+                    'firecrawl_request': False
+                })
+    
+    # Remove the firecrawl_request field from results before writing CSV
+    for result in results:
+        result.pop('firecrawl_request', None)
+    
+    # Sort results by NPI to maintain consistent order
+    results.sort(key=lambda x: x['npi'])
     
     # Print summary
     print(f"\n📊 Summary:")
@@ -391,6 +498,8 @@ def main():
                 'last_name',
                 'state',
                 'npi_city',
+                'has_abns',
+                'has_aoa',
                 'results_count',
                 'doctor_urls',
                 'reported_location',

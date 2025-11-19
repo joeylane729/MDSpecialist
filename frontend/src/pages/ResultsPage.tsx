@@ -167,6 +167,9 @@ const ResultsPage: React.FC = () => {
       med_school_score,
       residency_score = 0,
       experience_points = 0,
+      certification_points = 0,
+      abns_points = 0,
+      aoa_points = 0,
       years_experience
     } = scoreData;
     
@@ -242,6 +245,19 @@ const ResultsPage: React.FC = () => {
         breakdownParts.push(`Experience: ${years_experience} year${experienceSuffix} = ${experience_points} point${experience_points !== 1 ? 's' : ''} (bonus)`);
       } else {
         breakdownParts.push(`Experience: ${years_experience} year${experienceSuffix} = 0 points`);
+      }
+    }
+    
+    if (certification_points > 0) {
+      const certParts = [];
+      if (abns_points > 0) {
+        certParts.push(`ABNS certified = ${abns_points} point${abns_points !== 1 ? 's' : ''}`);
+      }
+      if (aoa_points > 0) {
+        certParts.push(`AOA certified = ${aoa_points} point${aoa_points !== 1 ? 's' : ''}`);
+      }
+      if (certParts.length > 0) {
+        breakdownParts.push(certParts.join(', '));
       }
     }
     
@@ -1163,6 +1179,8 @@ const ResultsPage: React.FC = () => {
             const rank = indexOfFirstProvider + index + 1;
             const { score, breakdown } = getProviderScore(provider);
             const isTopResult = rank === 1;
+            const scoreData = providerScores[provider.npi];
+            const isCertified = scoreData?.is_certified === true || scoreData?.certification_points > 0;
             
             return (
               <div key={provider.id} className="relative">
@@ -1182,6 +1200,7 @@ const ResultsPage: React.FC = () => {
                   isHighlighted={isTopResult}
                   score={score}
                   scoreBreakdown={breakdown}
+                  isCertified={isCertified}
                   providerContent={(() => {
                     const contentData = providerLinks[provider.npi];
                     console.log(`DEBUG: Looking for content for provider "${provider.name}" (NPI: "${provider.npi}") - found:`, contentData);
