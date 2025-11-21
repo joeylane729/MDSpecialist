@@ -38,8 +38,8 @@ class LangChainSpecialistRecommendationService:
     def retrieval_strategies(self):
         """Lazy initialization of LangChainRetrievalStrategies."""
         if self._retrieval_strategies is None:
-            # Pass database session to retrieval strategies for Postgres PubMed queries
-            self._retrieval_strategies = LangChainRetrievalStrategies(self.pinecone_service, db=self._db)
+            # Pass database session to retrieval strategies for Postgres queries (no Pinecone needed)
+            self._retrieval_strategies = LangChainRetrievalStrategies(pinecone_service=None, db=self._db)
         return self._retrieval_strategies
     
     def set_db(self, db):

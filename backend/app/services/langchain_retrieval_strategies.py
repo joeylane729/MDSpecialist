@@ -17,10 +17,9 @@ logger = logging.getLogger(__name__)
 class LangChainRetrievalStrategies:
     """LangChain-powered retrieval strategies."""
     
-    def __init__(self, pinecone_service: PineconeService, db: Optional[Session] = None):
+    def __init__(self, pinecone_service: Optional[PineconeService] = None, db: Optional[Session] = None):
+        # pinecone_service is now optional - no longer used for Vumedi or PubMed (migrated to Postgres)
         self.pinecone_service = pinecone_service
-        self.vumedi_index = self.pinecone_service.pc.Index(self.pinecone_service.default_index_name)
-        # No longer using self.pubmed_index - replaced with Postgres queries
         self.db = db
         if not db:
             # Create database connection if not provided
@@ -36,6 +35,119 @@ class LangChainRetrievalStrategies:
         # Note: Query generation is now handled by MedicalAnalysisService
         # This service only uses pre-generated search queries
         logger.info("LangChainRetrievalStrategies initialized successfully")
+    
+    def _query_vumedi_from_postgres(self, query: str, top_k: int = 100) -> List[Dict[str, Any]]:
+        """
+        Query Vumedi videos from Postgres database using text search.
+        Similar to _query_pubmed_from_postgres but for vumedi_content_consolidated table.
+        
+        Args:
+            query: Search query with OR-separated terms
+            top_k: Maximum number of results to return
+            
+        Returns:
+            List of video records in Pinecone-compatible format
+        """
+        try:
+            # Parse query terms (same logic as PubMed)
+            query_terms = [term.strip().lower() for term in query.split(" OR ")]
+            logger.info(f"🔍 Querying Vumedi from Postgres with {len(query_terms)} terms")
+            
+            # Build WHERE clause with LIKE for each term
+            like_conditions = []
+            for i, term in enumerate(query_terms):
+                # Search in title, featuring, and specialty fields
+                like_conditions.append(f"""
+                    (LOWER(title) LIKE :term_{i} OR 
+                     LOWER(featuring) LIKE :term_{i} OR 
+                     LOWER(specialty) LIKE :term_{i})
+                """)
+            
+            where_clause = " OR ".join(like_conditions)
+            
+            # Build query parameters
+            query_params = {"limit": top_k}
+            for i, term in enumerate(query_terms):
+                query_params[f"term_{i}"] = f"%{term}%"
+            
+            # Build SQL query
+            sql_query = text(f"""
+                SELECT 
+                    title,
+                    author,
+                    date,
+                    views,
+                    duration,
+                    link,
+                    thumbnail,
+                    featuring,
+                    specialty,
+                    scraped_at
+                FROM vumedi_content_consolidated
+                WHERE {where_clause}
+                ORDER BY 
+                    CASE 
+                        WHEN LOWER(title) LIKE :term_0 THEN 1
+                        WHEN LOWER(featuring) LIKE :term_0 THEN 2
+                        ELSE 3
+                    END
+                LIMIT :limit
+            """)
+            
+            logger.info(f"🚀 Executing Postgres Vumedi query with limit={top_k}")
+            
+            # Execute query
+            if self.db:
+                logger.info("📊 Using database session from context")
+                result = self.db.execute(sql_query, query_params)
+            else:
+                logger.info("📊 Using new database connection")
+                database_url = os.getenv('DATABASE_URL')
+                if not database_url:
+                    logger.error("❌ DATABASE_URL not found")
+                    return []
+                engine = create_engine(database_url)
+                with engine.connect() as conn:
+                    result = conn.execute(sql_query, query_params)
+            
+            # Convert results to list
+            rows = []
+            try:
+                for row in result:
+                    rows.append(row)
+                logger.info(f"📊 Retrieved {len(rows)} Vumedi videos")
+            except Exception as iter_error:
+                logger.error(f"❌ Error iterating Vumedi results: {str(iter_error)}")
+                return []
+            
+            # Convert to Pinecone-compatible format
+            hits = []
+            for row in rows:
+                hit_fields = {
+                    "title": row.title or "",
+                    "author": row.author or "",
+                    "date": row.date or "",
+                    "views": row.views or "",
+                    "duration": row.duration or "",
+                    "link": row.link or "",
+                    "thumbnail": row.thumbnail or "",
+                    "featuring": row.featuring or "",
+                    "specialty": row.specialty or "",
+                    "scraped_at": str(row.scraped_at) if row.scraped_at else "",
+                    "_score": 1.0  # Default relevance score
+                }
+                hits.append(hit_fields)
+            
+            logger.info(f"✅ Postgres query returned {len(hits)} Vumedi videos for query: '{query[:80]}{'...' if len(query) > 80 else ''}'")
+            
+            return hits
+            
+        except Exception as e:
+            logger.error(f"❌ Error querying Vumedi from Postgres: {str(e)}")
+            logger.error(f"❌ Error type: {type(e).__name__}")
+            import traceback
+            logger.error(f"❌ Full traceback:\n{traceback.format_exc()}")
+            return []
     
     def _query_pubmed_from_postgres(self, query: str, top_k: int = 10000) -> List[Dict[str, Any]]:
         """
@@ -392,17 +504,10 @@ class LangChainRetrievalStrategies:
                 pubmed_top_k = 10000  # Max 10000 total for PubMed
                 logger.debug(f"   📊 Using top_k={vumedi_top_k} for Vumedi, {pubmed_top_k} for PubMed")
                 
-                # Query Vumedi index (still using Pinecone)
-                vumedi_results = self.vumedi_index.search(
-                    namespace="__default__",
-                    query={
-                        "inputs": {"text": query},
-                        "top_k": vumedi_top_k
-                    },
-                    fields=["*"]
-                )
+                # Query Vumedi from Postgres database (migrated from Pinecone)
+                vumedi_hits = self._query_vumedi_from_postgres(query, vumedi_top_k)
                 
-                # Query PubMed from Postgres database (replacing Pinecone)
+                # Query PubMed from Postgres database
                 pubmed_hits = self._query_pubmed_from_postgres(query, pubmed_top_k)
                 
                 # Initialize treatment results
@@ -412,32 +517,32 @@ class LangChainRetrievalStrategies:
                     "query": query
                 }
                 
-                # Parse Vumedi results
+                # Parse Vumedi results from Postgres
                 vumedi_count = 0
                 vumedi_filtered = 0
-                if hasattr(vumedi_results, 'result') and hasattr(vumedi_results.result, 'hits'):
-                    for hit in vumedi_results.result.hits:
-                        candidate_id = hit.fields.get("link", f"{hit.fields.get('title', '')}_{hit.fields.get('author', '')}")
-                        if candidate_id and candidate_id not in seen_ids:
-                            # Add source information and treatment metadata
-                            hit.fields["_source"] = "vumedi"
-                            hit.fields["_treatment_id"] = treatment_id
-                            hit.fields["_treatment_name"] = treatment_name
-                            hit.fields["_score"] = getattr(hit, '_score', None)
-                            
-                            # Verify the result contains query variations
-                            is_verified = self._verify_result(hit.fields, query_variations, source="vumedi")
-                            hit.fields["_verified"] = is_verified
-                            
-                            # Store all results (both verified and unverified)
-                            treatment_results[treatment_id]["results"].append(hit.fields)
-                            seen_ids.add(candidate_id)
-                            
-                            if is_verified:
-                                vumedi_count += 1
-                            else:
-                                vumedi_filtered += 1
-                                logger.debug(f"❌ Filtered Vumedi result: {hit.fields.get('title', 'No title')[:50]}...")
+                for hit_fields in vumedi_hits:
+                    # Get link as unique identifier
+                    candidate_id = hit_fields.get("link", f"{hit_fields.get('title', '')}_{hit_fields.get('author', '')}")
+                    if candidate_id and candidate_id not in seen_ids:
+                        # Add source information and treatment metadata
+                        hit_fields["_source"] = "vumedi"
+                        hit_fields["_treatment_id"] = treatment_id
+                        hit_fields["_treatment_name"] = treatment_name
+                        # _score already set by Postgres query
+                        
+                        # Verify the result contains query variations
+                        is_verified = self._verify_result(hit_fields, query_variations, source="vumedi")
+                        hit_fields["_verified"] = is_verified
+                        
+                        # Store all results (both verified and unverified)
+                        treatment_results[treatment_id]["results"].append(hit_fields)
+                        seen_ids.add(candidate_id)
+                        
+                        if is_verified:
+                            vumedi_count += 1
+                        else:
+                            vumedi_filtered += 1
+                            logger.debug(f"❌ Filtered Vumedi result: {hit_fields.get('title', 'No title')[:50]}...")
                 
                 # Parse PubMed results from Postgres
                 pubmed_count = 0
