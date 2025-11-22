@@ -66,6 +66,11 @@ async def get_specialist_recommendations(
         # Convert dataclass to dict for serialization
         # This ensures all fields including cms_data are serialized
         recommendations_dict = asdict(recommendations)
+        
+        # Convert datetime to ISO format string for JSON serialization
+        if 'timestamp' in recommendations_dict and recommendations_dict['timestamp']:
+            recommendations_dict['timestamp'] = recommendations_dict['timestamp'].isoformat()
+        
         logger.info("🔍 DEBUG: Converted to dict, cms_data present: %s", 'cms_data' in recommendations_dict)
         logger.info("✅ [Backend] /api/v1/specialist-recommendations returning response")
         log_response_info("Specialist recommendations", recommendations)
