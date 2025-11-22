@@ -1003,6 +1003,28 @@ const ResultsPage: React.FC = () => {
                     </div>
                   )}
 
+                  {/* CPT Codes */}
+                  {searchParams?.cpt_codes && Array.isArray(searchParams.cpt_codes) && searchParams.cpt_codes.length > 0 && (
+                    <div className="border-l-4 border-amber-500 pl-4">
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Relevant CPT Codes</h3>
+                      <div className="text-sm text-gray-600 mb-3">
+                        Procedural codes that could be used by a neurosurgeon to treat this condition:
+                      </div>
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {searchParams.cpt_codes.map((cpt: any, index: number) => (
+                          <div key={index} className="bg-amber-50 rounded-lg p-3 border border-amber-200">
+                            <div className="flex items-start gap-3">
+                              <code className="bg-amber-100 px-2 py-1 rounded text-sm font-semibold text-amber-900 whitespace-nowrap">
+                                {cpt.code}
+                              </code>
+                              <span className="text-sm text-gray-700 flex-1">{cpt.description}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
 
                   {/* Search Query */}
                   {searchParams?.search_query && (

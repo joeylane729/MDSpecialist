@@ -150,6 +150,19 @@ class MedicalAnalysisService:
                 else:
                     logger.warning(f"⚠️  Could not find ICD-10 description for: {medical_analysis['predicted_icd10']}")
             
+            # Predict relevant CPT codes for the diagnosis
+            cpt_codes = []
+            if medical_analysis["predicted_icd10"] and medical_analysis.get("icd10_description"):
+                logger.info(f"🔍 Predicting CPT codes for ICD-10 {medical_analysis['predicted_icd10']}...")
+                cpt_codes = await self.predict_cpt_codes(
+                    medical_analysis["predicted_icd10"],
+                    medical_analysis["icd10_description"]
+                )
+                if cpt_codes:
+                    logger.info(f"✅ Predicted {len(cpt_codes)} CPT codes")
+                else:
+                    logger.warning(f"⚠️  No CPT codes predicted")
+            
             # Generate search query for Pinecone using the same prompt as LangChainRetrievalStrategies
             search_query = ""
             if medical_analysis.get("icd10_description") and diagnosis:
@@ -209,6 +222,7 @@ class MedicalAnalysisService:
                 "predicted_icd10": primary_icd10,
                 "icd10_description": primary_description,
                 "treatment_options": treatment_options,
+                "cpt_codes": cpt_codes,  # Relevant CPT codes for the diagnosis
                 "search_query": search_query,  # Pre-generated search query for Pinecone
                 
                 # Keep original nested structure for backward compatibility
@@ -478,6 +492,67 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
         except Exception as e:
             logger.error(f"Error generating search query: {e}")
             return ""
+
+    async def predict_cpt_codes(
+        self,
+        icd10_code: str,
+        icd10_description: str
+    ) -> List[Dict[str, str]]:
+        """
+        Use GPT to predict relevant CPT codes that a neurosurgeon would use to treat the given ICD-10 code.
+        
+        Args:
+            icd10_code: The ICD-10 diagnosis code
+            icd10_description: The description of the ICD-10 code
+            
+        Returns:
+            List of dictionaries containing CPT code and description
+        """
+        try:
+            prompt = PromptTemplate(
+                input_variables=["icd10_code", "icd10_description"],
+                template="""Give an exhaustive list of CPT codes that could be used by a neurosurgeon to treat ICD code {icd10_code} ({icd10_description}).
+
+Return the response in this exact JSON format:
+[
+    {{
+        "code": "CPT_CODE",
+        "description": "Procedure description"
+    }},
+    {{
+        "code": "CPT_CODE",
+        "description": "Procedure description"
+    }}
+]
+
+Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO additional text."""
+            )
+            
+            chain = prompt | self.llm
+            
+            response = await chain.ainvoke({
+                "icd10_code": icd10_code,
+                "icd10_description": icd10_description
+            })
+            
+            # Extract the JSON response
+            response_text = response.content.strip() if hasattr(response, 'content') else str(response).strip()
+            
+            # Clean up the response (remove markdown formatting if present)
+            if response_text.startswith('```json'):
+                response_text = response_text.replace('```json', '').replace('```', '').strip()
+            elif response_text.startswith('```'):
+                response_text = response_text.replace('```', '').strip()
+            
+            # Parse the JSON response
+            cpt_codes = json.loads(response_text)
+            
+            logger.info(f"✅ Predicted {len(cpt_codes)} CPT codes for ICD-10 {icd10_code}")
+            return cpt_codes
+            
+        except Exception as e:
+            logger.error(f"Error predicting CPT codes: {e}")
+            return []
 
     async def predict_diagnoses(
         self, 
