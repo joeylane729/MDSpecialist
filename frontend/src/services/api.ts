@@ -152,6 +152,13 @@ export interface SpecialistRecommendationResponse {
   timestamp: string;
   shared_specialist_information?: any[];
   search_query?: string;
+  cms_data?: {
+    url: string | null;
+    results: any[];
+    total_results: number;
+    cpt_codes_searched?: string[];
+    error: string | null;
+  };
 }
 
 export interface SpecialistRecommendationRequest {
