@@ -1900,7 +1900,8 @@ const ResultsPage: React.FC = () => {
                 </h3>
                 <div className="space-y-3">
                   {(() => {
-                    const cmsData = location.state?.aiRecommendations?.cms_data;
+                    // Check specialistRecommendationData first (from button click), then fall back to location.state
+                    const cmsData = specialistRecommendationData?.cms_data || location.state?.aiRecommendations?.cms_data;
                     
                     if (cmsData) {
                       return (
