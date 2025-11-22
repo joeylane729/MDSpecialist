@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from dataclasses import asdict
 from ...database import get_db
 from ...services.langchain_specialist_recommendation_service import LangChainSpecialistRecommendationService
 from ...schemas.specialist_recommendation import SpecialistRecommendationRequestSchema, RecommendationResponseSchema
@@ -59,10 +60,15 @@ async def get_specialist_recommendations(
             logger.info("🔍 DEBUG: cms_data value: %s", recommendations.cms_data)
             if recommendations.cms_data:
                 logger.info("🔍 DEBUG: cms_data keys: %s", recommendations.cms_data.keys() if isinstance(recommendations.cms_data, dict) else "not a dict")
+        
+        # Convert dataclass to dict for proper Pydantic serialization
+        # This ensures all fields including cms_data are serialized
+        recommendations_dict = asdict(recommendations)
+        logger.info("🔍 DEBUG: Converted to dict, cms_data present: %s", 'cms_data' in recommendations_dict)
         logger.info("✅ [Backend] /api/v1/specialist-recommendations returning response")
         log_response_info("Specialist recommendations", recommendations)
         
-        return recommendations
+        return recommendations_dict
         
     except Exception as e:
         logger.error(f"Error getting specialist recommendations: {e}")
