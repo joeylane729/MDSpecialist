@@ -25,6 +25,10 @@ interface SearchParams {
     outcomes: string;
     complications: string;
   }>;
+  cpt_codes?: Array<{
+    code: string;
+    description: string;
+  }>;
   search_query?: string;  // Pre-generated search query for Pinecone
   searchOptions?: {
     diagnosis: boolean;
