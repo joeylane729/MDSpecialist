@@ -42,3 +42,4 @@ class RecommendationResponse:
     timestamp: datetime
     shared_specialist_information: Optional[List[Dict[str, Any]]] = None
     search_query: Optional[str] = None  # GPT-generated search query used for Pinecone
+    cms_data: Optional[Dict[str, Any]] = None  # CMS API results based on CPT codes

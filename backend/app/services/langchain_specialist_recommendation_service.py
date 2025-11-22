@@ -61,6 +61,23 @@ class LangChainSpecialistRecommendationService:
             logger.info("🔍 Step 1: Performing comprehensive medical analysis with LangChain...")
             medical_analysis_results = await self.medical_analysis.comprehensive_analysis(patient_input)
             
+            # Step 1.5: Query CMS API with CPT codes from medical analysis
+            logger.info("🔍 Step 1.5: Querying CMS API with CPT codes...")
+            cms_results = {}
+            if medical_analysis_results.get("cpt_codes"):
+                cms_results = await self.medical_analysis.query_cms_api(
+                    medical_analysis_results["cpt_codes"]
+                )
+                logger.info(f"✅ CMS API query complete: {cms_results.get('total_results', 0)} results found")
+            else:
+                logger.warning("⚠️  No CPT codes available for CMS API query")
+                cms_results = {
+                    "url": None,
+                    "results": [],
+                    "total_results": 0,
+                    "error": "No CPT codes from medical analysis"
+                }
+            
             # Step 2: LLM-powered retrieval of specialist information
             logger.info("🔍 Step 2: Retrieving specialist information with LangChain...")
             logger.debug(f"🔍 Retrieval strategies type: {type(self.retrieval_strategies)}")
@@ -141,7 +158,8 @@ class LangChainSpecialistRecommendationService:
                 retrieval_strategies_used=["langchain_vector_search"],
                 timestamp=datetime.now(),
                 shared_specialist_information=treatment_specialist_information,
-                search_query=search_query
+                search_query=search_query,
+                cms_data=cms_results  # Add CMS API results to response
             )
             
             # Debug logging for treatment options

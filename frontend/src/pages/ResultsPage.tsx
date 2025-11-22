@@ -1883,13 +1883,82 @@ const ResultsPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* CMS API Results Section */}
+              <div className="bg-gray-800 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-cyan-400 mb-3 flex items-center gap-2">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  6. CMS API Results (CPT Code Data)
+                </h3>
+                <div className="space-y-3">
+                  {(() => {
+                    const cmsData = location.state?.aiRecommendations?.cms_data;
+                    
+                    if (cmsData) {
+                      return (
+                        <>
+                          {/* CMS API URL */}
+                          <div className="bg-gray-900 rounded p-3">
+                            <p className="text-gray-400 mb-2 text-sm font-semibold">API URL:</p>
+                            {cmsData.url ? (
+                              <div className="bg-gray-800 p-2 rounded">
+                                <p className="text-xs text-cyan-300 font-mono break-all">{cmsData.url}</p>
+                              </div>
+                            ) : (
+                              <p className="text-yellow-400 text-sm">No URL available</p>
+                            )}
+                          </div>
+
+                          {/* Results Summary */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-gray-900 rounded p-3">
+                              <p className="text-gray-400 text-sm mb-1">Total Results:</p>
+                              <p className="text-white font-mono text-lg">{cmsData.total_results || 0}</p>
+                            </div>
+                            <div className="bg-gray-900 rounded p-3">
+                              <p className="text-gray-400 text-sm mb-1">CPT Codes Searched:</p>
+                              <p className="text-white font-mono text-lg">{cmsData.cpt_codes_searched?.length || 0}</p>
+                            </div>
+                          </div>
+
+                          {/* Error Display */}
+                          {cmsData.error && (
+                            <div className="bg-red-900/20 border border-red-500 rounded p-3">
+                              <p className="text-red-400 text-sm font-semibold mb-1">Error:</p>
+                              <p className="text-red-300 text-sm">{cmsData.error}</p>
+                            </div>
+                          )}
+
+                          {/* Full JSON Results */}
+                          <details className="bg-gray-900 rounded p-3">
+                            <summary className="cursor-pointer text-cyan-300 hover:text-cyan-200 font-semibold">
+                              View Full CMS API Response ({cmsData.results?.length || 0} records)
+                            </summary>
+                            <div className="mt-3 max-h-96 overflow-y-auto">
+                              <pre className="text-xs text-gray-300 whitespace-pre-wrap">
+                                {JSON.stringify(cmsData.results, null, 2)}
+                              </pre>
+                            </div>
+                          </details>
+                        </>
+                      );
+                    }
+                    
+                    return (
+                      <p className="text-yellow-400">CMS API data not available (only available when specialists are searched)</p>
+                    );
+                  })()}
+                </div>
+              </div>
+
               {/* Raw API Response Section */}
               <div className="bg-gray-800 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-red-400 mb-3 flex items-center gap-2">
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                   </svg>
-                  6. Raw API Response Data
+                  7. Raw API Response Data
                 </h3>
                 <details className="bg-gray-900 rounded p-3">
                   <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold">

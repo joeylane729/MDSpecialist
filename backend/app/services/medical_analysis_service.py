@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import httpx
 from typing import List, Optional, Tuple, Dict, Any
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
@@ -553,6 +554,95 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         except Exception as e:
             logger.error(f"Error predicting CPT codes: {e}")
             return []
+
+    async def query_cms_api(
+        self,
+        cpt_codes: List[Dict[str, str]]
+    ) -> Dict[str, Any]:
+        """
+        Query the CMS public API using CPT codes from the medical analysis.
+        
+        Args:
+            cpt_codes: List of dictionaries containing CPT codes and descriptions
+            
+        Returns:
+            Dictionary with 'url', 'results', and metadata
+        """
+        if not cpt_codes or len(cpt_codes) == 0:
+            logger.warning("⚠️  No CPT codes provided for CMS API query")
+            return {
+                "url": None,
+                "results": [],
+                "total_results": 0,
+                "error": "No CPT codes provided"
+            }
+        
+        try:
+            # Extract just the CPT code values
+            cpt_code_values = [cpt['code'] for cpt in cpt_codes if 'code' in cpt]
+            
+            logger.info(f"🔍 Querying CMS API with {len(cpt_code_values)} CPT codes: {cpt_code_values}")
+            
+            # Build CMS API URL with filters
+            base_url = "https://data.cms.gov/data-api/v1/dataset/92396110-2aed-4d63-a6a2-5d6207d46a29/data"
+            
+            # Build the full URL with CPT code filters
+            filter_params = "&".join([
+                f"filter[hcpcs][condition][value][]={code}" 
+                for code in cpt_code_values
+            ])
+            
+            full_url = (
+                f"{base_url}?"
+                f"filter[hcpcs][condition][path]=HCPCS_Cd&"
+                f"filter[hcpcs][condition][operator]=IN&"
+                f"{filter_params}"
+            )
+            
+            logger.info(f"🌐 CMS API URL: {full_url[:200]}...")  # Log truncated URL
+            
+            # Make the HTTP request
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(full_url)
+                response.raise_for_status()
+                
+                cms_data = response.json()
+                
+                result = {
+                    "url": full_url,
+                    "results": cms_data if isinstance(cms_data, list) else [cms_data],
+                    "total_results": len(cms_data) if isinstance(cms_data, list) else 1,
+                    "cpt_codes_searched": cpt_code_values,
+                    "error": None
+                }
+                
+                logger.info(f"✅ CMS API returned {result['total_results']} results")
+                return result
+                
+        except httpx.TimeoutException as e:
+            logger.error(f"❌ CMS API request timed out: {e}")
+            return {
+                "url": full_url if 'full_url' in locals() else None,
+                "results": [],
+                "total_results": 0,
+                "error": f"Request timed out: {str(e)}"
+            }
+        except httpx.HTTPStatusError as e:
+            logger.error(f"❌ CMS API HTTP error: {e.response.status_code} - {e}")
+            return {
+                "url": full_url if 'full_url' in locals() else None,
+                "results": [],
+                "total_results": 0,
+                "error": f"HTTP {e.response.status_code}: {str(e)}"
+            }
+        except Exception as e:
+            logger.error(f"❌ Error querying CMS API: {e}")
+            return {
+                "url": full_url if 'full_url' in locals() else None,
+                "results": [],
+                "total_results": 0,
+                "error": str(e)
+            }
 
     async def predict_diagnoses(
         self, 
