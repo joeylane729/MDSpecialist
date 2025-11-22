@@ -43,7 +43,7 @@ const HomePage: React.FC = () => {
     specialists: boolean;
   }>({
     diagnosis: true, // Always true, can't be unchecked
-    specialists: false // Always false, never show specialist recommendations
+    specialists: true // Always true to get full specialist recommendations with CMS data
   });
 
   // Debug logging
