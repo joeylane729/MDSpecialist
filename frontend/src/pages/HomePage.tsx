@@ -592,6 +592,13 @@ const HomePage: React.FC = () => {
         // Debug logging for treatment options
         if (aiRecommendations) {
           console.log('🔍 DEBUG: aiRecommendations received:', aiRecommendations);
+          console.log('🔍 DEBUG: aiRecommendations keys:', Object.keys(aiRecommendations));
+          console.log('🔍 DEBUG: cms_data in aiRecommendations?', 'cms_data' in aiRecommendations);
+          if (aiRecommendations.cms_data) {
+            console.log('🔍 DEBUG: cms_data found!', aiRecommendations.cms_data);
+          } else {
+            console.warn('⚠️ DEBUG: cms_data NOT found in aiRecommendations!');
+          }
           console.log('🔍 DEBUG: patient_profile:', aiRecommendations.patient_profile);
           console.log('🔍 DEBUG: patient_profile keys:', Object.keys(aiRecommendations.patient_profile || {}));
           if (aiRecommendations.patient_profile?.treatment_options) {

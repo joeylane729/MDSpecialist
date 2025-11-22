@@ -104,6 +104,13 @@ const ResultsPage: React.FC = () => {
     console.log('ResultsPage - location.state:', location.state);
     console.log('ResultsPage - aiRecommendations:', location.state?.aiRecommendations);
     if (location.state?.aiRecommendations) {
+      console.log('ResultsPage - aiRecommendations keys:', Object.keys(location.state.aiRecommendations));
+      console.log('ResultsPage - cms_data present?', 'cms_data' in location.state.aiRecommendations);
+      if (location.state.aiRecommendations.cms_data) {
+        console.log('✅ ResultsPage - cms_data FOUND!', location.state.aiRecommendations.cms_data);
+      } else {
+        console.warn('⚠️ ResultsPage - cms_data MISSING!');
+      }
       console.log('ResultsPage - patient_profile:', location.state.aiRecommendations.patient_profile);
       console.log('ResultsPage - recommendations:', location.state.aiRecommendations.recommendations);
       

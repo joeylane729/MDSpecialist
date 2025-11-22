@@ -209,6 +209,16 @@ export const getSpecialistRecommendations = async (
       hasSharedSpecialistInfo: !!response.data?.shared_specialist_information,
       sharedInfoKeys: response.data?.shared_specialist_information ? Object.keys(response.data.shared_specialist_information) : []
     });
+    
+    // Debug: Check all top-level keys in response
+    console.log('🔍 [Frontend] Response data keys:', Object.keys(response.data || {}));
+    console.log('🔍 [Frontend] cms_data present?', 'cms_data' in (response.data || {}));
+    if (response.data?.cms_data) {
+      console.log('🔍 [Frontend] cms_data value:', response.data.cms_data);
+      console.log('🔍 [Frontend] cms_data.total_results:', response.data.cms_data.total_results);
+    } else {
+      console.warn('⚠️ [Frontend] cms_data is MISSING from response!');
+    }
 
     return response.data;
   } catch (error) {
