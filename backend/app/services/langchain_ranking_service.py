@@ -400,23 +400,38 @@ class LangChainRankingService:
                 source = record.get('_source', 'unknown')
                 
                 if source == 'vumedi':
-                    # Vumedi: Match by full name from "featuring" field
+                    # Vumedi: Match by full name from "featuring" OR "author" field
                     featuring = (record.get('featuring') or '').strip()
+                    author = (record.get('author') or '').strip()
+                    
+                    # Check both fields (case-insensitive)
+                    matched_provider = None
+                    
+                    # Try featuring field first
                     if featuring:
                         featuring_lower = featuring.lower()
                         if featuring_lower in npi_by_full_name:
-                            provider = npi_by_full_name[featuring_lower]
-                            npi = provider.get('npi', '')
-                            if npi:
-                                if npi not in provider_matches:
-                                    provider_matches[npi] = {
-                                        'vumedi_content': [],
-                                        'pubmed_articles': []
-                                    }
-                                provider_matches[npi]['vumedi_content'].append({
-                                    'link': record.get('link', ''),
-                                    'title': record.get('title', '')
-                                })
+                            matched_provider = npi_by_full_name[featuring_lower]
+                    
+                    # If no match in featuring, try author field
+                    if not matched_provider and author:
+                        author_lower = author.lower()
+                        if author_lower in npi_by_full_name:
+                            matched_provider = npi_by_full_name[author_lower]
+                    
+                    # If we found a match in either field, add to results
+                    if matched_provider:
+                        npi = matched_provider.get('npi', '')
+                        if npi:
+                            if npi not in provider_matches:
+                                provider_matches[npi] = {
+                                    'vumedi_content': [],
+                                    'pubmed_articles': []
+                                }
+                            provider_matches[npi]['vumedi_content'].append({
+                                'link': record.get('link', ''),
+                                'title': record.get('title', '')
+                            })
                 
                 elif source == 'pubmed':
                     # PubMed: Match by exact first name + last name from authors JSONB
