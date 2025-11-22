@@ -512,7 +512,11 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
         try:
             prompt = PromptTemplate(
                 input_variables=["icd10_code", "icd10_description"],
-                template="""Give an exhaustive list of CPT codes that could be used by a neurosurgeon to treat ICD code {icd10_code} ({icd10_description}). Make sure you do not miss any possible CPT codes, even rare ones.
+                template="""Give an exhaustive list of CPT codes that could possibly be used by a neurosurgeon to treat ICD code {icd10_code} ({icd10_description}). 
+                Make sure you do not miss any possible CPT codes, even rare ones. 
+                Super super exhaustive, do not miss any codes that any neurosurgeon could possibly choose as the CPT code if someone has this diagnosis. 
+                It's ok if it's really rare, as long as it's possible. 
+                If any neurosurgeon could possibly choose a CPT code, include it.
 
 Return the response in this exact JSON format:
 [
