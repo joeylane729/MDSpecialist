@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from dataclasses import asdict
@@ -7,13 +8,14 @@ from ...services.langchain_specialist_recommendation_service import LangChainSpe
 from ...schemas.specialist_recommendation import SpecialistRecommendationRequestSchema, RecommendationResponseSchema
 from ..utils.patient_input_processor import build_patient_input, log_endpoint_call, log_response_info
 import logging
+import json
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-@router.post("/specialist-recommendations", response_model=RecommendationResponseSchema)
+@router.post("/specialist-recommendations")
 async def get_specialist_recommendations(
     symptoms: str = Form(...),
     diagnosis: str = Form(...),
@@ -61,14 +63,16 @@ async def get_specialist_recommendations(
             if recommendations.cms_data:
                 logger.info("🔍 DEBUG: cms_data keys: %s", recommendations.cms_data.keys() if isinstance(recommendations.cms_data, dict) else "not a dict")
         
-        # Convert dataclass to dict for proper Pydantic serialization
+        # Convert dataclass to dict for serialization
         # This ensures all fields including cms_data are serialized
         recommendations_dict = asdict(recommendations)
         logger.info("🔍 DEBUG: Converted to dict, cms_data present: %s", 'cms_data' in recommendations_dict)
         logger.info("✅ [Backend] /api/v1/specialist-recommendations returning response")
         log_response_info("Specialist recommendations", recommendations)
         
-        return recommendations_dict
+        # Return JSONResponse directly to bypass FastAPI's Pydantic validation
+        # which was dropping the cms_data field
+        return JSONResponse(content=recommendations_dict)
         
     except Exception as e:
         logger.error(f"Error getting specialist recommendations: {e}")
