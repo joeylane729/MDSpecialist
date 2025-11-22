@@ -54,6 +54,11 @@ async def get_specialist_recommendations(
         
         # Log response information
         logger.info("Python type of recommendations: %s", type(recommendations))
+        logger.info("🔍 DEBUG: cms_data in recommendations: %s", hasattr(recommendations, 'cms_data'))
+        if hasattr(recommendations, 'cms_data'):
+            logger.info("🔍 DEBUG: cms_data value: %s", recommendations.cms_data)
+            if recommendations.cms_data:
+                logger.info("🔍 DEBUG: cms_data keys: %s", recommendations.cms_data.keys() if isinstance(recommendations.cms_data, dict) else "not a dict")
         logger.info("✅ [Backend] /api/v1/specialist-recommendations returning response")
         log_response_info("Specialist recommendations", recommendations)
         
