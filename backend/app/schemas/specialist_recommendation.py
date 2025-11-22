@@ -52,6 +52,7 @@ class RecommendationResponseSchema(BaseModel):
     timestamp: datetime = Field(..., description="Response timestamp")
     shared_specialist_information: Optional[Dict[str, Any]] = Field(None, description="Treatment-grouped Pinecone data for NPI ranking")
     search_query: Optional[str] = Field(None, description="GPT-generated search query used for Pinecone")
+    cms_data: Optional[Dict[str, Any]] = Field(None, description="CMS API results based on CPT codes")
 
 class SpecialistRecommendationRequestSchema(BaseModel):
     """Schema for specialist recommendation request."""
