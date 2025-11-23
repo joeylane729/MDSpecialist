@@ -565,12 +565,15 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
     ) -> Dict[str, Any]:
         """
         Query the CMS public API using CPT codes from the medical analysis.
+        If more than 100 CPT codes, splits into multiple API calls.
+        Groups results by provider (Rndrng_NPI) and sums Total Services.
+        Returns top 25 providers by total services.
         
         Args:
             cpt_codes: List of dictionaries containing CPT codes and descriptions
             
         Returns:
-            Dictionary with 'url', 'results', and metadata
+            Dictionary with 'url', 'results' (grouped by provider), and metadata
         """
         if not cpt_codes or len(cpt_codes) == 0:
             logger.warning("⚠️  No CPT codes provided for CMS API query")
@@ -578,6 +581,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 "url": None,
                 "results": [],
                 "total_results": 0,
+                "cpt_codes_searched": [],
                 "error": "No CPT codes provided"
             }
         
@@ -585,67 +589,148 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             # Extract just the CPT code values
             cpt_code_values = [cpt['code'] for cpt in cpt_codes if 'code' in cpt]
             
-            logger.info(f"🔍 Querying CMS API with {len(cpt_code_values)} CPT codes: {cpt_code_values}")
+            logger.info(f"🔍 Querying CMS API with {len(cpt_code_values)} CPT codes")
             
-            # Build CMS API URL with filters
+            # Build CMS API base URL
             base_url = "https://data.cms.gov/data-api/v1/dataset/92396110-2aed-4d63-a6a2-5d6207d46a29/data"
             
-            # Build the full URL with CPT code filters
-            filter_params = "&".join([
-                f"filter[hcpcs][condition][value][]={code}" 
-                for code in cpt_code_values
-            ])
+            # Split CPT codes into chunks of 100 if needed
+            chunk_size = 100
+            cpt_chunks = [
+                cpt_code_values[i:i + chunk_size] 
+                for i in range(0, len(cpt_code_values), chunk_size)
+            ]
             
-            full_url = (
-                f"{base_url}?"
-                f"filter[hcpcs][condition][path]=HCPCS_Cd&"
-                f"filter[hcpcs][condition][operator]=IN&"
-                f"{filter_params}"
-                f"&sort=-Tot_Srvcs&size=25"
-            )
+            logger.info(f"📦 Split into {len(cpt_chunks)} API call(s) (max 100 CPT codes per call)")
             
-            logger.info(f"🌐 CMS API URL: {full_url[:200]}...")  # Log truncated URL
+            # Make multiple API calls if needed
+            all_results = []
+            urls_used = []
             
-            # Make the HTTP request
             async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(full_url)
-                response.raise_for_status()
+                for chunk_idx, cpt_chunk in enumerate(cpt_chunks):
+                    # Build the full URL with CPT code filters
+                    filter_params = "&".join([
+                        f"filter[hcpcs][condition][value][]={code}" 
+                        for code in cpt_chunk
+                    ])
+                    
+                    full_url = (
+                        f"{base_url}?"
+                        f"filter[hcpcs][condition][path]=HCPCS_Cd&"
+                        f"filter[hcpcs][condition][operator]=IN&"
+                        f"{filter_params}"
+                    )
+                    
+                    urls_used.append(full_url)
+                    logger.info(f"🌐 CMS API call {chunk_idx + 1}/{len(cpt_chunks)}: {len(cpt_chunk)} CPT codes")
+                    
+                    try:
+                        response = await client.get(full_url)
+                        response.raise_for_status()
+                        
+                        cms_data = response.json()
+                        chunk_results = cms_data if isinstance(cms_data, list) else [cms_data]
+                        all_results.extend(chunk_results)
+                        
+                        logger.info(f"✅ Call {chunk_idx + 1} returned {len(chunk_results)} results")
+                    except Exception as e:
+                        logger.error(f"❌ Error in API call {chunk_idx + 1}: {e}")
+                        # Continue with other calls even if one fails
+                        continue
+            
+            logger.info(f"📊 Total raw results collected: {len(all_results)}")
+            
+            # Group results by provider (Rndrng_NPI) and sum Total Services
+            provider_totals: Dict[str, Dict[str, Any]] = {}
+            
+            for result in all_results:
+                npi = result.get('Rndrng_NPI')
+                if not npi:
+                    continue
                 
-                cms_data = response.json()
+                tot_srvcs = result.get('Tot_Srvcs', 0)
+                try:
+                    tot_srvcs_int = int(tot_srvcs) if tot_srvcs else 0
+                except (ValueError, TypeError):
+                    tot_srvcs_int = 0
                 
-                result = {
-                    "url": full_url,
-                    "results": cms_data if isinstance(cms_data, list) else [cms_data],
-                    "total_results": len(cms_data) if isinstance(cms_data, list) else 1,
-                    "cpt_codes_searched": cpt_code_values,
-                    "error": None
-                }
+                if npi not in provider_totals:
+                    provider_totals[npi] = {
+                        'Rndrng_NPI': npi,
+                        'Rndrng_Prvdr_First_Name': result.get('Rndrng_Prvdr_First_Name', ''),
+                        'Rndrng_Prvdr_Last_Org_Name': result.get('Rndrng_Prvdr_Last_Org_Name', ''),
+                        'Rndrng_Prvdr_City': result.get('Rndrng_Prvdr_City', ''),
+                        'Rndrng_Prvdr_State_Abrvtn': result.get('Rndrng_Prvdr_State_Abrvtn', ''),
+                        'Tot_Srvcs': 0,
+                        'HCPCS_Codes': set(),  # Track unique CPT codes
+                        'HCPCS_Descriptions': []  # Track descriptions
+                    }
                 
-                logger.info(f"✅ CMS API returned {result['total_results']} results")
-                return result
+                provider_totals[npi]['Tot_Srvcs'] += tot_srvcs_int
+                
+                # Track CPT codes and descriptions
+                hcpcs_cd = result.get('HCPCS_Cd', '')
+                hcpcs_desc = result.get('HCPCS_Desc', '')
+                if hcpcs_cd:
+                    provider_totals[npi]['HCPCS_Codes'].add(hcpcs_cd)
+                    if hcpcs_desc and hcpcs_desc not in provider_totals[npi]['HCPCS_Descriptions']:
+                        provider_totals[npi]['HCPCS_Descriptions'].append(hcpcs_desc)
+            
+            # Convert to list and sort by Tot_Srvcs descending, take top 25
+            grouped_results = list(provider_totals.values())
+            grouped_results.sort(key=lambda x: x['Tot_Srvcs'], reverse=True)
+            top_25_providers = grouped_results[:25]
+            
+            # Convert sets to lists for JSON serialization
+            for provider in top_25_providers:
+                provider['HCPCS_Codes'] = sorted(list(provider['HCPCS_Codes']))
+            
+            logger.info(f"✅ Grouped into {len(provider_totals)} providers, returning top 25")
+            
+            result = {
+                "url": urls_used[0] if urls_used else None,  # Primary URL for display
+                "urls": urls_used,  # All URLs used
+                "results": top_25_providers,
+                "total_results": len(all_results),  # Total raw results
+                "total_providers": len(provider_totals),  # Total unique providers
+                "cpt_codes_searched": cpt_code_values,
+                "error": None
+            }
+            
+            return result
                 
         except httpx.TimeoutException as e:
             logger.error(f"❌ CMS API request timed out: {e}")
             return {
-                "url": full_url if 'full_url' in locals() else None,
+                "url": None,
+                "urls": [],
                 "results": [],
                 "total_results": 0,
+                "total_providers": 0,
+                "cpt_codes_searched": [],
                 "error": f"Request timed out: {str(e)}"
             }
         except httpx.HTTPStatusError as e:
             logger.error(f"❌ CMS API HTTP error: {e.response.status_code} - {e}")
             return {
-                "url": full_url if 'full_url' in locals() else None,
+                "url": None,
+                "urls": [],
                 "results": [],
                 "total_results": 0,
+                "total_providers": 0,
+                "cpt_codes_searched": [],
                 "error": f"HTTP {e.response.status_code}: {str(e)}"
             }
         except Exception as e:
             logger.error(f"❌ Error querying CMS API: {e}")
             return {
-                "url": full_url if 'full_url' in locals() else None,
+                "url": None,
+                "urls": [],
                 "results": [],
                 "total_results": 0,
+                "total_providers": 0,
+                "cpt_codes_searched": [],
                 "error": str(e)
             }
 

@@ -1906,10 +1906,26 @@ const ResultsPage: React.FC = () => {
                     if (cmsData) {
                       return (
                         <>
-                          {/* CMS API URL */}
+                          {/* CMS API URL(s) */}
                           <div className="bg-gray-900 rounded p-3">
-                            <p className="text-gray-400 mb-2 text-sm font-semibold">API URL:</p>
-                            {cmsData.url ? (
+                            <p className="text-gray-400 mb-2 text-sm font-semibold">
+                              API URL{cmsData.urls && cmsData.urls.length > 1 ? 's' : ''}:
+                              {cmsData.urls && cmsData.urls.length > 1 && (
+                                <span className="text-gray-500 ml-2">({cmsData.urls.length} calls)</span>
+                              )}
+                            </p>
+                            {cmsData.urls && cmsData.urls.length > 0 ? (
+                              <div className="space-y-2">
+                                {cmsData.urls.map((url: string, idx: number) => (
+                                  <div key={idx} className="bg-gray-800 p-2 rounded">
+                                    {cmsData.urls.length > 1 && (
+                                      <p className="text-xs text-gray-500 mb-1">Call {idx + 1}:</p>
+                                    )}
+                                    <p className="text-xs text-cyan-300 font-mono break-all">{url}</p>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : cmsData.url ? (
                               <div className="bg-gray-800 p-2 rounded">
                                 <p className="text-xs text-cyan-300 font-mono break-all">{cmsData.url}</p>
                               </div>
@@ -1919,10 +1935,14 @@ const ResultsPage: React.FC = () => {
                           </div>
 
                           {/* Results Summary */}
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-3 gap-4">
                             <div className="bg-gray-900 rounded p-3">
-                              <p className="text-gray-400 text-sm mb-1">Total Results:</p>
+                              <p className="text-gray-400 text-sm mb-1">Total Raw Results:</p>
                               <p className="text-white font-mono text-lg">{cmsData.total_results || 0}</p>
+                            </div>
+                            <div className="bg-gray-900 rounded p-3">
+                              <p className="text-gray-400 text-sm mb-1">Total Providers:</p>
+                              <p className="text-white font-mono text-lg">{cmsData.total_providers || cmsData.results?.length || 0}</p>
                             </div>
                             <div className="bg-gray-900 rounded p-3">
                               <p className="text-gray-400 text-sm mb-1">CPT Codes Searched:</p>
@@ -1938,11 +1958,14 @@ const ResultsPage: React.FC = () => {
                             </div>
                           )}
 
-                          {/* CMS Results Table */}
+                          {/* CMS Results Table - Grouped by Provider */}
                           {cmsData.results && cmsData.results.length > 0 && (
                             <div className="bg-gray-900 rounded p-3">
                               <p className="text-gray-400 mb-3 text-sm font-semibold">
-                                Provider Results ({cmsData.results.length} records)
+                                Top 25 Providers by Total Services ({cmsData.results.length} providers)
+                                {cmsData.total_providers && cmsData.total_providers > 25 && (
+                                  <span className="text-gray-500 ml-2">(of {cmsData.total_providers} total)</span>
+                                )}
                               </p>
                               <div className="overflow-x-auto max-h-96 overflow-y-auto">
                                 <table className="w-full text-sm">
@@ -1950,31 +1973,65 @@ const ResultsPage: React.FC = () => {
                                     <tr>
                                       <th className="px-3 py-2 text-left text-cyan-400 font-semibold">Provider Name</th>
                                       <th className="px-3 py-2 text-left text-cyan-400 font-semibold">Location</th>
-                                      <th className="px-3 py-2 text-left text-cyan-400 font-semibold">CPT Code</th>
-                                      <th className="px-3 py-2 text-left text-cyan-400 font-semibold">CPT Description</th>
+                                      <th className="px-3 py-2 text-left text-cyan-400 font-semibold">CPT Codes</th>
+                                      <th className="px-3 py-2 text-left text-cyan-400 font-semibold">CPT Descriptions</th>
                                       <th className="px-3 py-2 text-right text-cyan-400 font-semibold">Total Services</th>
                                     </tr>
                                   </thead>
                                   <tbody>
-                                    {cmsData.results.map((result: any, index: number) => (
-                                      <tr key={index} className="border-t border-gray-700 hover:bg-gray-800">
-                                        <td className="px-3 py-2 text-white">
-                                          {result.Rndrng_Prvdr_First_Name || ''} {result.Rndrng_Prvdr_Last_Org_Name || ''}
-                                        </td>
-                                        <td className="px-3 py-2 text-gray-300">
-                                          {result.Rndrng_Prvdr_City || 'N/A'}, {result.Rndrng_Prvdr_State_Abrvtn || 'N/A'}
-                                        </td>
-                                        <td className="px-3 py-2 text-cyan-300 font-mono">
-                                          {result.HCPCS_Cd || 'N/A'}
-                                        </td>
-                                        <td className="px-3 py-2 text-gray-300">
-                                          {result.HCPCS_Desc || 'N/A'}
-                                        </td>
-                                        <td className="px-3 py-2 text-right text-white font-semibold">
-                                          {result.Tot_Srvcs || '0'}
-                                        </td>
-                                      </tr>
-                                    ))}
+                                    {cmsData.results.map((provider: any, index: number) => {
+                                      const cptCodes = Array.isArray(provider.HCPCS_Codes) 
+                                        ? provider.HCPCS_Codes 
+                                        : [];
+                                      const cptDescriptions = Array.isArray(provider.HCPCS_Descriptions)
+                                        ? provider.HCPCS_Descriptions
+                                        : [];
+                                      
+                                      return (
+                                        <tr key={provider.Rndrng_NPI || index} className="border-t border-gray-700 hover:bg-gray-800">
+                                          <td className="px-3 py-2 text-white">
+                                            {provider.Rndrng_Prvdr_First_Name || ''} {provider.Rndrng_Prvdr_Last_Org_Name || ''}
+                                          </td>
+                                          <td className="px-3 py-2 text-gray-300">
+                                            {provider.Rndrng_Prvdr_City || 'N/A'}, {provider.Rndrng_Prvdr_State_Abrvtn || 'N/A'}
+                                          </td>
+                                          <td className="px-3 py-2">
+                                            <div className="flex flex-wrap gap-1">
+                                              {cptCodes.length > 0 ? (
+                                                cptCodes.map((code: string, codeIdx: number) => (
+                                                  <span key={codeIdx} className="text-cyan-300 font-mono text-xs bg-gray-800 px-1.5 py-0.5 rounded">
+                                                    {code}
+                                                  </span>
+                                                ))
+                                              ) : (
+                                                <span className="text-gray-500">N/A</span>
+                                              )}
+                                            </div>
+                                          </td>
+                                          <td className="px-3 py-2 text-gray-300 max-w-xs">
+                                            <div className="text-xs">
+                                              {cptDescriptions.length > 0 ? (
+                                                <details className="cursor-pointer">
+                                                  <summary className="text-cyan-300 hover:text-cyan-200">
+                                                    {cptDescriptions.length} description{cptDescriptions.length !== 1 ? 's' : ''}
+                                                  </summary>
+                                                  <div className="mt-1 space-y-1 pl-2">
+                                                    {cptDescriptions.map((desc: string, descIdx: number) => (
+                                                      <div key={descIdx} className="text-gray-400">{desc}</div>
+                                                    ))}
+                                                  </div>
+                                                </details>
+                                              ) : (
+                                                <span className="text-gray-500">N/A</span>
+                                              )}
+                                            </div>
+                                          </td>
+                                          <td className="px-3 py-2 text-right text-white font-semibold">
+                                            {provider.Tot_Srvcs?.toLocaleString() || '0'}
+                                          </td>
+                                        </tr>
+                                      );
+                                    })}
                                   </tbody>
                                 </table>
                               </div>
