@@ -1938,17 +1938,48 @@ const ResultsPage: React.FC = () => {
                             </div>
                           )}
 
-                          {/* Full JSON Results */}
-                          <details className="bg-gray-900 rounded p-3">
-                            <summary className="cursor-pointer text-cyan-300 hover:text-cyan-200 font-semibold">
-                              View Full CMS API Response ({cmsData.results?.length || 0} records)
-                            </summary>
-                            <div className="mt-3 max-h-96 overflow-y-auto">
-                              <pre className="text-xs text-gray-300 whitespace-pre-wrap">
-                                {JSON.stringify(cmsData.results, null, 2)}
-                              </pre>
+                          {/* CMS Results Table */}
+                          {cmsData.results && cmsData.results.length > 0 && (
+                            <div className="bg-gray-900 rounded p-3">
+                              <p className="text-gray-400 mb-3 text-sm font-semibold">
+                                Provider Results ({cmsData.results.length} records)
+                              </p>
+                              <div className="overflow-x-auto max-h-96 overflow-y-auto">
+                                <table className="w-full text-sm">
+                                  <thead className="bg-gray-800 sticky top-0">
+                                    <tr>
+                                      <th className="px-3 py-2 text-left text-cyan-400 font-semibold">Provider Name</th>
+                                      <th className="px-3 py-2 text-left text-cyan-400 font-semibold">Location</th>
+                                      <th className="px-3 py-2 text-left text-cyan-400 font-semibold">CPT Code</th>
+                                      <th className="px-3 py-2 text-left text-cyan-400 font-semibold">CPT Description</th>
+                                      <th className="px-3 py-2 text-right text-cyan-400 font-semibold">Total Services</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {cmsData.results.map((result: any, index: number) => (
+                                      <tr key={index} className="border-t border-gray-700 hover:bg-gray-800">
+                                        <td className="px-3 py-2 text-white">
+                                          {result.Rndrng_Prvdr_First_Name || ''} {result.Rndrng_Prvdr_Last_Org_Name || ''}
+                                        </td>
+                                        <td className="px-3 py-2 text-gray-300">
+                                          {result.Rndrng_Prvdr_City || 'N/A'}, {result.Rndrng_Prvdr_State_Abrvtn || 'N/A'}
+                                        </td>
+                                        <td className="px-3 py-2 text-cyan-300 font-mono">
+                                          {result.HCPCS_Cd || 'N/A'}
+                                        </td>
+                                        <td className="px-3 py-2 text-gray-300">
+                                          {result.HCPCS_Desc || 'N/A'}
+                                        </td>
+                                        <td className="px-3 py-2 text-right text-white font-semibold">
+                                          {result.Tot_Srvcs || '0'}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
                             </div>
-                          </details>
+                          )}
                         </>
                       );
                     }

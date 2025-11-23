@@ -601,6 +601,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 f"filter[hcpcs][condition][path]=HCPCS_Cd&"
                 f"filter[hcpcs][condition][operator]=IN&"
                 f"{filter_params}"
+                f"&sort=-Tot_Srvcs&size=25"
             )
             
             logger.info(f"🌐 CMS API URL: {full_url[:200]}...")  # Log truncated URL
