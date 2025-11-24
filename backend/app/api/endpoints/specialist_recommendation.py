@@ -36,6 +36,7 @@ async def get_specialist_recommendations(
     try:
         # Log endpoint call
         logger.info("🚀 [Backend] /api/v1/specialist-recommendations endpoint called")
+        logger.info(f"🔍 [Backend] State parameter received: {state}")
         log_endpoint_call("Specialist recommendations", symptoms, diagnosis)
         
         # Initialize the LangChain service with database session

@@ -649,6 +649,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         """
         Query the CMS public API using CPT codes from the medical analysis.
         If more than 100 CPT codes, splits into multiple API calls.
+        If state is provided, filters results by state before selecting top 25.
         Groups results by provider (Rndrng_NPI) and sums Total Services.
         Returns top 25 providers by total services.
         
@@ -766,6 +767,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             
             # Filter by state if provided, then take top 25
             if state:
+                logger.info(f"🔍 Filtering CMS results by state: {state}")
                 # Convert state to 2-letter abbreviation if needed
                 state_abbrev = state.upper().strip()
                 if len(state_abbrev) > 2:

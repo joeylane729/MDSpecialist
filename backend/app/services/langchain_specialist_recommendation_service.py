@@ -64,6 +64,8 @@ class LangChainSpecialistRecommendationService:
             
             # Step 1.5: Query CMS API with CPT codes from medical analysis
             logger.info("🔍 Step 1.5: Querying CMS API with CPT codes...")
+            if state:
+                logger.info(f"🔍 Step 1.5: State filter will be applied: {state}")
             cms_results = {}
             if medical_analysis_results.get("cpt_codes"):
                 cms_results = await self.medical_analysis.query_cms_api(
