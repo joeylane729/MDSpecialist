@@ -22,6 +22,7 @@ async def get_specialist_recommendations(
     medical_history: Optional[str] = Form(None),
     medications: Optional[str] = Form(None),
     surgical_history: Optional[str] = Form(None),
+    state: Optional[str] = Form(None),
 
     files: List[UploadFile] = File([]),
     db: Session = Depends(get_db)
@@ -52,7 +53,8 @@ async def get_specialist_recommendations(
         
         # Get recommendations
         recommendations = await langchain_service.get_specialist_recommendations(
-            patient_input=patient_input
+            patient_input=patient_input,
+            state=state
         )
         
         # Log response information

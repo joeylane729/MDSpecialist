@@ -643,7 +643,8 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
 
     async def query_cms_api(
         self,
-        cpt_codes: List[Dict[str, str]]
+        cpt_codes: List[Dict[str, str]],
+        state: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Query the CMS public API using CPT codes from the medical analysis.
@@ -759,10 +760,43 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                     if hcpcs_desc and hcpcs_desc not in provider_totals[npi]['HCPCS_Descriptions']:
                         provider_totals[npi]['HCPCS_Descriptions'].append(hcpcs_desc)
             
-            # Convert to list and sort by Tot_Srvcs descending, take top 25
+            # Convert to list and sort by Tot_Srvcs descending
             grouped_results = list(provider_totals.values())
             grouped_results.sort(key=lambda x: x['Tot_Srvcs'], reverse=True)
-            top_25_providers = grouped_results[:25]
+            
+            # Filter by state if provided, then take top 25
+            if state:
+                # Convert state to 2-letter abbreviation if needed
+                state_abbrev = state.upper().strip()
+                if len(state_abbrev) > 2:
+                    # State name to abbreviation mapping
+                    state_map = {
+                        'ALABAMA': 'AL', 'ALASKA': 'AK', 'ARIZONA': 'AZ', 'ARKANSAS': 'AR',
+                        'CALIFORNIA': 'CA', 'COLORADO': 'CO', 'CONNECTICUT': 'CT', 'DELAWARE': 'DE',
+                        'FLORIDA': 'FL', 'GEORGIA': 'GA', 'HAWAII': 'HI', 'IDAHO': 'ID',
+                        'ILLINOIS': 'IL', 'INDIANA': 'IN', 'IOWA': 'IA', 'KANSAS': 'KS',
+                        'KENTUCKY': 'KY', 'LOUISIANA': 'LA', 'MAINE': 'ME', 'MARYLAND': 'MD',
+                        'MASSACHUSETTS': 'MA', 'MICHIGAN': 'MI', 'MINNESOTA': 'MN', 'MISSISSIPPI': 'MS',
+                        'MISSOURI': 'MO', 'MONTANA': 'MT', 'NEBRASKA': 'NE', 'NEVADA': 'NV',
+                        'NEW HAMPSHIRE': 'NH', 'NEW JERSEY': 'NJ', 'NEW MEXICO': 'NM', 'NEW YORK': 'NY',
+                        'NORTH CAROLINA': 'NC', 'NORTH DAKOTA': 'ND', 'OHIO': 'OH', 'OKLAHOMA': 'OK',
+                        'OREGON': 'OR', 'PENNSYLVANIA': 'PA', 'RHODE ISLAND': 'RI', 'SOUTH CAROLINA': 'SC',
+                        'SOUTH DAKOTA': 'SD', 'TENNESSEE': 'TN', 'TEXAS': 'TX', 'UTAH': 'UT',
+                        'VERMONT': 'VT', 'VIRGINIA': 'VA', 'WASHINGTON': 'WA', 'WEST VIRGINIA': 'WV',
+                        'WISCONSIN': 'WI', 'WYOMING': 'WY', 'DISTRICT OF COLUMBIA': 'DC'
+                    }
+                    state_abbrev = state_map.get(state_abbrev, state_abbrev)
+                
+                # Filter by state
+                filtered_by_state = [
+                    p for p in grouped_results 
+                    if (p.get('Rndrng_Prvdr_State_Abrvtn') or '').upper().strip() == state_abbrev
+                ]
+                logger.info(f"🔍 Filtered {len(filtered_by_state)} providers in state {state_abbrev} (from {len(grouped_results)} total)")
+                top_25_providers = filtered_by_state[:25]
+            else:
+                # No state filter, just take top 25
+                top_25_providers = grouped_results[:25]
             
             # Convert sets to lists for JSON serialization
             for provider in top_25_providers:

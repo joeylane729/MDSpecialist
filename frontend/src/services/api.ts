@@ -167,6 +167,7 @@ export interface SpecialistRecommendationRequest {
   medical_history?: string;
   medications?: string;
   surgical_history?: string;
+  state?: string;
   files?: File[];
 }
 
@@ -187,6 +188,9 @@ export const getSpecialistRecommendations = async (
     }
     if (request.surgical_history) {
       formData.append('surgical_history', request.surgical_history);
+    }
+    if (request.state) {
+      formData.append('state', request.state);
     }
 
     

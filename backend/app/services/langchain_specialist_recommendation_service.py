@@ -51,7 +51,8 @@ class LangChainSpecialistRecommendationService:
     
     async def get_specialist_recommendations(
         self,
-        patient_input: str
+        patient_input: str,
+        state: Optional[str] = None
     ) -> RecommendationResponse:
         """Get specialist recommendations using LangChain."""
         start_time = datetime.now()
@@ -66,7 +67,8 @@ class LangChainSpecialistRecommendationService:
             cms_results = {}
             if medical_analysis_results.get("cpt_codes"):
                 cms_results = await self.medical_analysis.query_cms_api(
-                    medical_analysis_results["cpt_codes"]
+                    medical_analysis_results["cpt_codes"],
+                    state=state
                 )
                 logger.info(f"✅ CMS API query complete: {cms_results.get('total_results', 0)} results found")
             else:

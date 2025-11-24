@@ -651,6 +651,7 @@ const ResultsPage: React.FC = () => {
         medical_history: location.state?.medicalHistory || '',
         medications: location.state?.medications || '',
         surgical_history: location.state?.surgicalHistory || '',
+        state: searchParams?.state || location.state?.state || '',
         files: []
       };
 
@@ -1989,7 +1990,8 @@ const ResultsPage: React.FC = () => {
                               sampleProviderStates: cmsData.results?.slice(0, 5).map((p: any) => p.Rndrng_Prvdr_State_Abrvtn) || []
                             });
                             
-                            // Filter results by state
+                            // Filter results by state (backend should already filter, but keep as safety net)
+                            // Backend now filters by state before selecting top 25, so results should already be filtered
                             let filteredResults = userStateCode 
                               ? (cmsData.results || []).filter((provider: any) => {
                                   const providerState = (provider.Rndrng_Prvdr_State_Abrvtn || '').toUpperCase().trim();
