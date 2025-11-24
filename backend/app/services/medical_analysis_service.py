@@ -19,7 +19,7 @@ class MedicalAnalysisService:
     """Service for comprehensive medical analysis including specialty determination, ICD-10 coding, and diagnosis prediction."""
     
     def __init__(self, db: Session = None):
-        self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
+        self.llm = ChatOpenAI(model="gpt-4o", temperature=0.1)
         self.db = db
         
         # Patient processing prompt
@@ -553,14 +553,65 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             elif response_text.startswith('```'):
                 response_text = response_text.replace('```', '').strip()
             
-            # Parse the JSON response
-            cpt_codes = json.loads(response_text)
+            # Try to extract JSON array if response contains other text
+            # Look for the first '[' and last ']' to extract just the JSON array
+            first_bracket = response_text.find('[')
+            last_bracket = response_text.rfind(']')
+            if first_bracket != -1 and last_bracket != -1 and last_bracket > first_bracket:
+                response_text = response_text[first_bracket:last_bracket + 1]
+            
+            # Try to fix common JSON issues
+            # Fix unescaped quotes in description fields (but not in code fields)
+            # This is a simple heuristic - look for patterns like "description": "text with "quote" here"
+            # We'll try to escape quotes that appear inside description values
+            try:
+                # First attempt: parse as-is
+                cpt_codes = json.loads(response_text)
+            except json.JSONDecodeError as json_error:
+                logger.warning(f"⚠️  Initial JSON parse failed: {json_error}. Attempting to fix...")
+                logger.debug(f"Problematic JSON (first 500 chars): {response_text[:500]}")
+                
+                # Try to fix common issues
+                # 1. Fix unescaped quotes in description fields
+                # Pattern: "description": "text with "unclosed quote"
+                fixed_text = response_text
+                
+                # 2. Try to extract valid JSON by finding the largest valid JSON array
+                # Start from the beginning and try progressively smaller chunks
+                max_attempts = 5
+                for attempt in range(max_attempts):
+                    try:
+                        # Try parsing from start, removing trailing characters
+                        if attempt > 0:
+                            # Remove last N characters (where N increases with each attempt)
+                            chars_to_remove = attempt * 100
+                            fixed_text = response_text[:-chars_to_remove] if chars_to_remove < len(response_text) else response_text
+                            # Try to close any open brackets/braces
+                            open_brackets = fixed_text.count('[') - fixed_text.count(']')
+                            open_braces = fixed_text.count('{') - fixed_text.count('}')
+                            fixed_text += ']' * open_brackets + '}' * open_braces
+                        
+                        cpt_codes = json.loads(fixed_text)
+                        logger.info(f"✅ Successfully parsed JSON after {attempt + 1} attempt(s)")
+                        break
+                    except json.JSONDecodeError:
+                        if attempt == max_attempts - 1:
+                            # Last attempt failed, log the error and return empty
+                            logger.error(f"❌ Failed to parse JSON after {max_attempts} attempts. Error: {json_error}")
+                            logger.error(f"Problematic JSON (first 1000 chars): {response_text[:1000]}")
+                            return []
+                        continue
+                else:
+                    # If we exhausted all attempts
+                    logger.error(f"❌ Could not parse JSON response after all fix attempts")
+                    return []
             
             logger.info(f"✅ Predicted {len(cpt_codes)} CPT codes for {len(search_query_terms)} diagnosis terms")
             return cpt_codes
             
         except Exception as e:
             logger.error(f"Error predicting CPT codes: {e}")
+            logger.error(f"Response text (first 500 chars): {response_text[:500] if 'response_text' in locals() else 'N/A'}")
             return []
 
     async def query_cms_api(
