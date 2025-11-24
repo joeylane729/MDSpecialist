@@ -1981,19 +1981,28 @@ const ResultsPage: React.FC = () => {
                               ? userState.toUpperCase() 
                               : (stateAbbreviationMap[userState] || userState.toUpperCase());
                             
+                            // Debug logging
+                            console.log('🔍 CMS Filter Debug:', {
+                              userState,
+                              userStateCode,
+                              totalResults: cmsData.results?.length || 0,
+                              sampleProviderStates: cmsData.results?.slice(0, 5).map((p: any) => p.Rndrng_Prvdr_State_Abrvtn) || []
+                            });
+                            
                             // Filter results by state
                             let filteredResults = userStateCode 
-                              ? cmsData.results.filter((provider: any) => {
-                                  const providerState = (provider.Rndrng_Prvdr_State_Abrvtn || '').toUpperCase();
-                                  return providerState === userStateCode;
+                              ? (cmsData.results || []).filter((provider: any) => {
+                                  const providerState = (provider.Rndrng_Prvdr_State_Abrvtn || '').toUpperCase().trim();
+                                  const matches = providerState === userStateCode;
+                                  if (!matches && userStateCode) {
+                                    console.log(`❌ Provider ${provider.Rndrng_Prvdr_First_Name} ${provider.Rndrng_Prvdr_Last_Org_Name} state mismatch: "${providerState}" !== "${userStateCode}"`);
+                                  }
+                                  return matches;
                                 })
-                              : cmsData.results;
+                              : (cmsData.results || []);
                             
-                            // If no results in selected state, show all results with a message
-                            const showAllResults = userStateCode && filteredResults.length === 0;
-                            if (showAllResults) {
-                              filteredResults = cmsData.results;
-                            }
+                            // If no results in selected state, show empty message (don't show all results)
+                            const showAllResults = false; // Never show all results if filtering by state
                             
                             return (
                               <div className="bg-gray-900 rounded p-3">
@@ -2006,24 +2015,25 @@ const ResultsPage: React.FC = () => {
                                     <span className="text-gray-500 ml-2">(of {cmsData.total_providers} total)</span>
                                   )}
                                 </p>
-                                {showAllResults && (
+                                {userStateCode && filteredResults.length === 0 && (
                                   <p className="text-yellow-400 text-sm mb-3">
-                                    No providers found in {userStateCode}. Showing all providers.
+                                    No providers found in {userStateCode} among the top 25 providers by total services.
                                   </p>
                                 )}
-                                <div className="overflow-x-auto max-h-96 overflow-y-auto">
-                                  <table className="w-full text-sm">
-                                    <thead className="bg-gray-800 sticky top-0">
-                                      <tr>
-                                        <th className="px-3 py-2 text-left text-cyan-400 font-semibold">Provider Name</th>
-                                        <th className="px-3 py-2 text-left text-cyan-400 font-semibold">Location</th>
-                                        <th className="px-3 py-2 text-left text-cyan-400 font-semibold">CPT Codes</th>
-                                        <th className="px-3 py-2 text-left text-cyan-400 font-semibold">CPT Descriptions</th>
-                                        <th className="px-3 py-2 text-right text-cyan-400 font-semibold">Total Services</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {filteredResults.map((provider: any, index: number) => {
+                                {filteredResults.length > 0 ? (
+                                  <div className="overflow-x-auto max-h-96 overflow-y-auto">
+                                    <table className="w-full text-sm">
+                                      <thead className="bg-gray-800 sticky top-0">
+                                        <tr>
+                                          <th className="px-3 py-2 text-left text-cyan-400 font-semibold">Provider Name</th>
+                                          <th className="px-3 py-2 text-left text-cyan-400 font-semibold">Location</th>
+                                          <th className="px-3 py-2 text-left text-cyan-400 font-semibold">CPT Codes</th>
+                                          <th className="px-3 py-2 text-left text-cyan-400 font-semibold">CPT Descriptions</th>
+                                          <th className="px-3 py-2 text-right text-cyan-400 font-semibold">Total Services</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {filteredResults.map((provider: any, index: number) => {
                                       const cptCodes = Array.isArray(provider.HCPCS_Codes) 
                                         ? provider.HCPCS_Codes 
                                         : [];
@@ -2079,6 +2089,7 @@ const ResultsPage: React.FC = () => {
                                     </tbody>
                                   </table>
                                 </div>
+                                ) : null}
                               </div>
                             );
                           })()}
