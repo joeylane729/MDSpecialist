@@ -766,6 +766,8 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             grouped_results.sort(key=lambda x: x['Tot_Srvcs'], reverse=True)
             
             # Filter by state if provided, then take top 25
+            state_abbrev = None
+            filtered_count = None
             if state:
                 logger.info(f"🔍 Filtering CMS results by state: {state}")
                 # Convert state to 2-letter abbreviation if needed
@@ -796,6 +798,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 ]
                 logger.info(f"🔍 Filtered {len(filtered_by_state)} providers in state {state_abbrev} (from {len(grouped_results)} total)")
                 top_25_providers = filtered_by_state[:25]
+                filtered_count = len(filtered_by_state)
             else:
                 # No state filter, just take top 25
                 top_25_providers = grouped_results[:25]
@@ -804,7 +807,10 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             for provider in top_25_providers:
                 provider['HCPCS_Codes'] = sorted(list(provider['HCPCS_Codes']))
             
-            logger.info(f"✅ Grouped into {len(provider_totals)} providers, returning top 25")
+            if state and filtered_count is not None and state_abbrev:
+                logger.info(f"✅ Grouped into {len(provider_totals)} total providers, filtered to {filtered_count} in state {state_abbrev}, returning top {len(top_25_providers)}")
+            else:
+                logger.info(f"✅ Grouped into {len(provider_totals)} providers, returning top {len(top_25_providers)}")
             
             result = {
                 "url": urls_used[0] if urls_used else None,  # Primary URL for display
