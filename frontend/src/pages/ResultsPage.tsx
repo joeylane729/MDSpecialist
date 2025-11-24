@@ -1906,33 +1906,33 @@ const ResultsPage: React.FC = () => {
                     if (cmsData) {
                       return (
                         <>
-                          {/* CMS API URL(s) */}
-                          <div className="bg-gray-900 rounded p-3">
-                            <p className="text-gray-400 mb-2 text-sm font-semibold">
+                          {/* CMS API URL(s) - Collapsed by default */}
+                          <details className="bg-gray-900 rounded p-3">
+                            <summary className="cursor-pointer text-cyan-300 hover:text-cyan-200 font-semibold text-sm">
                               API URL{cmsData.urls && cmsData.urls.length > 1 ? 's' : ''}:
                               {cmsData.urls && cmsData.urls.length > 1 && (
                                 <span className="text-gray-500 ml-2">({cmsData.urls.length} calls)</span>
                               )}
-                            </p>
-                            {cmsData.urls && cmsData.urls.length > 0 ? (
-                              <div className="space-y-2">
-                                {cmsData.urls.map((url: string, idx: number) => (
+                            </summary>
+                            <div className="mt-3 space-y-2">
+                              {cmsData.urls && cmsData.urls.length > 0 ? (
+                                cmsData.urls.map((url: string, idx: number) => (
                                   <div key={idx} className="bg-gray-800 p-2 rounded">
                                     {cmsData.urls.length > 1 && (
                                       <p className="text-xs text-gray-500 mb-1">Call {idx + 1}:</p>
                                     )}
                                     <p className="text-xs text-cyan-300 font-mono break-all">{url}</p>
                                   </div>
-                                ))}
-                              </div>
-                            ) : cmsData.url ? (
-                              <div className="bg-gray-800 p-2 rounded">
-                                <p className="text-xs text-cyan-300 font-mono break-all">{cmsData.url}</p>
-                              </div>
-                            ) : (
-                              <p className="text-yellow-400 text-sm">No URL available</p>
-                            )}
-                          </div>
+                                ))
+                              ) : cmsData.url ? (
+                                <div className="bg-gray-800 p-2 rounded">
+                                  <p className="text-xs text-cyan-300 font-mono break-all">{cmsData.url}</p>
+                                </div>
+                              ) : (
+                                <p className="text-yellow-400 text-sm">No URL available</p>
+                              )}
+                            </div>
+                          </details>
 
                           {/* Results Summary */}
                           <div className="grid grid-cols-3 gap-4">
@@ -1959,27 +1959,71 @@ const ResultsPage: React.FC = () => {
                           )}
 
                           {/* CMS Results Table - Grouped by Provider */}
-                          {cmsData.results && cmsData.results.length > 0 && (
-                            <div className="bg-gray-900 rounded p-3">
-                              <p className="text-gray-400 mb-3 text-sm font-semibold">
-                                Top 25 Providers by Total Services ({cmsData.results.length} providers)
-                                {cmsData.total_providers && cmsData.total_providers > 25 && (
-                                  <span className="text-gray-500 ml-2">(of {cmsData.total_providers} total)</span>
+                          {cmsData.results && cmsData.results.length > 0 && (() => {
+                            // State abbreviation mapping (full name to 2-letter code)
+                            const stateAbbreviationMap: { [key: string]: string } = {
+                              'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+                              'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+                              'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+                              'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+                              'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
+                              'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+                              'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
+                              'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+                              'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
+                              'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY',
+                              'District of Columbia': 'DC'
+                            };
+                            
+                            // Get user's selected state and convert to 2-letter code
+                            const userState = searchParams?.state || location.state?.state || '';
+                            const userStateCode = userState.length === 2 
+                              ? userState.toUpperCase() 
+                              : (stateAbbreviationMap[userState] || userState.toUpperCase());
+                            
+                            // Filter results by state
+                            let filteredResults = userStateCode 
+                              ? cmsData.results.filter((provider: any) => {
+                                  const providerState = (provider.Rndrng_Prvdr_State_Abrvtn || '').toUpperCase();
+                                  return providerState === userStateCode;
+                                })
+                              : cmsData.results;
+                            
+                            // If no results in selected state, show all results with a message
+                            const showAllResults = userStateCode && filteredResults.length === 0;
+                            if (showAllResults) {
+                              filteredResults = cmsData.results;
+                            }
+                            
+                            return (
+                              <div className="bg-gray-900 rounded p-3">
+                                <p className="text-gray-400 mb-3 text-sm font-semibold">
+                                  Top 25 Providers by Total Services ({filteredResults.length} providers)
+                                  {userStateCode && !showAllResults && (
+                                    <span className="text-gray-500 ml-2">in {userStateCode}</span>
+                                  )}
+                                  {cmsData.total_providers && cmsData.total_providers > 25 && (
+                                    <span className="text-gray-500 ml-2">(of {cmsData.total_providers} total)</span>
+                                  )}
+                                </p>
+                                {showAllResults && (
+                                  <p className="text-yellow-400 text-sm mb-3">
+                                    No providers found in {userStateCode}. Showing all providers.
+                                  </p>
                                 )}
-                              </p>
-                              <div className="overflow-x-auto max-h-96 overflow-y-auto">
-                                <table className="w-full text-sm">
-                                  <thead className="bg-gray-800 sticky top-0">
-                                    <tr>
-                                      <th className="px-3 py-2 text-left text-cyan-400 font-semibold">Provider Name</th>
-                                      <th className="px-3 py-2 text-left text-cyan-400 font-semibold">Location</th>
-                                      <th className="px-3 py-2 text-left text-cyan-400 font-semibold">CPT Codes</th>
-                                      <th className="px-3 py-2 text-left text-cyan-400 font-semibold">CPT Descriptions</th>
-                                      <th className="px-3 py-2 text-right text-cyan-400 font-semibold">Total Services</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {cmsData.results.map((provider: any, index: number) => {
+                                <div className="overflow-x-auto max-h-96 overflow-y-auto">
+                                  <table className="w-full text-sm">
+                                    <thead className="bg-gray-800 sticky top-0">
+                                      <tr>
+                                        <th className="px-3 py-2 text-left text-cyan-400 font-semibold">Provider Name</th>
+                                        <th className="px-3 py-2 text-left text-cyan-400 font-semibold">Location</th>
+                                        <th className="px-3 py-2 text-left text-cyan-400 font-semibold">CPT Codes</th>
+                                        <th className="px-3 py-2 text-left text-cyan-400 font-semibold">CPT Descriptions</th>
+                                        <th className="px-3 py-2 text-right text-cyan-400 font-semibold">Total Services</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {filteredResults.map((provider: any, index: number) => {
                                       const cptCodes = Array.isArray(provider.HCPCS_Codes) 
                                         ? provider.HCPCS_Codes 
                                         : [];
@@ -2031,12 +2075,13 @@ const ResultsPage: React.FC = () => {
                                           </td>
                                         </tr>
                                       );
-                                    })}
-                                  </tbody>
-                                </table>
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            );
+                          })()}
                         </>
                       );
                     }

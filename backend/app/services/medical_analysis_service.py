@@ -19,7 +19,7 @@ class MedicalAnalysisService:
     """Service for comprehensive medical analysis including specialty determination, ICD-10 coding, and diagnosis prediction."""
     
     def __init__(self, db: Session = None):
-        self.llm = ChatOpenAI(model="gpt-4o", temperature=0.1)
+        self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
         self.db = db
         
         # Patient processing prompt
@@ -151,19 +151,6 @@ class MedicalAnalysisService:
                 else:
                     logger.warning(f"⚠️  Could not find ICD-10 description for: {medical_analysis['predicted_icd10']}")
             
-            # Predict relevant CPT codes for the diagnosis
-            cpt_codes = []
-            if medical_analysis["predicted_icd10"] and medical_analysis.get("icd10_description"):
-                logger.info(f"🔍 Predicting CPT codes for ICD-10 {medical_analysis['predicted_icd10']}...")
-                cpt_codes = await self.predict_cpt_codes(
-                    medical_analysis["predicted_icd10"],
-                    medical_analysis["icd10_description"]
-                )
-                if cpt_codes:
-                    logger.info(f"✅ Predicted {len(cpt_codes)} CPT codes")
-                else:
-                    logger.warning(f"⚠️  No CPT codes predicted")
-            
             # Generate search query for Pinecone using the same prompt as LangChainRetrievalStrategies
             search_query = ""
             if medical_analysis.get("icd10_description") and diagnosis:
@@ -175,6 +162,20 @@ class MedicalAnalysisService:
                 logger.info(f"✅ Generated search query: {search_query[:100]}{'...' if len(search_query) > 100 else ''}")
             else:
                 logger.warning("⚠️  Cannot generate search query - missing ICD-10 description or user diagnosis")
+            
+            # Predict relevant CPT codes using the search query terms
+            cpt_codes = []
+            if search_query:
+                # Parse search query to extract individual terms (split by " OR ")
+                search_terms = [term.strip() for term in search_query.split(" OR ") if term.strip()]
+                logger.info(f"🔍 Predicting CPT codes for {len(search_terms)} diagnosis terms: {', '.join(search_terms[:3])}{'...' if len(search_terms) > 3 else ''}")
+                cpt_codes = await self.predict_cpt_codes(search_terms)
+                if cpt_codes:
+                    logger.info(f"✅ Predicted {len(cpt_codes)} CPT codes")
+                else:
+                    logger.warning(f"⚠️  No CPT codes predicted")
+            else:
+                logger.warning("⚠️  Cannot predict CPT codes - no search query generated")
             
             # Extract treatment options from diagnoses if available
             treatment_options = []
@@ -496,27 +497,31 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
 
     async def predict_cpt_codes(
         self,
-        icd10_code: str,
-        icd10_description: str
+        search_query_terms: List[str]
     ) -> List[Dict[str, str]]:
         """
-        Use GPT to predict relevant CPT codes that a neurosurgeon would use to treat the given ICD-10 code.
+        Use GPT to predict relevant CPT codes that a neurosurgeon would use to treat the given diagnosis terms.
         
         Args:
-            icd10_code: The ICD-10 diagnosis code
-            icd10_description: The description of the ICD-10 code
+            search_query_terms: List of diagnosis terms/descriptions from the search query (e.g., ["acoustic neuroma", "vestibular schwannoma", ...])
             
         Returns:
             List of dictionaries containing CPT code and description
         """
         try:
+            # Format the terms as a readable list
+            terms_text = "\n".join([f"- {term.strip()}" for term in search_query_terms if term.strip()])
+            
             prompt = PromptTemplate(
-                input_variables=["icd10_code", "icd10_description"],
-                template="""Give an exhaustive list of CPT codes that could possibly be used by a neurosurgeon to treat ICD code {icd10_code} ({icd10_description}). 
-                Make sure you do not miss any possible CPT codes, even rare ones. 
-                Super super exhaustive, do not miss any codes that any neurosurgeon could possibly choose as the CPT code if someone has this diagnosis. 
-                It's ok if it's really rare, as long as it's possible. 
-                If any neurosurgeon could possibly choose a CPT code, include it.
+                input_variables=["diagnosis_terms"],
+                template="""Give an exhaustive list of CPT codes that could possibly be used by a neurosurgeon to treat patients with any of these diagnoses:
+
+{diagnosis_terms}
+
+Make sure you do not miss any possible CPT codes, even rare ones. 
+Super super exhaustive, do not miss any codes that any neurosurgeon could possibly choose as the CPT code if someone has any of these diagnoses. 
+It's ok if it's really rare, as long as it's possible. 
+If any neurosurgeon could possibly choose a CPT code for any of these conditions, include it.
 
 Return the response in this exact JSON format:
 [
@@ -536,8 +541,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             chain = prompt | self.llm
             
             response = await chain.ainvoke({
-                "icd10_code": icd10_code,
-                "icd10_description": icd10_description
+                "diagnosis_terms": terms_text
             })
             
             # Extract the JSON response
@@ -552,7 +556,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             # Parse the JSON response
             cpt_codes = json.loads(response_text)
             
-            logger.info(f"✅ Predicted {len(cpt_codes)} CPT codes for ICD-10 {icd10_code}")
+            logger.info(f"✅ Predicted {len(cpt_codes)} CPT codes for {len(search_query_terms)} diagnosis terms")
             return cpt_codes
             
         except Exception as e:
