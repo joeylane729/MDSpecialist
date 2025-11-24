@@ -518,10 +518,11 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
 
 {diagnosis_terms}
 
-Make sure you do not miss any possible CPT codes, even rare ones. 
-Super super exhaustive, do not miss any codes that any neurosurgeon could possibly choose as the CPT code if someone has any of these diagnoses. 
-It's ok if it's really rare, as long as it's possible. 
-If any neurosurgeon could possibly choose a CPT code for any of these conditions, include it.
+IMPORTANT: 
+- Escape all quotes in descriptions (use \\" for quotes inside strings)
+- Keep descriptions concise (under 100 characters)
+- Do NOT include newlines in description strings
+- Ensure all strings are properly closed
 
 Return the response in this exact JSON format:
 [
@@ -569,42 +570,68 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 cpt_codes = json.loads(response_text)
             except json.JSONDecodeError as json_error:
                 logger.warning(f"⚠️  Initial JSON parse failed: {json_error}. Attempting to fix...")
-                logger.debug(f"Problematic JSON (first 500 chars): {response_text[:500]}")
+                logger.debug(f"Response length: {len(response_text)} chars")
                 
-                # Try to fix common issues
-                # 1. Fix unescaped quotes in description fields
-                # Pattern: "description": "text with "unclosed quote"
-                fixed_text = response_text
+                # Strategy 1: Try to find the last complete JSON object and extract valid portion
+                # Look for complete objects by finding closing braces followed by commas or closing brackets
+                cpt_codes = []
                 
-                # 2. Try to extract valid JSON by finding the largest valid JSON array
-                # Start from the beginning and try progressively smaller chunks
-                max_attempts = 5
-                for attempt in range(max_attempts):
+                # Strategy 1: Binary search to find the largest valid prefix
+                # This is more efficient than removing fixed chunks
+                left, right = 0, len(response_text)
+                best_valid = None
+                
+                for attempt in range(10):  # Max 10 binary search attempts
+                    mid = (left + right) // 2
+                    test_text = response_text[:mid]
+                    
+                    # Close any open brackets/braces
+                    open_brackets = test_text.count('[') - test_text.count(']')
+                    open_braces = test_text.count('{') - test_text.count('}')
+                    test_text += '}' * open_braces + ']' * open_brackets
+                    
                     try:
-                        # Try parsing from start, removing trailing characters
-                        if attempt > 0:
-                            # Remove last N characters (where N increases with each attempt)
-                            chars_to_remove = attempt * 100
-                            fixed_text = response_text[:-chars_to_remove] if chars_to_remove < len(response_text) else response_text
-                            # Try to close any open brackets/braces
-                            open_brackets = fixed_text.count('[') - fixed_text.count(']')
-                            open_braces = fixed_text.count('{') - fixed_text.count('}')
-                            fixed_text += ']' * open_brackets + '}' * open_braces
-                        
-                        cpt_codes = json.loads(fixed_text)
-                        logger.info(f"✅ Successfully parsed JSON after {attempt + 1} attempt(s)")
-                        break
+                        parsed = json.loads(test_text)
+                        if isinstance(parsed, list) and len(parsed) > 0:
+                            best_valid = parsed
+                            left = mid  # Try to get more
+                        else:
+                            right = mid  # Too much, reduce
                     except json.JSONDecodeError:
-                        if attempt == max_attempts - 1:
-                            # Last attempt failed, log the error and return empty
-                            logger.error(f"❌ Failed to parse JSON after {max_attempts} attempts. Error: {json_error}")
+                        right = mid  # Invalid, reduce
+                
+                if best_valid:
+                    cpt_codes = best_valid
+                    logger.info(f"✅ Extracted {len(cpt_codes)} valid CPT codes from partial JSON (response was {len(response_text)} chars)")
+                else:
+                    # Strategy 2: Try to extract individual valid JSON objects using regex
+                    # This is a fallback if binary search fails
+                    import re
+                    # Find all complete JSON objects: { "code": "...", "description": "..." }
+                    object_pattern = r'\{\s*"code"\s*:\s*"[^"]*"\s*,\s*"description"\s*:\s*"[^"]*"\s*\}'
+                    matches = re.findall(object_pattern, response_text)
+                    
+                    if matches:
+                        # Try to parse each match as JSON
+                        valid_objects = []
+                        for match in matches:
+                            try:
+                                obj = json.loads(match)
+                                valid_objects.append(obj)
+                            except json.JSONDecodeError:
+                                continue
+                        
+                        if valid_objects:
+                            cpt_codes = valid_objects
+                            logger.info(f"✅ Extracted {len(cpt_codes)} valid CPT codes using regex pattern matching")
+                        else:
+                            logger.error(f"❌ Could not extract any valid CPT codes. Error: {json_error}")
                             logger.error(f"Problematic JSON (first 1000 chars): {response_text[:1000]}")
                             return []
-                        continue
-                else:
-                    # If we exhausted all attempts
-                    logger.error(f"❌ Could not parse JSON response after all fix attempts")
-                    return []
+                    else:
+                        logger.error(f"❌ Could not extract valid CPT codes. Error: {json_error}")
+                        logger.error(f"Problematic JSON (first 1000 chars): {response_text[:1000]}")
+                        return []
             
             logger.info(f"✅ Predicted {len(cpt_codes)} CPT codes for {len(search_query_terms)} diagnosis terms")
             return cpt_codes
