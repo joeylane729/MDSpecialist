@@ -170,6 +170,7 @@ class MedicalAnalysisService:
                 logger.warning("⚠️  Cannot generate search query - missing ICD-10 description or user diagnosis")
             
             # Predict relevant CPT codes using the search query terms (or reuse provided codes)
+            cpt_prompt_text = ""
             if cpt_codes is not None:
                 logger.info(f"♻️  Reusing provided CPT codes: {len(cpt_codes)} codes")
             else:
@@ -178,7 +179,7 @@ class MedicalAnalysisService:
                     # Parse search query to extract individual terms (split by " OR ")
                     search_terms = [term.strip() for term in search_query.split(" OR ") if term.strip()]
                     logger.info(f"🔍 Predicting CPT codes for {len(search_terms)} diagnosis terms: {', '.join(search_terms[:3])}{'...' if len(search_terms) > 3 else ''}")
-                    cpt_codes = await self.predict_cpt_codes(search_terms)
+                    cpt_codes, cpt_prompt_text = await self.predict_cpt_codes(search_terms)
                     if cpt_codes:
                         logger.info(f"✅ Predicted {len(cpt_codes)} CPT codes")
                     else:
@@ -234,6 +235,7 @@ class MedicalAnalysisService:
                 "icd10_description": primary_description,
                 "treatment_options": treatment_options,
                 "cpt_codes": cpt_codes,  # Relevant CPT codes for the diagnosis
+                "cpt_prompt_text": cpt_prompt_text,  # Actual GPT prompt used to generate CPT codes
                 "search_query": search_query,  # Pre-generated search query for Pinecone
                 
                 # Keep original nested structure for backward compatibility
@@ -507,7 +509,7 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
     async def predict_cpt_codes(
         self,
         search_query_terms: List[str]
-    ) -> List[Dict[str, str]]:
+    ) -> Tuple[List[Dict[str, str]], str]:
         """
         Use GPT to predict relevant CPT codes that a neurosurgeon would use to treat the given diagnosis terms.
         
@@ -515,15 +517,13 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
             search_query_terms: List of diagnosis terms/descriptions from the search query (e.g., ["acoustic neuroma", "vestibular schwannoma", ...])
             
         Returns:
-            List of dictionaries containing CPT code and description
+            Tuple of (List of dictionaries containing CPT code and description, rendered prompt text with actual values)
         """
         try:
             # Format the terms as a readable list
             terms_text = "\n".join([f"- {term.strip()}" for term in search_query_terms if term.strip()])
             
-            prompt = PromptTemplate(
-                input_variables=["diagnosis_terms"],
-                template="""Give an exhaustive list of CPT codes that could possibly be used by a neurosurgeon to treat patients with any of these diagnoses:
+            prompt_template = """Give an exhaustive list of CPT codes that could possibly be used by a neurosurgeon to treat patients with any of these diagnoses:
 
 {diagnosis_terms}
 
@@ -546,7 +546,14 @@ Return the response in this exact JSON format:
 ]
 
 Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO additional text."""
+            
+            prompt = PromptTemplate(
+                input_variables=["diagnosis_terms"],
+                template=prompt_template
             )
+            
+            # Render the prompt with actual values to capture what was sent to GPT
+            rendered_prompt = prompt_template.format(diagnosis_terms=terms_text)
             
             chain = prompt | self.llm
             
@@ -643,12 +650,12 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                         return []
             
             logger.info(f"✅ Predicted {len(cpt_codes)} CPT codes for {len(search_query_terms)} diagnosis terms")
-            return cpt_codes
+            return cpt_codes, rendered_prompt
             
         except Exception as e:
             logger.error(f"Error predicting CPT codes: {e}")
             logger.error(f"Response text (first 500 chars): {response_text[:500] if 'response_text' in locals() else 'N/A'}")
-            return []
+            return [], ""
 
     async def query_cms_api(
         self,
