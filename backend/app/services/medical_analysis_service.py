@@ -1,6 +1,7 @@
 import os
 import json
 import logging
+import asyncio
 import httpx
 from typing import List, Optional, Tuple, Dict, Any
 from dotenv import load_dotenv
@@ -648,23 +649,27 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
     ) -> Dict[str, Any]:
         """
         Query the CMS public API using CPT codes from the medical analysis.
-        If more than 100 CPT codes, splits into multiple API calls.
+        Aggregates data across the most recent 5 years (2023-2019).
+        If more than 100 CPT codes, splits into multiple API calls per year.
         If state is provided, filters results by state before selecting top 25.
-        Groups results by provider (Rndrng_NPI) and sums Total Services.
+        Groups results by provider (Rndrng_NPI) and sums Total Services across all years.
         Returns top 25 providers by total services.
         
         Args:
             cpt_codes: List of dictionaries containing CPT codes and descriptions
+            state: Optional state filter (2-letter abbreviation or full name)
             
         Returns:
-            Dictionary with 'url', 'results' (grouped by provider), and metadata
+            Dictionary with 'url', 'urls', 'results' (grouped by provider), and metadata
         """
         if not cpt_codes or len(cpt_codes) == 0:
             logger.warning("⚠️  No CPT codes provided for CMS API query")
             return {
                 "url": None,
+                "urls": [],
                 "results": [],
                 "total_results": 0,
+                "total_providers": 0,
                 "cpt_codes_searched": [],
                 "error": "No CPT codes provided"
             }
@@ -673,10 +678,16 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             # Extract just the CPT code values
             cpt_code_values = [cpt['code'] for cpt in cpt_codes if 'code' in cpt]
             
-            logger.info(f"🔍 Querying CMS API with {len(cpt_code_values)} CPT codes")
+            logger.info(f"🔍 Querying CMS API with {len(cpt_code_values)} CPT codes across 5 years (2023-2019)")
             
-            # Build CMS API base URL
-            base_url = "https://data.cms.gov/data-api/v1/dataset/92396110-2aed-4d63-a6a2-5d6207d46a29/data"
+            # CMS dataset UUIDs for each year (most recent 5 years)
+            year_uuids = {
+                2023: "0e9f2f2b-7bf9-451a-912c-e02e654dd725",
+                2022: "e650987d-01b7-4f09-b75e-b0b075afbf98",
+                2021: "31dc2c47-f297-4948-bfb4-075e1bec3a02",
+                2020: "c957b49e-1323-49e7-8678-c09da387551d",
+                2019: "867b8ac7-ccb7-4cc9-873d-b24340d89e32"
+            }
             
             # Split CPT codes into chunks of 100 if needed
             chunk_size = 100
@@ -685,45 +696,74 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 for i in range(0, len(cpt_code_values), chunk_size)
             ]
             
-            logger.info(f"📦 Split into {len(cpt_chunks)} API call(s) (max 100 CPT codes per call)")
+            # Calculate total API calls: 5 years × number of chunks
+            total_calls = len(year_uuids) * len(cpt_chunks)
+            logger.info(f"📦 Making {total_calls} API calls ({len(year_uuids)} years × {len(cpt_chunks)} chunk(s) per year)")
             
-            # Make multiple API calls if needed
+            # Make API calls for all years and chunks
             all_results = []
             urls_used = []
             
             async with httpx.AsyncClient(timeout=30.0) as client:
-                for chunk_idx, cpt_chunk in enumerate(cpt_chunks):
-                    # Build the full URL with CPT code filters
-                    filter_params = "&".join([
-                        f"filter[hcpcs][condition][value][]={code}" 
-                        for code in cpt_chunk
-                    ])
+                # Create all API call tasks
+                tasks = []
+                for year, uuid in sorted(year_uuids.items(), reverse=True):  # Start with most recent
+                    base_url = f"https://data.cms.gov/data-api/v1/dataset/{uuid}/data"
                     
-                    full_url = (
-                        f"{base_url}?"
-                        f"filter[hcpcs][condition][path]=HCPCS_Cd&"
-                        f"filter[hcpcs][condition][operator]=IN&"
-                        f"{filter_params}"
-                    )
-                    
-                    urls_used.append(full_url)
-                    logger.info(f"🌐 CMS API call {chunk_idx + 1}/{len(cpt_chunks)}: {len(cpt_chunk)} CPT codes")
-                    
-                    try:
-                        response = await client.get(full_url)
-                        response.raise_for_status()
+                    for chunk_idx, cpt_chunk in enumerate(cpt_chunks):
+                        # Build the full URL with CPT code filters
+                        filter_params = "&".join([
+                            f"filter[hcpcs][condition][value][]={code}" 
+                            for code in cpt_chunk
+                        ])
                         
-                        cms_data = response.json()
-                        chunk_results = cms_data if isinstance(cms_data, list) else [cms_data]
-                        all_results.extend(chunk_results)
+                        full_url = (
+                            f"{base_url}?"
+                            f"filter[hcpcs][condition][path]=HCPCS_Cd&"
+                            f"filter[hcpcs][condition][operator]=IN&"
+                            f"{filter_params}"
+                        )
                         
-                        logger.info(f"✅ Call {chunk_idx + 1} returned {len(chunk_results)} results")
-                    except Exception as e:
-                        logger.error(f"❌ Error in API call {chunk_idx + 1}: {e}")
-                        # Continue with other calls even if one fails
-                        continue
+                        urls_used.append(full_url)
+                        
+                        # Create async task for this API call
+                        async def make_api_call(url: str, year: int, chunk_idx: int, total_chunks: int, chunk_size: int):
+                            try:
+                                logger.info(f"🌐 CMS API call for {year} (chunk {chunk_idx + 1}/{total_chunks}): {chunk_size} CPT codes")
+                                response = await client.get(url)
+                                response.raise_for_status()
+                                
+                                cms_data = response.json()
+                                chunk_results = cms_data if isinstance(cms_data, list) else [cms_data]
+                                
+                                # Add year metadata to each result for tracking
+                                for result in chunk_results:
+                                    result['_year'] = year
+                                
+                                logger.info(f"✅ {year} chunk {chunk_idx + 1} returned {len(chunk_results)} results")
+                                return chunk_results
+                            except Exception as e:
+                                logger.error(f"❌ Error in API call for {year} chunk {chunk_idx + 1}: {e}")
+                                return []
+                        
+                        tasks.append(make_api_call(full_url, year, chunk_idx, len(cpt_chunks), len(cpt_chunk)))
+                
+                # Execute all API calls in parallel
+                results_list = await asyncio.gather(*tasks)
+                
+                # Flatten all results
+                for results in results_list:
+                    all_results.extend(results)
+            
+            # Log summary by year
+            year_counts = {}
+            for result in all_results:
+                year = result.get('_year', 'unknown')
+                year_counts[year] = year_counts.get(year, 0) + 1
             
             logger.info(f"📊 Total raw results collected: {len(all_results)}")
+            for year in sorted(year_counts.keys(), reverse=True):
+                logger.info(f"   📅 {year}: {year_counts[year]} results")
             
             # Group results by provider (Rndrng_NPI) and sum Total Services
             provider_totals: Dict[str, Dict[str, Any]] = {}
@@ -813,12 +853,13 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 logger.info(f"✅ Grouped into {len(provider_totals)} providers, returning top {len(top_25_providers)}")
             
             result = {
-                "url": urls_used[0] if urls_used else None,  # Primary URL for display
-                "urls": urls_used,  # All URLs used
+                "url": urls_used[0] if urls_used else None,  # Primary URL for display (first one)
+                "urls": urls_used,  # All URLs used (all years and chunks)
                 "results": top_25_providers,
-                "total_results": len(all_results),  # Total raw results
+                "total_results": len(all_results),  # Total raw results across all years
                 "total_providers": len(provider_totals),  # Total unique providers
                 "cpt_codes_searched": cpt_code_values,
+                "years_queried": sorted(year_uuids.keys(), reverse=True),  # Years included in aggregation
                 "error": None
             }
             
