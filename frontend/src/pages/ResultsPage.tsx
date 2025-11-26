@@ -2029,8 +2029,7 @@ const ResultsPage: React.FC = () => {
                                         <tr>
                                           <th className="px-3 py-2 text-left text-cyan-400 font-semibold">Provider Name</th>
                                           <th className="px-3 py-2 text-left text-cyan-400 font-semibold">Location</th>
-                                          <th className="px-3 py-2 text-left text-cyan-400 font-semibold">CPT Codes</th>
-                                          <th className="px-3 py-2 text-left text-cyan-400 font-semibold">CPT Descriptions</th>
+                                          <th className="px-3 py-2 text-left text-cyan-400 font-semibold">CPT Codes & Descriptions</th>
                                           <th className="px-3 py-2 text-right text-cyan-400 font-semibold">Total Services</th>
                                         </tr>
                                       </thead>
@@ -2043,6 +2042,12 @@ const ResultsPage: React.FC = () => {
                                         ? provider.HCPCS_Descriptions
                                         : [];
                                       
+                                      // Pair up codes with descriptions by index (ensured 1:1 mapping from backend)
+                                      const codeDescriptionPairs = cptCodes.map((code: string, idx: number) => ({
+                                        code,
+                                        description: idx < cptDescriptions.length ? cptDescriptions[idx] : null
+                                      }));
+                                      
                                       return (
                                         <tr key={provider.Rndrng_NPI || index} className="border-t border-gray-700 hover:bg-gray-800">
                                           <td className="px-3 py-2 text-white">
@@ -2051,34 +2056,27 @@ const ResultsPage: React.FC = () => {
                                           <td className="px-3 py-2 text-gray-300">
                                             {provider.Rndrng_Prvdr_City || 'N/A'}, {provider.Rndrng_Prvdr_State_Abrvtn || 'N/A'}
                                           </td>
-                                          <td className="px-3 py-2">
-                                            <div className="flex flex-wrap gap-1">
-                                              {cptCodes.length > 0 ? (
-                                                cptCodes.map((code: string, codeIdx: number) => (
-                                                  <span key={codeIdx} className="text-cyan-300 font-mono text-xs bg-gray-800 px-1.5 py-0.5 rounded">
-                                                    {code}
-                                                  </span>
+                                          <td className="px-3 py-2 text-gray-300 max-w-lg">
+                                            <div className="space-y-2">
+                                              {codeDescriptionPairs.length > 0 ? (
+                                                codeDescriptionPairs.map((pair: { code: string; description: string | null }, pairIdx: number) => (
+                                                  <div key={pairIdx} className="border-l-2 border-cyan-500 pl-2 py-1">
+                                                    <div className="flex items-start gap-2">
+                                                      <span className="text-cyan-300 font-mono text-xs bg-gray-800 px-1.5 py-0.5 rounded whitespace-nowrap">
+                                                        {pair.code}
+                                                      </span>
+                                                      {pair.description ? (
+                                                        <span className="text-gray-400 text-xs flex-1">
+                                                          {pair.description}
+                                                        </span>
+                                                      ) : (
+                                                        <span className="text-gray-500 text-xs italic">No description available</span>
+                                                      )}
+                                                    </div>
+                                                  </div>
                                                 ))
                                               ) : (
-                                                <span className="text-gray-500">N/A</span>
-                                              )}
-                                            </div>
-                                          </td>
-                                          <td className="px-3 py-2 text-gray-300 max-w-xs">
-                                            <div className="text-xs">
-                                              {cptDescriptions.length > 0 ? (
-                                                <details className="cursor-pointer">
-                                                  <summary className="text-cyan-300 hover:text-cyan-200">
-                                                    {cptDescriptions.length} description{cptDescriptions.length !== 1 ? 's' : ''}
-                                                  </summary>
-                                                  <div className="mt-1 space-y-1 pl-2">
-                                                    {cptDescriptions.map((desc: string, descIdx: number) => (
-                                                      <div key={descIdx} className="text-gray-400">{desc}</div>
-                                                    ))}
-                                                  </div>
-                                                </details>
-                                              ) : (
-                                                <span className="text-gray-500">N/A</span>
+                                                <span className="text-gray-500 text-xs">N/A</span>
                                               )}
                                             </div>
                                           </td>
