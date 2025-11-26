@@ -796,18 +796,28 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                         'Rndrng_Prvdr_State_Abrvtn': result.get('Rndrng_Prvdr_State_Abrvtn', ''),
                         'Tot_Srvcs': 0,
                         'HCPCS_Codes': set(),  # Track unique CPT codes
-                        'HCPCS_Descriptions': []  # Track descriptions
+                        'HCPCS_Code_Descriptions': {}  # Track descriptions per CPT code: {code: (description, year)}
                     }
                 
                 provider_totals[npi]['Tot_Srvcs'] += tot_srvcs_int
                 
-                # Track CPT codes and descriptions
+                # Track CPT codes and descriptions (keep most recent description per code)
                 hcpcs_cd = result.get('HCPCS_Cd', '')
                 hcpcs_desc = result.get('HCPCS_Desc', '')
+                result_year = result.get('_year', 0)  # Get year from result metadata
+                
                 if hcpcs_cd:
                     provider_totals[npi]['HCPCS_Codes'].add(hcpcs_cd)
-                    if hcpcs_desc and hcpcs_desc not in provider_totals[npi]['HCPCS_Descriptions']:
-                        provider_totals[npi]['HCPCS_Descriptions'].append(hcpcs_desc)
+                    if hcpcs_desc:
+                        # Track descriptions per CPT code, keeping only the most recent one
+                        if hcpcs_cd not in provider_totals[npi]['HCPCS_Code_Descriptions']:
+                            # First time seeing this code, store description and year
+                            provider_totals[npi]['HCPCS_Code_Descriptions'][hcpcs_cd] = (hcpcs_desc, result_year)
+                        else:
+                            # Already have a description for this code, keep the most recent one
+                            existing_desc, existing_year = provider_totals[npi]['HCPCS_Code_Descriptions'][hcpcs_cd]
+                            if result_year > existing_year:
+                                provider_totals[npi]['HCPCS_Code_Descriptions'][hcpcs_cd] = (hcpcs_desc, result_year)
             
             # Convert to list and sort by Tot_Srvcs descending
             grouped_results = list(provider_totals.values())
@@ -851,9 +861,19 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 # No state filter, just take top 25
                 top_25_providers = grouped_results[:25]
             
-            # Convert sets to lists for JSON serialization
+            # Convert sets to lists and build descriptions list matching CPT codes
             for provider in top_25_providers:
                 provider['HCPCS_Codes'] = sorted(list(provider['HCPCS_Codes']))
+                # Build HCPCS_Descriptions list: one description per CPT code (most recent)
+                descriptions = []
+                code_descriptions = provider.get('HCPCS_Code_Descriptions', {})
+                for code in provider['HCPCS_Codes']:
+                    if code in code_descriptions:
+                        desc, _ = code_descriptions[code]
+                        descriptions.append(desc)
+                provider['HCPCS_Descriptions'] = descriptions
+                # Remove internal tracking dict
+                provider.pop('HCPCS_Code_Descriptions', None)
             
             if state and filtered_count is not None and state_abbrev:
                 logger.info(f"✅ Grouped into {len(provider_totals)} total providers, filtered to {filtered_count} in state {state_abbrev}, returning top {len(top_25_providers)}")
