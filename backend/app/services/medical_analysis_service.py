@@ -122,8 +122,13 @@ class MedicalAnalysisService:
             logger.error(f"Error processing patient input: {str(e)}")
             raise
     
-    async def comprehensive_analysis(self, patient_input: str) -> Dict[str, Any]:
-        """Perform comprehensive medical analysis including patient processing and medical analysis."""
+    async def comprehensive_analysis(self, patient_input: str, cpt_codes: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
+        """Perform comprehensive medical analysis including patient processing and medical analysis.
+        
+        Args:
+            patient_input: Patient input string containing symptoms, diagnosis, etc.
+            cpt_codes: Optional pre-generated CPT codes to reuse instead of generating new ones
+        """
         try:
             # Parse patient input to extract individual fields
             symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content = self._parse_patient_input(patient_input)
@@ -164,19 +169,22 @@ class MedicalAnalysisService:
             else:
                 logger.warning("⚠️  Cannot generate search query - missing ICD-10 description or user diagnosis")
             
-            # Predict relevant CPT codes using the search query terms
-            cpt_codes = []
-            if search_query:
-                # Parse search query to extract individual terms (split by " OR ")
-                search_terms = [term.strip() for term in search_query.split(" OR ") if term.strip()]
-                logger.info(f"🔍 Predicting CPT codes for {len(search_terms)} diagnosis terms: {', '.join(search_terms[:3])}{'...' if len(search_terms) > 3 else ''}")
-                cpt_codes = await self.predict_cpt_codes(search_terms)
-                if cpt_codes:
-                    logger.info(f"✅ Predicted {len(cpt_codes)} CPT codes")
-                else:
-                    logger.warning(f"⚠️  No CPT codes predicted")
+            # Predict relevant CPT codes using the search query terms (or reuse provided codes)
+            if cpt_codes is not None:
+                logger.info(f"♻️  Reusing provided CPT codes: {len(cpt_codes)} codes")
             else:
-                logger.warning("⚠️  Cannot predict CPT codes - no search query generated")
+                cpt_codes = []
+                if search_query:
+                    # Parse search query to extract individual terms (split by " OR ")
+                    search_terms = [term.strip() for term in search_query.split(" OR ") if term.strip()]
+                    logger.info(f"🔍 Predicting CPT codes for {len(search_terms)} diagnosis terms: {', '.join(search_terms[:3])}{'...' if len(search_terms) > 3 else ''}")
+                    cpt_codes = await self.predict_cpt_codes(search_terms)
+                    if cpt_codes:
+                        logger.info(f"✅ Predicted {len(cpt_codes)} CPT codes")
+                    else:
+                        logger.warning(f"⚠️  No CPT codes predicted")
+                else:
+                    logger.warning("⚠️  Cannot predict CPT codes - no search query generated")
             
             # Extract treatment options from diagnoses if available
             treatment_options = []

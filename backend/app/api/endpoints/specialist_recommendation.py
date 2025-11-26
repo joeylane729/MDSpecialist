@@ -23,7 +23,7 @@ async def get_specialist_recommendations(
     medications: Optional[str] = Form(None),
     surgical_history: Optional[str] = Form(None),
     state: Optional[str] = Form(None),
-
+    cpt_codes_json: Optional[str] = Form(None),  # Optional JSON string of CPT codes to reuse
     files: List[UploadFile] = File([]),
     db: Session = Depends(get_db)
 ):
@@ -32,12 +32,26 @@ async def get_specialist_recommendations(
     
     This endpoint processes patient information and returns intelligent
     specialist recommendations based on Pinecone data analysis.
+    
+    Args:
+        cpt_codes_json: Optional JSON string of CPT codes to reuse from previous medical analysis.
+                       This avoids duplicate GPT calls for CPT code prediction.
+                       Format: [{"code": "12345", "description": "..."}, ...]
     """
     try:
         # Log endpoint call
         logger.info("🚀 [Backend] /api/v1/specialist-recommendations endpoint called")
         logger.info(f"🔍 [Backend] State parameter received: {state}")
         log_endpoint_call("Specialist recommendations", symptoms, diagnosis)
+        
+        # Parse optional CPT codes if provided
+        cpt_codes = None
+        if cpt_codes_json:
+            try:
+                cpt_codes = json.loads(cpt_codes_json)
+                logger.info(f"♻️  [Backend] Received {len(cpt_codes)} pre-generated CPT codes to reuse")
+            except json.JSONDecodeError as e:
+                logger.warning(f"⚠️  [Backend] Failed to parse CPT codes JSON: {e}. Will generate new CPT codes.")
         
         # Initialize the LangChain service with database session
         langchain_service = LangChainSpecialistRecommendationService(db)
@@ -55,7 +69,8 @@ async def get_specialist_recommendations(
         # Get recommendations
         recommendations = await langchain_service.get_specialist_recommendations(
             patient_input=patient_input,
-            state=state
+            state=state,
+            cpt_codes=cpt_codes
         )
         
         # Log response information

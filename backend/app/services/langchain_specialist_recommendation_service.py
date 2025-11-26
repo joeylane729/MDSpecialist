@@ -52,15 +52,24 @@ class LangChainSpecialistRecommendationService:
     async def get_specialist_recommendations(
         self,
         patient_input: str,
-        state: Optional[str] = None
+        state: Optional[str] = None,
+        cpt_codes: Optional[List[Dict[str, str]]] = None
     ) -> RecommendationResponse:
-        """Get specialist recommendations using LangChain."""
+        """Get specialist recommendations using LangChain.
+        
+        Args:
+            patient_input: Patient input string
+            state: Optional state filter for CMS API
+            cpt_codes: Optional pre-generated CPT codes to reuse (avoids duplicate GPT calls)
+        """
         start_time = datetime.now()
         
         try:
             # Step 1: Comprehensive medical analysis and patient processing
             logger.info("🔍 Step 1: Performing comprehensive medical analysis with LangChain...")
-            medical_analysis_results = await self.medical_analysis.comprehensive_analysis(patient_input)
+            if cpt_codes is not None:
+                logger.info(f"♻️  Reusing provided CPT codes ({len(cpt_codes)} codes) to avoid duplicate generation")
+            medical_analysis_results = await self.medical_analysis.comprehensive_analysis(patient_input, cpt_codes=cpt_codes)
             
             # Step 1.5: Query CMS API with CPT codes from medical analysis
             logger.info("🔍 Step 1.5: Querying CMS API with CPT codes...")
@@ -204,6 +213,8 @@ class LangChainSpecialistRecommendationService:
             
             # Step 1: Get medical analysis
             logger.info("🔍 Step 1: Performing medical analysis for NPI ranking...")
+            # Note: For NPI ranking, we could also accept pre-generated CPT codes, but typically
+            # this is called separately so we generate fresh CPT codes here
             medical_analysis_results = await self.medical_analysis.comprehensive_analysis(patient_input)
             
             # Step 2: Use shared Pinecone specialist information (required)
