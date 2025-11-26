@@ -523,11 +523,12 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
             # Format the terms as a readable list
             terms_text = "\n".join([f"- {term.strip()}" for term in search_query_terms if term.strip()])
             
-            prompt_template = """Give an exhaustive list of CPT codes that could possibly be used by a neurosurgeon to treat patients with any of these diagnoses:
+            prompt_template = """Give an exhaustive list of primary CPT codes that could possibly be used by a neurosurgeon to treat patients with any of these diagnoses:
 
 {diagnosis_terms}
 
 IMPORTANT: 
+- Do not include any add-on CPT codes
 - Escape all quotes in descriptions (use \\" for quotes inside strings)
 - Keep descriptions concise (under 100 characters)
 - Do NOT include newlines in description strings
