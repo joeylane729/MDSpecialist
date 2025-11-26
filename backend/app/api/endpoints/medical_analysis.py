@@ -6,12 +6,14 @@ and treatment options without specialist retrieval.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from ...database import get_db
 from ...services.medical_analysis_service import MedicalAnalysisService
 from ..utils.patient_input_processor import build_patient_input, log_endpoint_call, log_response_info
 import logging
+import json
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -66,14 +68,31 @@ async def get_medical_analysis(
         # Log response information
         log_response_info("Medical analysis", analysis_results)
         
+        # Log response size and structure for debugging
+        try:
+            response_size = len(json.dumps(analysis_results))
+            logger.info(f"📊 [Backend] Analysis results size: {response_size} bytes")
+            logger.debug(f"📊 [Backend] Analysis results keys: {list(analysis_results.keys()) if isinstance(analysis_results, dict) else 'Not a dict'}")
+        except Exception as e:
+            logger.warning(f"⚠️ [Backend] Could not calculate response size: {e}")
+        
         response = {
             "status": "success",
             "patient_profile": analysis_results,
             "message": "Medical analysis completed successfully"
         }
         
-        logger.info("📤 [Backend] Medical analysis endpoint returning response")
-        return response
+        # Validate response is JSON serializable before returning
+        try:
+            json.dumps(response)  # Test serialization
+            logger.info("📤 [Backend] Medical analysis endpoint returning response (validated JSON serializable)")
+        except (TypeError, ValueError) as json_error:
+            logger.error(f"❌ [Backend] Response is not JSON serializable: {json_error}")
+            logger.error(f"❌ [Backend] Problematic data: {str(response)[:500]}")
+            raise HTTPException(status_code=500, detail=f"Response serialization error: {str(json_error)}")
+        
+        # Use JSONResponse to ensure proper serialization and headers
+        return JSONResponse(content=response)
         
     except Exception as e:
         logger.error(f"❌ [Backend] Error in medical analysis: {str(e)}")
