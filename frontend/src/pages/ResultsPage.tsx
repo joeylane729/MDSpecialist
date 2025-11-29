@@ -1141,20 +1141,24 @@ const ResultsPage: React.FC = () => {
                 const searchQuery = searchParams?.search_query || location.state?.aiRecommendations?.patient_profile?.search_query;
                 const hasCptCodes = cptCodes || searchParams?.cpt_codes;
                 
-                if (!treatmentOptions || treatmentOptions.length === 0 || !searchQuery) {
+                // Show button if we have treatment options
+                if (!treatmentOptions || treatmentOptions.length === 0) {
                   return null;
                 }
                 
+                // Don't show button if CPT codes already exist
                 if (hasCptCodes) {
-                  return null; // Don't show button if CPT codes already exist
+                  return null;
                 }
                 
+                // Always show the button (will be disabled if searchQuery is missing)
                 return (
                   <div className="text-center mt-6">
                     <button
                       onClick={handleGenerateCPTCodes}
-                      disabled={isGeneratingCPTCodes}
+                      disabled={isGeneratingCPTCodes || !searchQuery}
                       className="inline-flex items-center gap-3 bg-gradient-to-r from-green-600 to-teal-600 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:from-green-700 hover:to-teal-700 focus:ring-4 focus:ring-green-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                      title={!searchQuery ? "Search query is required to generate CPT codes" : ""}
                     >
                       {isGeneratingCPTCodes ? (
                         <>
@@ -1170,6 +1174,9 @@ const ResultsPage: React.FC = () => {
                         </>
                       )}
                     </button>
+                    {!searchQuery && (
+                      <p className="text-sm text-gray-500 mt-2">Waiting for search query to be generated...</p>
+                    )}
                   </div>
                 );
               })()}
@@ -2270,15 +2277,15 @@ const ResultsPage: React.FC = () => {
           </div>
         )}
         
-        {/* Bottom Button - Only show in assessment view */}
-        {activeView === 'assessment' && (
+        {/* Bottom Button - Only show in assessment view if CPT codes have been generated */}
+        {activeView === 'assessment' && (cptCodes || searchParams?.cpt_codes) && (
           <div className="text-center mt-8 mb-6">
             <button
               onClick={handleShowSpecialists}
-              disabled={isLoading}
+              disabled={isGeneratingSpecialists}
               className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
-              {isLoading ? (
+              {isGeneratingSpecialists ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                   Generating specialists...
