@@ -20,7 +20,7 @@ class MedicalAnalysisService:
     """Service for comprehensive medical analysis including specialty determination, ICD-10 coding, and diagnosis prediction."""
     
     def __init__(self, db: Session = None):
-        self.llm = ChatOpenAI(model="gpt-4o", temperature=0.1)
+        self.llm = ChatOpenAI(model="gpt-5.1", temperature=0.1)
         self.db = db
         
         # Patient processing prompt
@@ -538,8 +538,11 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
             
             prompt_template = """Give an exhaustive list of primary CPT codes that could possibly be used by a neurosurgeon to treat patients with any of these diagnoses and treatment options:
 
-Diagnoses: {diagnosis_terms}
-Treatment Options: {treatment_options}
+Diagnoses: 
+{diagnosis_terms}
+
+Treatment Options: 
+{treatment_options}
 
 IMPORTANT: 
 - Do not include any add-on CPT codes
