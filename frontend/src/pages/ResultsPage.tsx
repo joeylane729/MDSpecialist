@@ -791,7 +791,8 @@ const ResultsPage: React.FC = () => {
       const rankingRequest: NPIRankingRequest = {
         npi_providers: npiData.providers,
         patient_input: `Symptoms: ${searchParams?.symptoms}\nDiagnosis: ${searchParams?.diagnosis}`,
-        shared_specialist_information: specialistResponse.shared_specialist_information || []
+        shared_specialist_information: specialistResponse.shared_specialist_information || [],
+        cms_data: specialistResponse.cms_data // Pass CMS data for clinical volume bonus
       };
 
       const rankingResponse = await rankNPIProviders(rankingRequest);

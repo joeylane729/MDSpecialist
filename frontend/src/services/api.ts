@@ -367,6 +367,7 @@ export interface NPIRankingRequest {
   npi_providers: any[];
   patient_input: string;
   shared_specialist_information?: any[];
+  cms_data?: any; // Optional CMS data for clinical volume bonus
 }
 
 export interface VumediContent {

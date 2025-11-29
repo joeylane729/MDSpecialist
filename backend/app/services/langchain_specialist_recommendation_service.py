@@ -199,7 +199,8 @@ class LangChainSpecialistRecommendationService:
         self,
         npi_providers: List[Dict[str, Any]],
         patient_input: str,
-        shared_specialist_information: Optional[List[Dict[str, Any]]] = None
+        shared_specialist_information: Optional[List[Dict[str, Any]]] = None,
+        top_cms_npis: Optional[set] = None
     ) -> List[str]:
         """
         Rank NPI providers based on Pinecone specialist information.
@@ -229,10 +230,10 @@ class LangChainSpecialistRecommendationService:
             logger.info(f"📋 Treatment groups: {list(shared_specialist_information.keys()) if isinstance(shared_specialist_information, dict) else 'Not grouped'}")
             
             # Step 3: Use treatment-specific ranking service to rank NPI providers
-            # Note: CMS results are not available in this context (called from NPI ranking endpoint)
-            # Clinical volume bonus will only be applied when ranking from specialist recommendations endpoint
-            top_cms_npis = None
+            # Use top_cms_npis if provided (extracted from CMS data in the endpoint)
             logger.info("🔍 Step 3: Ranking NPI providers based on treatment-specific Pinecone data...")
+            if top_cms_npis:
+                logger.info(f"🏥 Using {len(top_cms_npis)} top CMS NPIs for clinical volume bonus")
             ranking_result = await self.ranking_service.rank_npi_providers_by_treatment(
                 npi_providers=npi_providers,
                 treatment_pinecone_data=shared_specialist_information,

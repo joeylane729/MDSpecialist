@@ -22,6 +22,7 @@ class NPIRankingRequest(BaseModel):
     npi_providers: List[Dict[str, Any]]
     patient_input: str
     shared_specialist_information: Optional[Dict[str, Any]] = None
+    cms_data: Optional[Dict[str, Any]] = None  # CMS data for clinical volume bonus
 
 @router.post("/rank-npi-providers")
 async def rank_npi_providers(
@@ -55,6 +56,20 @@ async def rank_npi_providers(
         else:
             logger.info("⚠️ [NPI Ranking] No shared specialist information provided")
         
+        # Extract top 25 NPIs from CMS results for clinical volume bonus
+        top_cms_npis = None
+        if request.cms_data and isinstance(request.cms_data, dict):
+            cms_providers = request.cms_data.get('results', [])
+            if cms_providers and isinstance(cms_providers, list):
+                # Extract NPIs from top 25 CMS providers (already sorted by total services)
+                top_cms_npis = set()
+                for provider in cms_providers[:25]:  # Top 25 providers
+                    npi = provider.get('Rndrng_NPI')
+                    if npi:
+                        top_cms_npis.add(str(npi))  # Normalize to string for comparison
+                if top_cms_npis:
+                    logger.info(f"🏥 [NPI Ranking] Extracted {len(top_cms_npis)} NPIs from top 25 CMS results for clinical volume bonus")
+        
         # Initialize the LangChain service
         langchain_service = LangChainSpecialistRecommendationService(db)
         
@@ -62,7 +77,8 @@ async def rank_npi_providers(
         ranking_result = await langchain_service.rank_npi_providers_with_pinecone(
             npi_providers=request.npi_providers,
             patient_input=request.patient_input,
-            shared_specialist_information=shared_data
+            shared_specialist_information=shared_data,
+            top_cms_npis=top_cms_npis
         )
         
         treatment_rankings = ranking_result['treatment_rankings']
