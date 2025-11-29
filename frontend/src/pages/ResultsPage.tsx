@@ -645,6 +645,10 @@ const ResultsPage: React.FC = () => {
       setIsLoading(true);
       
       // Step 1: Get specialist recommendations
+      // Reuse CPT codes from medical analysis if available to avoid duplicate generation
+      const existingCptCodes = searchParams?.cpt_codes || 
+                                location.state?.aiRecommendations?.patient_profile?.cpt_codes;
+      
       const specialistRequest: SpecialistRecommendationRequest = {
         symptoms: searchParams?.symptoms || '',
         diagnosis: searchParams?.diagnosis || '',
@@ -652,8 +656,13 @@ const ResultsPage: React.FC = () => {
         medications: location.state?.medications || '',
         surgical_history: location.state?.surgicalHistory || '',
         state: searchParams?.state || location.state?.state || '',
-        files: []
+        files: [],
+        cpt_codes: existingCptCodes  // Pass existing CPT codes to reuse them
       };
+
+      if (existingCptCodes && existingCptCodes.length > 0) {
+        console.log('♻️ [Frontend] Reusing', existingCptCodes.length, 'CPT codes from medical analysis');
+      }
 
       const specialistResponse = await getSpecialistRecommendations(specialistRequest);
       

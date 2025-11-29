@@ -169,6 +169,7 @@ export interface SpecialistRecommendationRequest {
   surgical_history?: string;
   state?: string;
   files?: File[];
+  cpt_codes?: Array<{ code: string; description: string }>;  // Optional CPT codes to reuse (avoids duplicate generation)
 }
 
 export const getSpecialistRecommendations = async (
@@ -191,6 +192,12 @@ export const getSpecialistRecommendations = async (
     }
     if (request.state) {
       formData.append('state', request.state);
+    }
+    
+    // Add CPT codes if provided (to reuse from previous medical analysis)
+    if (request.cpt_codes && request.cpt_codes.length > 0) {
+      formData.append('cpt_codes_json', JSON.stringify(request.cpt_codes));
+      console.log('♻️ [Frontend] Passing', request.cpt_codes.length, 'pre-generated CPT codes to reuse');
     }
 
     
