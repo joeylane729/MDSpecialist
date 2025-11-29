@@ -1028,7 +1028,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                     ]
                 }}
                 
-                Provide all relevant treatment options based on the diagnosis. There is no limit on the number of treatment options you can provide.
+                Provide all relevant treatment options based on the diagnosis.
                 
                 """
             )
