@@ -232,8 +232,6 @@ class LangChainSpecialistRecommendationService:
             # Note: CMS results are not available in this context (called from NPI ranking endpoint)
             # Clinical volume bonus will only be applied when ranking from specialist recommendations endpoint
             top_cms_npis = None
-            
-            # Step 3: Use treatment-specific ranking service to rank NPI providers
             logger.info("🔍 Step 3: Ranking NPI providers based on treatment-specific Pinecone data...")
             ranking_result = await self.ranking_service.rank_npi_providers_by_treatment(
                 npi_providers=npi_providers,
