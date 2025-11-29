@@ -926,7 +926,7 @@ const ResultsPage: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isGeneratingSpecialists) {
     return (
       <div className="fixed inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center overflow-hidden">
         {/* Background decorative elements */}
@@ -943,7 +943,7 @@ const ResultsPage: React.FC = () => {
           
           {/* Main heading */}
           <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-6">
-            Finding specialists in your area...
+            {isGeneratingSpecialists ? 'Generating specialist recommendations...' : 'Finding specialists in your area...'}
           </h2>
           
           {/* Sleek info card */}
@@ -958,7 +958,9 @@ const ResultsPage: React.FC = () => {
               </div>
               <div className="flex-1">
                 <p className="text-gray-700 text-sm leading-relaxed">
-                  <span className="font-semibold text-gray-900">Please wait...</span> This process may take 1-2 minutes as we analyze thousands of specialists and match them to your specific needs.
+                  <span className="font-semibold text-gray-900">Please wait...</span> {isGeneratingSpecialists 
+                    ? 'This process may take 2-3 minutes as we analyze thousands of specialists and match them to your specific needs.'
+                    : 'This process may take 1-2 minutes as we analyze thousands of specialists and match them to your specific needs.'}
                 </p>
               </div>
             </div>
