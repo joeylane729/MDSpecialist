@@ -228,19 +228,10 @@ class LangChainSpecialistRecommendationService:
             logger.info(f"🔍 Step 2: Using shared specialist records")
             logger.info(f"📋 Treatment groups: {list(shared_specialist_information.keys()) if isinstance(shared_specialist_information, dict) else 'Not grouped'}")
             
-            # Step 3: Extract top 25 NPIs from CMS results for clinical volume bonus
+            # Step 3: Use treatment-specific ranking service to rank NPI providers
+            # Note: CMS results are not available in this context (called from NPI ranking endpoint)
+            # Clinical volume bonus will only be applied when ranking from specialist recommendations endpoint
             top_cms_npis = None
-            if cms_results and isinstance(cms_results, dict):
-                cms_providers = cms_results.get('results', [])
-                if cms_providers and isinstance(cms_providers, list):
-                    # Extract NPIs from top 25 CMS providers (already sorted by total services)
-                    top_cms_npis = set()
-                    for provider in cms_providers[:25]:  # Top 25 providers
-                        npi = provider.get('Rndrng_NPI')
-                        if npi:
-                            top_cms_npis.add(str(npi))  # Normalize to string for comparison
-                    if top_cms_npis:
-                        logger.info(f"🏥 Extracted {len(top_cms_npis)} NPIs from top 25 CMS results for clinical volume bonus")
             
             # Step 3: Use treatment-specific ranking service to rank NPI providers
             logger.info("🔍 Step 3: Ranking NPI providers based on treatment-specific Pinecone data...")
