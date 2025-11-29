@@ -7,7 +7,7 @@ then uses LangChain to rank the NPI providers based on relevance to the Pinecone
 
 import logging
 import time
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional, Tuple, Set
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 from ..models.specialist_recommendation import SpecialistRecommendation
@@ -319,7 +319,8 @@ class LangChainRankingService:
         npi_providers: List[Dict[str, Any]], 
         pinecone_data: List[Dict[str, Any]], 
         patient_profile: Dict[str, Any],
-        max_providers: int = 10000
+        max_providers: int = 10000,
+        top_cms_npis: Optional[Set[str]] = None
     ) -> Dict[str, Any]:
         """
         Rank NPI providers based on simple exact name matching with Pinecone data.
@@ -329,6 +330,7 @@ class LangChainRankingService:
             pinecone_data: List of specialist information from Pinecone (Vumedi/PubMed)
             patient_profile: Patient profile with symptoms, diagnosis, etc. (not used, kept for compatibility)
             max_providers: Maximum number of providers to rank (default: 10000)
+            top_cms_npis: Optional set of NPI strings for top 25 CMS providers (for clinical volume bonus)
             
         Returns:
             Dictionary with 'ranking' (list of NPI numbers), 'provider_links', 'provider_scores', and 'explanation'
@@ -624,7 +626,14 @@ class LangChainRankingService:
                     residency_score = residency_scores.get(npi_str, 0)
                     cert_info = certification_scores.get(npi_str, {})
                     certification_points = cert_info.get('certification_points', 0) if isinstance(cert_info, dict) else 0
-                    total_score = content_score + med_school_score + residency_score + experience_points + certification_points
+                    
+                    # Check if provider is in top 25 CMS results (clinical volume bonus)
+                    clinical_volume_points = 0
+                    if top_cms_npis and npi_str in top_cms_npis:
+                        clinical_volume_points = 20
+                        logger.debug(f"🔍 DEBUG: NPI {npi} is in top 25 CMS results - adding 20 clinical volume points")
+                    
+                    total_score = content_score + med_school_score + residency_score + experience_points + certification_points + clinical_volume_points
                     
                     # Log if medical school score is missing
                     if med_school_score == 0 and npi_str in med_school_scores:
@@ -647,7 +656,8 @@ class LangChainRankingService:
                     logger.debug(
                         f"🔍 DEBUG: NPI {npi} - Content score: {content_score}, Med school: {med_school_score}, "
                         f"Residency: {residency_score}, Experience: {experience_points} (from {years_experience} years), "
-                        f"Certification: {certification_points} (ABNS: {abns_points}, AOA: {aoa_points}), Total: {total_score}"
+                        f"Certification: {certification_points} (ABNS: {abns_points}, AOA: {aoa_points}), "
+                        f"Clinical Volume: {clinical_volume_points}, Total: {total_score}"
                     )
                     
                     provider_scores[npi] = {
@@ -657,6 +667,7 @@ class LangChainRankingService:
                         'residency_score': residency_score,
                         'experience_points': experience_points,
                         'certification_points': certification_points,
+                        'clinical_volume_points': clinical_volume_points,
                         'is_certified': is_certified,
                         'has_abns': has_abns,
                         'has_aoa': has_aoa,
@@ -1056,7 +1067,8 @@ class LangChainRankingService:
         npi_providers: List[Dict[str, Any]],
         treatment_pinecone_data: Dict[str, Any],
         patient_profile: Dict[str, Any],
-        max_providers: int = 10000
+        max_providers: int = 10000,
+        top_cms_npis: Optional[Set[str]] = None
     ) -> Dict[str, Any]:
         """
         Rank ALL NPI providers by score (publications + videos), then by GPT relevance within score groups.
@@ -1066,6 +1078,7 @@ class LangChainRankingService:
             treatment_pinecone_data: Dictionary with treatment-specific Pinecone data
             patient_profile: Patient profile with symptoms, diagnosis, etc.
             max_providers: Maximum number of providers to rank per treatment (default: 10000)
+            top_cms_npis: Optional set of NPI strings for top 25 CMS providers (for clinical volume bonus)
             
         Returns:
             Dictionary with treatment-specific rankings showing ALL providers with scores
@@ -1107,7 +1120,8 @@ class LangChainRankingService:
                     npi_providers=npi_providers,
                     pinecone_data=pinecone_data,
                     patient_profile=patient_profile,
-                    max_providers=max_providers
+                    max_providers=max_providers,
+                    top_cms_npis=top_cms_npis
                 )
                 
                 # Get the ranked NPIs and scores from GPT (already calculated with new scoring system)
@@ -1156,7 +1170,15 @@ class LangChainRankingService:
                         if provider_info:
                             years_experience_raw = provider_info.get('yearsExperience', provider_info.get('years_experience'))
                         years_experience, experience_points = self._calculate_experience_points(years_experience_raw)
-                        total_score = med_school_score + experience_points + certification_points
+                        
+                        # Check if unmatched provider is in top 25 CMS results (clinical volume bonus)
+                        clinical_volume_points = 0
+                        npi_str = str(npi)
+                        if top_cms_npis and npi_str in top_cms_npis:
+                            clinical_volume_points = 20
+                            logger.debug(f"🔍 DEBUG: Unmatched NPI {npi} is in top 25 CMS results - adding 20 clinical volume points")
+                        
+                        total_score = med_school_score + experience_points + certification_points + clinical_volume_points
                         provider_scores[npi] = {
                             'npi': npi,
                             'score': total_score,
@@ -1168,6 +1190,7 @@ class LangChainRankingService:
                             'pubmed_last_author_count': 0,
                             'pubmed_base_points': 0,
                             'pubmed_weighted_points': 0,
+                            'clinical_volume_points': clinical_volume_points,
                             'pubmed_quartile_q1_count': 0,
                             'pubmed_quartile_q2_count': 0,
                             'pubmed_quartile_q3_count': 0,

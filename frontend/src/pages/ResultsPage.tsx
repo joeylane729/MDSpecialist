@@ -212,6 +212,7 @@ const ResultsPage: React.FC = () => {
       residency_score = 0,
       experience_points = 0,
       certification_points = 0,
+      clinical_volume_points = 0,
       abns_points = 0,
       aoa_points = 0,
       years_experience
@@ -303,6 +304,10 @@ const ResultsPage: React.FC = () => {
       if (certParts.length > 0) {
         breakdownParts.push(certParts.join(', '));
       }
+    }
+    
+    if (clinical_volume_points > 0) {
+      breakdownParts.push(`Clinical volume: Top 25 CMS provider = ${clinical_volume_points} point${clinical_volume_points !== 1 ? 's' : ''}`);
     }
     
     const breakdown = breakdownParts.length > 0 
