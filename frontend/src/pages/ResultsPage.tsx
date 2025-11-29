@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { NPIProvider, getSpecialistRecommendations, SpecialistRecommendationRequest, searchNPIProviders, rankNPIProviders, NPISearchRequest, NPIRankingRequest, ProviderContent, generateCPTCodes } from '../services/api';
@@ -91,6 +91,7 @@ const ResultsPage: React.FC = () => {
   const [isGeneratingCPTCodes, setIsGeneratingCPTCodes] = useState(false);
   const [isGeneratingSpecialists, setIsGeneratingSpecialists] = useState(false);
   const [selectedTreatmentIndices, setSelectedTreatmentIndices] = useState<Set<number>>(new Set());
+  const hasInitializedTreatments = useRef(false);
   
   // Set initial view based on search options
   useEffect(() => {
@@ -166,8 +167,13 @@ const ResultsPage: React.FC = () => {
     }
   }, [searchParams, cptCodes]);
   
-  // Initialize selected treatment indices - all checked by default
+  // Initialize selected treatment indices - all checked by default (only once)
   useEffect(() => {
+    // Only initialize once, even if searchParams changes later
+    if (hasInitializedTreatments.current) {
+      return;
+    }
+    
     // Only run if we have searchParams or aiRecommendations
     if (!searchParams && !location.state?.aiRecommendations) {
       return;
@@ -175,13 +181,14 @@ const ResultsPage: React.FC = () => {
     
     const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
     if (treatmentOptions && treatmentOptions.length > 0) {
-      // Only initialize if we don't have any selected yet or if the number of options changed
-      if (selectedTreatmentIndices.size === 0 || selectedTreatmentIndices.size !== treatmentOptions.length) {
+      // Only initialize if we don't have any selected yet
+      if (selectedTreatmentIndices.size === 0) {
         // Set all treatment options as selected by default
         setSelectedTreatmentIndices(new Set(treatmentOptions.map((_, index) => index)));
+        hasInitializedTreatments.current = true;
       }
     }
-  }, [searchParams, location.state?.aiRecommendations]);
+  }, [searchParams, location.state?.aiRecommendations, selectedTreatmentIndices.size]);
 
 
 
