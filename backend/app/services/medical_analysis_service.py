@@ -524,12 +524,10 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
             else:
                 treatment_options_text = "None specified"
             
-            prompt_template = """Give an exhaustive list of primary CPT codes that could possibly be used by a neurosurgeon to treat patients with any of these diagnoses and treatment options:
-
-Diagnoses: 
+            prompt_template = """Give an exhaustive list of primary CPT codes that could possibly be used by a neurosurgeon to treat patients with any of these diagnoses:
 {diagnosis_terms}
 
-Treatment Options: 
+Only consider CPT codes that could be used for the following treatment options: 
 {treatment_options}
 
 IMPORTANT: 
