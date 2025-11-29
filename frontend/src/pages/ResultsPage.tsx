@@ -1139,7 +1139,8 @@ const ResultsPage: React.FC = () => {
               {(() => {
                 const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
                 const searchQuery = searchParams?.search_query || location.state?.aiRecommendations?.patient_profile?.search_query;
-                const hasCptCodes = cptCodes || searchParams?.cpt_codes;
+                const existingCptCodes = cptCodes || searchParams?.cpt_codes;
+                const hasCptCodes = Array.isArray(existingCptCodes) && existingCptCodes.length > 0;
                 
                 // Show button if we have treatment options
                 if (!treatmentOptions || treatmentOptions.length === 0) {
@@ -1181,8 +1182,14 @@ const ResultsPage: React.FC = () => {
                 );
               })()}
               
-              {/* CPT Codes Section */}
-              {(cptCodes || searchParams?.cpt_codes) && (
+              {/* CPT Codes Section - only show if we have actual CPT codes */}
+              {(() => {
+                const existingCptCodes = cptCodes || searchParams?.cpt_codes;
+                const hasCptCodes = Array.isArray(existingCptCodes) && existingCptCodes.length > 0;
+                if (!hasCptCodes) {
+                  return null;
+                }
+                return (
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <h2 className="text-2xl font-semibold text-gray-900 mb-4">Relevant CPT Codes</h2>
                   
@@ -2300,7 +2307,10 @@ const ResultsPage: React.FC = () => {
               )}
             </button>
           </div>
-        )}
+            );
+          }
+          return null;
+        })()}
       </div>
       
       <style>{`
