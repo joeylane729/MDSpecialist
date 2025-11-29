@@ -169,11 +169,14 @@ const ResultsPage: React.FC = () => {
   // Initialize selected treatment indices - all checked by default
   useEffect(() => {
     const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
-    if (treatmentOptions && treatmentOptions.length > 0 && selectedTreatmentIndices.size === 0) {
-      // Set all treatment options as selected by default
-      setSelectedTreatmentIndices(new Set(treatmentOptions.map((_, index) => index)));
+    if (treatmentOptions && treatmentOptions.length > 0) {
+      // Only initialize if we don't have any selected yet or if the number of options changed
+      if (selectedTreatmentIndices.size === 0 || selectedTreatmentIndices.size !== treatmentOptions.length) {
+        // Set all treatment options as selected by default
+        setSelectedTreatmentIndices(new Set(treatmentOptions.map((_, index) => index)));
+      }
     }
-  }, [searchParams, location.state?.aiRecommendations, selectedTreatmentIndices.size]);
+  }, [searchParams, location.state?.aiRecommendations]);
 
 
 
