@@ -20,6 +20,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
   const [isInsuranceModalOpen, setIsInsuranceModalOpen] = useState(false);
   const [showAllVumedi, setShowAllVumedi] = useState(false);
   const [showAllPubMed, setShowAllPubMed] = useState(false);
+  const [isScoreBreakdownModalOpen, setIsScoreBreakdownModalOpen] = useState(false);
   
   const MAX_ITEMS_TO_SHOW = 5;
 
@@ -42,6 +43,60 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
     return 'bg-gradient-to-r from-red-500 to-pink-600';                         // Very poor (0 results)
   };
 
+  // Parse breakdown text into structured sections
+  const parseBreakdown = (breakdownText: string) => {
+    if (!breakdownText || breakdownText === 'No score data available') {
+      return { sections: [], total: null };
+    }
+
+    const lines = breakdownText.split('\n').filter(line => line.trim());
+    const sections: Array<{ title: string; items: string[]; isSubsection?: boolean }> = [];
+    let currentSection: { title: string; items: string[] } | null = null;
+    let total: string | null = null;
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      
+      // Check if it's a total line
+      if (trimmed.toLowerCase().startsWith('total:')) {
+        total = trimmed;
+        continue;
+      }
+
+      // Check if it's indented (sub-item)
+      const isIndented = /^\s{2,}/.test(line);
+      
+      // Check if it's a section title (contains colon, not indented, and might not have equals)
+      const hasColon = trimmed.includes(':');
+      const hasEquals = trimmed.includes('=');
+      const isTitle = hasColon && !isIndented && (!hasEquals || trimmed.includes('total:'));
+      
+      if (isTitle) {
+        // Save previous section
+        if (currentSection) {
+          sections.push(currentSection);
+        }
+        // Start new section
+        currentSection = { title: trimmed, items: [] };
+      } else if (currentSection) {
+        // Add item to current section (could be indented sub-item)
+        currentSection.items.push(trimmed);
+      } else if (!isIndented && !trimmed.toLowerCase().startsWith('total')) {
+        // Orphan line that's not a total, create a new section for it
+        if (trimmed) {
+          sections.push({ title: 'Score Components', items: [trimmed] });
+        }
+      }
+    }
+
+    // Add last section
+    if (currentSection) {
+      sections.push(currentSection);
+    }
+
+    return { sections, total };
+  };
+
   return (
     <>
       <div 
@@ -59,12 +114,16 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                 {provider.name}
               </h2>
               {score !== undefined && (
-                <div 
-                  className={`inline-flex items-center justify-center w-12 h-8 ${getScoreColor(score)} text-white text-sm font-bold rounded-lg shadow-sm cursor-help`}
-                  title={scoreBreakdown}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsScoreBreakdownModalOpen(true);
+                  }}
+                  className={`inline-flex items-center justify-center w-12 h-8 ${getScoreColor(score)} text-white text-sm font-bold rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow`}
+                  title="Click to view score breakdown"
                 >
                   {score}
-                </div>
+                </button>
               )}
             </div>
 
@@ -542,6 +601,113 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                 className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
               >
                 Submit for Approval
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Score Breakdown Modal */}
+      {isScoreBreakdownModalOpen && scoreBreakdown && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+          onClick={() => setIsScoreBreakdownModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-t-xl">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold mb-1">Score Breakdown</h2>
+                  <p className="text-blue-100 text-sm">{provider.name}</p>
+                </div>
+                <button
+                  onClick={() => setIsScoreBreakdownModalOpen(false)}
+                  className="text-white hover:text-gray-200 transition-colors p-2 hover:bg-white/20 rounded-lg"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              {score !== undefined && (
+                <div className="mt-4">
+                  <div className={`inline-flex items-center justify-center px-4 py-2 ${getScoreColor(score)} text-white text-lg font-bold rounded-lg shadow-lg`}>
+                    Total Score: {score} points
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              {(() => {
+                const { sections, total } = parseBreakdown(scoreBreakdown);
+                
+                if (sections.length === 0) {
+                  return (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No score breakdown available</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-4">
+                    {sections.map((section, index) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        <h3 className="font-semibold text-gray-900 mb-3 text-lg">{section.title}</h3>
+                        {section.items.length > 0 ? (
+                          <ul className="space-y-2">
+                            {section.items.map((item, itemIndex) => {
+                              // Extract point value if present
+                              const pointMatch = item.match(/= (\d+) point/i);
+                              const points = pointMatch ? pointMatch[1] : null;
+                              const itemWithoutPoints = item.replace(/\s*=\s*\d+\s*point[s]?.*$/i, '').trim();
+                              
+                              return (
+                                <li key={itemIndex} className="flex items-start gap-3">
+                                  <span className="text-blue-600 mt-1">•</span>
+                                  <div className="flex-1">
+                                    <span className="text-gray-700">{itemWithoutPoints}</span>
+                                    {points && (
+                                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">
+                                        +{points} pt{points !== '1' ? 's' : ''}
+                                      </span>
+                                    )}
+                                  </div>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        ) : (
+                          <p className="text-gray-500 text-sm">No items in this section</p>
+                        )}
+                      </div>
+                    ))}
+                    
+                    {total && (
+                      <div className="mt-6 pt-4 border-t-2 border-gray-300">
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4">
+                          <p className="text-lg font-bold text-gray-900 text-center">{total}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 bg-gray-50 px-6 py-4 rounded-b-xl border-t border-gray-200">
+              <button
+                onClick={() => setIsScoreBreakdownModalOpen(false)}
+                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+              >
+                Close
               </button>
             </div>
           </div>
