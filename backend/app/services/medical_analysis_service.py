@@ -157,6 +157,19 @@ class MedicalAnalysisService:
                 else:
                     logger.warning(f"⚠️  Could not find ICD-10 description for: {medical_analysis['predicted_icd10']}")
             
+            # Extract treatment options from diagnoses if available (needed for CPT code prediction)
+            treatment_options = []
+            if medical_analysis["diagnoses"] and "treatment_options" in medical_analysis["diagnoses"]:
+                treatment_options = medical_analysis["diagnoses"]["treatment_options"]
+                logger.info(f"📋 Found {len(treatment_options)} treatment options:")
+                for i, option in enumerate(treatment_options):
+                    logger.info(f"   {i+1}. {option.get('name', 'Unnamed')}")
+            else:
+                logger.warning("⚠️  No treatment options found in medical analysis")
+                logger.debug(f"🔍 Available keys: {list(medical_analysis.keys())}")
+                if "diagnoses" in medical_analysis:
+                    logger.debug(f"🔍 Diagnoses keys: {list(medical_analysis['diagnoses'].keys())}")
+            
             # Generate search query for Pinecone using the same prompt as LangChainRetrievalStrategies
             search_query = ""
             if medical_analysis.get("icd10_description") and diagnosis:
@@ -169,7 +182,7 @@ class MedicalAnalysisService:
             else:
                 logger.warning("⚠️  Cannot generate search query - missing ICD-10 description or user diagnosis")
             
-            # Predict relevant CPT codes using the search query terms (or reuse provided codes)
+            # Predict relevant CPT codes using the search query terms and treatment options (or reuse provided codes)
             cpt_prompt_text = ""
             if cpt_codes is not None:
                 logger.info(f"♻️  Reusing provided CPT codes: {len(cpt_codes)} codes")
@@ -179,26 +192,13 @@ class MedicalAnalysisService:
                     # Parse search query to extract individual terms (split by " OR ")
                     search_terms = [term.strip() for term in search_query.split(" OR ") if term.strip()]
                     logger.info(f"🔍 Predicting CPT codes for {len(search_terms)} diagnosis terms: {', '.join(search_terms[:3])}{'...' if len(search_terms) > 3 else ''}")
-                    cpt_codes, cpt_prompt_text = await self.predict_cpt_codes(search_terms)
+                    cpt_codes, cpt_prompt_text = await self.predict_cpt_codes(search_terms, treatment_options)
                     if cpt_codes:
                         logger.info(f"✅ Predicted {len(cpt_codes)} CPT codes")
                     else:
                         logger.warning(f"⚠️  No CPT codes predicted")
                 else:
                     logger.warning("⚠️  Cannot predict CPT codes - no search query generated")
-            
-            # Extract treatment options from diagnoses if available
-            treatment_options = []
-            if medical_analysis["diagnoses"] and "treatment_options" in medical_analysis["diagnoses"]:
-                treatment_options = medical_analysis["diagnoses"]["treatment_options"]
-                logger.info(f"📋 Found {len(treatment_options)} treatment options:")
-                for i, option in enumerate(treatment_options):
-                    logger.info(f"   {i+1}. {option.get('name', 'Unnamed')}")
-            else:
-                logger.warning("⚠️  No treatment options found in medical analysis")
-                logger.debug(f"🔍 Available keys: {list(medical_analysis.keys())}")
-                if "diagnoses" in medical_analysis:
-                    logger.debug(f"🔍 Diagnoses keys: {list(medical_analysis['diagnoses'].keys())}")
             
             # Log diagnosis structure for debugging
             logger.debug(f"🔍 Diagnosis structure type: {type(medical_analysis['diagnoses'])}")
@@ -508,13 +508,15 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
 
     async def predict_cpt_codes(
         self,
-        search_query_terms: List[str]
+        search_query_terms: List[str],
+        treatment_options: Optional[List[Dict[str, str]]] = None
     ) -> Tuple[List[Dict[str, str]], str]:
         """
-        Use GPT to predict relevant CPT codes that a neurosurgeon would use to treat the given diagnosis terms.
+        Use GPT to predict relevant CPT codes that a neurosurgeon would use to treat the given diagnosis terms and treatment options.
         
         Args:
             search_query_terms: List of diagnosis terms/descriptions from the search query (e.g., ["acoustic neuroma", "vestibular schwannoma", ...])
+            treatment_options: Optional list of treatment options with name, outcomes, and complications
             
         Returns:
             Tuple of (List of dictionaries containing CPT code and description, rendered prompt text with actual values)
@@ -523,9 +525,21 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
             # Format the terms as a readable list
             terms_text = "\n".join([f"- {term.strip()}" for term in search_query_terms if term.strip()])
             
-            prompt_template = """Give an exhaustive list of primary CPT codes that could possibly be used by a neurosurgeon to treat patients with any of these diagnoses:
+            # Format treatment options for the prompt
+            treatment_options_text = ""
+            if treatment_options and len(treatment_options) > 0:
+                treatment_lines = []
+                for i, option in enumerate(treatment_options, 1):
+                    name = option.get('name', f'Treatment {i}')
+                    treatment_lines.append(f"{i}. {name}")
+                treatment_options_text = "\n".join(treatment_lines)
+            else:
+                treatment_options_text = "None specified"
+            
+            prompt_template = """Give an exhaustive list of primary CPT codes that could possibly be used by a neurosurgeon to treat patients with any of these diagnoses and treatment options:
 
-{diagnosis_terms}
+Diagnoses: {diagnosis_terms}
+Treatment Options: {treatment_options}
 
 IMPORTANT: 
 - Do not include any add-on CPT codes
@@ -550,17 +564,21 @@ Return the response in this exact JSON format:
 Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO additional text."""
             
             prompt = PromptTemplate(
-                input_variables=["diagnosis_terms"],
+                input_variables=["diagnosis_terms", "treatment_options"],
                 template=prompt_template
             )
             
             # Render the prompt with actual values to capture what was sent to GPT
-            rendered_prompt = prompt_template.format(diagnosis_terms=terms_text)
+            rendered_prompt = prompt_template.format(
+                diagnosis_terms=terms_text,
+                treatment_options=treatment_options_text
+            )
             
             chain = prompt | self.llm
             
             response = await chain.ainvoke({
-                "diagnosis_terms": terms_text
+                "diagnosis_terms": terms_text,
+                "treatment_options": treatment_options_text
             })
             
             # Extract the JSON response
