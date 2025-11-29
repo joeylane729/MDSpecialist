@@ -1255,7 +1255,8 @@ const ResultsPage: React.FC = () => {
                     </button>
                   </div>
                 </div>
-              )}
+                );
+              })()}
             </div>
         </>
         )}
