@@ -529,6 +529,7 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
 
 IMPORTANT: 
 - Do not include any add-on CPT codes
+- Do not include codes that start with 99XXX or 6178X
 - Escape all quotes in descriptions (use \\" for quotes inside strings)
 - Keep descriptions concise (under 100 characters)
 - Do NOT include newlines in description strings
