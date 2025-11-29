@@ -90,6 +90,7 @@ const ResultsPage: React.FC = () => {
   const [cptPromptText, setCptPromptText] = useState<string | null>(null);
   const [isGeneratingCPTCodes, setIsGeneratingCPTCodes] = useState(false);
   const [isGeneratingSpecialists, setIsGeneratingSpecialists] = useState(false);
+  const [selectedTreatmentIndices, setSelectedTreatmentIndices] = useState<Set<number>>(new Set());
   
   // Set initial view based on search options
   useEffect(() => {
@@ -164,6 +165,15 @@ const ResultsPage: React.FC = () => {
       }
     }
   }, [searchParams, cptCodes]);
+  
+  // Initialize selected treatment indices - all checked by default
+  useEffect(() => {
+    const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
+    if (treatmentOptions && treatmentOptions.length > 0 && selectedTreatmentIndices.size === 0) {
+      // Set all treatment options as selected by default
+      setSelectedTreatmentIndices(new Set(treatmentOptions.map((_, index) => index)));
+    }
+  }, [searchParams, location.state?.aiRecommendations, selectedTreatmentIndices.size]);
 
 
 
@@ -653,11 +663,19 @@ const ResultsPage: React.FC = () => {
       setIsGeneratingCPTCodes(true);
       
       // Get treatment options and search query from current data
-      const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
+      const allTreatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
       const searchQuery = searchParams?.search_query || location.state?.aiRecommendations?.patient_profile?.search_query;
       
-      if (!treatmentOptions || treatmentOptions.length === 0) {
+      if (!allTreatmentOptions || allTreatmentOptions.length === 0) {
         alert('Treatment options are required to generate CPT codes');
+        return;
+      }
+      
+      // Filter to only selected treatment options
+      const selectedTreatmentOptions = allTreatmentOptions.filter((_, index) => selectedTreatmentIndices.has(index));
+      
+      if (selectedTreatmentOptions.length === 0) {
+        alert('Please select at least one treatment option to generate CPT codes');
         return;
       }
       
@@ -668,7 +686,7 @@ const ResultsPage: React.FC = () => {
       
       const response = await generateCPTCodes({
         search_query: searchQuery,
-        treatment_options: treatmentOptions
+        treatment_options: selectedTreatmentOptions
       });
       
       // Update CPT codes state
@@ -1103,20 +1121,37 @@ const ResultsPage: React.FC = () => {
                 if (treatmentOptions && treatmentOptions.length > 0) {
                   return (
                     <div className="space-y-3">
-                      {treatmentOptions.map((treatment, index) => (
-                        <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-start gap-3">
-                            <span className="text-sm text-gray-700 font-bold">{index + 1}.</span>
-                            <div className="flex-1">
-                              <h4 className="font-medium text-gray-900 text-sm mb-2">{treatment.name}</h4>
-                              <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
-                                <div><span className="font-medium">Outcomes:</span> {treatment.outcomes}</div>
-                                <div><span className="font-medium">Complications:</span> {treatment.complications}</div>
+                      {treatmentOptions.map((treatment, index) => {
+                        const isChecked = selectedTreatmentIndices.has(index);
+                        return (
+                          <div key={index} className={`p-3 rounded-lg border-2 transition-colors ${isChecked ? 'bg-gray-50 border-blue-500' : 'bg-gray-50 border-gray-200'}`}>
+                            <div className="flex items-start gap-3">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  const newSelected = new Set(selectedTreatmentIndices);
+                                  if (e.target.checked) {
+                                    newSelected.add(index);
+                                  } else {
+                                    newSelected.delete(index);
+                                  }
+                                  setSelectedTreatmentIndices(newSelected);
+                                }}
+                                className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              />
+                              <span className="text-sm text-gray-700 font-bold">{index + 1}.</span>
+                              <div className="flex-1">
+                                <h4 className="font-medium text-gray-900 text-sm mb-2">{treatment.name}</h4>
+                                <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
+                                  <div><span className="font-medium">Outcomes:</span> {treatment.outcomes}</div>
+                                  <div><span className="font-medium">Complications:</span> {treatment.complications}</div>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   );
                 } else {

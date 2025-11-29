@@ -990,7 +990,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             pdf_content: Extracted content from uploaded PDF files (optional)
             
         Returns:
-            Dictionary containing primary diagnosis and exactly 3 treatment options
+            Dictionary containing primary diagnosis and treatment options
         """
         try:
             prompt = PromptTemplate(
@@ -1024,19 +1024,11 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                             "name": "Treatment name",
                             "outcomes": "Expected outcomes and success rates",
                             "complications": "Potential complications and risks"
-                        }},
-                        {{
-                            "name": "Treatment name",
-                            "outcomes": "Expected outcomes and success rates",
-                            "complications": "Potential complications and risks"
-                        }},
-                        {{
-                            "name": "Treatment name",
-                            "outcomes": "Expected outcomes and success rates",
-                            "complications": "Potential complications and risks"
                         }}
                     ]
                 }}
+                
+                Provide all relevant treatment options based on the diagnosis. There is no limit on the number of treatment options you can provide.
                 
                 """
             )
