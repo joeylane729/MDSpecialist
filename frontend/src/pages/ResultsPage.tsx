@@ -2285,7 +2285,11 @@ const ResultsPage: React.FC = () => {
         )}
         
         {/* Bottom Button - Only show in assessment view if CPT codes have been generated */}
-        {activeView === 'assessment' && (cptCodes || searchParams?.cpt_codes) && (
+        {(() => {
+          const existingCptCodes = cptCodes || searchParams?.cpt_codes;
+          const hasCptCodes = Array.isArray(existingCptCodes) && existingCptCodes.length > 0;
+          if (activeView === 'assessment' && hasCptCodes) {
+            return (
           <div className="text-center mt-8 mb-6">
             <button
               onClick={handleShowSpecialists}
