@@ -46,7 +46,7 @@ interface TreatmentOption {
 // Function to get treatment options from GPT-generated data
 const getTreatmentOptions = (searchParams: any, aiRecommendations?: any): TreatmentOption[] | null => {
   // Use GPT-generated treatment options if available from searchParams
-  if (searchParams.treatment_options && Array.isArray(searchParams.treatment_options) && searchParams.treatment_options.length > 0) {
+  if (searchParams?.treatment_options && Array.isArray(searchParams.treatment_options) && searchParams.treatment_options.length > 0) {
     return searchParams.treatment_options.map((option: any) => ({
       name: option.name || "Treatment Option",
       outcomes: option.outcomes || "Outcomes not specified",
@@ -168,6 +168,11 @@ const ResultsPage: React.FC = () => {
   
   // Initialize selected treatment indices - all checked by default
   useEffect(() => {
+    // Only run if we have searchParams or aiRecommendations
+    if (!searchParams && !location.state?.aiRecommendations) {
+      return;
+    }
+    
     const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
     if (treatmentOptions && treatmentOptions.length > 0) {
       // Only initialize if we don't have any selected yet or if the number of options changed
@@ -1101,7 +1106,7 @@ const ResultsPage: React.FC = () => {
                       <div className="bg-gray-50 p-3 rounded-lg">
                         <p className="text-sm text-gray-600 mb-2">The following search terms will be used to find relevant specialists:</p>
                         <div className="text-sm text-gray-800 font-mono break-words">
-                          {searchParams.search_query}
+                          {searchParams?.search_query}
                         </div>
                       </div>
                     </div>
