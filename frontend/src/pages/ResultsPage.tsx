@@ -2284,38 +2284,6 @@ const ResultsPage: React.FC = () => {
             </div>
           </div>
         )}
-        
-        {/* Bottom Button - Only show in assessment view if CPT codes have been generated */}
-        {(() => {
-          const existingCptCodes = cptCodes || searchParams?.cpt_codes;
-          const hasCptCodes = Array.isArray(existingCptCodes) && existingCptCodes.length > 0;
-          if (activeView === 'assessment' && hasCptCodes) {
-            return (
-          <div className="text-center mt-8 mb-6">
-            <button
-              onClick={handleShowSpecialists}
-              disabled={isGeneratingSpecialists}
-              className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              {isGeneratingSpecialists ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Generating specialists...
-                </>
-              ) : (
-                <>
-                  Show me suggested specialists
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-                  </svg>
-                </>
-              )}
-            </button>
-          </div>
-            );
-          }
-          return null;
-        })()}
       </div>
       
       <style>{`
