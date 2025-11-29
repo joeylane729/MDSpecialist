@@ -122,12 +122,12 @@ class MedicalAnalysisService:
             logger.error(f"Error processing patient input: {str(e)}")
             raise
     
-    async def comprehensive_analysis(self, patient_input: str, cpt_codes: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
+    async def comprehensive_analysis(self, patient_input: str) -> Dict[str, Any]:
         """Perform comprehensive medical analysis including patient processing and medical analysis.
+        CPT codes are NOT generated in this step - they must be generated separately via generate_cpt_codes_from_analysis().
         
         Args:
             patient_input: Patient input string containing symptoms, diagnosis, etc.
-            cpt_codes: Optional pre-generated CPT codes to reuse instead of generating new ones
         """
         try:
             # Parse patient input to extract individual fields
@@ -182,23 +182,11 @@ class MedicalAnalysisService:
             else:
                 logger.warning("⚠️  Cannot generate search query - missing ICD-10 description or user diagnosis")
             
-            # Predict relevant CPT codes using the search query terms and treatment options (or reuse provided codes)
+            # CPT codes are NOT generated in this step - they must be generated separately
+            # This is part of the step-by-step flow where diagnosis/treatment options come first
+            cpt_codes = []
             cpt_prompt_text = ""
-            if cpt_codes is not None:
-                logger.info(f"♻️  Reusing provided CPT codes: {len(cpt_codes)} codes")
-            else:
-                cpt_codes = []
-                if search_query:
-                    # Parse search query to extract individual terms (split by " OR ")
-                    search_terms = [term.strip() for term in search_query.split(" OR ") if term.strip()]
-                    logger.info(f"🔍 Predicting CPT codes for {len(search_terms)} diagnosis terms: {', '.join(search_terms[:3])}{'...' if len(search_terms) > 3 else ''}")
-                    cpt_codes, cpt_prompt_text = await self.predict_cpt_codes(search_terms, treatment_options)
-                    if cpt_codes:
-                        logger.info(f"✅ Predicted {len(cpt_codes)} CPT codes")
-                    else:
-                        logger.warning(f"⚠️  No CPT codes predicted")
-                else:
-                    logger.warning("⚠️  Cannot predict CPT codes - no search query generated")
+            logger.info("⏭️  Skipping CPT code generation (step-by-step flow - generate separately)")
             
             # Log diagnosis structure for debugging
             logger.debug(f"🔍 Diagnosis structure type: {type(medical_analysis['diagnoses'])}")
@@ -674,11 +662,35 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             
             logger.info(f"✅ Predicted {len(cpt_codes)} CPT codes for {len(search_query_terms)} diagnosis terms")
             return cpt_codes, rendered_prompt
-            
         except Exception as e:
             logger.error(f"Error predicting CPT codes: {e}")
-            logger.error(f"Response text (first 500 chars): {response_text[:500] if 'response_text' in locals() else 'N/A'}")
             return [], ""
+    
+    async def generate_cpt_codes_from_analysis(
+        self,
+        search_query: str,
+        treatment_options: List[Dict[str, str]]
+    ) -> Tuple[List[Dict[str, str]], str]:
+        """
+        Generate CPT codes from search query and treatment options.
+        This is a convenience method for the separate CPT code generation endpoint.
+        
+        Args:
+            search_query: Search query string (typically from generate_search_query)
+            treatment_options: List of treatment options with name, outcomes, and complications
+            
+        Returns:
+            Tuple of (List of dictionaries containing CPT code and description, rendered prompt text)
+        """
+        if not search_query:
+            logger.warning("⚠️  Cannot generate CPT codes - no search query provided")
+            return [], ""
+        
+        # Parse search query to extract individual terms (split by " OR ")
+        search_terms = [term.strip() for term in search_query.split(" OR ") if term.strip()]
+        logger.info(f"🔍 Generating CPT codes for {len(search_terms)} diagnosis terms: {', '.join(search_terms[:3])}{'...' if len(search_terms) > 3 else ''}")
+        
+        return await self.predict_cpt_codes(search_terms, treatment_options)
 
     async def query_cms_api(
         self,

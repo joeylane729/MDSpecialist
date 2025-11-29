@@ -60,7 +60,7 @@ async def get_medical_analysis(
         )
         logger.info(f"📋 [Backend] Patient input built: {len(patient_input)} characters")
         
-        # Get medical analysis
+        # Get medical analysis (CPT codes are not generated here - they must be generated separately)
         logger.info("🧠 [Backend] Starting comprehensive analysis")
         analysis_results = await medical_analysis_service.comprehensive_analysis(patient_input)
         logger.info("✅ [Backend] Comprehensive analysis completed")
@@ -100,3 +100,59 @@ async def get_medical_analysis(
         import traceback
         logger.error(f"❌ [Backend] Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error in medical analysis: {str(e)}")
+
+
+@router.post("/medical-analysis/cpt-codes")
+async def generate_cpt_codes(
+    search_query: str = Form(...),
+    treatment_options_json: str = Form(...),  # JSON array of treatment options
+    db: Session = Depends(get_db)
+):
+    """
+    Generate CPT codes based on search query and treatment options.
+    
+    This endpoint is called separately after the initial medical analysis to generate CPT codes.
+    It requires the search_query and treatment_options from the previous step.
+    """
+    try:
+        logger.info("🚀 [Backend] CPT code generation endpoint called")
+        logger.info(f"🔍 [Backend] Search query: {search_query[:100]}{'...' if len(search_query) > 100 else ''}")
+        
+        # Parse treatment options JSON
+        try:
+            treatment_options = json.loads(treatment_options_json)
+            if not isinstance(treatment_options, list):
+                raise ValueError("treatment_options_json must be a JSON array")
+            logger.info(f"📋 [Backend] Received {len(treatment_options)} treatment options")
+        except json.JSONDecodeError as e:
+            logger.error(f"❌ [Backend] Failed to parse treatment_options_json: {e}")
+            raise HTTPException(status_code=400, detail=f"Invalid treatment_options_json: {str(e)}")
+        
+        # Initialize the medical analysis service with database session
+        medical_analysis_service = MedicalAnalysisService(db)
+        
+        # Generate CPT codes
+        logger.info("🔍 [Backend] Generating CPT codes...")
+        cpt_codes, cpt_prompt_text = await medical_analysis_service.generate_cpt_codes_from_analysis(
+            search_query=search_query,
+            treatment_options=treatment_options
+        )
+        logger.info(f"✅ [Backend] Generated {len(cpt_codes)} CPT codes")
+        
+        response = {
+            "status": "success",
+            "cpt_codes": cpt_codes,
+            "cpt_prompt_text": cpt_prompt_text,
+            "message": f"Successfully generated {len(cpt_codes)} CPT codes"
+        }
+        
+        return JSONResponse(content=response)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ [Backend] Error generating CPT codes: {str(e)}")
+        logger.error(f"❌ [Backend] Exception type: {type(e).__name__}")
+        import traceback
+        logger.error(f"❌ [Backend] Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Error generating CPT codes: {str(e)}")

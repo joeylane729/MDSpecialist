@@ -256,6 +256,54 @@ export interface MedicalAnalysisResponse {
   message: string;
 }
 
+export interface CPTCodeGenerationRequest {
+  search_query: string;
+  treatment_options: Array<{
+    name: string;
+    outcomes: string;
+    complications: string;
+  }>;
+}
+
+export interface CPTCodeGenerationResponse {
+  status: string;
+  cpt_codes: Array<{ code: string; description: string }>;
+  cpt_prompt_text: string;
+  message: string;
+}
+
+export const generateCPTCodes = async (
+  request: CPTCodeGenerationRequest
+): Promise<CPTCodeGenerationResponse> => {
+  try {
+    console.log('🔍 [Frontend] Generating CPT codes:', {
+      search_query: request.search_query?.substring(0, 100),
+      treatment_options_count: request.treatment_options?.length
+    });
+
+    const formData = new FormData();
+    formData.append('search_query', request.search_query);
+    formData.append('treatment_options_json', JSON.stringify(request.treatment_options));
+    
+    console.log('🔍 [Frontend] Making API call to:', `${API_BASE_URL}/api/v1/medical-analysis/cpt-codes`);
+    
+    const response = await api.post('/api/v1/medical-analysis/cpt-codes', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    console.log('✅ [Frontend] CPT code generation response received:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [Frontend] CPT code generation error:', error);
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.detail || 'Failed to generate CPT codes');
+    }
+    throw error;
+  }
+};
+
 export const getMedicalAnalysis = async (
   request: MedicalAnalysisRequest
 ): Promise<MedicalAnalysisResponse> => {

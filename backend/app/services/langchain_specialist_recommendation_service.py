@@ -67,28 +67,32 @@ class LangChainSpecialistRecommendationService:
         try:
             # Step 1: Comprehensive medical analysis and patient processing
             logger.info("🔍 Step 1: Performing comprehensive medical analysis with LangChain...")
-            if cpt_codes is not None:
-                logger.info(f"♻️  Reusing provided CPT codes ({len(cpt_codes)} codes) to avoid duplicate generation")
-            medical_analysis_results = await self.medical_analysis.comprehensive_analysis(patient_input, cpt_codes=cpt_codes)
+            medical_analysis_results = await self.medical_analysis.comprehensive_analysis(patient_input)
             
-            # Step 1.5: Query CMS API with CPT codes from medical analysis
+            # Add provided CPT codes to medical analysis results if available
+            if cpt_codes and len(cpt_codes) > 0:
+                medical_analysis_results["cpt_codes"] = cpt_codes
+                logger.info(f"✅ Added {len(cpt_codes)} provided CPT codes to medical analysis results")
+            
+            # Step 1.5: Query CMS API with CPT codes (use provided codes or none)
             logger.info("🔍 Step 1.5: Querying CMS API with CPT codes...")
             if state:
                 logger.info(f"🔍 Step 1.5: State filter will be applied: {state}")
             cms_results = {}
-            if medical_analysis_results.get("cpt_codes"):
+            if cpt_codes and len(cpt_codes) > 0:
+                logger.info(f"♻️  Using provided CPT codes ({len(cpt_codes)} codes) for CMS API query")
                 cms_results = await self.medical_analysis.query_cms_api(
-                    medical_analysis_results["cpt_codes"],
+                    cpt_codes,
                     state=state
                 )
                 logger.info(f"✅ CMS API query complete: {cms_results.get('total_results', 0)} results found")
             else:
-                logger.warning("⚠️  No CPT codes available for CMS API query")
+                logger.warning("⚠️  No CPT codes provided for CMS API query")
                 cms_results = {
                     "url": None,
                     "results": [],
                     "total_results": 0,
-                    "error": "No CPT codes from medical analysis"
+                    "error": "No CPT codes provided"
                 }
             
             # Step 2: LLM-powered retrieval of specialist information

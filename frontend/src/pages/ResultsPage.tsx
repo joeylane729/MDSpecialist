@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { NPIProvider, getSpecialistRecommendations, SpecialistRecommendationRequest, searchNPIProviders, rankNPIProviders, NPISearchRequest, NPIRankingRequest, ProviderContent } from '../services/api';
+import { NPIProvider, getSpecialistRecommendations, SpecialistRecommendationRequest, searchNPIProviders, rankNPIProviders, NPISearchRequest, NPIRankingRequest, ProviderContent, generateCPTCodes } from '../services/api';
 import NPIProviderCard from '../components/NPIProviderCard';
 
 interface Provider extends NPIProvider {
@@ -29,6 +29,7 @@ interface SearchParams {
     code: string;
     description: string;
   }>;
+  cpt_prompt_text?: string;  // GPT prompt text used to generate CPT codes
   search_query?: string;  // Pre-generated search query for Pinecone
   searchOptions?: {
     diagnosis: boolean;
@@ -85,6 +86,10 @@ const ResultsPage: React.FC = () => {
   const [selectedTreatmentId, setSelectedTreatmentId] = useState<string>('');
   const [activeView, setActiveView] = useState<'assessment' | 'specialists' | 'ai-recommendations' | 'debug'>('assessment');
   const [specialistRecommendationData, setSpecialistRecommendationData] = useState<any>(null);
+  const [cptCodes, setCptCodes] = useState<Array<{ code: string; description: string }> | null>(null);
+  const [cptPromptText, setCptPromptText] = useState<string | null>(null);
+  const [isGeneratingCPTCodes, setIsGeneratingCPTCodes] = useState(false);
+  const [isGeneratingSpecialists, setIsGeneratingSpecialists] = useState(false);
   
   // Set initial view based on search options
   useEffect(() => {
@@ -149,6 +154,16 @@ const ResultsPage: React.FC = () => {
       console.log('🔍 DEBUG: searchParams search_query:', searchParams?.search_query);
     }
   }, [location.state, searchParams]);
+  
+  // Initialize CPT codes from searchParams if available
+  useEffect(() => {
+    if (searchParams?.cpt_codes && !cptCodes) {
+      setCptCodes(searchParams.cpt_codes);
+      if (searchParams.cpt_prompt_text) {
+        setCptPromptText(searchParams.cpt_prompt_text);
+      }
+    }
+  }, [searchParams, cptCodes]);
 
 
 
@@ -633,6 +648,51 @@ const ResultsPage: React.FC = () => {
     saveFilterState();
   };
 
+  const handleGenerateCPTCodes = async () => {
+    try {
+      setIsGeneratingCPTCodes(true);
+      
+      // Get treatment options and search query from current data
+      const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
+      const searchQuery = searchParams?.search_query || location.state?.aiRecommendations?.patient_profile?.search_query;
+      
+      if (!treatmentOptions || treatmentOptions.length === 0) {
+        alert('Treatment options are required to generate CPT codes');
+        return;
+      }
+      
+      if (!searchQuery) {
+        alert('Search query is required to generate CPT codes');
+        return;
+      }
+      
+      const response = await generateCPTCodes({
+        search_query: searchQuery,
+        treatment_options: treatmentOptions
+      });
+      
+      // Update CPT codes state
+      setCptCodes(response.cpt_codes);
+      setCptPromptText(response.cpt_prompt_text);
+      
+      // Update searchParams to include CPT codes
+      if (searchParams) {
+        setSearchParams({
+          ...searchParams,
+          cpt_codes: response.cpt_codes,
+          cpt_prompt_text: response.cpt_prompt_text
+        });
+      }
+      
+      console.log('✅ Generated', response.cpt_codes.length, 'CPT codes');
+    } catch (error) {
+      console.error('❌ Error generating CPT codes:', error);
+      alert('Failed to generate CPT codes: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setIsGeneratingCPTCodes(false);
+    }
+  };
+
   const handleShowSpecialists = async () => {
     // If specialists are already available, just switch to the view
     if (searchParams?.searchOptions?.specialists && filteredProviders.length > 0) {
@@ -640,15 +700,21 @@ const ResultsPage: React.FC = () => {
       return;
     }
 
+    // Check if CPT codes are available
+    const existingCptCodes = cptCodes || searchParams?.cpt_codes || 
+                                location.state?.aiRecommendations?.patient_profile?.cpt_codes;
+    
+    if (!existingCptCodes || existingCptCodes.length === 0) {
+      alert('Please generate CPT codes first before getting specialist recommendations');
+      return;
+    }
+
     // If specialists haven't been generated yet, call the APIs
     try {
-      setIsLoading(true);
+      setIsGeneratingSpecialists(true);
       
       // Step 1: Get specialist recommendations
-      // Reuse CPT codes from medical analysis if available to avoid duplicate generation
-      const existingCptCodes = searchParams?.cpt_codes || 
-                                location.state?.aiRecommendations?.patient_profile?.cpt_codes;
-      
+      // Reuse CPT codes from state or medical analysis to avoid duplicate generation
       const specialistRequest: SpecialistRecommendationRequest = {
         symptoms: searchParams?.symptoms || '',
         diagnosis: searchParams?.diagnosis || '',
@@ -661,7 +727,7 @@ const ResultsPage: React.FC = () => {
       };
 
       if (existingCptCodes && existingCptCodes.length > 0) {
-        console.log('♻️ [Frontend] Reusing', existingCptCodes.length, 'CPT codes from medical analysis');
+        console.log('♻️ [Frontend] Reusing', existingCptCodes.length, 'CPT codes for specialist recommendations');
       }
 
       const specialistResponse = await getSpecialistRecommendations(specialistRequest);
@@ -748,7 +814,7 @@ const ResultsPage: React.FC = () => {
       console.error('Error fetching specialist recommendations:', error);
       // You might want to show an error message to the user here
     } finally {
-      setIsLoading(false);
+      setIsGeneratingSpecialists(false);
     }
   };
 
@@ -972,25 +1038,6 @@ const ResultsPage: React.FC = () => {
               <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-3 leading-tight py-1">
                 Medical Assessment
               </h1>
-              <button
-                onClick={handleShowSpecialists}
-                disabled={isLoading}
-                className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    Generating specialists...
-                  </>
-                ) : (
-                  <>
-                    Show me suggested specialists
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
-                  </>
-                )}
-              </button>
             </div>
             
             <div className="mx-auto space-y-6">
@@ -1024,49 +1071,6 @@ const ResultsPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* CPT Codes */}
-                  {searchParams?.cpt_codes && Array.isArray(searchParams.cpt_codes) && searchParams.cpt_codes.length > 0 && (
-                    <div className="border-l-4 border-amber-500 pl-4">
-                      {/* GPT Prompt Instructions (collapsed by default) */}
-                      {searchParams?.cpt_prompt_text && (
-                        <div className="mb-4">
-                          <details className="bg-gray-50 rounded-lg border border-gray-200">
-                            <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-t-lg">
-                              <span className="flex items-center gap-2">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                View GPT Prompt Instructions (for debugging)
-                              </span>
-                            </summary>
-                            <div className="p-4 border-t border-gray-200">
-                              <p className="text-xs text-gray-600 mb-2">The following prompt was sent to GPT to generate the CPT codes:</p>
-                              <pre className="text-xs text-gray-800 bg-white p-3 rounded border border-gray-300 overflow-x-auto whitespace-pre-wrap font-mono">
-                                {searchParams.cpt_prompt_text}
-                              </pre>
-                            </div>
-                          </details>
-                        </div>
-                      )}
-                      
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Relevant CPT Codes</h3>
-                      <div className="text-sm text-gray-600 mb-3">
-                        Procedural codes that could be used by a neurosurgeon to treat this condition:
-                      </div>
-                      <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {searchParams.cpt_codes.map((cpt: any, index: number) => (
-                          <div key={index} className="bg-amber-50 rounded-lg p-3 border border-amber-200">
-                            <div className="flex items-start gap-3">
-                              <code className="bg-amber-100 px-2 py-1 rounded text-sm font-semibold text-amber-900 whitespace-nowrap">
-                                {cpt.code}
-                              </code>
-                              <span className="text-sm text-gray-700 flex-1">{cpt.description}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
 
                   {/* Search Query */}
@@ -1130,6 +1134,114 @@ const ResultsPage: React.FC = () => {
                 }
               })()}
               </div>
+              
+              {/* Button to generate CPT codes */}
+              {(() => {
+                const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
+                const searchQuery = searchParams?.search_query || location.state?.aiRecommendations?.patient_profile?.search_query;
+                const hasCptCodes = cptCodes || searchParams?.cpt_codes;
+                
+                if (!treatmentOptions || treatmentOptions.length === 0 || !searchQuery) {
+                  return null;
+                }
+                
+                if (hasCptCodes) {
+                  return null; // Don't show button if CPT codes already exist
+                }
+                
+                return (
+                  <div className="text-center mt-6">
+                    <button
+                      onClick={handleGenerateCPTCodes}
+                      disabled={isGeneratingCPTCodes}
+                      className="inline-flex items-center gap-3 bg-gradient-to-r from-green-600 to-teal-600 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:from-green-700 hover:to-teal-700 focus:ring-4 focus:ring-green-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                    >
+                      {isGeneratingCPTCodes ? (
+                        <>
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          Generating CPT Codes...
+                        </>
+                      ) : (
+                        <>
+                          Generate CPT Codes
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                          </svg>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                );
+              })()}
+              
+              {/* CPT Codes Section */}
+              {(cptCodes || searchParams?.cpt_codes) && (
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h2 className="text-2xl font-semibold text-gray-900 mb-4">Relevant CPT Codes</h2>
+                  
+                  {/* GPT Prompt Instructions (collapsed by default) */}
+                  {(cptPromptText || searchParams?.cpt_prompt_text) && (
+                    <div className="mb-4">
+                      <details className="bg-gray-50 rounded-lg border border-gray-200">
+                        <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-t-lg">
+                          <span className="flex items-center gap-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            View GPT Prompt Instructions (for debugging)
+                          </span>
+                        </summary>
+                        <div className="p-4 border-t border-gray-200">
+                          <p className="text-xs text-gray-600 mb-2">The following prompt was sent to GPT to generate the CPT codes:</p>
+                          <pre className="text-xs text-gray-800 bg-white p-3 rounded border border-gray-300 overflow-x-auto whitespace-pre-wrap font-mono">
+                            {cptPromptText || searchParams?.cpt_prompt_text}
+                          </pre>
+                        </div>
+                      </details>
+                    </div>
+                  )}
+                  
+                  <div className="text-sm text-gray-600 mb-3">
+                    Procedural codes that could be used by a neurosurgeon to treat this condition:
+                  </div>
+                  
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {(cptCodes || searchParams?.cpt_codes || []).map((cpt: any, index: number) => (
+                      <div key={index} className="bg-amber-50 rounded-lg p-3 border border-amber-200">
+                        <div className="flex items-start gap-3">
+                          <code className="bg-amber-100 px-2 py-1 rounded text-sm font-semibold text-amber-900 whitespace-nowrap">
+                            {cpt.code}
+                          </code>
+                          <span className="text-sm text-gray-700 flex-1">{cpt.description}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Button to generate specialist recommendations */}
+                  <div className="text-center mt-6">
+                    <button
+                      onClick={handleShowSpecialists}
+                      disabled={isGeneratingSpecialists}
+                      className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                    >
+                      {isGeneratingSpecialists ? (
+                        <>
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          Generating Specialists...
+                        </>
+                      ) : (
+                        <>
+                          Show me suggested specialists
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                          </svg>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
         </>
         )}
