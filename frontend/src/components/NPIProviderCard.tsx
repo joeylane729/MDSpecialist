@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Phone, Star, Award, Calendar, Building, HelpCircle, Clock, FileText, Shield, ExternalLink, BookOpen, Flag } from 'lucide-react';
+import { MapPin, Phone, Star, Award, Calendar, Building, HelpCircle, Clock, FileText, Shield, ExternalLink, BookOpen, Flag, ChevronDown, ChevronUp, TrendingUp, GraduationCap, Briefcase, Video, Activity } from 'lucide-react';
 import { NPIProvider, ProviderContent, VumediContent, PubMedArticle } from '../services/api';
 import SchedulingModal from './SchedulingModal';
 
@@ -9,11 +9,12 @@ interface NPIProviderCardProps {
   isHighlighted?: boolean;
   score?: number;
   scoreBreakdown?: string;
+  scoreData?: any;
   isCertified?: boolean;
   providerContent?: ProviderContent;
 }
 
-export default function NPIProviderCard({ provider, onClick, isHighlighted = false, score, scoreBreakdown, isCertified = false, providerContent }: NPIProviderCardProps) {
+export default function NPIProviderCard({ provider, onClick, isHighlighted = false, score, scoreBreakdown, scoreData, isCertified = false, providerContent }: NPIProviderCardProps) {
   const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
   const [isQuestionsModalOpen, setIsQuestionsModalOpen] = useState(false);
   const [isPreAuthModalOpen, setIsPreAuthModalOpen] = useState(false);
@@ -122,7 +123,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                   className={`inline-flex items-center justify-center w-12 h-8 ${getScoreColor(score)} text-white text-sm font-bold rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow`}
                   title="Click to view score breakdown"
                 >
-                  {score}
+                  {score.toFixed(2)}
                 </button>
               )}
             </div>
@@ -608,111 +609,463 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
       )}
 
       {/* Score Breakdown Modal */}
-      {isScoreBreakdownModalOpen && scoreBreakdown && (
+      {isScoreBreakdownModalOpen && (scoreBreakdown || scoreData) && (
+        <ScoreBreakdownModal
+          provider={provider}
+          score={score}
+          scoreData={scoreData}
+          onClose={() => setIsScoreBreakdownModalOpen(false)}
+        />
+      )}
+    </>
+  );
+}
+
+// Score Breakdown Modal Component
+interface ScoreBreakdownModalProps {
+  provider: NPIProvider;
+  score?: number;
+  scoreData?: any;
+  onClose: () => void;
+}
+
+function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreakdownModalProps) {
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  
+  const toggleSection = (sectionKey: string) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(sectionKey)) {
+      newExpanded.delete(sectionKey);
+    } else {
+      newExpanded.add(sectionKey);
+    }
+    setExpandedSections(newExpanded);
+  };
+
+  const getScoreColor = (score: number): string => {
+    if (score >= 80) return 'bg-gradient-to-r from-emerald-500 to-green-600';
+    if (score >= 60) return 'bg-gradient-to-r from-blue-500 to-indigo-600';
+    if (score >= 40) return 'bg-gradient-to-r from-amber-500 to-orange-500';
+    if (score >= 20) return 'bg-gradient-to-r from-orange-500 to-red-500';
+    return 'bg-gradient-to-r from-red-500 to-pink-600';
+  };
+
+  if (!scoreData?.weighted_breakdown) {
+    // Fallback to old text-based breakdown
+    return (
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        onClick={onClose}
+      >
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          onClick={() => setIsScoreBreakdownModalOpen(false)}
+          className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[85vh] overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
         >
-          <div 
-            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[85vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-t-xl">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-2xl font-bold mb-1">Score Breakdown</h2>
-                  <p className="text-blue-100 text-sm">{provider.name}</p>
-                </div>
-                <button
-                  onClick={() => setIsScoreBreakdownModalOpen(false)}
-                  className="text-white hover:text-gray-200 transition-colors p-2 hover:bg-white/20 rounded-lg"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+          <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-t-xl">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold mb-1">Score Breakdown</h2>
+                <p className="text-blue-100 text-sm">{provider.name}</p>
               </div>
-              {score !== undefined && (
-                <div className="mt-4">
-                  <div className={`inline-flex items-center justify-center px-4 py-2 ${getScoreColor(score)} text-white text-lg font-bold rounded-lg shadow-lg`}>
-                    Total Score: {score} points
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-6">
-              {(() => {
-                const { sections, total } = parseBreakdown(scoreBreakdown);
-                
-                if (sections.length === 0) {
-                  return (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500">No score breakdown available</p>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div className="space-y-4">
-                    {sections.map((section, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                        <h3 className="font-semibold text-gray-900 mb-3 text-lg">{section.title}</h3>
-                        {section.items.length > 0 ? (
-                          <ul className="space-y-2">
-                            {section.items.map((item, itemIndex) => {
-                              // Extract point value if present
-                              const pointMatch = item.match(/= (\d+) point/i);
-                              const points = pointMatch ? pointMatch[1] : null;
-                              const itemWithoutPoints = item.replace(/\s*=\s*\d+\s*point[s]?.*$/i, '').trim();
-                              
-                              return (
-                                <li key={itemIndex} className="flex items-start gap-3">
-                                  <span className="text-blue-600 mt-1">•</span>
-                                  <div className="flex-1">
-                                    <span className="text-gray-700">{itemWithoutPoints}</span>
-                                    {points && (
-                                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">
-                                        +{points} pt{points !== '1' ? 's' : ''}
-                                      </span>
-                                    )}
-                                  </div>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        ) : (
-                          <p className="text-gray-500 text-sm">No items in this section</p>
-                        )}
-                      </div>
-                    ))}
-                    
-                    {total && (
-                      <div className="mt-6 pt-4 border-t-2 border-gray-300">
-                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4">
-                          <p className="text-lg font-bold text-gray-900 text-center">{total}</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
-
-            {/* Modal Footer */}
-            <div className="sticky bottom-0 bg-gray-50 px-6 py-4 rounded-b-xl border-t border-gray-200">
               <button
-                onClick={() => setIsScoreBreakdownModalOpen(false)}
-                className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+                onClick={onClose}
+                className="text-white hover:text-gray-200 transition-colors p-2 hover:bg-white/20 rounded-lg"
               >
-                Close
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
           </div>
+          <div className="p-6">
+            <p className="text-gray-500">Score breakdown data not available</p>
+          </div>
         </div>
-      )}
-    </>
+      </div>
+    );
+  }
+
+  const { weighted_breakdown } = scoreData;
+  const {
+    clinical_volume,
+    pubmed,
+    training,
+    experience,
+    vumedi
+  } = weighted_breakdown;
+
+  const {
+    vumedi_count = 0,
+    pubmed_count = 0,
+    pubmed_first_author_count = 0,
+    pubmed_middle_author_count = 0,
+    pubmed_last_author_count = 0,
+    pubmed_base_points = 0,
+    pubmed_weighted_points = 0,
+    pubmed_quartile_q1_count = 0,
+    pubmed_quartile_q2_count = 0,
+    pubmed_quartile_q3_count = 0,
+    pubmed_quartile_q4_count = 0,
+    pubmed_quartile_no_data_count = 0,
+    med_school_score = 0,
+    residency_score = 0,
+    certification_points = 0,
+    abns_points = 0,
+    aoa_points = 0,
+    years_experience
+  } = scoreData;
+
+  const sections = [
+    {
+      key: 'clinical_volume',
+      title: 'Clinical Volume',
+      icon: Activity,
+      color: 'bg-blue-50 border-blue-200',
+      iconColor: 'text-blue-600',
+      weight: clinical_volume.weight,
+      percentage: clinical_volume.percentage,
+      weightedPoints: clinical_volume.weighted_points,
+      summary: clinical_volume.percentage > 0 ? '✓ Top 25 CMS provider' : 'Not in top 25',
+      details: clinical_volume.percentage > 0 ? (
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-600">Status:</span>
+            <span className="font-semibold text-green-700">✓ In Top 25 CMS Results</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Percentage:</span>
+            <span className="font-semibold">{clinical_volume.percentage.toFixed(1)}%</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Calculation:</span>
+            <span className="font-semibold">1.0 × {clinical_volume.weight}% = {clinical_volume.weighted_points.toFixed(2)} points</span>
+          </div>
+        </div>
+      ) : (
+        <div className="text-sm text-gray-600">This provider is not in the top 25 CMS results for the searched CPT codes.</div>
+      )
+    },
+    {
+      key: 'pubmed',
+      title: 'PubMed Articles',
+      icon: FileText,
+      color: 'bg-purple-50 border-purple-200',
+      iconColor: 'text-purple-600',
+      weight: pubmed.weight,
+      percentage: pubmed.percentage,
+      weightedPoints: pubmed.weighted_points,
+      summary: `${pubmed_count} article${pubmed_count !== 1 ? 's' : ''}`,
+      details: (
+        <div className="space-y-3 text-sm">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <span className="text-gray-600">Total Articles:</span>
+              <span className="ml-2 font-semibold">{pubmed_count}</span>
+            </div>
+            <div>
+              <span className="text-gray-600">Weighted Points:</span>
+              <span className="ml-2 font-semibold">{pubmed_weighted_points.toFixed(2)}</span>
+            </div>
+          </div>
+          {(pubmed_first_author_count > 0 || pubmed_middle_author_count > 0 || pubmed_last_author_count > 0) && (
+            <div className="border-t pt-3">
+              <div className="font-semibold text-gray-700 mb-2">Author Positions:</div>
+              <div className="space-y-1">
+                {pubmed_first_author_count > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">First author:</span>
+                    <span>{pubmed_first_author_count} × 2 pts = {pubmed_first_author_count * 2} pts</span>
+                  </div>
+                )}
+                {pubmed_middle_author_count > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Middle author:</span>
+                    <span>{pubmed_middle_author_count} × 1 pt = {pubmed_middle_author_count} pts</span>
+                  </div>
+                )}
+                {pubmed_last_author_count > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Last author:</span>
+                    <span>{pubmed_last_author_count} × 3 pts = {pubmed_last_author_count * 3} pts</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-semibold pt-2 border-t">
+                  <span>Base Points:</span>
+                  <span>{pubmed_base_points.toFixed(1)} pts</span>
+                </div>
+              </div>
+            </div>
+          )}
+          {(pubmed_quartile_q1_count > 0 || pubmed_quartile_q2_count > 0 || pubmed_quartile_q3_count > 0 || pubmed_quartile_q4_count > 0 || pubmed_quartile_no_data_count > 0) && (
+            <div className="border-t pt-3">
+              <div className="font-semibold text-gray-700 mb-2">Journal Quartiles:</div>
+              <div className="space-y-1">
+                {pubmed_quartile_q1_count > 0 && <div className="flex justify-between"><span className="text-gray-600">Q1:</span><span>{pubmed_quartile_q1_count} articles (×1.0)</span></div>}
+                {pubmed_quartile_q2_count > 0 && <div className="flex justify-between"><span className="text-gray-600">Q2:</span><span>{pubmed_quartile_q2_count} articles (×0.75)</span></div>}
+                {pubmed_quartile_q3_count > 0 && <div className="flex justify-between"><span className="text-gray-600">Q3:</span><span>{pubmed_quartile_q3_count} articles (×0.5)</span></div>}
+                {pubmed_quartile_q4_count > 0 && <div className="flex justify-between"><span className="text-gray-600">Q4:</span><span>{pubmed_quartile_q4_count} articles (×0.25)</span></div>}
+                {pubmed_quartile_no_data_count > 0 && <div className="flex justify-between"><span className="text-gray-600">No quartile:</span><span>{pubmed_quartile_no_data_count} articles (×1.0)</span></div>}
+              </div>
+            </div>
+          )}
+          <div className="border-t pt-3">
+            <div className="font-semibold text-gray-700 mb-2">Calculation:</div>
+            <div className="space-y-1 text-xs text-gray-600 font-mono">
+              <div>Raw Score: {pubmed_weighted_points.toFixed(2)} pts</div>
+              <div>Percentage: {pubmed.percentage.toFixed(1)}% (relative to max in batch)</div>
+              <div>Weighted: {pubmed.percentage.toFixed(1)}% × {pubmed.weight}% = {pubmed.weighted_points.toFixed(2)} points</div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'training',
+      title: 'Training',
+      icon: GraduationCap,
+      color: 'bg-indigo-50 border-indigo-200',
+      iconColor: 'text-indigo-600',
+      weight: training.weight,
+      percentage: training.percentage,
+      weightedPoints: training.weighted_points,
+      summary: `Med School + Residency + Certifications`,
+      details: (
+        <div className="space-y-3 text-sm">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <span className="text-gray-600">Medical School:</span>
+              <span className="ml-2 font-semibold">{med_school_score} pts</span>
+            </div>
+            <div>
+              <span className="text-gray-600">Residency:</span>
+              <span className="ml-2 font-semibold">{residency_score} pts</span>
+            </div>
+          </div>
+          {certification_points > 0 && (
+            <div className="border-t pt-3">
+              <div className="font-semibold text-gray-700 mb-2">Certifications:</div>
+              <div className="space-y-1">
+                {abns_points > 0 && <div className="flex justify-between"><span className="text-gray-600">ABNS:</span><span>{abns_points} pts</span></div>}
+                {aoa_points > 0 && <div className="flex justify-between"><span className="text-gray-600">AOA:</span><span>{aoa_points} pts</span></div>}
+                <div className="flex justify-between font-semibold pt-2 border-t">
+                  <span>Total Certification Points:</span>
+                  <span>{certification_points} pts</span>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="border-t pt-3">
+            <div className="font-semibold text-gray-700 mb-2">Calculation:</div>
+            <div className="space-y-1 text-xs text-gray-600 font-mono">
+              <div>Raw Score: {med_school_score + residency_score + certification_points} pts</div>
+              <div>Percentage: {training.percentage.toFixed(1)}% (relative to max in batch)</div>
+              <div>Weighted: {training.percentage.toFixed(1)}% × {training.weight}% = {training.weighted_points.toFixed(2)} points</div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'experience',
+      title: 'Years of Experience',
+      icon: Briefcase,
+      color: 'bg-green-50 border-green-200',
+      iconColor: 'text-green-600',
+      weight: experience.weight,
+      percentage: experience.percentage,
+      weightedPoints: experience.weighted_points,
+      summary: years_experience ? `${years_experience} year${years_experience !== 1 ? 's' : ''}` : 'Not available',
+      details: (
+        <div className="space-y-3 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-600">Years of Experience:</span>
+            <span className="font-semibold">{years_experience || 'N/A'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Experience Points:</span>
+            <span className="font-semibold">{scoreData.experience_points || 0} pts</span>
+          </div>
+          <div className="border-t pt-3">
+            <div className="font-semibold text-gray-700 mb-2">Calculation:</div>
+            <div className="space-y-1 text-xs text-gray-600 font-mono">
+              <div>Raw Score: {scoreData.experience_points || 0} pts</div>
+              <div>Percentage: {experience.percentage.toFixed(1)}% (relative to max in batch)</div>
+              <div>Weighted: {experience.percentage.toFixed(1)}% × {experience.weight}% = {experience.weighted_points.toFixed(2)} points</div>
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: 'vumedi',
+      title: 'Medical Lectures (Vumedi)',
+      icon: Video,
+      color: 'bg-pink-50 border-pink-200',
+      iconColor: 'text-pink-600',
+      weight: vumedi.weight,
+      percentage: vumedi.percentage,
+      weightedPoints: vumedi.weighted_points,
+      summary: `${vumedi_count} video${vumedi_count !== 1 ? 's' : ''}`,
+      details: (
+        <div className="space-y-3 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-600">Total Videos:</span>
+            <span className="font-semibold">{vumedi_count}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Raw Score:</span>
+            <span className="font-semibold">{vumedi_count * 4} pts ({vumedi_count} × 4)</span>
+          </div>
+          <div className="border-t pt-3">
+            <div className="font-semibold text-gray-700 mb-2">Calculation:</div>
+            <div className="space-y-1 text-xs text-gray-600 font-mono">
+              <div>Raw Score: {vumedi_count * 4} pts</div>
+              <div>Percentage: {vumedi.percentage.toFixed(1)}% (relative to max in batch)</div>
+              <div>Weighted: {vumedi.percentage.toFixed(1)}% × {vumedi.weight}% = {vumedi.weighted_points.toFixed(2)} points</div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+  ];
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white rounded-xl shadow-2xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-t-xl z-10">
+          <div className="flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-bold mb-1">Score Breakdown</h2>
+              <p className="text-blue-100 text-sm">{provider.name}</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-white hover:text-gray-200 transition-colors p-2 hover:bg-white/20 rounded-lg"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          {score !== undefined && (
+            <div className="mt-4">
+              <div className={`inline-flex items-center justify-center px-4 py-2 ${getScoreColor(score)} text-white text-lg font-bold rounded-lg shadow-lg`}>
+                Total Score: {score.toFixed(2)} / 100
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Modal Content */}
+        <div className="p-6">
+          <div className="mb-6">
+            <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-4 border border-gray-200">
+              <h3 className="font-semibold text-gray-900 mb-2">Weight Distribution</h3>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
+                <div className="text-center">
+                  <div className="font-bold text-blue-600">40%</div>
+                  <div className="text-gray-600 text-xs">Clinical Volume</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-purple-600">40%</div>
+                  <div className="text-gray-600 text-xs">PubMed</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-indigo-600">10%</div>
+                  <div className="text-gray-600 text-xs">Training</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-green-600">6%</div>
+                  <div className="text-gray-600 text-xs">Experience</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-pink-600">4%</div>
+                  <div className="text-gray-600 text-xs">Vumedi</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {sections.map((section) => {
+              const Icon = section.icon;
+              const isExpanded = expandedSections.has(section.key);
+              
+              return (
+                <div
+                  key={section.key}
+                  className={`${section.color} border-2 rounded-lg overflow-hidden transition-all`}
+                >
+                  {/* Section Header */}
+                  <button
+                    onClick={() => toggleSection(section.key)}
+                    className="w-full p-4 flex items-center justify-between hover:bg-opacity-80 transition-colors"
+                  >
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className={`${section.iconColor} bg-white rounded-lg p-2`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <div className="flex items-center gap-3">
+                          <h3 className="font-bold text-gray-900 text-lg">{section.title}</h3>
+                          <span className="text-xs font-semibold text-gray-600 bg-white px-2 py-1 rounded">
+                            {section.weight}% weight
+                          </span>
+                        </div>
+                        <div className="mt-2 flex items-center gap-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl font-bold text-gray-900">{section.weightedPoints.toFixed(2)}</span>
+                            <span className="text-sm text-gray-600">/ {section.weight}</span>
+                          </div>
+                          <div className="h-2 bg-white rounded-full flex-1 max-w-[200px]">
+                            <div
+                              className={`h-full ${section.iconColor.replace('text-', 'bg-')} rounded-full transition-all`}
+                              style={{ width: `${Math.min(section.percentage, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-semibold text-gray-700">{section.percentage.toFixed(1)}%</span>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">{section.summary}</p>
+                      </div>
+                    </div>
+                    <div className="ml-4">
+                      {isExpanded ? (
+                        <ChevronUp className="w-5 h-5 text-gray-600" />
+                      ) : (
+                        <ChevronDown className="w-5 h-5 text-gray-600" />
+                      )}
+                    </div>
+                  </button>
+
+                  {/* Expandable Details */}
+                  {isExpanded && (
+                    <div className="border-t border-gray-300 bg-white p-4">
+                      {section.details}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Modal Footer */}
+        <div className="sticky bottom-0 bg-gray-50 px-6 py-4 rounded-b-xl border-t border-gray-200">
+          <button
+            onClick={onClose}
+            className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

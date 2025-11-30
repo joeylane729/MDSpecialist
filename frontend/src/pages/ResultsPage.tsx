@@ -1660,6 +1660,7 @@ const ResultsPage: React.FC = () => {
                   isHighlighted={isTopResult}
                   score={score}
                   scoreBreakdown={breakdown}
+                  scoreData={scoreData}
                   isCertified={isCertified}
                   providerContent={(() => {
                     const contentData = providerLinks[provider.npi];
