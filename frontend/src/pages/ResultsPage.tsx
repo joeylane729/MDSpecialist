@@ -24,6 +24,7 @@ interface SearchParams {
     name: string;
     outcomes: string;
     complications: string;
+    category?: string;
   }>;
   cpt_codes?: Array<{
     code: string;
@@ -42,6 +43,7 @@ interface TreatmentOption {
   name: string;
   outcomes: string;
   complications: string;
+  category?: string;
 }
 
 // Function to get treatment options from GPT-generated data
@@ -51,7 +53,8 @@ const getTreatmentOptions = (searchParams: any, aiRecommendations?: any): Treatm
     return searchParams.treatment_options.map((option: any) => ({
       name: option.name || "Treatment Option",
       outcomes: option.outcomes || "Outcomes not specified",
-      complications: option.complications || "Complications not specified"
+      complications: option.complications || "Complications not specified",
+      category: option.category || "Other"
     }));
   }
 
@@ -60,7 +63,8 @@ const getTreatmentOptions = (searchParams: any, aiRecommendations?: any): Treatm
     return aiRecommendations.patient_profile.treatment_options.map((option: any) => ({
       name: option.name || "Treatment Option",
       outcomes: option.outcomes || "Outcomes not specified",
-      complications: option.complications || "Complications not specified"
+      complications: option.complications || "Complications not specified",
+      category: option.category || "Other"
     }));
   }
 
@@ -1470,7 +1474,14 @@ const ResultsPage: React.FC = () => {
                               />
                               <span className="text-sm text-gray-700 font-bold">{index + 1}.</span>
                               <div className="flex-1">
-                                <h4 className="font-medium text-gray-900 text-sm mb-2">{treatment.name}</h4>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <h4 className="font-medium text-gray-900 text-sm">{treatment.name}</h4>
+                                  {treatment.category && (
+                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                                      {treatment.category}
+                                    </span>
+                                  )}
+                                </div>
                                 <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
                                   <div><span className="font-medium">Outcomes:</span> {treatment.outcomes}</div>
                                   <div><span className="font-medium">Complications:</span> {treatment.complications}</div>

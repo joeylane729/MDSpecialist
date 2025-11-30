@@ -1072,7 +1072,12 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 1. Primary diagnosis (most likely ICD-10 code and description based on symptoms and diagnosis)
                 2. Treatment options performed specifically by a neurosurgeon
 
-                Provide all relevant treatment options based on the diagnosis.
+                Provide all relevant treatment options based on the diagnosis. 
+                For each treatment option, include the category of the treatment option out of the following options:
+                - Surgery
+                - Radiosurgery
+                - Endovascular
+                - Other
                                 
                 Return the response in this exact JSON format:
                 {{
@@ -1084,7 +1089,8 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                         {{
                             "name": "Treatment name",
                             "outcomes": "Expected outcomes and success rates",
-                            "complications": "Potential complications and risks"
+                            "complications": "Potential complications and risks",
+                            "category": "Category of the treatment option"
                         }}
                     ]
                 }}
