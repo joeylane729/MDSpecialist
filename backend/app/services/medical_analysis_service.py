@@ -762,9 +762,9 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         Query the CMS public API using CPT codes from the medical analysis.
         Aggregates data across the most recent 5 years (2023-2019).
         If more than 100 CPT codes, splits into multiple API calls per year.
-        If state is provided, filters results by state before selecting top 25.
+        If state is provided, filters results by state (but returns all, not just top 25).
         Groups results by provider (Rndrng_NPI) and sums Total Services across all years.
-        Returns top 25 providers by total services.
+        Returns all providers (still sorted by total services descending), or all providers in the specified state.
         
         Args:
             cpt_codes: List of dictionaries containing CPT codes and descriptions
@@ -926,7 +926,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             grouped_results = list(provider_totals.values())
             grouped_results.sort(key=lambda x: x['Tot_Srvcs'], reverse=True)
             
-            # Filter by state if provided, then take top 25
+            # Filter by state if provided, but return ALL results (no top 25 limit)
             state_abbrev = None
             filtered_count = None
             if state:
@@ -952,20 +952,20 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                     }
                     state_abbrev = state_map.get(state_abbrev, state_abbrev)
                 
-                # Filter by state
+                # Filter by state (return all, not just top 25)
                 filtered_by_state = [
                     p for p in grouped_results 
                     if (p.get('Rndrng_Prvdr_State_Abrvtn') or '').upper().strip() == state_abbrev
                 ]
                 logger.info(f"🔍 Filtered {len(filtered_by_state)} providers in state {state_abbrev} (from {len(grouped_results)} total)")
-                top_25_providers = filtered_by_state[:25]
+                final_providers = filtered_by_state
                 filtered_count = len(filtered_by_state)
             else:
-                # No state filter, just take top 25
-                top_25_providers = grouped_results[:25]
+                # No state filter, return all providers
+                final_providers = grouped_results
             
             # Convert sets to lists and build descriptions list matching CPT codes
-            for provider in top_25_providers:
+            for provider in final_providers:
                 provider['HCPCS_Codes'] = sorted(list(provider['HCPCS_Codes']))
                 # Build HCPCS_Descriptions list: one description per CPT code (most recent)
                 descriptions = []
@@ -979,14 +979,14 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 provider.pop('HCPCS_Code_Descriptions', None)
             
             if state and filtered_count is not None and state_abbrev:
-                logger.info(f"✅ Grouped into {len(provider_totals)} total providers, filtered to {filtered_count} in state {state_abbrev}, returning top {len(top_25_providers)}")
+                logger.info(f"✅ Grouped into {len(provider_totals)} total providers, filtered to {filtered_count} in state {state_abbrev}, returning all {len(final_providers)}")
             else:
-                logger.info(f"✅ Grouped into {len(provider_totals)} providers, returning top {len(top_25_providers)}")
+                logger.info(f"✅ Grouped into {len(provider_totals)} providers, returning all {len(final_providers)}")
             
             result = {
                 "url": urls_used[0] if urls_used else None,  # Primary URL for display (first one)
                 "urls": urls_used,  # All URLs used (all years and chunks)
-                "results": top_25_providers,
+                "results": final_providers,  # All providers (no top 25 limit), still sorted by Tot_Srvcs descending
                 "total_results": len(all_results),  # Total raw results across all years
                 "total_providers": len(provider_totals),  # Total unique providers
                 "cpt_codes_searched": cpt_code_values,
@@ -1069,7 +1069,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 
                 Analyze the information above and provide:
                 1. Primary diagnosis (most likely ICD-10 code and description based on symptoms and diagnosis)
-                2. Treatment options
+                2. Treatment options performed specifically by a neurosurgeon
 
                 Provide all relevant treatment options based on the diagnosis.
                                 

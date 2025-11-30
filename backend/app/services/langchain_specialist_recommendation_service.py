@@ -200,7 +200,7 @@ class LangChainSpecialistRecommendationService:
         npi_providers: List[Dict[str, Any]],
         patient_input: str,
         shared_specialist_information: Optional[List[Dict[str, Any]]] = None,
-        top_cms_npis: Optional[set] = None
+        cms_tot_srvcs: Optional[Dict[str, int]] = None
     ) -> List[str]:
         """
         Rank NPI providers based on Pinecone specialist information.
@@ -230,15 +230,17 @@ class LangChainSpecialistRecommendationService:
             logger.info(f"📋 Treatment groups: {list(shared_specialist_information.keys()) if isinstance(shared_specialist_information, dict) else 'Not grouped'}")
             
             # Step 3: Use treatment-specific ranking service to rank NPI providers
-            # Use top_cms_npis if provided (extracted from CMS data in the endpoint)
+            # Use cms_tot_srvcs if provided (extracted from CMS data in the endpoint)
             logger.info("🔍 Step 3: Ranking NPI providers based on treatment-specific Pinecone data...")
-            if top_cms_npis:
-                logger.info(f"🏥 Using {len(top_cms_npis)} top CMS NPIs for clinical volume bonus")
+            if cms_tot_srvcs:
+                logger.info(f"🏥 Using Tot_Srvcs data for {len(cms_tot_srvcs)} CMS providers for clinical volume scoring")
+                max_tot_srvcs = max(cms_tot_srvcs.values()) if cms_tot_srvcs.values() else 0
+                logger.info(f"🏥 Max Tot_Srvcs in CMS data: {max_tot_srvcs}")
             ranking_result = await self.ranking_service.rank_npi_providers_by_treatment(
                 npi_providers=npi_providers,
                 treatment_pinecone_data=shared_specialist_information,
                 patient_profile=medical_analysis_results,
-                top_cms_npis=top_cms_npis
+                cms_tot_srvcs=cms_tot_srvcs
             )
             
             treatment_rankings = ranking_result['treatment_rankings']

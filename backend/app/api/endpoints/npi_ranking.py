@@ -56,35 +56,43 @@ async def rank_npi_providers(
         else:
             logger.info("⚠️ [NPI Ranking] No shared specialist information provided")
         
-        # Extract top 25 NPIs from CMS results for clinical volume bonus
-        top_cms_npis = None
+        # Extract CMS Tot_Srvcs data for percentage-based clinical volume scoring
+        cms_tot_srvcs = None
         if request.cms_data and isinstance(request.cms_data, dict):
             logger.info(f"🏥 [NPI Ranking] CMS data received - keys: {list(request.cms_data.keys())}")
             cms_providers = request.cms_data.get('results', [])
             logger.info(f"🏥 [NPI Ranking] CMS providers count: {len(cms_providers) if isinstance(cms_providers, list) else 'not a list'}")
             if cms_providers and isinstance(cms_providers, list):
-                # Extract NPIs from top 25 CMS providers (already sorted by total services)
-                top_cms_npis = set()
+                # Extract NPIs and Tot_Srvcs from ALL CMS providers (not just top 25)
+                cms_tot_srvcs = {}
                 extracted_count = 0
-                for i, provider in enumerate(cms_providers[:25]):  # Top 25 providers
+                for i, provider in enumerate(cms_providers):
                     npi = provider.get('Rndrng_NPI')
+                    tot_srvcs = provider.get('Tot_Srvcs', 0)
                     if npi:
+                        try:
+                            tot_srvcs_int = int(tot_srvcs) if tot_srvcs else 0
+                        except (ValueError, TypeError):
+                            tot_srvcs_int = 0
+                        
                         npi_str = str(npi)
-                        top_cms_npis.add(npi_str)
+                        cms_tot_srvcs[npi_str] = tot_srvcs_int
                         extracted_count += 1
+                        
                         # Log first 5 for debugging
                         if i < 5:
-                            logger.info(f"🏥 [NPI Ranking] Top {i+1} CMS provider NPI: {npi_str} (from {provider.get('Rndrng_Prvdr_First_Name', '')} {provider.get('Rndrng_Prvdr_Last_Org_Name', '')})")
+                            logger.info(f"🏥 [NPI Ranking] CMS provider {i+1} NPI: {npi_str}, Tot_Srvcs: {tot_srvcs_int} (from {provider.get('Rndrng_Prvdr_First_Name', '')} {provider.get('Rndrng_Prvdr_Last_Org_Name', '')})")
                         # Check if this is Theodore Schwartz
                         first_name = provider.get('Rndrng_Prvdr_First_Name', '').upper()
                         last_name = provider.get('Rndrng_Prvdr_Last_Org_Name', '').upper()
                         if 'THEODORE' in first_name and 'SCHWARTZ' in last_name:
-                            logger.info(f"✅ [NPI Ranking] FOUND THEODORE SCHWARTZ at position {i+1} with NPI: {npi_str}")
+                            logger.info(f"✅ [NPI Ranking] FOUND THEODORE SCHWARTZ at position {i+1} with NPI: {npi_str}, Tot_Srvcs: {tot_srvcs_int}")
                     else:
                         logger.warning(f"⚠️ [NPI Ranking] Provider at position {i+1} has no Rndrng_NPI field")
-                if top_cms_npis:
-                    logger.info(f"🏥 [NPI Ranking] Extracted {len(top_cms_npis)} NPIs from top 25 CMS results for clinical volume bonus")
-                    logger.info(f"🏥 [NPI Ranking] First 10 extracted NPIs: {list(list(top_cms_npis)[:10])}")
+                if cms_tot_srvcs:
+                    logger.info(f"🏥 [NPI Ranking] Extracted {len(cms_tot_srvcs)} NPIs with Tot_Srvcs from CMS results for clinical volume scoring")
+                    max_tot_srvcs = max(cms_tot_srvcs.values()) if cms_tot_srvcs.values() else 0
+                    logger.info(f"🏥 [NPI Ranking] Max Tot_Srvcs in CMS results: {max_tot_srvcs}")
                 else:
                     logger.warning(f"⚠️ [NPI Ranking] No NPIs extracted from CMS providers!")
             else:
@@ -100,7 +108,7 @@ async def rank_npi_providers(
             npi_providers=request.npi_providers,
             patient_input=request.patient_input,
             shared_specialist_information=shared_data,
-            top_cms_npis=top_cms_npis
+            cms_tot_srvcs=cms_tot_srvcs
         )
         
         treatment_rankings = ranking_result['treatment_rankings']
