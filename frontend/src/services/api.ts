@@ -439,8 +439,24 @@ export const rankNPIProviders = async (request: NPIRankingRequest): Promise<NPIR
     const payload = {
       npi_providers: request.npi_providers,
       patient_input: request.patient_input,
-      shared_specialist_information: request.shared_specialist_information
+      shared_specialist_information: request.shared_specialist_information,
+      cms_data: request.cms_data // Include CMS data for clinical volume bonus
     };
+    
+    if (request.cms_data) {
+      const cmsDataAny = request.cms_data as any;
+      console.log('  - CMS data structure:', {
+        hasTop25Npis: !!cmsDataAny.top_25_npis,
+        top25NpisLength: cmsDataAny.top_25_npis?.length || 0,
+        top25NpisType: Array.isArray(cmsDataAny.top_25_npis) ? 'array' : typeof cmsDataAny.top_25_npis,
+        cmsDataKeys: Object.keys(request.cms_data)
+      });
+      if (cmsDataAny.top_25_npis && cmsDataAny.top_25_npis.length > 0) {
+        console.log('  - Sample top_25_npis (first 5):', cmsDataAny.top_25_npis.slice(0, 5));
+      }
+    } else {
+      console.warn('  ⚠️  NO CMS DATA IN RANKING REQUEST');
+    }
     
     const payloadSize = JSON.stringify(payload).length;
     console.log(`🔍 [Frontend] Calling /api/v1/rank-npi-providers with payload size: ${(payloadSize / 1024).toFixed(2)} KB`);

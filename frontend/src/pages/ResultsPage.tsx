@@ -888,6 +888,42 @@ const ResultsPage: React.FC = () => {
         // Capture the provider links and scores
         providerLinks = firstTreatment.provider_links || {};
         const providerScores = firstTreatment.provider_scores || {};
+        
+        console.log('🔍 [Frontend] Provider Scores Received:');
+        console.log('  - Total providers with scores:', Object.keys(providerScores).length);
+        
+        // Check for clinical volume points in scores
+        let providersWithClinicalVolume = 0;
+        const sampleProvidersWithClinicalVolume: string[] = [];
+        Object.entries(providerScores).forEach(([npi, scoreData]: [string, any]) => {
+          const clinicalVol = scoreData?.clinical_volume_points || 0;
+          if (clinicalVol > 0) {
+            providersWithClinicalVolume++;
+            if (sampleProvidersWithClinicalVolume.length < 5) {
+              sampleProvidersWithClinicalVolume.push(`${npi}: ${clinicalVol} points`);
+            }
+          }
+        });
+        
+        console.log('  - Providers with clinical_volume_points > 0:', providersWithClinicalVolume);
+        if (sampleProvidersWithClinicalVolume.length > 0) {
+          console.log('  - Sample providers with clinical volume:', sampleProvidersWithClinicalVolume);
+        } else {
+          console.warn('  ⚠️  NO PROVIDERS FOUND WITH CLINICAL VOLUME POINTS');
+          
+          // Log first 5 providers' scores for debugging
+          const first5Npis = Object.keys(providerScores).slice(0, 5);
+          console.log('  - First 5 providers score data:');
+          first5Npis.forEach(npi => {
+            const scoreData = providerScores[npi];
+            console.log(`    ${npi}:`, {
+              score: scoreData?.score,
+              clinical_volume_points: scoreData?.clinical_volume_points,
+              hasClinicalVolume: !!(scoreData?.clinical_volume_points && scoreData.clinical_volume_points > 0)
+            });
+          });
+        }
+        
         setProviderScores(providerScores);
       }
       
