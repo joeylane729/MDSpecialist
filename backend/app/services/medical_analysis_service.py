@@ -528,13 +528,18 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
             # Use custom prompt if provided, otherwise use default
             if custom_prompt:
                 prompt_template = custom_prompt
-                # For custom prompts, we still need to format with the variables if they're present
-                try:
-                    rendered_prompt = prompt_template.format(
-                        diagnosis_terms=terms_text,
-                        treatment_options=treatment_options_text
-                    )
-                except KeyError:
+                # For custom prompts, format with the variables if they're present
+                if "{diagnosis_terms}" in custom_prompt or "{treatment_options}" in custom_prompt:
+                    try:
+                        rendered_prompt = prompt_template.format(
+                            diagnosis_terms=terms_text,
+                            treatment_options=treatment_options_text
+                        )
+                    except KeyError as e:
+                        # If formatting fails, log and use as-is
+                        logger.warning(f"⚠️  Could not format custom prompt with variables: {e}")
+                        rendered_prompt = prompt_template
+                else:
                     # If custom prompt doesn't have these variables, use it as-is
                     rendered_prompt = prompt_template
             else:
@@ -597,6 +602,9 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             # Invoke with variables only if they're expected
             if custom_prompt and "{diagnosis_terms}" not in custom_prompt and "{treatment_options}" not in custom_prompt:
                 response = await chain.ainvoke({})
+                # For custom prompts without variables, the rendered prompt is the prompt itself
+                if not rendered_prompt:
+                    rendered_prompt = prompt_template
             else:
                 response = await chain.ainvoke({
                     "diagnosis_terms": terms_text,
