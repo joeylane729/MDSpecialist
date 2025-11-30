@@ -833,10 +833,11 @@ const ResultsPage: React.FC = () => {
       console.log('  - specialistResponse.cms_data exists?', !!specialistResponse.cms_data);
       if (specialistResponse.cms_data) {
         console.log('  - cms_data keys:', Object.keys(specialistResponse.cms_data));
-        console.log('  - cms_data.top_25_npis?', specialistResponse.cms_data.top_25_npis);
-        console.log('  - cms_data.top_25_npis length:', specialistResponse.cms_data.top_25_npis?.length || 0);
-        if (specialistResponse.cms_data.top_25_npis && specialistResponse.cms_data.top_25_npis.length > 0) {
-          console.log('  - First 5 top_25_npis:', specialistResponse.cms_data.top_25_npis.slice(0, 5));
+        const cmsDataAny = specialistResponse.cms_data as any;
+        console.log('  - cms_data.top_25_npis?', cmsDataAny.top_25_npis);
+        console.log('  - cms_data.top_25_npis length:', cmsDataAny.top_25_npis?.length || 0);
+        if (cmsDataAny.top_25_npis && cmsDataAny.top_25_npis.length > 0) {
+          console.log('  - First 5 top_25_npis:', cmsDataAny.top_25_npis.slice(0, 5));
         }
       } else {
         console.warn('  ⚠️  NO CMS DATA AVAILABLE FOR RANKING');

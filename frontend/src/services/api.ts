@@ -463,6 +463,25 @@ export const rankNPIProviders = async (request: NPIRankingRequest): Promise<NPIR
     });
     
     console.log('✅ [Frontend] Ranking successful:', response.data.message);
+    
+    // Check if provider scores in response have clinical volume points
+    if (response.data.treatment_rankings) {
+      const firstTreatmentId = Object.keys(response.data.treatment_rankings)[0];
+      if (firstTreatmentId) {
+        const firstTreatment = response.data.treatment_rankings[firstTreatmentId];
+        const providerScores = firstTreatment?.provider_scores || {};
+        const scoresWithClinicalVolume = Object.values(providerScores).filter((scoreData: any) => 
+          scoreData?.clinical_volume_points && scoreData.clinical_volume_points > 0
+        );
+        console.log(`🔍 [Frontend] Providers with clinical_volume_points in response (treatment ${firstTreatmentId}):`, scoresWithClinicalVolume.length);
+        if (scoresWithClinicalVolume.length > 0) {
+          console.log('  - Sample scores with clinical volume:', scoresWithClinicalVolume.slice(0, 3));
+        } else {
+          console.warn('  ⚠️  NO PROVIDER SCORES HAVE CLINICAL VOLUME POINTS IN RESPONSE');
+        }
+      }
+    }
+    
     return response.data;
   } catch (error) {
     console.error('❌ [Frontend] Error ranking NPI providers:', error);
