@@ -337,6 +337,15 @@ class LangChainRankingService:
         max_training = max(max_training, 1.0)
         max_experience = max(max_experience, 1.0)
         
+        # Store max values for frontend display
+        max_values = {
+            'clinical_volume': max_clinical_volume,
+            'pubmed': max_pubmed,
+            'vumedi': max_vumedi,
+            'training': max_training,
+            'experience': max_experience
+        }
+        
         weighted_scores = {}
         
         for npi, scores in raw_scores.items():
@@ -367,7 +376,14 @@ class LangChainRankingService:
                 'vumedi_weighted': vumedi_weighted,
                 'training_weighted': training_weighted,
                 'experience_weighted': experience_weighted,
-                'final_score': final_score
+                'final_score': final_score,
+                'breakdown_details': {  # Store details for frontend display
+                    'clinical_volume': {'raw': scores.get('clinical_volume_raw', 0), 'max': max_values['clinical_volume'], 'percentage': clinical_volume_pct * 100, 'weighted_points': clinical_volume_weighted, 'weight': 40},
+                    'pubmed': {'raw': scores.get('pubmed_raw', 0), 'max': max_values['pubmed'], 'percentage': pubmed_pct * 100, 'weighted_points': pubmed_weighted, 'weight': 40},
+                    'training': {'raw': scores.get('training_raw', 0), 'max': max_values['training'], 'percentage': training_pct * 100, 'weighted_points': training_weighted, 'weight': 10},
+                    'experience': {'raw': scores.get('experience_raw', 0), 'max': max_values['experience'], 'percentage': experience_pct * 100, 'weighted_points': experience_weighted, 'weight': 6},
+                    'vumedi': {'raw': scores.get('vumedi_raw', 0), 'max': max_values['vumedi'], 'percentage': vumedi_pct * 100, 'weighted_points': vumedi_weighted, 'weight': 4},
+                }
             }
         
         return weighted_scores
@@ -820,7 +836,8 @@ class LangChainRankingService:
                                 'percentage': weighted_data['vumedi_pct'],
                                 'weighted_points': weighted_data['vumedi_weighted'],
                                 'weight': 4.0
-                            }
+                            },
+                            'breakdown_details': weighted_data.get('breakdown_details', {})
                         }
             
             # Sort providers by score (descending), then by name
@@ -1436,7 +1453,8 @@ class LangChainRankingService:
                                     'percentage': weighted_data['vumedi_pct'],
                                     'weighted_points': weighted_data['vumedi_weighted'],
                                     'weight': 4.0
-                                }
+                                },
+                                'breakdown_details': weighted_data.get('breakdown_details', {})
                             }
                     # Also update matched providers if not already updated
                     for npi, weighted_data in weighted_scores.items():
@@ -1467,7 +1485,8 @@ class LangChainRankingService:
                                     'percentage': weighted_data['vumedi_pct'],
                                     'weighted_points': weighted_data['vumedi_weighted'],
                                     'weight': 4.0
-                                }
+                                },
+                                'breakdown_details': weighted_data.get('breakdown_details', {})
                             }
                             # Ensure ALL providers have weighted_breakdown (even if all zeros)
                             # This is needed for providers without matches or with zero scores
