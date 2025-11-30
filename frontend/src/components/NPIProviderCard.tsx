@@ -722,6 +722,7 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
       icon: Activity,
       color: 'bg-blue-50 border-blue-200',
       iconColor: 'text-blue-600',
+      barColor: 'bg-blue-600',
       weight: clinical_volume.weight,
       percentage: clinical_volume.percentage,
       weightedPoints: clinical_volume.weighted_points,
@@ -751,6 +752,7 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
       icon: FileText,
       color: 'bg-purple-50 border-purple-200',
       iconColor: 'text-purple-600',
+      barColor: 'bg-purple-600',
       weight: pubmed.weight,
       percentage: pubmed.percentage,
       weightedPoints: pubmed.weighted_points,
@@ -825,6 +827,7 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
       icon: GraduationCap,
       color: 'bg-indigo-50 border-indigo-200',
       iconColor: 'text-indigo-600',
+      barColor: 'bg-indigo-600',
       weight: training.weight,
       percentage: training.percentage,
       weightedPoints: training.weighted_points,
@@ -871,6 +874,7 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
       icon: Briefcase,
       color: 'bg-green-50 border-green-200',
       iconColor: 'text-green-600',
+      barColor: 'bg-green-600',
       weight: experience.weight,
       percentage: experience.percentage,
       weightedPoints: experience.weighted_points,
@@ -902,6 +906,7 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
       icon: Video,
       color: 'bg-pink-50 border-pink-200',
       iconColor: 'text-pink-600',
+      barColor: 'bg-pink-600',
       weight: vumedi.weight,
       percentage: vumedi.percentage,
       weightedPoints: vumedi.weighted_points,
@@ -1026,7 +1031,7 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
                           </div>
                           <div className="h-2 bg-white rounded-full flex-1 max-w-[200px]">
                             <div
-                              className={`h-full ${section.iconColor.replace('text-', 'bg-')} rounded-full transition-all`}
+                              className={`h-full ${section.barColor} rounded-full transition-all`}
                               style={{ width: `${Math.min(section.percentage, 100)}%` }}
                             />
                           </div>
