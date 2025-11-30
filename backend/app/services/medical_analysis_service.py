@@ -527,21 +527,32 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
             
             # Use custom prompt if provided, otherwise use default
             if custom_prompt:
-                prompt_template = custom_prompt
+                # Escape all curly braces except for our template variables to prevent LangChain from parsing them
+                escaped_prompt = custom_prompt
+                # Temporarily replace our template variables with placeholders
+                escaped_prompt = escaped_prompt.replace("{diagnosis_terms}", "__DIAGNOSIS_TERMS__")
+                escaped_prompt = escaped_prompt.replace("{treatment_options}", "__TREATMENT_OPTIONS__")
+                # Escape all remaining curly braces
+                escaped_prompt = escaped_prompt.replace("{", "{{").replace("}", "}}")
+                # Restore our template variables
+                escaped_prompt = escaped_prompt.replace("{{__DIAGNOSIS_TERMS__}}", "{diagnosis_terms}")
+                escaped_prompt = escaped_prompt.replace("{{__TREATMENT_OPTIONS__}}", "{treatment_options}")
+                
+                prompt_template = escaped_prompt
                 # For custom prompts, format with the variables if they're present
                 if "{diagnosis_terms}" in custom_prompt or "{treatment_options}" in custom_prompt:
                     try:
-                        rendered_prompt = prompt_template.format(
+                        rendered_prompt = custom_prompt.format(
                             diagnosis_terms=terms_text,
                             treatment_options=treatment_options_text
                         )
                     except KeyError as e:
                         # If formatting fails, log and use as-is
                         logger.warning(f"⚠️  Could not format custom prompt with variables: {e}")
-                        rendered_prompt = prompt_template
+                        rendered_prompt = custom_prompt
                 else:
                     # If custom prompt doesn't have these variables, use it as-is
-                    rendered_prompt = prompt_template
+                    rendered_prompt = custom_prompt
             else:
                 prompt_template = """Give an exhaustive list of primary CPT codes that could possibly be used by a neurosurgeon to treat patients with any of these diagnoses:
 {diagnosis_terms}

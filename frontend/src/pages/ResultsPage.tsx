@@ -715,27 +715,44 @@ const ResultsPage: React.FC = () => {
         custom_prompt: customPrompt
       });
       
-      // Update CPT codes state
-      setCptCodes(response.cpt_codes);
-      setCptPromptText(response.cpt_prompt_text);
-      // Only update editable prompt if we used the default (not custom), otherwise keep the edited version
-      if (!useCustomPrompt) {
-        setEditablePromptText(response.cpt_prompt_text);
+      // Only update CPT codes if we got valid codes (non-empty array)
+      if (response.cpt_codes && response.cpt_codes.length > 0) {
+        setCptCodes(response.cpt_codes);
+        setCptPromptText(response.cpt_prompt_text);
+        // Only update editable prompt if we used the default (not custom), otherwise keep the edited version
+        if (!useCustomPrompt) {
+          setEditablePromptText(response.cpt_prompt_text);
+        }
+        
+        // Update searchParams to include CPT codes
+        if (searchParams) {
+          setSearchParams({
+            ...searchParams,
+            cpt_codes: response.cpt_codes,
+            cpt_prompt_text: response.cpt_prompt_text
+          });
+        }
+        
+        console.log('✅ Generated', response.cpt_codes.length, 'CPT codes');
+      } else {
+        // If we got 0 codes, don't update state - keep existing codes
+        console.warn('⚠️  Received 0 CPT codes, keeping existing codes');
+        if (response.cpt_prompt_text) {
+          // Still update the prompt text if provided
+          setCptPromptText(response.cpt_prompt_text);
+          if (!useCustomPrompt) {
+            setEditablePromptText(response.cpt_prompt_text);
+          }
+        }
+        alert('No CPT codes were generated. Please check the prompt and try again.');
       }
       
-      // Update searchParams to include CPT codes
-      if (searchParams) {
-        setSearchParams({
-          ...searchParams,
-          cpt_codes: response.cpt_codes,
-          cpt_prompt_text: response.cpt_prompt_text
-        });
-      }
-      
-      console.log('✅ Generated', response.cpt_codes.length, 'CPT codes');
     } catch (error) {
       console.error('❌ Error generating CPT codes:', error);
-      alert('Failed to generate CPT codes: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert('Failed to generate CPT codes: ' + errorMessage);
+      // Don't clear existing CPT codes on error - keep what we have
+      // setCptCodes(null) would cause UI to reset
     } finally {
       setIsGeneratingCPTCodes(false);
     }
