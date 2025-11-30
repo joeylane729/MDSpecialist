@@ -205,6 +205,7 @@ const ResultsPage: React.FC = () => {
     
     const { 
       score, 
+      weighted_breakdown,
       vumedi_count, 
       pubmed_count, 
       pubmed_first_author_count = 0,
@@ -241,7 +242,96 @@ const ResultsPage: React.FC = () => {
       }
     }
     
-    // Create a more readable breakdown
+    // Create weighted breakdown display if available
+    if (weighted_breakdown) {
+      const breakdownParts = [];
+      
+      // Add header explaining the weighting system
+      breakdownParts.push('Score Breakdown (Weighted System):\n');
+      breakdownParts.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+      
+      // Clinical Volume (40%)
+      const cv = weighted_breakdown.clinical_volume;
+      breakdownParts.push(`1. Clinical Volume (${cv.weight}% weight)`);
+      breakdownParts.push(`   Percentage: ${cv.percentage.toFixed(1)}%`);
+      breakdownParts.push(`   Weighted Points: ${cv.weighted_points.toFixed(2)} / ${cv.weight}`);
+      breakdownParts.push(`   Status: ${cv.percentage > 0 ? '✓ Top 25 CMS provider' : 'Not in top 25'}\n`);
+      
+      // PubMed (40%)
+      const pubmed = weighted_breakdown.pubmed;
+      breakdownParts.push(`2. PubMed Articles (${pubmed.weight}% weight)`);
+      breakdownParts.push(`   Percentage: ${pubmed.percentage.toFixed(1)}%`);
+      breakdownParts.push(`   Weighted Points: ${pubmed.weighted_points.toFixed(2)} / ${pubmed.weight}`);
+      if (pubmed_count > 0) {
+        breakdownParts.push(`   Details: ${pubmed_count} article${pubmed_count !== 1 ? 's' : ''} (weighted by author position & journal quartile)`);
+        if (pubmed_first_author_count > 0 || pubmed_middle_author_count > 0 || pubmed_last_author_count > 0) {
+          const authorParts = [];
+          if (pubmed_first_author_count > 0) authorParts.push(`${pubmed_first_author_count} first author${pubmed_first_author_count !== 1 ? 's' : ''}`);
+          if (pubmed_middle_author_count > 0) authorParts.push(`${pubmed_middle_author_count} middle author${pubmed_middle_author_count !== 1 ? 's' : ''}`);
+          if (pubmed_last_author_count > 0) authorParts.push(`${pubmed_last_author_count} last author${pubmed_last_author_count !== 1 ? 's' : ''}`);
+          breakdownParts.push(`     - ${authorParts.join(', ')}`);
+        }
+      } else {
+        breakdownParts.push(`   Details: No PubMed articles found`);
+      }
+      breakdownParts.push('');
+      
+      // Training (10%) - Med school + Residency + Certification
+      const training = weighted_breakdown.training;
+      breakdownParts.push(`3. Training (${training.weight}% weight - Med School + Residency + Board Certifications)`);
+      breakdownParts.push(`   Percentage: ${training.percentage.toFixed(1)}%`);
+      breakdownParts.push(`   Weighted Points: ${training.weighted_points.toFixed(2)} / ${training.weight}`);
+      const trainingDetails = [];
+      if (med_school_score > 0) trainingDetails.push(`Med school: ${med_school_score} pts`);
+      if (residency_score > 0) trainingDetails.push(`Residency: ${residency_score} pts`);
+      if (certification_points > 0) {
+        const certDetails = [];
+        if (abns_points > 0) certDetails.push(`ABNS: ${abns_points}`);
+        if (aoa_points > 0) certDetails.push(`AOA: ${aoa_points}`);
+        trainingDetails.push(`Certifications: ${certDetails.join(', ')}`);
+      }
+      breakdownParts.push(`   Details: ${trainingDetails.length > 0 ? trainingDetails.join(' | ') : 'No training data'}\n`);
+      
+      // Experience (6%)
+      const exp = weighted_breakdown.experience;
+      breakdownParts.push(`4. Years of Experience (${exp.weight}% weight)`);
+      breakdownParts.push(`   Percentage: ${exp.percentage.toFixed(1)}%`);
+      breakdownParts.push(`   Weighted Points: ${exp.weighted_points.toFixed(2)} / ${exp.weight}`);
+      if (years_experience) {
+        breakdownParts.push(`   Details: ${years_experience} year${years_experience !== 1 ? 's' : ''} of experience`);
+      } else {
+        breakdownParts.push(`   Details: Experience data not available`);
+      }
+      breakdownParts.push('');
+      
+      // Vumedi (4%)
+      const vumedi = weighted_breakdown.vumedi;
+      breakdownParts.push(`5. Medical Lectures - Vumedi (${vumedi.weight}% weight)`);
+      breakdownParts.push(`   Percentage: ${vumedi.percentage.toFixed(1)}%`);
+      breakdownParts.push(`   Weighted Points: ${vumedi.weighted_points.toFixed(2)} / ${vumedi.weight}`);
+      if (vumedi_count > 0) {
+        breakdownParts.push(`   Details: ${vumedi_count} video${vumedi_count !== 1 ? 's' : ''}`);
+      } else {
+        breakdownParts.push(`   Details: No Vumedi videos found`);
+      }
+      breakdownParts.push('');
+      
+      // Total
+      breakdownParts.push('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      breakdownParts.push(`Total Weighted Score: ${score.toFixed(2)} / 100`);
+      breakdownParts.push('');
+      breakdownParts.push(`Weight Distribution:`);
+      breakdownParts.push(`  • Clinical Volume: 40%`);
+      breakdownParts.push(`  • PubMed: 40%`);
+      breakdownParts.push(`  • Training: 10%`);
+      breakdownParts.push(`  • Experience: 6%`);
+      breakdownParts.push(`  • Vumedi: 4%`);
+      
+      const breakdown = breakdownParts.join('\n');
+      return { score, breakdown };
+    }
+    
+    // Fallback to old breakdown format if weighted_breakdown is not available
     const breakdownParts = [];
     if (vumedi_count > 0) {
       breakdownParts.push(`${vumedi_count} Vumedi video${vumedi_count > 1 ? 's' : ''} = ${vumedi_count * 4} point${vumedi_count * 4 !== 1 ? 's' : ''} (${vumedi_count} × 4)`);
