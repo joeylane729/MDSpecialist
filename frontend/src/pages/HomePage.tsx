@@ -679,6 +679,7 @@ const HomePage: React.FC = () => {
           treatment_options: aiRecommendations?.patient_profile?.treatment_options,
           cpt_codes: aiRecommendations?.patient_profile?.cpt_codes,
           cpt_prompt_text: aiRecommendations?.patient_profile?.cpt_prompt_text,
+          diagnoses_prompt_text: aiRecommendations?.patient_profile?.diagnoses_prompt_text,
           search_query: aiRecommendations?.patient_profile?.search_query,
           searchOptions: searchOptions
         },
@@ -722,6 +723,7 @@ const HomePage: React.FC = () => {
             treatment_options: aiRecommendations?.patient_profile?.treatment_options,
             cpt_codes: aiRecommendations?.patient_profile?.cpt_codes,
             cpt_prompt_text: aiRecommendations?.patient_profile?.cpt_prompt_text,
+            diagnoses_prompt_text: aiRecommendations?.patient_profile?.diagnoses_prompt_text,
             search_query: aiRecommendations?.patient_profile?.search_query,
             searchOptions: searchOptions
           },
