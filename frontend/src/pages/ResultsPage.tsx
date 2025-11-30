@@ -227,6 +227,20 @@ const ResultsPage: React.FC = () => {
       years_experience
     } = scoreData;
     
+    // Log clinical volume points for debugging (only for first few providers to avoid spam)
+    if (typeof window !== 'undefined' && !(window as any).__clinicalVolumeLogged) {
+      (window as any).__clinicalVolumeLogged = new Set();
+    }
+    const loggedSet = (window as any).__clinicalVolumeLogged as Set<string>;
+    if (!loggedSet.has(npi) && clinical_volume_points > 0) {
+      console.log(`✅ [Frontend] Provider ${npi} (${provider.first_name} ${provider.last_name}) has clinical_volume_points: ${clinical_volume_points}`);
+      loggedSet.add(npi);
+      // Only log first 10
+      if (loggedSet.size <= 10) {
+        console.log(`  - Full scoreData for ${npi}:`, JSON.stringify(scoreData, null, 2));
+      }
+    }
+    
     // Create a more readable breakdown
     const breakdownParts = [];
     if (vumedi_count > 0) {
@@ -815,6 +829,19 @@ const ResultsPage: React.FC = () => {
       const npiData = await searchNPIProviders(npiSearchRequest);
       
       // Step 3: Rank NPI providers using specialist information
+      console.log('🔍 [Frontend] CMS Data Check Before Ranking:');
+      console.log('  - specialistResponse.cms_data exists?', !!specialistResponse.cms_data);
+      if (specialistResponse.cms_data) {
+        console.log('  - cms_data keys:', Object.keys(specialistResponse.cms_data));
+        console.log('  - cms_data.top_25_npis?', specialistResponse.cms_data.top_25_npis);
+        console.log('  - cms_data.top_25_npis length:', specialistResponse.cms_data.top_25_npis?.length || 0);
+        if (specialistResponse.cms_data.top_25_npis && specialistResponse.cms_data.top_25_npis.length > 0) {
+          console.log('  - First 5 top_25_npis:', specialistResponse.cms_data.top_25_npis.slice(0, 5));
+        }
+      } else {
+        console.warn('  ⚠️  NO CMS DATA AVAILABLE FOR RANKING');
+      }
+      
       const rankingRequest: NPIRankingRequest = {
         npi_providers: npiData.providers,
         patient_input: `Symptoms: ${searchParams?.symptoms}\nDiagnosis: ${searchParams?.diagnosis}`,
@@ -822,6 +849,8 @@ const ResultsPage: React.FC = () => {
         cms_data: specialistResponse.cms_data // Pass CMS data for clinical volume bonus
       };
 
+      console.log('🔍 [Frontend] Ranking request cms_data:', rankingRequest.cms_data ? 'PRESENT' : 'MISSING');
+      
       const rankingResponse = await rankNPIProviders(rankingRequest);
       
       // Handle new treatment-specific ranking structure
