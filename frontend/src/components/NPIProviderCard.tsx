@@ -992,7 +992,7 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
                 </div>
                 <div className="text-center">
                   <div className="font-bold text-pink-600">4%</div>
-                  <div className="text-gray-600 text-xs">Vumedi</div>
+                  <div className="text-gray-600 text-xs">Medical Lectures</div>
                 </div>
               </div>
             </div>
