@@ -726,24 +726,24 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
       weight: clinical_volume.weight,
       percentage: clinical_volume.percentage,
       weightedPoints: clinical_volume.weighted_points,
-      summary: clinical_volume.percentage > 0 ? '✓ Top 25 CMS provider' : 'Not in top 25',
+      summary: clinical_volume.percentage > 0 ? `✓ ${clinical_volume.percentage.toFixed(1)}% of max Tot_Srvcs` : 'Not in CMS results',
       details: clinical_volume.percentage > 0 ? (
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-600">Status:</span>
-            <span className="font-semibold text-green-700">✓ In Top 25 CMS Results</span>
+            <span className="font-semibold text-green-700">✓ In CMS Results</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-600">Percentage:</span>
+            <span className="text-gray-600">Percentage of Max Tot_Srvcs:</span>
             <span className="font-semibold">{clinical_volume.percentage.toFixed(1)}%</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">Calculation:</span>
-            <span className="font-semibold">1.0 × {clinical_volume.weight}% = {clinical_volume.weighted_points.toFixed(2)} points</span>
+            <span className="font-semibold">{(clinical_volume.percentage / 100).toFixed(2)} × {clinical_volume.weight}% = {clinical_volume.weighted_points.toFixed(2)} points</span>
           </div>
         </div>
       ) : (
-        <div className="text-sm text-gray-600">This provider is not in the top 25 CMS results for the searched CPT codes.</div>
+        <div className="text-sm text-gray-600">This provider is not in the CMS results for the searched CPT codes.</div>
       )
     },
     {
