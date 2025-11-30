@@ -800,10 +800,9 @@ const ResultsPage: React.FC = () => {
     try {
       setIsRegeneratingDiagnoses(true);
       
-      // Get original request data from location state or searchParams
-      const originalRequest = location.state?.searchInputs;
-      if (!originalRequest) {
-        alert('Unable to regenerate: Original search data not found');
+      // Get original request data from searchParams or location.state
+      if (!searchParams) {
+        alert('Unable to regenerate: Search parameters not found');
         return;
       }
       
@@ -811,13 +810,14 @@ const ResultsPage: React.FC = () => {
       const customPrompt = useCustomPrompt && editableDiagnosesPromptText ? editableDiagnosesPromptText : undefined;
       
       // Call medical analysis API with custom prompt
+      // Get data from searchParams or fallback to location.state
       const response = await getMedicalAnalysis({
-        symptoms: originalRequest.symptoms || '',
-        diagnosis: originalRequest.diagnosis || '',
-        medical_history: originalRequest.medical_history,
-        medications: originalRequest.medications,
-        surgical_history: originalRequest.surgical_history,
-        files: originalRequest.files || [],
+        symptoms: searchParams.symptoms || location.state?.symptoms || '',
+        diagnosis: searchParams.diagnosis || location.state?.diagnosis || '',
+        medical_history: location.state?.medicalHistory || '',
+        medications: location.state?.medications || '',
+        surgical_history: location.state?.surgicalHistory || '',
+        files: [], // Files are not persisted, so we can't include them in rerun
         custom_diagnoses_prompt: customPrompt
       });
       
