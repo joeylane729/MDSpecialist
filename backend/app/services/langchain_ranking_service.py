@@ -909,6 +909,47 @@ class LangChainRankingService:
                          f"Found {sum(score['vumedi_count'] for score in provider_scores.values())} Vumedi matches " \
                          f"and {sum(score['pubmed_count'] for score in provider_scores.values())} PubMed matches."
             
+            # Ensure ALL providers have weighted_breakdown (even if all zeros)
+            # This is needed for providers without matches or with zero scores
+            for npi in provider_scores:
+                if 'weighted_breakdown' not in provider_scores[npi]:
+                    # Create a zero-weighted breakdown for providers without one
+                    provider_scores[npi]['weighted_breakdown'] = {
+                        'clinical_volume': {
+                            'raw': 0.0,
+                            'percentage': 0.0,
+                            'weighted_points': 0.0,
+                            'weight': 40.0
+                        },
+                        'pubmed': {
+                            'raw': 0.0,
+                            'percentage': 0.0,
+                            'weighted_points': 0.0,
+                            'weight': 40.0
+                        },
+                        'training': {
+                            'raw': 0.0,
+                            'percentage': 0.0,
+                            'weighted_points': 0.0,
+                            'weight': 10.0
+                        },
+                        'experience': {
+                            'raw': 0.0,
+                            'percentage': 0.0,
+                            'weighted_points': 0.0,
+                            'weight': 6.0
+                        },
+                        'vumedi': {
+                            'raw': 0.0,
+                            'percentage': 0.0,
+                            'weighted_points': 0.0,
+                            'weight': 4.0
+                        }
+                    }
+                    # Also ensure score is set (might be 0 for unmatched providers)
+                    if 'score' not in provider_scores[npi]:
+                        provider_scores[npi]['score'] = 0.0
+            
             return {
                 'ranking': ranked_npis,
                 'provider_links': provider_links,  # NPI-keyed
@@ -1431,7 +1472,47 @@ class LangChainRankingService:
                                     'weighted_points': weighted_data['vumedi_weighted'],
                                     'weight': 4.0
                                 }
-                            }
+                            
+                            # Ensure ALL providers have weighted_breakdown (even if all zeros)
+                            # This is needed for providers without matches or with zero scores
+                            for npi in provider_scores:
+                                if 'weighted_breakdown' not in provider_scores[npi]:
+                                    # Create a zero-weighted breakdown for providers without one
+                                    provider_scores[npi]['weighted_breakdown'] = {
+                                        'clinical_volume': {
+                                            'raw': 0.0,
+                                            'percentage': 0.0,
+                                            'weighted_points': 0.0,
+                                            'weight': 40.0
+                                        },
+                                        'pubmed': {
+                                            'raw': 0.0,
+                                            'percentage': 0.0,
+                                            'weighted_points': 0.0,
+                                            'weight': 40.0
+                                        },
+                                        'training': {
+                                            'raw': 0.0,
+                                            'percentage': 0.0,
+                                            'weighted_points': 0.0,
+                                            'weight': 10.0
+                                        },
+                                        'experience': {
+                                            'raw': 0.0,
+                                            'percentage': 0.0,
+                                            'weighted_points': 0.0,
+                                            'weight': 6.0
+                                        },
+                                        'vumedi': {
+                                            'raw': 0.0,
+                                            'percentage': 0.0,
+                                            'weighted_points': 0.0,
+                                            'weight': 4.0
+                                        }
+                                    }
+                                    # Also ensure score is set (might be 0 for unmatched providers)
+                                    if 'score' not in provider_scores[npi]:
+                                        provider_scores[npi]['score'] = 0.0
                 
                 # Sort ALL providers (matched + unmatched) by their total scores
                 # provider_scores is keyed by NPI, so iterate correctly
