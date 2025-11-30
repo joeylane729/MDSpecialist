@@ -88,6 +88,7 @@ const ResultsPage: React.FC = () => {
   const [specialistRecommendationData, setSpecialistRecommendationData] = useState<any>(null);
   const [cptCodes, setCptCodes] = useState<Array<{ code: string; description: string }> | null>(null);
   const [cptPromptText, setCptPromptText] = useState<string | null>(null);
+  const [editablePromptText, setEditablePromptText] = useState<string | null>(null);
   const [isGeneratingCPTCodes, setIsGeneratingCPTCodes] = useState(false);
   const [isGeneratingSpecialists, setIsGeneratingSpecialists] = useState(false);
   const [selectedTreatmentIndices, setSelectedTreatmentIndices] = useState<Set<number>>(new Set());
@@ -163,6 +164,7 @@ const ResultsPage: React.FC = () => {
       setCptCodes(searchParams.cpt_codes);
       if (searchParams.cpt_prompt_text) {
         setCptPromptText(searchParams.cpt_prompt_text);
+        setEditablePromptText(searchParams.cpt_prompt_text);
       }
     }
   }, [searchParams, cptCodes]);
@@ -678,7 +680,7 @@ const ResultsPage: React.FC = () => {
     saveFilterState();
   };
 
-  const handleGenerateCPTCodes = async () => {
+  const handleGenerateCPTCodes = async (useCustomPrompt: boolean = false) => {
     try {
       setIsGeneratingCPTCodes(true);
       
@@ -704,14 +706,22 @@ const ResultsPage: React.FC = () => {
         return;
       }
       
+      // Use custom prompt if rerunning with edited prompt, otherwise use default (undefined)
+      const customPrompt = useCustomPrompt && editablePromptText ? editablePromptText : undefined;
+      
       const response = await generateCPTCodes({
         search_query: searchQuery,
-        treatment_options: selectedTreatmentOptions
+        treatment_options: selectedTreatmentOptions,
+        custom_prompt: customPrompt
       });
       
       // Update CPT codes state
       setCptCodes(response.cpt_codes);
       setCptPromptText(response.cpt_prompt_text);
+      // Only update editable prompt if we used the default (not custom), otherwise keep the edited version
+      if (!useCustomPrompt) {
+        setEditablePromptText(response.cpt_prompt_text);
+      }
       
       // Update searchParams to include CPT codes
       if (searchParams) {
@@ -1214,7 +1224,7 @@ const ResultsPage: React.FC = () => {
                 return (
                   <div className="text-center mt-6">
                     <button
-                      onClick={handleGenerateCPTCodes}
+                      onClick={() => handleGenerateCPTCodes(false)}
                       disabled={isGeneratingCPTCodes || !searchQuery}
                       className="inline-flex items-center gap-3 bg-gradient-to-r from-green-600 to-teal-600 text-white px-6 py-3 rounded-lg font-semibold text-lg hover:from-green-700 hover:to-teal-700 focus:ring-4 focus:ring-green-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                       title={!searchQuery ? "Search query is required to generate CPT codes" : ""}
@@ -1265,9 +1275,35 @@ const ResultsPage: React.FC = () => {
                         </summary>
                         <div className="p-4 border-t border-gray-200">
                           <p className="text-xs text-gray-600 mb-2">The following prompt was sent to GPT to generate the CPT codes:</p>
-                          <pre className="text-xs text-gray-800 bg-white p-3 rounded border border-gray-300 overflow-x-auto whitespace-pre-wrap font-mono">
-                            {cptPromptText || searchParams?.cpt_prompt_text}
-                          </pre>
+                          <textarea
+                            className="w-full text-xs text-gray-800 bg-white p-3 rounded border border-gray-300 font-mono min-h-[200px] resize-y"
+                            value={editablePromptText || cptPromptText || searchParams?.cpt_prompt_text || ''}
+                            onChange={(e) => setEditablePromptText(e.target.value)}
+                            placeholder="Prompt text..."
+                          />
+                          <div className="mt-3 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                await handleGenerateCPTCodes(true);
+                              }}
+                              disabled={isGeneratingCPTCodes || !editablePromptText}
+                              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                            >
+                              {isGeneratingCPTCodes ? (
+                                <span className="flex items-center gap-2">
+                                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  Generating...
+                                </span>
+                              ) : (
+                                'Rerun with Edited Prompt'
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </details>
                     </div>

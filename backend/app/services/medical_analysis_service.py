@@ -497,7 +497,8 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
     async def predict_cpt_codes(
         self,
         search_query_terms: List[str],
-        treatment_options: Optional[List[Dict[str, str]]] = None
+        treatment_options: Optional[List[Dict[str, str]]] = None,
+        custom_prompt: Optional[str] = None
     ) -> Tuple[List[Dict[str, str]], str]:
         """
         Use GPT to predict relevant CPT codes that a neurosurgeon would use to treat the given diagnosis terms and treatment options.
@@ -524,7 +525,20 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
             else:
                 treatment_options_text = "None specified"
             
-            prompt_template = """Give an exhaustive list of primary CPT codes that could possibly be used by a neurosurgeon to treat patients with any of these diagnoses:
+            # Use custom prompt if provided, otherwise use default
+            if custom_prompt:
+                prompt_template = custom_prompt
+                # For custom prompts, we still need to format with the variables if they're present
+                try:
+                    rendered_prompt = prompt_template.format(
+                        diagnosis_terms=terms_text,
+                        treatment_options=treatment_options_text
+                    )
+                except KeyError:
+                    # If custom prompt doesn't have these variables, use it as-is
+                    rendered_prompt = prompt_template
+            else:
+                prompt_template = """Give an exhaustive list of primary CPT codes that could possibly be used by a neurosurgeon to treat patients with any of these diagnoses:
 {diagnosis_terms}
 
 Only consider CPT codes that could be used for the following treatment options: 
@@ -551,24 +565,43 @@ Return the response in this exact JSON format:
 ]
 
 Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO additional text."""
+                
+                # Render the prompt with actual values to capture what was sent to GPT
+                rendered_prompt = prompt_template.format(
+                    diagnosis_terms=terms_text,
+                    treatment_options=treatment_options_text
+                )
             
-            prompt = PromptTemplate(
-                input_variables=["diagnosis_terms", "treatment_options"],
-                template=prompt_template
-            )
-            
-            # Render the prompt with actual values to capture what was sent to GPT
-            rendered_prompt = prompt_template.format(
-                diagnosis_terms=terms_text,
-                treatment_options=treatment_options_text
-            )
+            # Create prompt template with variables only if custom prompt uses them
+            if custom_prompt:
+                # Try to detect if the custom prompt uses the variables
+                if "{diagnosis_terms}" in custom_prompt or "{treatment_options}" in custom_prompt:
+                    prompt = PromptTemplate(
+                        input_variables=["diagnosis_terms", "treatment_options"],
+                        template=prompt_template
+                    )
+                else:
+                    # If no variables, create a simple template without variables
+                    prompt = PromptTemplate(
+                        input_variables=[],
+                        template=prompt_template
+                    )
+            else:
+                prompt = PromptTemplate(
+                    input_variables=["diagnosis_terms", "treatment_options"],
+                    template=prompt_template
+                )
             
             chain = prompt | self.llm
             
-            response = await chain.ainvoke({
-                "diagnosis_terms": terms_text,
-                "treatment_options": treatment_options_text
-            })
+            # Invoke with variables only if they're expected
+            if custom_prompt and "{diagnosis_terms}" not in custom_prompt and "{treatment_options}" not in custom_prompt:
+                response = await chain.ainvoke({})
+            else:
+                response = await chain.ainvoke({
+                    "diagnosis_terms": terms_text,
+                    "treatment_options": treatment_options_text
+                })
             
             # Extract the JSON response
             response_text = response.content.strip() if hasattr(response, 'content') else str(response).strip()
@@ -667,7 +700,8 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
     async def generate_cpt_codes_from_analysis(
         self,
         search_query: str,
-        treatment_options: List[Dict[str, str]]
+        treatment_options: List[Dict[str, str]],
+        custom_prompt: Optional[str] = None
     ) -> Tuple[List[Dict[str, str]], str]:
         """
         Generate CPT codes from search query and treatment options.
@@ -688,7 +722,10 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         search_terms = [term.strip() for term in search_query.split(" OR ") if term.strip()]
         logger.info(f"🔍 Generating CPT codes for {len(search_terms)} diagnosis terms: {', '.join(search_terms[:3])}{'...' if len(search_terms) > 3 else ''}")
         
-        return await self.predict_cpt_codes(search_terms, treatment_options)
+        if custom_prompt:
+            logger.info("📝 Using custom prompt for CPT code generation")
+        
+        return await self.predict_cpt_codes(search_terms, treatment_options, custom_prompt=custom_prompt)
 
     async def query_cms_api(
         self,

@@ -263,6 +263,7 @@ export interface CPTCodeGenerationRequest {
     outcomes: string;
     complications: string;
   }>;
+  custom_prompt?: string; // Optional custom prompt to override default
 }
 
 export interface CPTCodeGenerationResponse {
@@ -284,6 +285,9 @@ export const generateCPTCodes = async (
     const formData = new FormData();
     formData.append('search_query', request.search_query);
     formData.append('treatment_options_json', JSON.stringify(request.treatment_options));
+    if (request.custom_prompt) {
+      formData.append('custom_prompt', request.custom_prompt);
+    }
     
     console.log('🔍 [Frontend] Making API call to:', `${API_BASE_URL}/api/v1/medical-analysis/cpt-codes`);
     

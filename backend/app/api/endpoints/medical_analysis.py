@@ -106,6 +106,7 @@ async def get_medical_analysis(
 async def generate_cpt_codes(
     search_query: str = Form(...),
     treatment_options_json: str = Form(...),  # JSON array of treatment options
+    custom_prompt: Optional[str] = Form(None),  # Optional custom prompt to override default
     db: Session = Depends(get_db)
 ):
     """
@@ -133,9 +134,12 @@ async def generate_cpt_codes(
         
         # Generate CPT codes
         logger.info("🔍 [Backend] Generating CPT codes...")
+        if custom_prompt:
+            logger.info("📝 [Backend] Using custom prompt for CPT code generation")
         cpt_codes, cpt_prompt_text = await medical_analysis_service.generate_cpt_codes_from_analysis(
             search_query=search_query,
-            treatment_options=treatment_options
+            treatment_options=treatment_options,
+            custom_prompt=custom_prompt
         )
         logger.info(f"✅ [Backend] Generated {len(cpt_codes)} CPT codes")
         
