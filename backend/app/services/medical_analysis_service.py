@@ -1070,10 +1070,9 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 Analyze the information above and provide:
                 1. Primary diagnosis (most likely ICD-10 code and description based on symptoms and diagnosis)
                 2. Treatment options
-                
-                Consider the symptoms carefully when determining the most likely diagnosis and alternatives.
-                For treatment options, provide evidence-based treatment approaches with realistic outcomes and complications.
-                
+
+                Provide all relevant treatment options based on the diagnosis.
+                                
                 Return the response in this exact JSON format:
                 {{
                     "primary": {{
@@ -1088,9 +1087,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                         }}
                     ]
                 }}
-                
-                Provide all relevant treatment options based on the diagnosis.
-                
+                                
                 """
             
             # Use custom prompt if provided, otherwise use default
