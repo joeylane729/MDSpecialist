@@ -141,6 +141,9 @@ export interface PatientProfile {
     complications: string;
   }>;
   search_query?: string;  // Pre-generated search query for Pinecone
+  predicted_icd10?: string;  // Predicted ICD-10 code
+  icd10_description?: string;  // ICD-10 description
+  diagnoses_prompt_text?: string;  // GPT prompt text used to generate diagnoses/treatment options
 }
 
 export interface SpecialistRecommendationResponse {
