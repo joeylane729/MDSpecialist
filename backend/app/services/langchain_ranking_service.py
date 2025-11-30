@@ -1288,6 +1288,9 @@ class LangChainRankingService:
                 all_unmatched_npis = [str(npi) for npi in unmatched_npis if npi]
                 certification_scores_unmatched = self._batch_get_certification_scores(all_unmatched_npis) if all_unmatched_npis else {}
                 
+                # Initialize raw scores dictionary for unmatched providers (for weighted scoring)
+                unmatched_raw_scores = {}
+                
                 for npi in unmatched_npis:
                     if npi and npi not in provider_scores:
                         # Get medical school score even for unmatched doctors
