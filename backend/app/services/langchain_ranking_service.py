@@ -629,9 +629,19 @@ class LangChainRankingService:
                     
                     # Check if provider is in top 25 CMS results (clinical volume bonus)
                     clinical_volume_points = 0
-                    if top_cms_npis and npi_str in top_cms_npis:
-                        clinical_volume_points = 20
-                        logger.debug(f"🔍 DEBUG: NPI {npi} is in top 25 CMS results - adding 20 clinical volume points")
+                    if top_cms_npis:
+                        logger.debug(f"🔍 DEBUG: Checking NPI {npi_str} against {len(top_cms_npis)} top CMS NPIs")
+                        if npi_str in top_cms_npis:
+                            clinical_volume_points = 20
+                            logger.info(f"✅ [Ranking] NPI {npi_str} ({provider.get('first_name', '')} {provider.get('last_name', '')}) is in top 25 CMS results - adding 20 clinical volume points")
+                        # Check for Theodore Schwartz specifically
+                        first_name = provider.get('first_name', '').upper()
+                        last_name = provider.get('last_name', '').upper()
+                        if 'THEODORE' in first_name and 'SCHWARTZ' in last_name:
+                            logger.info(f"🔍 [Ranking] Checking Theodore Schwartz NPI {npi_str} - in top_cms_npis? {npi_str in top_cms_npis}")
+                            logger.info(f"🔍 [Ranking] Sample top_cms_npis: {list(list(top_cms_npis)[:5])}")
+                    else:
+                        logger.debug(f"🔍 DEBUG: No top_cms_npis provided for NPI {npi_str}")
                     
                     total_score = content_score + med_school_score + residency_score + experience_points + certification_points + clinical_volume_points
                     
@@ -1174,9 +1184,17 @@ class LangChainRankingService:
                         # Check if unmatched provider is in top 25 CMS results (clinical volume bonus)
                         clinical_volume_points = 0
                         npi_str = str(npi)
-                        if top_cms_npis and npi_str in top_cms_npis:
-                            clinical_volume_points = 20
-                            logger.debug(f"🔍 DEBUG: Unmatched NPI {npi} is in top 25 CMS results - adding 20 clinical volume points")
+                        if top_cms_npis:
+                            if npi_str in top_cms_npis:
+                                clinical_volume_points = 20
+                                logger.info(f"✅ [Ranking] Unmatched NPI {npi_str} ({provider.get('first_name', '')} {provider.get('last_name', '')}) is in top 25 CMS results - adding 20 clinical volume points")
+                            # Check for Theodore Schwartz specifically
+                            first_name = provider.get('first_name', '').upper()
+                            last_name = provider.get('last_name', '').upper()
+                            if 'THEODORE' in first_name and 'SCHWARTZ' in last_name:
+                                logger.info(f"🔍 [Ranking] Unmatched Theodore Schwartz NPI {npi_str} - in top_cms_npis? {npi_str in top_cms_npis}")
+                        else:
+                            logger.debug(f"🔍 DEBUG: No top_cms_npis provided for unmatched NPI {npi_str}")
                         
                         total_score = med_school_score + experience_points + certification_points + clinical_volume_points
                         provider_scores[npi] = {
