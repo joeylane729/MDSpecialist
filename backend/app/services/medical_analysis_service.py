@@ -1044,7 +1044,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         Use GPT to predict primary diagnosis and treatment options based on patient information.
         
         Args:
-            symptoms: Patient symptoms
+            symptoms: Patient symptoms 
             diagnosis: Patient diagnosis
             medical_history: Medical history (optional)
             medications: Current medications (optional)
