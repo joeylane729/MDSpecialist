@@ -28,6 +28,7 @@ async def get_medical_analysis(
     medications: Optional[str] = Form(None),
     surgical_history: Optional[str] = Form(None),
     files: List[UploadFile] = File([]),
+    custom_diagnoses_prompt: Optional[str] = Form(None),  # Optional custom prompt for diagnosis/treatment generation
     db: Session = Depends(get_db)
 ):
     """
@@ -62,7 +63,9 @@ async def get_medical_analysis(
         
         # Get medical analysis (CPT codes are not generated here - they must be generated separately)
         logger.info("🧠 [Backend] Starting comprehensive analysis")
-        analysis_results = await medical_analysis_service.comprehensive_analysis(patient_input)
+        if custom_diagnoses_prompt:
+            logger.info("📝 [Backend] Using custom prompt for diagnosis/treatment generation")
+        analysis_results = await medical_analysis_service.comprehensive_analysis(patient_input, custom_diagnoses_prompt=custom_diagnoses_prompt)
         logger.info("✅ [Backend] Comprehensive analysis completed")
         
         # Log response information

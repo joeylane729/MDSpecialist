@@ -122,12 +122,13 @@ class MedicalAnalysisService:
             logger.error(f"Error processing patient input: {str(e)}")
             raise
     
-    async def comprehensive_analysis(self, patient_input: str) -> Dict[str, Any]:
+    async def comprehensive_analysis(self, patient_input: str, custom_diagnoses_prompt: Optional[str] = None) -> Dict[str, Any]:
         """Perform comprehensive medical analysis including patient processing and medical analysis.
         CPT codes are NOT generated in this step - they must be generated separately via generate_cpt_codes_from_analysis().
         
         Args:
             patient_input: Patient input string containing symptoms, diagnosis, etc.
+            custom_diagnoses_prompt: Optional custom prompt to override default for diagnosis/treatment generation
         """
         try:
             # Parse patient input to extract individual fields
@@ -137,9 +138,14 @@ class MedicalAnalysisService:
             patient_profile = await self.process_patient_input(patient_input)
             
             # Perform medical analysis with individual fields including PDF content
+            diagnoses_result, diagnoses_prompt_text = await self.predict_diagnoses(
+                symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content,
+                custom_prompt=custom_diagnoses_prompt
+            )
+            
             medical_analysis = {
                 "predicted_icd10": await self.predict_icd10_code(symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content),
-                "diagnoses": await self.predict_diagnoses(symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content)
+                "diagnoses": diagnoses_result
             }
             
             # Ensure diagnoses is not None
@@ -224,6 +230,7 @@ class MedicalAnalysisService:
                 "treatment_options": treatment_options,
                 "cpt_codes": cpt_codes,  # Relevant CPT codes for the diagnosis
                 "cpt_prompt_text": cpt_prompt_text,  # Actual GPT prompt used to generate CPT codes
+                "diagnoses_prompt_text": diagnoses_prompt_text,  # Actual GPT prompt used to generate diagnoses/treatment options
                 "search_query": search_query,  # Pre-generated search query for Pinecone
                 
                 # Keep original nested structure for backward compatibility
@@ -1030,8 +1037,9 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         medical_history: str = "", 
         medications: str = "", 
         surgical_history: str = "",
-        pdf_content: str = ""
-    ) -> Dict[str, Any]:
+        pdf_content: str = "",
+        custom_prompt: Optional[str] = None
+    ) -> Tuple[Dict[str, Any], str]:
         """
         Use GPT to predict primary diagnosis and treatment options based on patient information.
         
@@ -1042,14 +1050,13 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             medications: Current medications (optional)
             surgical_history: Surgical history (optional)
             pdf_content: Extracted content from uploaded PDF files (optional)
+            custom_prompt: Optional custom prompt to override default
             
         Returns:
-            Dictionary containing primary diagnosis and treatment options
+            Tuple of (Dictionary containing primary diagnosis and treatment options, rendered prompt text)
         """
         try:
-            prompt = PromptTemplate(
-                input_variables=["symptoms", "diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
-                template="""
+            default_template = """
                 Patient Information:
                 Symptoms: {symptoms}
                 Diagnosis: {diagnosis}
@@ -1085,7 +1092,73 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 Provide all relevant treatment options based on the diagnosis.
                 
                 """
-            )
+            
+            # Use custom prompt if provided, otherwise use default
+            if custom_prompt:
+                # Escape all curly braces except for our template variables to prevent LangChain from parsing them
+                escaped_prompt = custom_prompt
+                # Temporarily replace our template variables with placeholders
+                escaped_prompt = escaped_prompt.replace("{symptoms}", "__SYMPTOMS__")
+                escaped_prompt = escaped_prompt.replace("{diagnosis}", "__DIAGNOSIS__")
+                escaped_prompt = escaped_prompt.replace("{medical_history}", "__MEDICAL_HISTORY__")
+                escaped_prompt = escaped_prompt.replace("{medications}", "__MEDICATIONS__")
+                escaped_prompt = escaped_prompt.replace("{surgical_history}", "__SURGICAL_HISTORY__")
+                escaped_prompt = escaped_prompt.replace("{pdf_content}", "__PDF_CONTENT__")
+                # Escape all remaining curly braces
+                escaped_prompt = escaped_prompt.replace("{", "{{").replace("}", "}}")
+                # Restore our template variables
+                escaped_prompt = escaped_prompt.replace("{{__SYMPTOMS__}}", "{symptoms}")
+                escaped_prompt = escaped_prompt.replace("{{__DIAGNOSIS__}}", "{diagnosis}")
+                escaped_prompt = escaped_prompt.replace("{{__MEDICAL_HISTORY__}}", "{medical_history}")
+                escaped_prompt = escaped_prompt.replace("{{__MEDICATIONS__}}", "{medications}")
+                escaped_prompt = escaped_prompt.replace("{{__SURGICAL_HISTORY__}}", "{surgical_history}")
+                escaped_prompt = escaped_prompt.replace("{{__PDF_CONTENT__}}", "{pdf_content}")
+                
+                prompt_template = escaped_prompt
+                # For custom prompts, format with the variables if they're present
+                if any(var in custom_prompt for var in ["{symptoms}", "{diagnosis}", "{medical_history}", "{medications}", "{surgical_history}", "{pdf_content}"]):
+                    # Variables are present, use LangChain PromptTemplate
+                    prompt = PromptTemplate(
+                        input_variables=["symptoms", "diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
+                        template=prompt_template
+                    )
+                    rendered_prompt = prompt.format(
+                        symptoms=symptoms,
+                        diagnosis=diagnosis,
+                        medical_history=medical_history,
+                        medications=medications,
+                        surgical_history=surgical_history,
+                        pdf_content=pdf_content
+                    )
+                else:
+                    # No variables, use prompt as-is
+                    rendered_prompt = custom_prompt
+            else:
+                prompt_template = default_template
+                prompt = PromptTemplate(
+                    input_variables=["symptoms", "diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
+                    template=prompt_template
+                )
+                rendered_prompt = prompt.format(
+                    symptoms=symptoms,
+                    diagnosis=diagnosis,
+                    medical_history=medical_history,
+                    medications=medications,
+                    surgical_history=surgical_history,
+                    pdf_content=pdf_content
+                )
+            
+            # Create prompt template for LangChain (always use variables even if custom prompt doesn't have them)
+            if custom_prompt:
+                prompt = PromptTemplate(
+                    input_variables=["symptoms", "diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
+                    template=prompt_template
+                )
+            else:
+                prompt = PromptTemplate(
+                    input_variables=["symptoms", "diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
+                    template=prompt_template
+                )
             
             chain = prompt | self.llm
             
@@ -1120,11 +1193,11 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                         if primary_desc:
                             diagnoses['primary']['description'] = primary_desc
                 
-                return diagnoses
+                return diagnoses, rendered_prompt
             else:
                 logger.warning(f"GPT returned invalid response structure: {diagnoses}")
-                return {"primary": {}, "treatment_options": []}
+                return {"primary": {}, "treatment_options": []}, rendered_prompt
                 
         except Exception as e:
             logger.error(f"Error in GPT diagnosis prediction: {e}")
-            return {"primary": {}, "differential": [], "treatment_options": []}
+            return {"primary": {}, "differential": [], "treatment_options": []}, rendered_prompt if 'rendered_prompt' in locals() else ""

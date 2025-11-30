@@ -1472,7 +1472,7 @@ class LangChainRankingService:
                                     'weighted_points': weighted_data['vumedi_weighted'],
                                     'weight': 4.0
                                 }
-                            
+                            }
                             # Ensure ALL providers have weighted_breakdown (even if all zeros)
                             # This is needed for providers without matches or with zero scores
                             for npi in provider_scores:

@@ -30,6 +30,7 @@ interface SearchParams {
     description: string;
   }>;
   cpt_prompt_text?: string;  // GPT prompt text used to generate CPT codes
+  diagnoses_prompt_text?: string;  // GPT prompt text used to generate diagnoses/treatment options
   search_query?: string;  // Pre-generated search query for Pinecone
   searchOptions?: {
     diagnosis: boolean;
@@ -89,7 +90,10 @@ const ResultsPage: React.FC = () => {
   const [cptCodes, setCptCodes] = useState<Array<{ code: string; description: string }> | null>(null);
   const [cptPromptText, setCptPromptText] = useState<string | null>(null);
   const [editablePromptText, setEditablePromptText] = useState<string | null>(null);
+  const [diagnosesPromptText, setDiagnosesPromptText] = useState<string | null>(null);
+  const [editableDiagnosesPromptText, setEditableDiagnosesPromptText] = useState<string | null>(null);
   const [isGeneratingCPTCodes, setIsGeneratingCPTCodes] = useState(false);
+  const [isRegeneratingDiagnoses, setIsRegeneratingDiagnoses] = useState(false);
   const [isGeneratingSpecialists, setIsGeneratingSpecialists] = useState(false);
   const [selectedTreatmentIndices, setSelectedTreatmentIndices] = useState<Set<number>>(new Set());
   const hasInitializedTreatments = useRef(false);
@@ -168,6 +172,14 @@ const ResultsPage: React.FC = () => {
       }
     }
   }, [searchParams, cptCodes]);
+  
+  // Initialize diagnoses prompt text from searchParams if available
+  useEffect(() => {
+    if (searchParams?.diagnoses_prompt_text && !diagnosesPromptText) {
+      setDiagnosesPromptText(searchParams.diagnoses_prompt_text);
+      setEditableDiagnosesPromptText(searchParams.diagnoses_prompt_text);
+    }
+  }, [searchParams, diagnosesPromptText]);
   
   // Initialize selected treatment indices - all checked by default (only once)
   useEffect(() => {
@@ -784,6 +796,67 @@ const ResultsPage: React.FC = () => {
     saveFilterState();
   };
 
+  const handleRegenerateDiagnoses = async (useCustomPrompt: boolean = false) => {
+    try {
+      setIsRegeneratingDiagnoses(true);
+      
+      // Get original request data from location state or searchParams
+      const originalRequest = location.state?.searchInputs;
+      if (!originalRequest) {
+        alert('Unable to regenerate: Original search data not found');
+        return;
+      }
+      
+      // Use custom prompt if rerunning with edited prompt, otherwise use default (undefined)
+      const customPrompt = useCustomPrompt && editableDiagnosesPromptText ? editableDiagnosesPromptText : undefined;
+      
+      // Call medical analysis API with custom prompt
+      const response = await getMedicalAnalysis({
+        symptoms: originalRequest.symptoms || '',
+        diagnosis: originalRequest.diagnosis || '',
+        medical_history: originalRequest.medical_history,
+        medications: originalRequest.medications,
+        surgical_history: originalRequest.surgical_history,
+        files: originalRequest.files || [],
+        custom_diagnoses_prompt: customPrompt
+      });
+      
+      // Update searchParams with new results
+      if (response.patient_profile) {
+        const newSearchParams: SearchParams = {
+          ...searchParams!,
+          predicted_icd10: response.patient_profile.predicted_icd10,
+          icd10_description: response.patient_profile.icd10_description,
+          treatment_options: response.patient_profile.treatment_options,
+          search_query: response.patient_profile.search_query,
+          diagnoses_prompt_text: response.patient_profile.diagnoses_prompt_text
+        };
+        setSearchParams(newSearchParams);
+        
+        // Update prompt text state
+        if (response.patient_profile.diagnoses_prompt_text) {
+          setDiagnosesPromptText(response.patient_profile.diagnoses_prompt_text);
+          // Only update editable prompt if we used the default (not custom), otherwise keep the edited version
+          if (!useCustomPrompt) {
+            setEditableDiagnosesPromptText(response.patient_profile.diagnoses_prompt_text);
+          }
+        }
+        
+        // Reset selected treatment indices since options may have changed
+        if (response.patient_profile.treatment_options) {
+          setSelectedTreatmentIndices(new Set(Array.from({length: response.patient_profile.treatment_options.length}, (_, i) => i)));
+        }
+        
+        console.log('✅ Regenerated diagnoses and treatment options');
+      }
+    } catch (error) {
+      console.error('Error regenerating diagnoses:', error);
+      alert('Failed to regenerate diagnoses. Please try again.');
+    } finally {
+      setIsRegeneratingDiagnoses(false);
+    }
+  };
+
   const handleGenerateCPTCodes = async (useCustomPrompt: boolean = false) => {
     try {
       setIsGeneratingCPTCodes(true);
@@ -1323,6 +1396,54 @@ const ResultsPage: React.FC = () => {
               {/* Treatment Options with Outcomes and Complications */}
               <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Treatment Options</h2>
+              
+              {/* GPT Prompt Instructions for Diagnoses/Treatment (collapsed by default) */}
+              {(diagnosesPromptText || searchParams?.diagnoses_prompt_text) && (
+                <div className="mb-4">
+                  <details className="bg-gray-50 rounded-lg border border-gray-200">
+                    <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-t-lg">
+                      <span className="flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        View GPT Prompt Instructions (for debugging)
+                      </span>
+                    </summary>
+                    <div className="p-4 border-t border-gray-200">
+                      <p className="text-xs text-gray-600 mb-2">The following prompt was sent to GPT to generate the diagnoses and treatment options:</p>
+                      <textarea
+                        className="w-full text-xs text-gray-800 bg-white p-3 rounded border border-gray-300 font-mono min-h-[200px] resize-y"
+                        value={editableDiagnosesPromptText || diagnosesPromptText || searchParams?.diagnoses_prompt_text || ''}
+                        onChange={(e) => setEditableDiagnosesPromptText(e.target.value)}
+                        placeholder="Prompt text..."
+                      />
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            await handleRegenerateDiagnoses(true);
+                          }}
+                          disabled={isRegeneratingDiagnoses || !editableDiagnosesPromptText}
+                          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {isRegeneratingDiagnoses ? (
+                            <span className="flex items-center gap-2">
+                              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Regenerating...
+                            </span>
+                          ) : (
+                            'Rerun with Edited Prompt'
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </details>
+                </div>
+              )}
               {(() => {
                 const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
                 if (treatmentOptions && treatmentOptions.length > 0) {

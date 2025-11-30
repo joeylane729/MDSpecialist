@@ -248,6 +248,7 @@ export interface MedicalAnalysisRequest {
   medications?: string;
   surgical_history?: string;
   files?: File[];
+  custom_diagnoses_prompt?: string;
 }
 
 export interface MedicalAnalysisResponse {
@@ -339,6 +340,10 @@ export const getMedicalAnalysis = async (
       request.files.forEach((file) => {
         formData.append('files', file);
       });
+    }
+    
+    if (request.custom_diagnoses_prompt) {
+      formData.append('custom_diagnoses_prompt', request.custom_diagnoses_prompt);
     }
     
     console.log('🔍 [Frontend] Making API call to:', `${API_BASE_URL}/api/v1/medical-analysis`);
