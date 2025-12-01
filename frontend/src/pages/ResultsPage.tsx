@@ -72,6 +72,29 @@ const getTreatmentOptions = (searchParams: any, aiRecommendations?: any): Treatm
   return null;
 };
 
+// Helper function to map CPT codes to categories
+const getCptCodeToCategoryMap = (cptCodesByCategory: { [category: string]: Array<{ code: string; description: string }> }): { [cptCode: string]: string } => {
+  const map: { [cptCode: string]: string } = {};
+  Object.entries(cptCodesByCategory).forEach(([category, codes]) => {
+    codes.forEach(cpt => {
+      map[cpt.code] = category;
+    });
+  });
+  return map;
+};
+
+// Helper function to get categories from treatment options
+const getCategoriesFromTreatmentOptions = (treatmentOptions: TreatmentOption[] | null): string[] => {
+  if (!treatmentOptions || treatmentOptions.length === 0) return [];
+  const categories = new Set<string>();
+  treatmentOptions.forEach(option => {
+    if (option.category) {
+      categories.add(option.category);
+    }
+  });
+  return Array.from(categories).sort();
+};
+
 const ResultsPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -89,13 +112,15 @@ const ResultsPage: React.FC = () => {
   const [providerScores, setProviderScores] = useState<{ [npi: string]: any }>({});
   const [treatmentRankings, setTreatmentRankings] = useState<{ [treatmentId: string]: any }>({});
   const [selectedTreatmentId, setSelectedTreatmentId] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>(''); // For specialists page filtering
+  const [selectedDebugCategory, setSelectedDebugCategory] = useState<string>(''); // For debug page CMS results
   const [activeView, setActiveView] = useState<'assessment' | 'specialists' | 'ai-recommendations' | 'debug'>('assessment');
   const [specialistRecommendationData, setSpecialistRecommendationData] = useState<any>(null);
   const [cptCodes, setCptCodes] = useState<Array<{ code: string; description: string }> | null>(null);
   const [cptCodesByCategory, setCptCodesByCategory] = useState<{ [category: string]: Array<{ code: string; description: string }> }>({});
   const [cptPromptTextByCategory, setCptPromptTextByCategory] = useState<{ [category: string]: string }>({});
   const [editablePromptTextByCategory, setEditablePromptTextByCategory] = useState<{ [category: string]: string }>({});
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCptCategory, setSelectedCptCategory] = useState<string | null>(null);
   const [cptPromptText, setCptPromptText] = useState<string | null>(null);
   const [editablePromptText, setEditablePromptText] = useState<string | null>(null);
   const [diagnosesPromptText, setDiagnosesPromptText] = useState<string | null>(null);
@@ -947,8 +972,8 @@ const ResultsPage: React.FC = () => {
       setCptPromptTextByCategory(prev => ({ ...prev, ...newCptPromptTextByCategory }));
       
       // Set first category as selected if none selected yet
-      if (!selectedCategory && Object.keys(newCptCodesByCategory).length > 0) {
-        setSelectedCategory(Object.keys(newCptCodesByCategory)[0]);
+      if (!selectedCptCategory && Object.keys(newCptCodesByCategory).length > 0) {
+        setSelectedCptCategory(Object.keys(newCptCodesByCategory)[0]);
       }
       
       // Combine all CPT codes for backward compatibility and CMS API call
@@ -1176,6 +1201,71 @@ const ResultsPage: React.FC = () => {
     }
   };
 
+  const handleCategoryFilterChange = (category: string, treatmentsByCategory: { [category: string]: Array<{ id: string; treatment: any }> }) => {
+    console.log('🔍 Category filter changed to:', category);
+    
+    if (!category) {
+      // Show all providers from all treatments
+      const allRankedNPIs = new Set<string>();
+      const allProviderLinks: { [npi: string]: ProviderContent } = {};
+      const allProviderScores: { [npi: string]: any } = {};
+      
+      Object.values(treatmentRankings).forEach((treatment: any) => {
+        if (treatment.ranked_providers) {
+          treatment.ranked_providers.forEach((npi: string) => allRankedNPIs.add(npi));
+        }
+        if (treatment.provider_links) {
+          Object.assign(allProviderLinks, treatment.provider_links);
+        }
+        if (treatment.provider_scores) {
+          Object.assign(allProviderScores, treatment.provider_scores);
+        }
+      });
+      
+      const originalProviders = providers || [];
+      const rankedNPIProviders = Array.from(allRankedNPIs).map((npi: string) => 
+        originalProviders.find((provider: Provider) => provider.npi === npi)
+      ).filter((provider: Provider | undefined): provider is NPIProvider => provider !== undefined);
+      
+      setRankedProviders(rankedNPIProviders);
+      setProviderLinks(allProviderLinks);
+      setProviderScores(allProviderScores);
+    } else {
+      // Show providers only from treatments in selected category
+      const categoryTreatments = treatmentsByCategory[category] || [];
+      const allRankedNPIs = new Set<string>();
+      const allProviderLinks: { [npi: string]: ProviderContent } = {};
+      const allProviderScores: { [npi: string]: any } = {};
+      
+      categoryTreatments.forEach(({ id }) => {
+        const treatment = treatmentRankings[id];
+        if (treatment) {
+          if (treatment.ranked_providers) {
+            treatment.ranked_providers.forEach((npi: string) => allRankedNPIs.add(npi));
+          }
+          if (treatment.provider_links) {
+            Object.assign(allProviderLinks, treatment.provider_links);
+          }
+          if (treatment.provider_scores) {
+            Object.assign(allProviderScores, treatment.provider_scores);
+          }
+        }
+      });
+      
+      const originalProviders = providers || [];
+      const rankedNPIProviders = Array.from(allRankedNPIs).map((npi: string) => 
+        originalProviders.find((provider: Provider) => provider.npi === npi)
+      ).filter((provider: Provider | undefined): provider is NPIProvider => provider !== undefined);
+      
+      setRankedProviders(rankedNPIProviders);
+      setProviderLinks(allProviderLinks);
+      setProviderScores(allProviderScores);
+    }
+    
+    setCurrentPage(1);
+    saveFilterState();
+  };
+
   const handleTreatmentFilterChange = (treatmentId: string) => {
     console.log('🔍 Treatment filter changed to:', treatmentId);
     console.log('🔍 Available treatment rankings:', treatmentRankings);
@@ -1201,6 +1291,7 @@ const ResultsPage: React.FC = () => {
       
       setRankedProviders(rankedNPIProviders);
       setProviderLinks(treatment.provider_links || {});
+      setProviderScores(treatment.provider_scores || {});
     } else {
       console.log('🔍 No treatment data found for ID:', treatmentId);
     }
@@ -1611,7 +1702,7 @@ const ResultsPage: React.FC = () => {
                 
                 // Prefer category-based codes if available, otherwise fall back to legacy format
                 const categories = hasCptCodesByCategory ? Object.keys(cptCodesByCategory) : [];
-                const displayCategory = selectedCategory || (categories.length > 0 ? categories[0] : null);
+                const displayCategory = selectedCptCategory || (categories.length > 0 ? categories[0] : null);
                 
                 if (!hasCptCodesByCategory && !hasCptCodes) {
                   return null;
@@ -1638,7 +1729,7 @@ const ResultsPage: React.FC = () => {
                           return (
                             <button
                               key={category}
-                              onClick={() => setSelectedCategory(category)}
+                              onClick={() => setSelectedCptCategory(category)}
                               className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                                 isSelected
                                   ? 'border-blue-600 text-blue-600'
@@ -1855,34 +1946,47 @@ const ResultsPage: React.FC = () => {
               Compare Outcomes
             </button>
 
-            {/* Treatment Options Dropdown */}
+            {/* Category Dropdown */}
             {(() => {
               const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
-              if (treatmentOptions && treatmentOptions.length > 0 && Object.keys(treatmentRankings).length > 0) {
+              const categories = getCategoriesFromTreatmentOptions(treatmentOptions);
+              
+              if (categories.length > 0 && Object.keys(treatmentRankings).length > 0) {
+                // Group treatments by category
+                const treatmentsByCategory: { [category: string]: Array<{ id: string; treatment: any }> } = {};
+                Object.entries(treatmentRankings).forEach(([treatmentId, treatment]) => {
+                  const category = (treatment as any).category || 'Other';
+                  if (!treatmentsByCategory[category]) {
+                    treatmentsByCategory[category] = [];
+                  }
+                  treatmentsByCategory[category].push({ id: treatmentId, treatment });
+                });
+                
                 return (
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
                       <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                       </svg>
-                      <span className="text-sm font-medium text-gray-700">Treatment:</span>
+                      <span className="text-sm font-medium text-gray-700">Category:</span>
                     </div>
                     <select
-                      value={selectedTreatmentId}
+                      value={selectedCategory}
                       onChange={(e) => {
-                        setSelectedTreatmentId(e.target.value);
-                        handleTreatmentFilterChange(e.target.value);
+                        const category = e.target.value;
+                        setSelectedCategory(category);
+                        handleCategoryFilterChange(category, treatmentsByCategory);
                       }}
                       className={`px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white/50 ${
-                        selectedTreatmentId
+                        selectedCategory
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-300'
                       }`}
                     >
-                      <option value="">Select a treatment option</option>
-                      {Object.entries(treatmentRankings).map(([treatmentId, treatment]) => (
-                        <option key={treatmentId} value={treatmentId}>
-                          {treatment.name}
+                      <option value="">All Categories</option>
+                      {categories.map((category) => (
+                        <option key={category} value={category}>
+                          {category} ({treatmentsByCategory[category]?.length || 0})
                         </option>
                       ))}
                     </select>
@@ -2709,22 +2813,113 @@ const ResultsPage: React.FC = () => {
                             // If no results in selected state, show empty message (don't show all results)
                             const showAllResults = false; // Never show all results if filtering by state
                             
+                            // Group CMS results by category
+                            const cptToCategoryMap = getCptCodeToCategoryMap(cptCodesByCategory);
+                            const resultsByCategory: { [category: string]: any[] } = {};
+                            const uncategorizedResults: any[] = [];
+                            
+                            filteredResults.forEach((provider: any) => {
+                              const providerCptCodes = Array.isArray(provider.HCPCS_Codes) ? provider.HCPCS_Codes : [];
+                              const providerCategories = new Set<string>();
+                              
+                              providerCptCodes.forEach((code: string) => {
+                                if (cptToCategoryMap[code]) {
+                                  providerCategories.add(cptToCategoryMap[code]);
+                                }
+                              });
+                              
+                              if (providerCategories.size > 0) {
+                                // Provider has CPT codes that belong to categories
+                                providerCategories.forEach(category => {
+                                  if (!resultsByCategory[category]) {
+                                    resultsByCategory[category] = [];
+                                  }
+                                  // Add provider to each category it belongs to
+                                  resultsByCategory[category].push(provider);
+                                });
+                              } else {
+                                // Provider has no categorized CPT codes
+                                uncategorizedResults.push(provider);
+                              }
+                            });
+                            
+                            // Remove duplicates from each category (provider might appear in multiple categories)
+                            Object.keys(resultsByCategory).forEach(category => {
+                              const seen = new Set<string>();
+                              resultsByCategory[category] = resultsByCategory[category].filter((provider: any) => {
+                                const npi = provider.Rndrng_NPI;
+                                if (seen.has(npi)) {
+                                  return false;
+                                }
+                                seen.add(npi);
+                                return true;
+                              });
+                            });
+                            
+                            const categories = Object.keys(resultsByCategory).sort();
+                            
+                            // Initialize selectedDebugCategory if not set and categories exist
+                            if (categories.length > 0 && !selectedDebugCategory) {
+                              setSelectedDebugCategory(categories[0]);
+                            }
+                            
                             return (
                               <div className="bg-gray-900 rounded p-3">
-                                <p className="text-gray-400 mb-3 text-sm font-semibold">
-                                  Top 25 Providers by Total Services ({filteredResults.length} providers)
-                                  {userStateCode && !showAllResults && (
-                                    <span className="text-gray-500 ml-2">in {userStateCode}</span>
-                                  )}
-                                  {cmsData.total_providers && cmsData.total_providers > 25 && (
-                                    <span className="text-gray-500 ml-2">(of {cmsData.total_providers} total)</span>
-                                  )}
-                                </p>
+                                <div className="flex items-center justify-between mb-3">
+                                  <p className="text-gray-400 text-sm font-semibold">
+                                    {filteredResults.length} Providers by Total Services
+                                    {userStateCode && !showAllResults && (
+                                      <span className="text-gray-500 ml-2">in {userStateCode}</span>
+                                    )}
+                                    {cmsData.total_providers && cmsData.total_providers > filteredResults.length && (
+                                      <span className="text-gray-500 ml-2">(of {cmsData.total_providers} total)</span>
+                                    )}
+                                  </p>
+                                </div>
+                                
                                 {userStateCode && filteredResults.length === 0 && (
                                   <p className="text-yellow-400 text-sm mb-3">
-                                    No providers found in {userStateCode} among the top 25 providers by total services.
+                                    No providers found in {userStateCode} among the providers by total services.
                                   </p>
                                 )}
+                                
+                                {/* Category Tabs for CMS Results */}
+                                {categories.length > 0 && (
+                                  <div className="mb-4 border-b border-gray-700">
+                                    <div className="flex space-x-1 overflow-x-auto">
+                                      {categories.map((category) => {
+                                        const categoryResults = resultsByCategory[category] || [];
+                                        const isSelected = selectedDebugCategory === category;
+                                        return (
+                                          <button
+                                            key={category}
+                                            onClick={() => setSelectedDebugCategory(category)}
+                                            className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                                              isSelected
+                                                ? 'border-cyan-400 text-cyan-400'
+                                                : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-500'
+                                            }`}
+                                          >
+                                            {category} ({categoryResults.length})
+                                          </button>
+                                        );
+                                      })}
+                                      {uncategorizedResults.length > 0 && (
+                                        <button
+                                          onClick={() => setSelectedDebugCategory('Uncategorized')}
+                                          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                                            selectedDebugCategory === 'Uncategorized'
+                                              ? 'border-cyan-400 text-cyan-400'
+                                              : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-500'
+                                          }`}
+                                        >
+                                          Uncategorized ({uncategorizedResults.length})
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                
                                 {filteredResults.length > 0 ? (
                                   <div className="overflow-x-auto max-h-96 overflow-y-auto">
                                     <table className="w-full text-sm">
@@ -2737,58 +2932,67 @@ const ResultsPage: React.FC = () => {
                                         </tr>
                                       </thead>
                                       <tbody>
-                                        {filteredResults.map((provider: any, index: number) => {
-                                      const cptCodes = Array.isArray(provider.HCPCS_Codes) 
-                                        ? provider.HCPCS_Codes 
-                                        : [];
-                                      const cptDescriptions = Array.isArray(provider.HCPCS_Descriptions)
-                                        ? provider.HCPCS_Descriptions
-                                        : [];
-                                      
-                                      // Pair up codes with descriptions by index (ensured 1:1 mapping from backend)
-                                      const codeDescriptionPairs = cptCodes.map((code: string, idx: number) => ({
-                                        code,
-                                        description: idx < cptDescriptions.length ? cptDescriptions[idx] : null
-                                      }));
-                                      
-                                      return (
-                                        <tr key={provider.Rndrng_NPI || index} className="border-t border-gray-700 hover:bg-gray-800">
-                                          <td className="px-3 py-2 text-white">
-                                            {provider.Rndrng_Prvdr_First_Name || ''} {provider.Rndrng_Prvdr_Last_Org_Name || ''}
-                                          </td>
-                                          <td className="px-3 py-2 text-gray-300">
-                                            {provider.Rndrng_Prvdr_City || 'N/A'}, {provider.Rndrng_Prvdr_State_Abrvtn || 'N/A'}
-                                          </td>
-                                          <td className="px-3 py-2 text-gray-300 max-w-lg">
-                                            <div className="space-y-2">
-                                              {codeDescriptionPairs.length > 0 ? (
-                                                codeDescriptionPairs.map((pair: { code: string; description: string | null }, pairIdx: number) => (
-                                                  <div key={pairIdx} className="border-l-2 border-cyan-500 pl-2 py-1">
-                                                    <div className="flex items-start gap-2">
-                                                      <span className="text-cyan-300 font-mono text-xs bg-gray-800 px-1.5 py-0.5 rounded whitespace-nowrap">
-                                                        {pair.code}
-                                                      </span>
-                                                      {pair.description ? (
-                                                        <span className="text-gray-400 text-xs flex-1">
-                                                          {pair.description}
-                                                        </span>
-                                                      ) : (
-                                                        <span className="text-gray-500 text-xs italic">No description available</span>
-                                                      )}
-                                                    </div>
+                                        {(() => {
+                                          // Show results for selected category, or all if no categories
+                                          const displayResults = categories.length > 0 && selectedDebugCategory
+                                            ? (selectedDebugCategory === 'Uncategorized' 
+                                                ? uncategorizedResults 
+                                                : (resultsByCategory[selectedDebugCategory] || []))
+                                            : filteredResults;
+                                          
+                                          return displayResults.map((provider: any, index: number) => {
+                                            const cptCodes = Array.isArray(provider.HCPCS_Codes) 
+                                              ? provider.HCPCS_Codes 
+                                              : [];
+                                            const cptDescriptions = Array.isArray(provider.HCPCS_Descriptions)
+                                              ? provider.HCPCS_Descriptions
+                                              : [];
+                                            
+                                            // Pair up codes with descriptions by index (ensured 1:1 mapping from backend)
+                                            const codeDescriptionPairs = cptCodes.map((code: string, idx: number) => ({
+                                              code,
+                                              description: idx < cptDescriptions.length ? cptDescriptions[idx] : null
+                                            }));
+                                            
+                                            return (
+                                              <tr key={provider.Rndrng_NPI || index} className="border-t border-gray-700 hover:bg-gray-800">
+                                                <td className="px-3 py-2 text-white">
+                                                  {provider.Rndrng_Prvdr_First_Name || ''} {provider.Rndrng_Prvdr_Last_Org_Name || ''}
+                                                </td>
+                                                <td className="px-3 py-2 text-gray-300">
+                                                  {provider.Rndrng_Prvdr_City || 'N/A'}, {provider.Rndrng_Prvdr_State_Abrvtn || 'N/A'}
+                                                </td>
+                                                <td className="px-3 py-2 text-gray-300 max-w-lg">
+                                                  <div className="space-y-2">
+                                                    {codeDescriptionPairs.length > 0 ? (
+                                                      codeDescriptionPairs.map((pair: { code: string; description: string | null }, pairIdx: number) => (
+                                                        <div key={pairIdx} className="border-l-2 border-cyan-500 pl-2 py-1">
+                                                          <div className="flex items-start gap-2">
+                                                            <span className="text-cyan-300 font-mono text-xs bg-gray-800 px-1.5 py-0.5 rounded whitespace-nowrap">
+                                                              {pair.code}
+                                                            </span>
+                                                            {pair.description ? (
+                                                              <span className="text-gray-400 text-xs flex-1">
+                                                                {pair.description}
+                                                              </span>
+                                                            ) : (
+                                                              <span className="text-gray-500 text-xs italic">No description available</span>
+                                                            )}
+                                                          </div>
+                                                        </div>
+                                                      ))
+                                                    ) : (
+                                                      <span className="text-gray-500 text-xs">N/A</span>
+                                                    )}
                                                   </div>
-                                                ))
-                                              ) : (
-                                                <span className="text-gray-500 text-xs">N/A</span>
-                                              )}
-                                            </div>
-                                          </td>
-                                          <td className="px-3 py-2 text-right text-white font-semibold">
-                                            {provider.Tot_Srvcs?.toLocaleString() || '0'}
-                                          </td>
-                                        </tr>
-                                      );
-                                      })}
+                                                </td>
+                                                <td className="px-3 py-2 text-right text-white font-semibold">
+                                                  {provider.Tot_Srvcs?.toLocaleString() || '0'}
+                                                </td>
+                                              </tr>
+                                            );
+                                          });
+                                        })()}
                                     </tbody>
                                   </table>
                                 </div>
