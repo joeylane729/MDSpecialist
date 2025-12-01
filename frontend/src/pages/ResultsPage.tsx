@@ -1262,83 +1262,68 @@ const ResultsPage: React.FC = () => {
         });
       }
       
-      // Filter clinical volume based on category CPT codes
-      // For each provider, check if they have CPT codes in CMS data that match the category
+      // First, calculate the max Tot_Srvcs for this category across all providers
+      // This ensures all providers are compared against the same max value
+      const providerCategoryTotSrvcs: { [npi: string]: number } = {};
+      
+      // Calculate Tot_Srvcs per provider for this category
+      // Note: CMS data is already grouped by provider, so each provider appears once with all their CPT codes
+      Object.keys(cmsProvidersByNpi).forEach(providerNpi => {
+        const providerData = cmsProvidersByNpi[providerNpi];
+        
+        // Check if this provider has any CPT codes in the selected category
+        // Since providers are grouped, we can check the first record (they all have the same CPT codes)
+        if (providerData && providerData.length > 0) {
+          const provider = providerData[0]; // All records for a provider should be the same after grouping
+          const codes = Array.isArray(provider.HCPCS_Codes) ? provider.HCPCS_Codes : [];
+          
+          // Check if provider has any CPT codes in the selected category
+          if (codes.some((code: string) => categoryCptCodeSet.has(code))) {
+            // Use the provider's Tot_Srvcs directly (it's already the total across all their codes)
+            providerCategoryTotSrvcs[providerNpi] = provider.Tot_Srvcs || 0;
+          }
+        }
+      });
+      
+      // Find the max Tot_Srvcs for this category
+      const maxCategoryTotSrvcs = Object.values(providerCategoryTotSrvcs).length > 0 
+        ? Math.max(...Object.values(providerCategoryTotSrvcs)) 
+        : 1;
+      
+      // Now, filter clinical volume based on category CPT codes for each provider
       Object.keys(filteredProviderScores).forEach(npi => {
         const scoreData = filteredProviderScores[npi];
-        const cmsProviderData = cmsProvidersByNpi[npi];
+        const categoryTotSrvcs = providerCategoryTotSrvcs[npi] || 0;
+        const hasCategoryCptCodes = categoryTotSrvcs > 0;
         
-        if (cmsProviderData && cmsProviderData.length > 0) {
-          // Check if this provider has any CPT codes in the selected category
-          let hasCategoryCptCodes = false;
-          let categoryTotSrvcs = 0;
+        if (hasCategoryCptCodes && scoreData.weighted_breakdown) {
+          // Calculate percentage based on max Tot_Srvcs for this category only
+          const categoryPct = maxCategoryTotSrvcs > 0 ? (categoryTotSrvcs / maxCategoryTotSrvcs) : 0;
           
-          cmsProviderData.forEach((provider: any) => {
-            const providerCptCodes = Array.isArray(provider.HCPCS_Codes) ? provider.HCPCS_Codes : [];
-            providerCptCodes.forEach((code: string) => {
-              if (categoryCptCodeSet.has(code)) {
-                hasCategoryCptCodes = true;
-                categoryTotSrvcs += provider.Tot_Srvcs || 0;
-              }
-            });
-          });
-          
-          if (hasCategoryCptCodes && scoreData.weighted_breakdown) {
-            // Update clinical volume in the breakdown to reflect category-specific Tot_Srvcs
-            // We need to recalculate the percentage based on max Tot_Srvcs for this category
-            const allCategoryTotSrvcs: number[] = [];
-            Object.keys(cmsProvidersByNpi).forEach(providerNpi => {
-              const providerData = cmsProvidersByNpi[providerNpi];
-              providerData.forEach((p: any) => {
-                const codes = Array.isArray(p.HCPCS_Codes) ? p.HCPCS_Codes : [];
-                if (codes.some((code: string) => categoryCptCodeSet.has(code))) {
-                  allCategoryTotSrvcs.push(p.Tot_Srvcs || 0);
-                }
-              });
-            });
-            const maxCategoryTotSrvcs = allCategoryTotSrvcs.length > 0 ? Math.max(...allCategoryTotSrvcs) : 1;
-            const categoryPct = maxCategoryTotSrvcs > 0 ? (categoryTotSrvcs / maxCategoryTotSrvcs) : 0;
+          // Update the weighted breakdown
+          if (scoreData.weighted_breakdown.breakdown_details?.clinical_volume) {
+            scoreData.weighted_breakdown.breakdown_details.clinical_volume.raw = categoryTotSrvcs;
+            scoreData.weighted_breakdown.breakdown_details.clinical_volume.max_raw = maxCategoryTotSrvcs;
+            scoreData.weighted_breakdown.breakdown_details.clinical_volume.percentage = categoryPct * 100;
+            scoreData.weighted_breakdown.breakdown_details.clinical_volume.weighted_points = categoryPct * 40;
             
-            // Update the weighted breakdown
-            if (scoreData.weighted_breakdown.breakdown_details?.clinical_volume) {
-              scoreData.weighted_breakdown.breakdown_details.clinical_volume.raw = categoryTotSrvcs;
-              scoreData.weighted_breakdown.breakdown_details.clinical_volume.max_raw = maxCategoryTotSrvcs;
-              scoreData.weighted_breakdown.breakdown_details.clinical_volume.percentage = categoryPct * 100;
-              scoreData.weighted_breakdown.breakdown_details.clinical_volume.weighted_points = categoryPct * 40;
-              
-              // Recalculate final score
-              const cv = scoreData.weighted_breakdown.breakdown_details.clinical_volume.weighted_points || 0;
-              const pubmed = scoreData.weighted_breakdown.breakdown_details.pubmed?.weighted_points || 0;
-              const training = scoreData.weighted_breakdown.breakdown_details.training?.weighted_points || 0;
-              const experience = scoreData.weighted_breakdown.breakdown_details.experience?.weighted_points || 0;
-              const vumedi = scoreData.weighted_breakdown.breakdown_details.vumedi?.weighted_points || 0;
-              scoreData.weighted_breakdown.final_score = cv + pubmed + training + experience + vumedi;
-              scoreData.score = scoreData.weighted_breakdown.final_score;
-            }
-          } else {
-            // Provider doesn't have CPT codes in this category - set clinical volume to 0
-            if (scoreData.weighted_breakdown?.breakdown_details?.clinical_volume) {
-              scoreData.weighted_breakdown.breakdown_details.clinical_volume.raw = 0;
-              scoreData.weighted_breakdown.breakdown_details.clinical_volume.percentage = 0;
-              scoreData.weighted_breakdown.breakdown_details.clinical_volume.weighted_points = 0;
-              
-              // Recalculate final score without clinical volume
-              const pubmed = scoreData.weighted_breakdown.breakdown_details.pubmed?.weighted_points || 0;
-              const training = scoreData.weighted_breakdown.breakdown_details.training?.weighted_points || 0;
-              const experience = scoreData.weighted_breakdown.breakdown_details.experience?.weighted_points || 0;
-              const vumedi = scoreData.weighted_breakdown.breakdown_details.vumedi?.weighted_points || 0;
-              scoreData.weighted_breakdown.final_score = pubmed + training + experience + vumedi;
-              scoreData.score = scoreData.weighted_breakdown.final_score;
-            }
+            // Recalculate final score
+            const cv = scoreData.weighted_breakdown.breakdown_details.clinical_volume.weighted_points || 0;
+            const pubmed = scoreData.weighted_breakdown.breakdown_details.pubmed?.weighted_points || 0;
+            const training = scoreData.weighted_breakdown.breakdown_details.training?.weighted_points || 0;
+            const experience = scoreData.weighted_breakdown.breakdown_details.experience?.weighted_points || 0;
+            const vumedi = scoreData.weighted_breakdown.breakdown_details.vumedi?.weighted_points || 0;
+            scoreData.weighted_breakdown.final_score = cv + pubmed + training + experience + vumedi;
+            scoreData.score = scoreData.weighted_breakdown.final_score;
           }
         } else {
-          // No CMS data for this provider - set clinical volume to 0
+          // Provider doesn't have CPT codes in this category - set clinical volume to 0
           if (scoreData.weighted_breakdown?.breakdown_details?.clinical_volume) {
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.raw = 0;
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.percentage = 0;
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.weighted_points = 0;
             
-            // Recalculate final score
+            // Recalculate final score without clinical volume
             const pubmed = scoreData.weighted_breakdown.breakdown_details.pubmed?.weighted_points || 0;
             const training = scoreData.weighted_breakdown.breakdown_details.training?.weighted_points || 0;
             const experience = scoreData.weighted_breakdown.breakdown_details.experience?.weighted_points || 0;
