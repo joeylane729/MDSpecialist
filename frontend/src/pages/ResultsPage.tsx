@@ -131,6 +131,7 @@ const ResultsPage: React.FC = () => {
   const [isGeneratingSpecialists, setIsGeneratingSpecialists] = useState(false);
   const [selectedTreatmentIndices, setSelectedTreatmentIndices] = useState<Set<number>>(new Set());
   const hasInitializedTreatments = useRef(false);
+  const hasInitializedCategoryFilter = useRef(false);
   
   // Set initial view based on search options
   useEffect(() => {
@@ -248,6 +249,43 @@ const ResultsPage: React.FC = () => {
       }
     }
   }, [searchParams, location.state, specialistRecommendationData, cptCodesByCategory]);
+
+  // Initialize selected category when treatmentRankings are available
+  useEffect(() => {
+    if (Object.keys(treatmentRankings).length > 0 && !selectedCategory) {
+      const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
+      const categories = getCategoriesFromTreatmentOptions(treatmentOptions);
+      if (categories.length > 0) {
+        const firstCategory = categories[0];
+        setSelectedCategory(firstCategory);
+        console.log('🔍 Auto-selecting first category:', firstCategory);
+      }
+    }
+  }, [treatmentRankings, selectedCategory, searchParams, location.state?.aiRecommendations]);
+
+  // Apply category filter when selectedCategory is set for the first time
+  useEffect(() => {
+    if (selectedCategory && Object.keys(treatmentRankings).length > 0 && !hasInitializedCategoryFilter.current) {
+      const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
+      const categories = getCategoriesFromTreatmentOptions(treatmentOptions);
+      
+      if (categories.includes(selectedCategory)) {
+        // Group treatments by category for the filter change handler
+        const treatmentsByCategory: { [category: string]: Array<{ id: string; treatment: any }> } = {};
+        Object.entries(treatmentRankings).forEach(([treatmentId, treatment]) => {
+          const category = (treatment as any).category || 'Other';
+          if (!treatmentsByCategory[category]) {
+            treatmentsByCategory[category] = [];
+          }
+          treatmentsByCategory[category].push({ id: treatmentId, treatment });
+        });
+        
+        // Apply the category filter once
+        handleCategoryFilterChange(selectedCategory, treatmentsByCategory);
+        hasInitializedCategoryFilter.current = true;
+      }
+    }
+  }, [selectedCategory, treatmentRankings, searchParams, location.state?.aiRecommendations]);
 
   // Original useEffect for CPT codes (keeping for backward compatibility)
   useEffect(() => {
@@ -575,6 +613,15 @@ const ResultsPage: React.FC = () => {
         const firstTreatmentId = Object.keys(location.state.treatmentRankings)[0];
         const firstTreatment = location.state.treatmentRankings[firstTreatmentId];
         setSelectedTreatmentId(firstTreatmentId);
+        
+        // Initialize selected category to first available category
+        const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
+        const categories = getCategoriesFromTreatmentOptions(treatmentOptions);
+        if (categories.length > 0 && !selectedCategory) {
+          const firstCategory = categories[0];
+          setSelectedCategory(firstCategory);
+          console.log('🔍 Initializing selected category to:', firstCategory);
+        }
         
         // Get ranked providers for the first treatment
         const rankedNPIs = firstTreatment.ranked_providers;
@@ -1317,7 +1364,7 @@ const ResultsPage: React.FC = () => {
       }
     });
     
-    // Now, if a category is selected, modify ONLY clinical volume based on category-specific CPT codes
+    // Always require a category - modify ONLY clinical volume based on category-specific CPT codes
     if (category) {
       // Modify ONLY clinical volume based on category-specific CPT codes
       const categoryCptCodes = cptCodesByCategory[category] || [];
@@ -2127,22 +2174,23 @@ const ResultsPage: React.FC = () => {
                       <span className="text-sm font-medium text-gray-700">Category:</span>
                     </div>
                     <select
-                      value={selectedCategory}
+                      value={selectedCategory || categories[0] || ''}
                       onChange={(e) => {
                         const category = e.target.value;
-                        setSelectedCategory(category);
-                        handleCategoryFilterChange(category, treatmentsByCategory);
+                        if (category) {
+                          setSelectedCategory(category);
+                          handleCategoryFilterChange(category, treatmentsByCategory);
+                        }
                       }}
                       className={`px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white/50 ${
-                        selectedCategory
+                        selectedCategory || categories[0]
                           ? 'border-blue-500 bg-blue-50'
                           : 'border-gray-300'
                       }`}
                     >
-                      <option value="">All Categories</option>
                       {categories.map((category) => (
                         <option key={category} value={category}>
-                          {category} ({treatmentsByCategory[category]?.length || 0})
+                          {category}
                         </option>
                       ))}
                     </select>
