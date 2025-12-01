@@ -730,7 +730,7 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
       details: clinical_volume.percentage > 0 ? (() => {
         const breakdownDetails = weighted_breakdown?.breakdown_details?.clinical_volume;
         const totSrvcs = breakdownDetails?.raw ?? 0;
-        const maxTotSrvcs = breakdownDetails?.max ?? 1;
+        const maxTotSrvcs = breakdownDetails?.max_raw ?? breakdownDetails?.max ?? 1; // Support both max_raw and max for backward compatibility
         const percentageCalc = maxTotSrvcs > 0 ? (totSrvcs / maxTotSrvcs * 100).toFixed(1) : '0.0';
         
         return (
@@ -744,12 +744,12 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
               <span className="font-semibold">{totSrvcs.toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Max Tot_Srvcs (in batch):</span>
+              <span className="text-gray-600">Max Total Services (in category):</span>
               <span className="font-semibold">{maxTotSrvcs.toLocaleString()}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Percentage Calculation:</span>
-              <span className="font-semibold">{totSrvcs.toLocaleString()} ÷ {maxTotSrvcs.toLocaleString()} = {percentageCalc}%</span>
+              <span className="font-semibold">{totSrvcs.toLocaleString()} ÷ {maxTotSrvcs.toLocaleString()} = {clinical_volume.percentage.toFixed(1)}%</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Weighted Points:</span>
@@ -758,7 +758,7 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
           </div>
         );
       })() : (
-        <div className="text-sm text-gray-600">This provider is not in the CMS results for the searched CPT codes.</div>
+        <div className="text-sm text-gray-600">This provider is not in the CMS results for the searched CPT codes or has no recorded services for this category.</div>
       )
     },
     {
