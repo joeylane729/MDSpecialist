@@ -1204,63 +1204,164 @@ const ResultsPage: React.FC = () => {
   const handleCategoryFilterChange = (category: string, treatmentsByCategory: { [category: string]: Array<{ id: string; treatment: any }> }) => {
     console.log('🔍 Category filter changed to:', category);
     
+    // Always show ALL providers from all treatments (combine all ranked providers)
+    const allRankedNPIs = new Set<string>();
+    const allProviderLinks: { [npi: string]: ProviderContent } = {};
+    
+    // Collect all providers and links from all treatments
+    Object.values(treatmentRankings).forEach((treatment: any) => {
+      if (treatment.ranked_providers) {
+        treatment.ranked_providers.forEach((npi: string) => allRankedNPIs.add(npi));
+      }
+      if (treatment.provider_links) {
+        Object.assign(allProviderLinks, treatment.provider_links);
+      }
+    });
+    
+    const originalProviders = providers || [];
+    const allProviders = Array.from(allRankedNPIs).map((npi: string) => 
+      originalProviders.find((provider: Provider) => provider.npi === npi)
+    ).filter((provider: Provider | undefined): provider is NPIProvider => provider !== undefined);
+    
+    // Now filter scores based on category
+    let filteredProviderScores: { [npi: string]: any } = {};
+    
     if (!category) {
-      // Show all providers from all treatments
-      const allRankedNPIs = new Set<string>();
-      const allProviderLinks: { [npi: string]: ProviderContent } = {};
-      const allProviderScores: { [npi: string]: any } = {};
-      
+      // Show all scores from all treatments (merge all scores)
       Object.values(treatmentRankings).forEach((treatment: any) => {
-        if (treatment.ranked_providers) {
-          treatment.ranked_providers.forEach((npi: string) => allRankedNPIs.add(npi));
-        }
-        if (treatment.provider_links) {
-          Object.assign(allProviderLinks, treatment.provider_links);
-        }
         if (treatment.provider_scores) {
-          Object.assign(allProviderScores, treatment.provider_scores);
+          Object.assign(filteredProviderScores, treatment.provider_scores);
         }
       });
-      
-      const originalProviders = providers || [];
-      const rankedNPIProviders = Array.from(allRankedNPIs).map((npi: string) => 
-        originalProviders.find((provider: Provider) => provider.npi === npi)
-      ).filter((provider: Provider | undefined): provider is NPIProvider => provider !== undefined);
-      
-      setRankedProviders(rankedNPIProviders);
-      setProviderLinks(allProviderLinks);
-      setProviderScores(allProviderScores);
     } else {
-      // Show providers only from treatments in selected category
+      // Only use scores from treatments in selected category
       const categoryTreatments = treatmentsByCategory[category] || [];
-      const allRankedNPIs = new Set<string>();
-      const allProviderLinks: { [npi: string]: ProviderContent } = {};
-      const allProviderScores: { [npi: string]: any } = {};
+      const categoryCptCodes = cptCodesByCategory[category] || [];
+      const categoryCptCodeSet = new Set(categoryCptCodes.map(cpt => cpt.code));
       
+      // Get CMS data to filter clinical volume by category
+      const cmsData = specialistRecommendationData?.cms_data || location.state?.aiRecommendations?.cms_data;
+      const cmsProvidersByNpi: { [npi: string]: any } = {};
+      if (cmsData?.results) {
+        cmsData.results.forEach((provider: any) => {
+          const npi = provider.Rndrng_NPI;
+          if (npi) {
+            if (!cmsProvidersByNpi[npi]) {
+              cmsProvidersByNpi[npi] = [];
+            }
+            cmsProvidersByNpi[npi].push(provider);
+          }
+        });
+      }
+      
+      // Merge scores from treatments in this category
       categoryTreatments.forEach(({ id }) => {
         const treatment = treatmentRankings[id];
-        if (treatment) {
-          if (treatment.ranked_providers) {
-            treatment.ranked_providers.forEach((npi: string) => allRankedNPIs.add(npi));
-          }
-          if (treatment.provider_links) {
-            Object.assign(allProviderLinks, treatment.provider_links);
-          }
-          if (treatment.provider_scores) {
-            Object.assign(allProviderScores, treatment.provider_scores);
-          }
+        if (treatment?.provider_scores) {
+          Object.entries(treatment.provider_scores).forEach(([npi, scoreData]: [string, any]) => {
+            if (!filteredProviderScores[npi]) {
+              // Initialize with the score data
+              filteredProviderScores[npi] = { ...scoreData };
+            } else {
+              // Merge scores (take max or sum depending on what makes sense)
+              // For now, we'll use the scores from the first treatment, but we could merge them
+              // For simplicity, we'll keep the first one we encounter
+            }
+          });
         }
       });
       
-      const originalProviders = providers || [];
-      const rankedNPIProviders = Array.from(allRankedNPIs).map((npi: string) => 
-        originalProviders.find((provider: Provider) => provider.npi === npi)
-      ).filter((provider: Provider | undefined): provider is NPIProvider => provider !== undefined);
-      
-      setRankedProviders(rankedNPIProviders);
-      setProviderLinks(allProviderLinks);
-      setProviderScores(allProviderScores);
+      // Filter clinical volume based on category CPT codes
+      // For each provider, check if they have CPT codes in CMS data that match the category
+      Object.keys(filteredProviderScores).forEach(npi => {
+        const scoreData = filteredProviderScores[npi];
+        const cmsProviderData = cmsProvidersByNpi[npi];
+        
+        if (cmsProviderData && cmsProviderData.length > 0) {
+          // Check if this provider has any CPT codes in the selected category
+          let hasCategoryCptCodes = false;
+          let categoryTotSrvcs = 0;
+          
+          cmsProviderData.forEach((provider: any) => {
+            const providerCptCodes = Array.isArray(provider.HCPCS_Codes) ? provider.HCPCS_Codes : [];
+            providerCptCodes.forEach((code: string) => {
+              if (categoryCptCodeSet.has(code)) {
+                hasCategoryCptCodes = true;
+                categoryTotSrvcs += provider.Tot_Srvcs || 0;
+              }
+            });
+          });
+          
+          if (hasCategoryCptCodes && scoreData.weighted_breakdown) {
+            // Update clinical volume in the breakdown to reflect category-specific Tot_Srvcs
+            // We need to recalculate the percentage based on max Tot_Srvcs for this category
+            const allCategoryTotSrvcs: number[] = [];
+            Object.keys(cmsProvidersByNpi).forEach(providerNpi => {
+              const providerData = cmsProvidersByNpi[providerNpi];
+              providerData.forEach((p: any) => {
+                const codes = Array.isArray(p.HCPCS_Codes) ? p.HCPCS_Codes : [];
+                if (codes.some((code: string) => categoryCptCodeSet.has(code))) {
+                  allCategoryTotSrvcs.push(p.Tot_Srvcs || 0);
+                }
+              });
+            });
+            const maxCategoryTotSrvcs = allCategoryTotSrvcs.length > 0 ? Math.max(...allCategoryTotSrvcs) : 1;
+            const categoryPct = maxCategoryTotSrvcs > 0 ? (categoryTotSrvcs / maxCategoryTotSrvcs) : 0;
+            
+            // Update the weighted breakdown
+            if (scoreData.weighted_breakdown.breakdown_details?.clinical_volume) {
+              scoreData.weighted_breakdown.breakdown_details.clinical_volume.raw = categoryTotSrvcs;
+              scoreData.weighted_breakdown.breakdown_details.clinical_volume.max_raw = maxCategoryTotSrvcs;
+              scoreData.weighted_breakdown.breakdown_details.clinical_volume.percentage = categoryPct * 100;
+              scoreData.weighted_breakdown.breakdown_details.clinical_volume.weighted_points = categoryPct * 40;
+              
+              // Recalculate final score
+              const cv = scoreData.weighted_breakdown.breakdown_details.clinical_volume.weighted_points || 0;
+              const pubmed = scoreData.weighted_breakdown.breakdown_details.pubmed?.weighted_points || 0;
+              const training = scoreData.weighted_breakdown.breakdown_details.training?.weighted_points || 0;
+              const experience = scoreData.weighted_breakdown.breakdown_details.experience?.weighted_points || 0;
+              const vumedi = scoreData.weighted_breakdown.breakdown_details.vumedi?.weighted_points || 0;
+              scoreData.weighted_breakdown.final_score = cv + pubmed + training + experience + vumedi;
+              scoreData.score = scoreData.weighted_breakdown.final_score;
+            }
+          } else {
+            // Provider doesn't have CPT codes in this category - set clinical volume to 0
+            if (scoreData.weighted_breakdown?.breakdown_details?.clinical_volume) {
+              scoreData.weighted_breakdown.breakdown_details.clinical_volume.raw = 0;
+              scoreData.weighted_breakdown.breakdown_details.clinical_volume.percentage = 0;
+              scoreData.weighted_breakdown.breakdown_details.clinical_volume.weighted_points = 0;
+              
+              // Recalculate final score without clinical volume
+              const pubmed = scoreData.weighted_breakdown.breakdown_details.pubmed?.weighted_points || 0;
+              const training = scoreData.weighted_breakdown.breakdown_details.training?.weighted_points || 0;
+              const experience = scoreData.weighted_breakdown.breakdown_details.experience?.weighted_points || 0;
+              const vumedi = scoreData.weighted_breakdown.breakdown_details.vumedi?.weighted_points || 0;
+              scoreData.weighted_breakdown.final_score = pubmed + training + experience + vumedi;
+              scoreData.score = scoreData.weighted_breakdown.final_score;
+            }
+          }
+        } else {
+          // No CMS data for this provider - set clinical volume to 0
+          if (scoreData.weighted_breakdown?.breakdown_details?.clinical_volume) {
+            scoreData.weighted_breakdown.breakdown_details.clinical_volume.raw = 0;
+            scoreData.weighted_breakdown.breakdown_details.clinical_volume.percentage = 0;
+            scoreData.weighted_breakdown.breakdown_details.clinical_volume.weighted_points = 0;
+            
+            // Recalculate final score
+            const pubmed = scoreData.weighted_breakdown.breakdown_details.pubmed?.weighted_points || 0;
+            const training = scoreData.weighted_breakdown.breakdown_details.training?.weighted_points || 0;
+            const experience = scoreData.weighted_breakdown.breakdown_details.experience?.weighted_points || 0;
+            const vumedi = scoreData.weighted_breakdown.breakdown_details.vumedi?.weighted_points || 0;
+            scoreData.weighted_breakdown.final_score = pubmed + training + experience + vumedi;
+            scoreData.score = scoreData.weighted_breakdown.final_score;
+          }
+        }
+      });
     }
+    
+    setRankedProviders(allProviders);
+    setProviderLinks(allProviderLinks);
+    setProviderScores(filteredProviderScores);
     
     setCurrentPage(1);
     saveFilterState();
