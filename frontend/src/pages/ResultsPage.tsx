@@ -92,11 +92,16 @@ const ResultsPage: React.FC = () => {
   const [activeView, setActiveView] = useState<'assessment' | 'specialists' | 'ai-recommendations' | 'debug'>('assessment');
   const [specialistRecommendationData, setSpecialistRecommendationData] = useState<any>(null);
   const [cptCodes, setCptCodes] = useState<Array<{ code: string; description: string }> | null>(null);
+  const [cptCodesByCategory, setCptCodesByCategory] = useState<{ [category: string]: Array<{ code: string; description: string }> }>({});
+  const [cptPromptTextByCategory, setCptPromptTextByCategory] = useState<{ [category: string]: string }>({});
+  const [editablePromptTextByCategory, setEditablePromptTextByCategory] = useState<{ [category: string]: string }>({});
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [cptPromptText, setCptPromptText] = useState<string | null>(null);
   const [editablePromptText, setEditablePromptText] = useState<string | null>(null);
   const [diagnosesPromptText, setDiagnosesPromptText] = useState<string | null>(null);
   const [editableDiagnosesPromptText, setEditableDiagnosesPromptText] = useState<string | null>(null);
   const [isGeneratingCPTCodes, setIsGeneratingCPTCodes] = useState(false);
+  const [isGeneratingCPTCodesForCategory, setIsGeneratingCPTCodesForCategory] = useState<string | null>(null);
   const [isRegeneratingDiagnoses, setIsRegeneratingDiagnoses] = useState(false);
   const [isGeneratingSpecialists, setIsGeneratingSpecialists] = useState(false);
   const [selectedTreatmentIndices, setSelectedTreatmentIndices] = useState<Set<number>>(new Set());
@@ -861,7 +866,7 @@ const ResultsPage: React.FC = () => {
     }
   };
 
-  const handleGenerateCPTCodes = async (useCustomPrompt: boolean = false) => {
+  const handleGenerateCPTCodes = async (useCustomPrompt: boolean = false, categoryFilter?: string) => {
     try {
       setIsGeneratingCPTCodes(true);
       
@@ -875,9 +880,22 @@ const ResultsPage: React.FC = () => {
       }
       
       // Filter to only selected treatment options
-      const selectedTreatmentOptions = allTreatmentOptions.filter((_, index) => selectedTreatmentIndices.has(index));
+      let selectedTreatmentOptions = allTreatmentOptions.filter((_, index) => selectedTreatmentIndices.has(index));
       
-      if (selectedTreatmentOptions.length === 0) {
+      // Group selected treatment options by category
+      const optionsByCategory: { [category: string]: TreatmentOption[] } = {};
+      selectedTreatmentOptions.forEach(option => {
+        const category = option.category || 'Other';
+        if (!optionsByCategory[category]) {
+          optionsByCategory[category] = [];
+        }
+        optionsByCategory[category].push(option);
+      });
+      
+      // If a specific category is requested, only generate for that category
+      const categoriesToGenerate = categoryFilter ? [categoryFilter] : Object.keys(optionsByCategory);
+      
+      if (categoriesToGenerate.length === 0) {
         alert('Please select at least one treatment option to generate CPT codes');
         return;
       }
@@ -887,55 +905,75 @@ const ResultsPage: React.FC = () => {
         return;
       }
       
-      // Use custom prompt if rerunning with edited prompt, otherwise use default (undefined)
-      const customPrompt = useCustomPrompt && editablePromptText ? editablePromptText : undefined;
+      // Generate CPT codes for each category
+      const newCptCodesByCategory: { [category: string]: Array<{ code: string; description: string }> } = {};
+      const newCptPromptTextByCategory: { [category: string]: string } = {};
       
-      const response = await generateCPTCodes({
-        search_query: searchQuery,
-        treatment_options: selectedTreatmentOptions,
-        custom_prompt: customPrompt
-      });
-      
-      // Only update CPT codes if we got valid codes (non-empty array)
-      if (response.cpt_codes && response.cpt_codes.length > 0) {
-        setCptCodes(response.cpt_codes);
-        setCptPromptText(response.cpt_prompt_text);
-        // Only update editable prompt if we used the default (not custom), otherwise keep the edited version
-        if (!useCustomPrompt) {
-          setEditablePromptText(response.cpt_prompt_text);
-        }
+      for (const category of categoriesToGenerate) {
+        const categoryOptions = optionsByCategory[category];
+        if (!categoryOptions || categoryOptions.length === 0) continue;
         
-        // Update searchParams to include CPT codes
+        setIsGeneratingCPTCodesForCategory(category);
+        
+        // Use custom prompt if rerunning with edited prompt, otherwise use default (undefined)
+        const customPrompt = useCustomPrompt && editablePromptText ? editablePromptText : undefined;
+        
+        try {
+          const response = await generateCPTCodes({
+            search_query: searchQuery,
+            treatment_options: categoryOptions,
+            custom_prompt: customPrompt
+          });
+          
+          if (response.cpt_codes && response.cpt_codes.length > 0) {
+            newCptCodesByCategory[category] = response.cpt_codes;
+            newCptPromptTextByCategory[category] = response.cpt_prompt_text || '';
+            // Initialize editable prompt text for this category
+            setEditablePromptTextByCategory(prev => ({
+              ...prev,
+              [category]: response.cpt_prompt_text || ''
+            }));
+            console.log(`✅ Generated ${response.cpt_codes.length} CPT codes for category: ${category}`);
+          } else {
+            console.warn(`⚠️  Received 0 CPT codes for category: ${category}`);
+          }
+        } catch (error) {
+          console.error(`❌ Error generating CPT codes for category ${category}:`, error);
+        }
+      }
+      
+      // Update state with all categories
+      setCptCodesByCategory(prev => ({ ...prev, ...newCptCodesByCategory }));
+      setCptPromptTextByCategory(prev => ({ ...prev, ...newCptPromptTextByCategory }));
+      
+      // Set first category as selected if none selected yet
+      if (!selectedCategory && Object.keys(newCptCodesByCategory).length > 0) {
+        setSelectedCategory(Object.keys(newCptCodesByCategory)[0]);
+      }
+      
+      // Combine all CPT codes for backward compatibility and CMS API call
+      const allCptCodes = Object.values(newCptCodesByCategory).flat();
+      if (allCptCodes.length > 0) {
+        setCptCodes(allCptCodes);
+        
+        // Update searchParams to include combined CPT codes
         if (searchParams) {
           setSearchParams({
             ...searchParams,
-            cpt_codes: response.cpt_codes,
-            cpt_prompt_text: response.cpt_prompt_text
+            cpt_codes: allCptCodes
           });
         }
         
-        console.log('✅ Generated', response.cpt_codes.length, 'CPT codes');
-      } else {
-        // If we got 0 codes, don't update state - keep existing codes
-        console.warn('⚠️  Received 0 CPT codes, keeping existing codes');
-        if (response.cpt_prompt_text) {
-          // Still update the prompt text if provided
-          setCptPromptText(response.cpt_prompt_text);
-          if (!useCustomPrompt) {
-            setEditablePromptText(response.cpt_prompt_text);
-          }
-        }
-        alert('No CPT codes were generated. Please check the prompt and try again.');
+        console.log(`✅ Generated total ${allCptCodes.length} CPT codes across ${Object.keys(newCptCodesByCategory).length} categories`);
       }
       
     } catch (error) {
       console.error('❌ Error generating CPT codes:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       alert('Failed to generate CPT codes: ' + errorMessage);
-      // Don't clear existing CPT codes on error - keep what we have
-      // setCptCodes(null) would cause UI to reset
     } finally {
       setIsGeneratingCPTCodes(false);
+      setIsGeneratingCPTCodesForCategory(null);
     }
   };
 
@@ -946,9 +984,17 @@ const ResultsPage: React.FC = () => {
       return;
     }
 
-    // Check if CPT codes are available
-    const existingCptCodes = cptCodes || searchParams?.cpt_codes || 
-                                location.state?.aiRecommendations?.patient_profile?.cpt_codes;
+    // Check if CPT codes are available - combine all categories if category-based codes exist
+    let existingCptCodes = cptCodes || searchParams?.cpt_codes || 
+                              location.state?.aiRecommendations?.patient_profile?.cpt_codes;
+    
+    // If we have category-based codes, combine them all
+    if (Object.keys(cptCodesByCategory).length > 0) {
+      const allCategoryCodes = Object.values(cptCodesByCategory).flat();
+      if (allCategoryCodes.length > 0) {
+        existingCptCodes = allCategoryCodes;
+      }
+    }
     
     if (!existingCptCodes || existingCptCodes.length === 0) {
       alert('Please generate CPT codes first before getting specialist recommendations');
@@ -1515,14 +1561,15 @@ const ResultsPage: React.FC = () => {
                 const searchQuery = searchParams?.search_query || location.state?.aiRecommendations?.patient_profile?.search_query;
                 const existingCptCodes = cptCodes || searchParams?.cpt_codes;
                 const hasCptCodes = Array.isArray(existingCptCodes) && existingCptCodes.length > 0;
+                const hasCptCodesByCategory = Object.keys(cptCodesByCategory).length > 0;
                 
                 // Show button if we have treatment options
                 if (!treatmentOptions || treatmentOptions.length === 0) {
                   return null;
                 }
                 
-                // Don't show button if CPT codes already exist
-                if (hasCptCodes) {
+                // Don't show button if CPT codes already exist (either legacy or category-based)
+                if (hasCptCodes || hasCptCodesByCategory) {
                   return null;
                 }
                 
@@ -1558,17 +1605,109 @@ const ResultsPage: React.FC = () => {
               
               {/* CPT Codes Section - only show if we have actual CPT codes */}
               {(() => {
+                const hasCptCodesByCategory = Object.keys(cptCodesByCategory).length > 0;
                 const existingCptCodes = cptCodes || searchParams?.cpt_codes;
                 const hasCptCodes = Array.isArray(existingCptCodes) && existingCptCodes.length > 0;
-                if (!hasCptCodes) {
+                
+                // Prefer category-based codes if available, otherwise fall back to legacy format
+                const categories = hasCptCodesByCategory ? Object.keys(cptCodesByCategory) : [];
+                const displayCategory = selectedCategory || (categories.length > 0 ? categories[0] : null);
+                
+                if (!hasCptCodesByCategory && !hasCptCodes) {
                   return null;
                 }
+                
                 return (
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h2 className="text-2xl font-semibold text-gray-900 mb-4">Relevant CPT Codes</h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-semibold text-gray-900">Relevant CPT Codes</h2>
+                    {hasCptCodesByCategory && (
+                      <div className="text-sm text-gray-600">
+                        Total: {Object.values(cptCodesByCategory).flat().length} codes across {categories.length} {categories.length === 1 ? 'category' : 'categories'}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Category Tabs - only show if we have multiple categories */}
+                  {hasCptCodesByCategory && categories.length > 1 && (
+                    <div className="mb-4 border-b border-gray-200">
+                      <div className="flex space-x-1 overflow-x-auto">
+                        {categories.map((category) => {
+                          const categoryCodes = cptCodesByCategory[category] || [];
+                          const isSelected = displayCategory === category;
+                          return (
+                            <button
+                              key={category}
+                              onClick={() => setSelectedCategory(category)}
+                              className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                                isSelected
+                                  ? 'border-blue-600 text-blue-600'
+                                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                              }`}
+                            >
+                              {category} ({categoryCodes.length})
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                   
                   {/* GPT Prompt Instructions (collapsed by default) */}
-                  {(cptPromptText || searchParams?.cpt_prompt_text) && (
+                  {displayCategory && cptPromptTextByCategory[displayCategory] && (
+                    <div className="mb-4">
+                      <details className="bg-gray-50 rounded-lg border border-gray-200">
+                        <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-t-lg">
+                          <span className="flex items-center gap-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            View GPT Prompt Instructions for {displayCategory} (for debugging)
+                          </span>
+                        </summary>
+                        <div className="p-4 border-t border-gray-200">
+                          <p className="text-xs text-gray-600 mb-2">The following prompt was sent to GPT to generate the CPT codes for {displayCategory}:</p>
+                          <textarea
+                            className="w-full text-xs text-gray-800 bg-white p-3 rounded border border-gray-300 font-mono min-h-[200px] resize-y"
+                            value={editablePromptTextByCategory[displayCategory] || cptPromptTextByCategory[displayCategory] || ''}
+                            onChange={(e) => {
+                              setEditablePromptTextByCategory(prev => ({
+                                ...prev,
+                                [displayCategory]: e.target.value
+                              }));
+                            }}
+                            placeholder="Prompt text..."
+                          />
+                          <div className="mt-3 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                await handleGenerateCPTCodes(true, displayCategory);
+                              }}
+                              disabled={isGeneratingCPTCodes || !editablePromptTextByCategory[displayCategory]}
+                              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                            >
+                              {isGeneratingCPTCodes && isGeneratingCPTCodesForCategory === displayCategory ? (
+                                <span className="flex items-center gap-2">
+                                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  Generating...
+                                </span>
+                              ) : (
+                                'Rerun with Edited Prompt'
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </details>
+                    </div>
+                  )}
+                  
+                  {/* Fallback prompt section for legacy format */}
+                  {!hasCptCodesByCategory && (cptPromptText || searchParams?.cpt_prompt_text) && (
                     <div className="mb-4">
                       <details className="bg-gray-50 rounded-lg border border-gray-200">
                         <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-t-lg">
@@ -1616,11 +1755,16 @@ const ResultsPage: React.FC = () => {
                   )}
                   
                   <div className="text-sm text-gray-600 mb-3">
-                    Procedural codes that could be used by a neurosurgeon to treat this condition:
+                    {displayCategory 
+                      ? `Procedural codes for ${displayCategory} category:`
+                      : 'Procedural codes that could be used by a neurosurgeon to treat this condition:'}
                   </div>
                   
                   <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {(cptCodes || searchParams?.cpt_codes || []).map((cpt: any, index: number) => (
+                    {(hasCptCodesByCategory && displayCategory && cptCodesByCategory[displayCategory]
+                      ? cptCodesByCategory[displayCategory]
+                      : (cptCodes || searchParams?.cpt_codes || [])
+                    ).map((cpt: any, index: number) => (
                       <div key={index} className="bg-amber-50 rounded-lg p-3 border border-amber-200">
                         <div className="flex items-start gap-3">
                           <code className="bg-amber-100 px-2 py-1 rounded text-sm font-semibold text-amber-900 whitespace-nowrap">
