@@ -1461,7 +1461,14 @@ const ResultsPage: React.FC = () => {
       });
     }
     
-    setRankedProviders(allProviders);
+    // Sort providers by their total score (descending) after updating scores
+    const sortedProviders = [...allProviders].sort((a, b) => {
+      const scoreA = filteredProviderScores[a.npi]?.score || filteredProviderScores[a.npi]?.weighted_breakdown?.final_score || 0;
+      const scoreB = filteredProviderScores[b.npi]?.score || filteredProviderScores[b.npi]?.weighted_breakdown?.final_score || 0;
+      return scoreB - scoreA; // Sort descending (highest score first)
+    });
+    
+    setRankedProviders(sortedProviders);
     setProviderLinks(allProviderLinks);
     setProviderScores(filteredProviderScores);
     
