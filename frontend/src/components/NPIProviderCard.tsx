@@ -715,6 +715,13 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
     years_experience
   } = scoreData;
 
+  // Recalculate clinical volume percentage from raw values for accuracy
+  const clinicalVolumeBreakdown = weighted_breakdown?.breakdown_details?.clinical_volume;
+  const clinicalVolumeRaw = clinicalVolumeBreakdown?.raw ?? 0;
+  const clinicalVolumeMaxRaw = clinicalVolumeBreakdown?.max_raw ?? clinicalVolumeBreakdown?.max ?? 1;
+  const clinicalVolumePercentageRecalc = clinicalVolumeMaxRaw > 0 ? (clinicalVolumeRaw / clinicalVolumeMaxRaw * 100) : 0;
+  const clinicalVolumeWeightedPointsRecalc = (clinicalVolumePercentageRecalc / 100) * clinical_volume.weight;
+
   const sections = [
     {
       key: 'clinical_volume',
@@ -724,14 +731,22 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
       iconColor: 'text-blue-600',
       barColor: 'bg-blue-600',
       weight: clinical_volume.weight,
-      percentage: clinical_volume.percentage,
-      weightedPoints: clinical_volume.weighted_points,
-      summary: clinical_volume.percentage > 0 ? `✓ ${clinical_volume.percentage.toFixed(1)}% of max Tot_Srvcs` : 'Not in CMS results',
-      details: clinical_volume.percentage > 0 ? (() => {
+      percentage: clinicalVolumePercentageRecalc, // Use recalculated percentage
+      weightedPoints: clinicalVolumeWeightedPointsRecalc, // Use recalculated weighted points
+      summary: clinicalVolumeBreakdown ? `✓ ${clinicalVolumePercentageRecalc.toFixed(1)}% of max Tot_Srvcs` : 'Not in CMS results',
+      details: (() => {
         const breakdownDetails = weighted_breakdown?.breakdown_details?.clinical_volume;
+        if (!breakdownDetails) {
+          return <div className="text-sm text-gray-600">This provider is not in the CMS results for the searched CPT codes or has no recorded services for this category.</div>;
+        }
+        
         const totSrvcs = breakdownDetails?.raw ?? 0;
         const maxTotSrvcs = breakdownDetails?.max_raw ?? breakdownDetails?.max ?? 1; // Support both max_raw and max for backward compatibility
-        const percentageCalc = maxTotSrvcs > 0 ? (totSrvcs / maxTotSrvcs * 100).toFixed(1) : '0.0';
+        // Recalculate percentage from raw values to ensure accuracy
+        const percentageCalc = maxTotSrvcs > 0 ? (totSrvcs / maxTotSrvcs * 100) : 0;
+        const percentageDisplay = percentageCalc.toFixed(1);
+        // Recalculate weighted points from the recalculated percentage
+        const weightedPointsCalc = (percentageCalc / 100) * clinical_volume.weight;
         
         return (
           <div className="space-y-2 text-sm">
@@ -749,17 +764,15 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Percentage Calculation:</span>
-              <span className="font-semibold">{totSrvcs.toLocaleString()} ÷ {maxTotSrvcs.toLocaleString()} = {clinical_volume.percentage.toFixed(1)}%</span>
+              <span className="font-semibold">{totSrvcs.toLocaleString()} ÷ {maxTotSrvcs.toLocaleString()} = {percentageDisplay}%</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Weighted Points:</span>
-              <span className="font-semibold">{(clinical_volume.percentage / 100).toFixed(2)} × {clinical_volume.weight}% = {clinical_volume.weighted_points.toFixed(2)} points</span>
+              <span className="font-semibold">{(percentageCalc / 100).toFixed(2)} × {clinical_volume.weight}% = {weightedPointsCalc.toFixed(2)} points</span>
             </div>
           </div>
         );
-      })() : (
-        <div className="text-sm text-gray-600">This provider is not in the CMS results for the searched CPT codes or has no recorded services for this category.</div>
-      )
+      })()
     },
     {
       key: 'pubmed',
