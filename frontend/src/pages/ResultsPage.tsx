@@ -1234,8 +1234,19 @@ const ResultsPage: React.FC = () => {
         }
       });
     } else {
-      // Only use scores from treatments in selected category
-      const categoryTreatments = treatmentsByCategory[category] || [];
+      // First, merge ALL scores from ALL treatments (keep everything except clinical volume)
+      Object.values(treatmentRankings).forEach((treatment: any) => {
+        if (treatment.provider_scores) {
+          Object.entries(treatment.provider_scores).forEach(([npi, scoreData]: [string, any]) => {
+            if (!filteredProviderScores[npi]) {
+              // Deep copy the score data so we can modify it without affecting the original
+              filteredProviderScores[npi] = JSON.parse(JSON.stringify(scoreData));
+            }
+          });
+        }
+      });
+      
+      // Now, modify ONLY clinical volume based on category-specific CPT codes
       const categoryCptCodes = cptCodesByCategory[category] || [];
       const categoryCptCodeSet = new Set(categoryCptCodes.map(cpt => cpt.code));
       
@@ -1253,23 +1264,6 @@ const ResultsPage: React.FC = () => {
           }
         });
       }
-      
-      // Merge scores from treatments in this category
-      categoryTreatments.forEach(({ id }) => {
-        const treatment = treatmentRankings[id];
-        if (treatment?.provider_scores) {
-          Object.entries(treatment.provider_scores).forEach(([npi, scoreData]: [string, any]) => {
-            if (!filteredProviderScores[npi]) {
-              // Initialize with the score data
-              filteredProviderScores[npi] = { ...scoreData };
-            } else {
-              // Merge scores (take max or sum depending on what makes sense)
-              // For now, we'll use the scores from the first treatment, but we could merge them
-              // For simplicity, we'll keep the first one we encounter
-            }
-          });
-        }
-      });
       
       // Filter clinical volume based on category CPT codes
       // For each provider, check if they have CPT codes in CMS data that match the category
