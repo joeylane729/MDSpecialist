@@ -206,6 +206,59 @@ const ResultsPage: React.FC = () => {
       }
     }
   }, [searchParams, cptCodes]);
+
+  // Initialize cptCodesByCategory from location.state if available (when navigating from HomePage)
+  useEffect(() => {
+    // Check if we have cptCodesByCategory in location.state (if it was stored there)
+    if (location.state?.cptCodesByCategory && Object.keys(cptCodesByCategory).length === 0) {
+      console.log('🔍 Initializing cptCodesByCategory from location.state');
+      setCptCodesByCategory(location.state.cptCodesByCategory);
+    }
+  }, [location.state, cptCodesByCategory]);
+
+  // Initialize cptCodesByCategory from treatment options and CMS CPT codes if empty
+  useEffect(() => {
+    // Only try to reconstruct if cptCodesByCategory is empty and we have treatment options
+    if (Object.keys(cptCodesByCategory).length === 0) {
+      const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
+      const cmsData = location.state?.aiRecommendations?.cms_data || specialistRecommendationData?.cms_data;
+      const cmsCptCodes = cmsData?.cpt_codes_searched;
+      
+      if (treatmentOptions && treatmentOptions.length > 0 && cmsCptCodes && Array.isArray(cmsCptCodes) && cmsCptCodes.length > 0) {
+        console.log('⚠️ cptCodesByCategory is empty, attempting to reconstruct from treatment options and CMS CPT codes...');
+        console.log('🔍 Treatment options:', treatmentOptions);
+        console.log('🔍 CMS CPT codes searched:', cmsCptCodes);
+        
+        // Group treatment options by category
+        const optionsByCategory: { [category: string]: TreatmentOption[] } = {};
+        treatmentOptions.forEach(option => {
+          const category = option.category || 'Other';
+          if (!optionsByCategory[category]) {
+            optionsByCategory[category] = [];
+          }
+          optionsByCategory[category].push(option);
+        });
+        
+        console.log('🔍 Options by category:', Object.keys(optionsByCategory));
+        
+        // Note: We can't perfectly reconstruct without knowing which CPT codes belong to which category
+        // This is a limitation - we'd need the actual mapping from when CPT codes were generated
+        // For now, we'll log a warning
+        console.warn('⚠️ Cannot fully reconstruct cptCodesByCategory - need actual CPT codes per category mapping');
+      }
+    }
+  }, [searchParams, location.state, specialistRecommendationData, cptCodesByCategory]);
+
+  // Original useEffect for CPT codes (keeping for backward compatibility)
+  useEffect(() => {
+    if (searchParams?.cpt_codes && !cptCodes) {
+      setCptCodes(searchParams.cpt_codes);
+      if (searchParams.cpt_prompt_text) {
+        setCptPromptText(searchParams.cpt_prompt_text);
+        setEditablePromptText(searchParams.cpt_prompt_text);
+      }
+    }
+  }, [searchParams, cptCodes]);
   
   // Initialize diagnoses prompt text from searchParams if available
   useEffect(() => {
@@ -238,7 +291,30 @@ const ResultsPage: React.FC = () => {
     }
   }, [searchParams, location.state?.aiRecommendations, selectedTreatmentIndices.size]);
 
-
+  // Initialize cptCodesByCategory from searchParams if available
+  useEffect(() => {
+    // Only initialize if cptCodesByCategory is empty and we have CPT codes in searchParams
+    if (Object.keys(cptCodesByCategory).length === 0 && searchParams?.cpt_codes) {
+      console.log('🔍 Attempting to initialize cptCodesByCategory from searchParams...');
+      // Try to reconstruct from treatment options and CPT codes
+      const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
+      if (treatmentOptions && treatmentOptions.length > 0 && Array.isArray(searchParams.cpt_codes)) {
+        // This is a fallback - ideally we'd have the actual category mapping
+        // For now, we'll group by treatment option categories
+        const reconstructed: { [category: string]: Array<{ code: string; description: string }> } = {};
+        treatmentOptions.forEach(option => {
+          const category = option.category || 'Other';
+          if (!reconstructed[category]) {
+            reconstructed[category] = [];
+          }
+          // Add all CPT codes to each category (this is approximate)
+          // The real mapping should come from the actual CPT code generation
+        });
+        // Note: This won't work perfectly without the actual mapping
+        console.log('⚠️ Cannot fully reconstruct cptCodesByCategory without category-specific CPT codes');
+      }
+    }
+  }, [searchParams, location.state?.aiRecommendations, cptCodesByCategory]);
 
   // Get provider score and breakdown
   const getProviderScore = (provider: any): { score: number; breakdown: string } => {
@@ -2895,7 +2971,13 @@ const ResultsPage: React.FC = () => {
                             const showAllResults = false; // Never show all results if filtering by state
                             
                             // Group CMS results by category
+                            console.log('🔍 Debug: cptCodesByCategory keys:', Object.keys(cptCodesByCategory));
+                            console.log('🔍 Debug: cptCodesByCategory values:', Object.keys(cptCodesByCategory).map(k => ({ category: k, count: cptCodesByCategory[k]?.length || 0 })));
+                            
                             const cptToCategoryMap = getCptCodeToCategoryMap(cptCodesByCategory);
+                            console.log('🔍 Debug: CPT to category map size:', Object.keys(cptToCategoryMap).length);
+                            console.log('🔍 Debug: Sample CPT codes in map:', Object.keys(cptToCategoryMap).slice(0, 5));
+                            
                             const resultsByCategory: { [category: string]: any[] } = {};
                             const uncategorizedResults: any[] = [];
                             
@@ -2906,6 +2988,7 @@ const ResultsPage: React.FC = () => {
                               providerCptCodes.forEach((code: string) => {
                                 if (cptToCategoryMap[code]) {
                                   providerCategories.add(cptToCategoryMap[code]);
+                                  console.log(`🔍 Provider ${provider.Rndrng_Prvdr_First_Name} ${provider.Rndrng_Prvdr_Last_Org_Name}: CPT code ${code} mapped to category ${cptToCategoryMap[code]}`);
                                 }
                               });
                               
