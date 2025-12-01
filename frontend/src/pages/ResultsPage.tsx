@@ -1267,21 +1267,23 @@ const ResultsPage: React.FC = () => {
       const providerCategoryTotSrvcs: { [npi: string]: number } = {};
       
       // Calculate Tot_Srvcs per provider for this category
-      // Note: CMS data is already grouped by provider, so each provider appears once with all their CPT codes
+      // CMS data has one row per provider-CPT code combination, so we need to sum Tot_Srvcs
+      // for each provider where the CPT code matches the selected category
       Object.keys(cmsProvidersByNpi).forEach(providerNpi => {
         const providerData = cmsProvidersByNpi[providerNpi];
+        let providerCategoryTotal = 0;
         
-        // Check if this provider has any CPT codes in the selected category
-        // Since providers are grouped, we can check the first record (they all have the same CPT codes)
-        if (providerData && providerData.length > 0) {
-          const provider = providerData[0]; // All records for a provider should be the same after grouping
-          const codes = Array.isArray(provider.HCPCS_Codes) ? provider.HCPCS_Codes : [];
-          
-          // Check if provider has any CPT codes in the selected category
+        // Sum Tot_Srvcs for this provider's CPT codes that match the selected category
+        providerData.forEach((p: any) => {
+          const codes = Array.isArray(p.HCPCS_Codes) ? p.HCPCS_Codes : [];
+          // Check if any of this row's CPT codes are in the selected category
           if (codes.some((code: string) => categoryCptCodeSet.has(code))) {
-            // Use the provider's Tot_Srvcs directly (it's already the total across all their codes)
-            providerCategoryTotSrvcs[providerNpi] = provider.Tot_Srvcs || 0;
+            providerCategoryTotal += p.Tot_Srvcs || 0;
           }
+        });
+        
+        if (providerCategoryTotal > 0) {
+          providerCategoryTotSrvcs[providerNpi] = providerCategoryTotal;
         }
       });
       
@@ -1320,6 +1322,7 @@ const ResultsPage: React.FC = () => {
           // Provider doesn't have CPT codes in this category - set clinical volume to 0
           if (scoreData.weighted_breakdown?.breakdown_details?.clinical_volume) {
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.raw = 0;
+            scoreData.weighted_breakdown.breakdown_details.clinical_volume.max_raw = maxCategoryTotSrvcs; // Still set max so percentage calculation is correct
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.percentage = 0;
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.weighted_points = 0;
             
@@ -2112,6 +2115,7 @@ const ResultsPage: React.FC = () => {
                 )}
                 
                 <NPIProviderCard
+                  key={`${provider.npi}-${selectedCategory || 'all'}`}
                   provider={provider}
                   onClick={handleProviderClick}
                   isHighlighted={isTopResult}
