@@ -1224,29 +1224,26 @@ const ResultsPage: React.FC = () => {
     ).filter((provider: Provider | undefined): provider is NPIProvider => provider !== undefined);
     
     // Now filter scores based on category
+    // First, merge ALL scores from ALL treatments (scores should be same across treatments except clinical volume)
     let filteredProviderScores: { [npi: string]: any } = {};
     
-    if (!category) {
-      // Show all scores from all treatments (merge all scores)
-      Object.values(treatmentRankings).forEach((treatment: any) => {
-        if (treatment.provider_scores) {
-          Object.assign(filteredProviderScores, treatment.provider_scores);
-        }
-      });
-    } else {
-      // First, merge ALL scores from ALL treatments (keep everything except clinical volume)
-      Object.values(treatmentRankings).forEach((treatment: any) => {
-        if (treatment.provider_scores) {
-          Object.entries(treatment.provider_scores).forEach(([npi, scoreData]: [string, any]) => {
-            if (!filteredProviderScores[npi]) {
-              // Deep copy the score data so we can modify it without affecting the original
-              filteredProviderScores[npi] = JSON.parse(JSON.stringify(scoreData));
-            }
-          });
-        }
-      });
-      
-      // Now, modify ONLY clinical volume based on category-specific CPT codes
+    // Merge all scores from all treatments - use first complete score we find for each provider
+    Object.values(treatmentRankings).forEach((treatment: any) => {
+      if (treatment.provider_scores) {
+        Object.entries(treatment.provider_scores).forEach(([npi, scoreData]: [string, any]) => {
+          if (!filteredProviderScores[npi]) {
+            // Deep copy the score data so we can modify it without affecting the original
+            filteredProviderScores[npi] = JSON.parse(JSON.stringify(scoreData));
+          }
+          // If we already have scores for this provider, keep the existing ones
+          // (scores should be same across treatments except clinical volume, so first wins)
+        });
+      }
+    });
+    
+    // Now, if a category is selected, modify ONLY clinical volume based on category-specific CPT codes
+    if (category) {
+      // Modify ONLY clinical volume based on category-specific CPT codes
       const categoryCptCodes = cptCodesByCategory[category] || [];
       const categoryCptCodeSet = new Set(categoryCptCodes.map(cpt => cpt.code));
       
