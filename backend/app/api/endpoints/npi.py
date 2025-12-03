@@ -344,6 +344,39 @@ async def search_providers_by_criteria(
                 if graduation_year <= current_year:
                     years_experience = max(0, current_year - graduation_year)
 
+            # Check if provider is in exclusions table (by NPI or name)
+            is_excluded = False
+            try:
+                # First check by NPI (only if NPI is valid, not "0000000000" or empty)
+                provider_npi = str(provider.npi).strip() if provider.npi else ''
+                if provider_npi and provider_npi != '0000000000' and len(provider_npi) == 10:
+                    excl_npi_check = text("""
+                        SELECT COUNT(*) FROM exclusions 
+                        WHERE npi = :npi AND (reindate IS NULL OR reindate = '' OR reindate = '00000000')
+                    """)
+                    npi_result = db.execute(excl_npi_check, {"npi": provider_npi}).fetchone()
+                    
+                    if npi_result and npi_result[0] > 0:
+                        is_excluded = True
+                
+                # If not found by NPI, check by first name + last name
+                if not is_excluded and provider.provider_first_name and provider.provider_last_name:
+                    excl_name_check = text("""
+                        SELECT COUNT(*) FROM exclusions 
+                        WHERE UPPER(TRIM(FIRSTNAME)) = UPPER(TRIM(:firstname))
+                          AND UPPER(TRIM(LASTNAME)) = UPPER(TRIM(:lastname))
+                          AND (reindate IS NULL OR reindate = '' OR reindate = '00000000')
+                    """)
+                    name_result = db.execute(excl_name_check, {
+                        "firstname": provider.provider_first_name.strip(),
+                        "lastname": provider.provider_last_name.strip()
+                    }).fetchone()
+                    
+                    if name_result and name_result[0] > 0:
+                        is_excluded = True
+            except Exception as e:
+                logger.error(f"Error checking exclusions for NPI {provider.npi}: {e}")
+
             formatted_provider = {
                 "id": provider.npi,  # Use NPI as ID
                 "npi": provider.npi,
@@ -358,6 +391,7 @@ async def search_providers_by_criteria(
                 "yearsExperience": years_experience,
                 "boardCertified": None,  # No certification data available
                 "acceptingPatients": True,  # Default to accepting patients
+                "isExcluded": is_excluded,  # Flag for excluded providers
                 "languages": [],  # No language data available
                 "insurance": [],  # No insurance data available
                 "education": {

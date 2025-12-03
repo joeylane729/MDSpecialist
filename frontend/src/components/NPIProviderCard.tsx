@@ -14,6 +14,37 @@ interface NPIProviderCardProps {
   providerContent?: ProviderContent;
 }
 
+// Red flag types and their descriptions
+type RedFlagType = 'not_certified' | 'excluded' | 'low_clinical_volume' | string;
+
+interface RedFlagInfo {
+  type: RedFlagType;
+  title: string;
+  description: string;
+  severity: 'warning' | 'error';
+}
+
+const RED_FLAG_DEFINITIONS: Record<RedFlagType, RedFlagInfo> = {
+  not_certified: {
+    type: 'not_certified',
+    title: 'Not Board Certified',
+    description: 'This provider is not board certified. Board certification indicates that a physician has met specific education, training, and examination requirements in their specialty.',
+    severity: 'warning'
+  },
+  excluded: {
+    type: 'excluded',
+    title: 'Excluded Provider',
+    description: 'This provider is listed in the federal exclusions database (LEIE - List of Excluded Individuals/Entities). This means they are excluded from participating in federal healthcare programs such as Medicare and Medicaid.',
+    severity: 'error'
+  },
+  low_clinical_volume: {
+    type: 'low_clinical_volume',
+    title: 'Low Clinical Volume',
+    description: 'This provider has low clinical volume (<25%) compared to other providers in the search results. This may indicate limited experience with the specific procedures or treatments relevant to your condition.',
+    severity: 'warning'
+  }
+};
+
 export default function NPIProviderCard({ provider, onClick, isHighlighted = false, score, scoreBreakdown, scoreData, isCertified = false, providerContent }: NPIProviderCardProps) {
   const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
   const [isQuestionsModalOpen, setIsQuestionsModalOpen] = useState(false);
@@ -22,6 +53,8 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
   const [showAllVumedi, setShowAllVumedi] = useState(false);
   const [showAllPubMed, setShowAllPubMed] = useState(false);
   const [isScoreBreakdownModalOpen, setIsScoreBreakdownModalOpen] = useState(false);
+  const [redFlagModalOpen, setRedFlagModalOpen] = useState(false);
+  const [selectedRedFlagType, setSelectedRedFlagType] = useState<RedFlagType | null>(null);
   
   const MAX_ITEMS_TO_SHOW = 5;
 
@@ -34,6 +67,38 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
   const openSchedulingModal = () => {
     setIsSchedulingModalOpen(true);
   };
+
+  // Get all active red flags for this provider
+  const getActiveRedFlags = (): RedFlagType[] => {
+    const flags: RedFlagType[] = [];
+    if (!isCertified) {
+      flags.push('not_certified');
+    }
+    if (provider.isExcluded) {
+      flags.push('excluded');
+    }
+    
+    // Check for low clinical volume (<25%, including 0)
+    if (scoreData?.weighted_breakdown?.breakdown_details?.clinical_volume) {
+      const clinicalVolumeBreakdown = scoreData.weighted_breakdown.breakdown_details.clinical_volume;
+      const clinicalVolumeRaw = clinicalVolumeBreakdown.raw ?? 0;
+      const clinicalVolumeMaxRaw = clinicalVolumeBreakdown.max_raw ?? clinicalVolumeBreakdown.max ?? 1;
+      const clinicalVolumePercentage = clinicalVolumeMaxRaw > 0 ? (clinicalVolumeRaw / clinicalVolumeMaxRaw * 100) : 0;
+      
+      if (clinicalVolumePercentage < 25) {
+        flags.push('low_clinical_volume');
+      }
+    }
+    
+    return flags;
+  };
+
+  const handleRedFlagClick = (flagType: RedFlagType) => {
+    setSelectedRedFlagType(flagType);
+    setRedFlagModalOpen(true);
+  };
+
+  const activeRedFlags = getActiveRedFlags();
 
   // Get score color based on score value (updated for 3x content scoring)
   const getScoreColor = (score: number): string => {
@@ -140,15 +205,23 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                   <span>Board Certified</span>
                 </div>
               )}
-              {!isCertified && (
-                <div 
-                  className="flex items-center gap-1 ml-2 px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium cursor-help"
-                  title="Not board certified"
-                >
-                  <Flag className="h-3 w-3" />
-                  <span>Not Certified</span>
-                </div>
-              )}
+              {/* Red Flags - Show as clickable icons */}
+              {activeRedFlags.map((flagType) => {
+                const flagInfo = RED_FLAG_DEFINITIONS[flagType];
+                return (
+                  <button
+                    key={flagType}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRedFlagClick(flagType);
+                    }}
+                    className="ml-2 p-1.5 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors cursor-pointer"
+                    title={`Click to learn more about this flag`}
+                  >
+                    <Flag className="h-4 w-4" />
+                  </button>
+                );
+              })}
             </div>
 
             {/* Location */}
@@ -1100,5 +1173,45 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
         </div>
       </div>
     </div>
+
+      {/* Red Flag Modal */}
+      {redFlagModalOpen && selectedRedFlagType && RED_FLAG_DEFINITIONS[selectedRedFlagType] && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setRedFlagModalOpen(false)}>
+          <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-full ${RED_FLAG_DEFINITIONS[selectedRedFlagType].severity === 'error' ? 'bg-red-100' : 'bg-amber-100'}`}>
+                  <Flag className={`h-6 w-6 ${RED_FLAG_DEFINITIONS[selectedRedFlagType].severity === 'error' ? 'text-red-600' : 'text-amber-600'}`} />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">{RED_FLAG_DEFINITIONS[selectedRedFlagType].title}</h3>
+              </div>
+              <button
+                onClick={() => setRedFlagModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className={`p-4 rounded-lg mb-4 ${RED_FLAG_DEFINITIONS[selectedRedFlagType].severity === 'error' ? 'bg-red-50 border border-red-200' : 'bg-amber-50 border border-amber-200'}`}>
+              <p className="text-gray-700 leading-relaxed">{RED_FLAG_DEFINITIONS[selectedRedFlagType].description}</p>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setRedFlagModalOpen(false)}
+                className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+                  RED_FLAG_DEFINITIONS[selectedRedFlagType].severity === 'error'
+                    ? 'bg-red-600 text-white hover:bg-red-700'
+                    : 'bg-amber-600 text-white hover:bg-amber-700'
+                }`}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

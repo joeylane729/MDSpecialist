@@ -92,7 +92,32 @@ const getCategoriesFromTreatmentOptions = (treatmentOptions: TreatmentOption[] |
       categories.add(option.category);
     }
   });
-  return Array.from(categories).sort();
+  
+  // Define the preferred order for categories (case-insensitive matching)
+  const categoryOrder = ['Surgery', 'Radiosurgery', 'Endovascular', 'Other'];
+  
+  // Sort categories: first by preferred order, then alphabetically for any others
+  return Array.from(categories).sort((a, b) => {
+    const aLower = a.toLowerCase();
+    const bLower = b.toLowerCase();
+    const aIndex = categoryOrder.indexOf(aLower);
+    const bIndex = categoryOrder.indexOf(bLower);
+    
+    // If both are in the preferred order, sort by their index
+    if (aIndex !== -1 && bIndex !== -1) {
+      return aIndex - bIndex;
+    }
+    // If only a is in the preferred order, it comes first
+    if (aIndex !== -1) {
+      return -1;
+    }
+    // If only b is in the preferred order, it comes first
+    if (bIndex !== -1) {
+      return 1;
+    }
+    // If neither is in the preferred order, sort alphabetically
+    return a.localeCompare(b);
+  });
 };
 
 const ResultsPage: React.FC = () => {

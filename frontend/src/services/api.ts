@@ -50,6 +50,7 @@ export interface NPIProvider {
   languages?: string[];
   insurance?: string[];
   acceptingPatients: boolean;
+  isExcluded?: boolean;  // Flag for excluded providers
   education?: {
     medicalSchool?: string | null;
     residency?: string | null;
