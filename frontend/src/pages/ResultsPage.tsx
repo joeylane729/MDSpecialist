@@ -94,7 +94,7 @@ const getCategoriesFromTreatmentOptions = (treatmentOptions: TreatmentOption[] |
   });
   
   // Define the preferred order for categories (case-insensitive matching)
-  const categoryOrder = ['Surgery', 'Radiosurgery', 'Endovascular', 'Other'];
+  const categoryOrder = ['surgery', 'radiosurgery', 'endovascular', 'other'];
   
   // Sort categories: first by preferred order, then alphabetically for any others
   return Array.from(categories).sort((a, b) => {
