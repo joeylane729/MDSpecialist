@@ -690,6 +690,45 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
           onClose={() => setIsScoreBreakdownModalOpen(false)}
         />
       )}
+
+      {/* Red Flag Modal */}
+      {redFlagModalOpen && selectedRedFlagType && RED_FLAG_DEFINITIONS[selectedRedFlagType] && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setRedFlagModalOpen(false)}>
+          <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-full ${RED_FLAG_DEFINITIONS[selectedRedFlagType].severity === 'error' ? 'bg-red-100' : 'bg-amber-100'}`}>
+                  <Flag className={`h-6 w-6 ${RED_FLAG_DEFINITIONS[selectedRedFlagType].severity === 'error' ? 'text-red-600' : 'text-amber-600'}`} />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900">{RED_FLAG_DEFINITIONS[selectedRedFlagType].title}</h3>
+              </div>
+              <button
+                onClick={() => setRedFlagModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className={`p-4 rounded-lg mb-4 ${RED_FLAG_DEFINITIONS[selectedRedFlagType].severity === 'error' ? 'bg-red-50 border border-red-200' : 'bg-amber-50 border border-amber-200'}`}>
+              <p className="text-gray-700 leading-relaxed">{RED_FLAG_DEFINITIONS[selectedRedFlagType].description}</p>
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setRedFlagModalOpen(false)}
+                className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+                  RED_FLAG_DEFINITIONS[selectedRedFlagType].severity === 'error'
+                    ? 'bg-red-600 text-white hover:bg-red-700'
+                    : 'bg-amber-600 text-white hover:bg-amber-700'
+                }`}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -1173,45 +1212,4 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
         </div>
       </div>
     </div>
-
-      {/* Red Flag Modal */}
-      {redFlagModalOpen && selectedRedFlagType && RED_FLAG_DEFINITIONS[selectedRedFlagType] && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setRedFlagModalOpen(false)}>
-          <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-full ${RED_FLAG_DEFINITIONS[selectedRedFlagType].severity === 'error' ? 'bg-red-100' : 'bg-amber-100'}`}>
-                  <Flag className={`h-6 w-6 ${RED_FLAG_DEFINITIONS[selectedRedFlagType].severity === 'error' ? 'text-red-600' : 'text-amber-600'}`} />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900">{RED_FLAG_DEFINITIONS[selectedRedFlagType].title}</h3>
-              </div>
-              <button
-                onClick={() => setRedFlagModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className={`p-4 rounded-lg mb-4 ${RED_FLAG_DEFINITIONS[selectedRedFlagType].severity === 'error' ? 'bg-red-50 border border-red-200' : 'bg-amber-50 border border-amber-200'}`}>
-              <p className="text-gray-700 leading-relaxed">{RED_FLAG_DEFINITIONS[selectedRedFlagType].description}</p>
-            </div>
-            <div className="flex justify-end">
-              <button
-                onClick={() => setRedFlagModalOpen(false)}
-                className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
-                  RED_FLAG_DEFINITIONS[selectedRedFlagType].severity === 'error'
-                    ? 'bg-red-600 text-white hover:bg-red-700'
-                    : 'bg-amber-600 text-white hover:bg-amber-700'
-                }`}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-}
+  )}
