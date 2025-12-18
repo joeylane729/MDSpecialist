@@ -139,6 +139,9 @@ class PreAuthLetterService:
                 specificity_summary = "This provider's expertise is directly relevant to the patient's specific condition and treatment needs."
                 logger.info("🎯 [PreAuth] No specificity_relevance data provided, using default summary")
             
+            # Build patient symptoms line (handle conditionally outside template)
+            patient_symptoms_line = f"- Symptoms: {patient_symptoms}" if patient_symptoms else ""
+            
             # Build the prompt
             logger.info("📝 [PreAuth] Building GPT prompt template")
             prompt = PromptTemplate(
@@ -152,7 +155,7 @@ class PreAuthLetterService:
                     "experience_summary",
                     "specificity_summary",
                     "patient_diagnosis",
-                    "patient_symptoms"
+                    "patient_symptoms_line"
                 ],
                 template="""
 Write a formal pre-authorization letter to an insurance company justifying medical necessity for a specialist consultation.
@@ -175,7 +178,7 @@ Provider Qualifications:
 
 Patient Information:
 - Diagnosis: {patient_diagnosis}
-{f"Symptoms: {patient_symptoms}" if patient_symptoms else ""}
+{patient_symptoms_line}
 
 Instructions:
 Write a formal business letter (400-600 words) with:
@@ -197,7 +200,7 @@ Write a formal business letter (400-600 words) with:
                 "experience_summary": experience_summary,
                 "specificity_summary": specificity_summary,
                 "patient_diagnosis": patient_diagnosis,
-                "patient_symptoms": patient_symptoms or ""
+                "patient_symptoms_line": patient_symptoms_line
             }
             
             # Log summary lengths
