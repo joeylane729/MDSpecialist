@@ -539,6 +539,10 @@ export interface PreAuthLetterRequest {
     score?: number;
     [key: string]: any;
   };
+  user_first_name: string;
+  user_last_name: string;
+  insurance_company_name: string;
+  insurance_company_email: string;
 }
 
 export interface PreAuthLetterResponse {

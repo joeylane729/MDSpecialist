@@ -26,6 +26,10 @@ class PreAuthLetterRequest(BaseModel):
     patient_diagnosis: str
     patient_symptoms: Optional[str] = None
     specificity_relevance: Optional[dict] = None  # Specificity/relevance data from scoreData
+    user_first_name: str
+    user_last_name: str
+    insurance_company_name: str
+    insurance_company_email: str
 
 @router.post("/preauth-letter")
 async def generate_preauth_letter(
@@ -49,6 +53,9 @@ async def generate_preauth_letter(
         logger.info(f"📝 [Backend] Patient diagnosis: {request.patient_diagnosis}")
         logger.info(f"📝 [Backend] Patient symptoms: {request.patient_symptoms or 'Not provided'}")
         logger.info(f"📝 [Backend] Has specificity_relevance: {request.specificity_relevance is not None}")
+        logger.info(f"📝 [Backend] User name: {request.user_first_name} {request.user_last_name}")
+        logger.info(f"📝 [Backend] Insurance company: {request.insurance_company_name}")
+        logger.info(f"📝 [Backend] Insurance company email: {request.insurance_company_email}")
         
         # Log provider info details
         provider_info_keys = list(request.provider_info.keys())
@@ -72,7 +79,11 @@ async def generate_preauth_letter(
             provider_info=request.provider_info,
             patient_diagnosis=request.patient_diagnosis,
             patient_symptoms=request.patient_symptoms,
-            specificity_relevance=request.specificity_relevance
+            specificity_relevance=request.specificity_relevance,
+            user_first_name=request.user_first_name,
+            user_last_name=request.user_last_name,
+            insurance_company_name=request.insurance_company_name,
+            insurance_company_email=request.insurance_company_email
         )
         
         letter_length = len(letter) if letter else 0

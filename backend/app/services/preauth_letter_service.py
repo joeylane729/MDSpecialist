@@ -23,7 +23,11 @@ class PreAuthLetterService:
         provider_info: Dict[str, Any],
         patient_diagnosis: str,
         patient_symptoms: Optional[str] = None,
-        specificity_relevance: Optional[Dict[str, Any]] = None
+        specificity_relevance: Optional[Dict[str, Any]] = None,
+        user_first_name: str = "",
+        user_last_name: str = "",
+        insurance_company_name: str = "",
+        insurance_company_email: str = ""
     ) -> str:
         """
         Generate a pre-authorization letter for insurance approval.
@@ -40,6 +44,10 @@ class PreAuthLetterService:
             patient_diagnosis: Patient's diagnosis
             patient_symptoms: Optional patient symptoms
             specificity_relevance: Optional specificity/relevance data from scoreData
+            user_first_name: User's first name
+            user_last_name: User's last name
+            insurance_company_name: Insurance company name
+            insurance_company_email: Insurance company email address
             
         Returns:
             Generated pre-authorization letter as a string
@@ -144,6 +152,9 @@ class PreAuthLetterService:
             
             # Build the prompt
             logger.info("📝 [PreAuth] Building GPT prompt template")
+            logger.info(f"👤 [PreAuth] User: {user_first_name} {user_last_name}")
+            logger.info(f"🏢 [PreAuth] Insurance: {insurance_company_name} ({insurance_company_email})")
+            
             prompt = PromptTemplate(
                 input_variables=[
                     "provider_name",
@@ -155,7 +166,11 @@ class PreAuthLetterService:
                     "experience_summary",
                     "specificity_summary",
                     "patient_diagnosis",
-                    "patient_symptoms_line"
+                    "patient_symptoms_line",
+                    "user_first_name",
+                    "user_last_name",
+                    "insurance_company_name",
+                    "insurance_company_email"
                 ],
                 template="""
 Write a professional pre-authorization email to an insurance company justifying medical necessity for a specialist consultation.
@@ -180,16 +195,23 @@ Patient Information:
 - Diagnosis: {patient_diagnosis}
 {patient_symptoms_line}
 
+Sender Information:
+- Name: {user_first_name} {user_last_name}
+
+Recipient Information:
+- Insurance Company: {insurance_company_name}
+- Email: {insurance_company_email}
+
 Instructions:
 Write a professional email (400-600 words) with:
-- Subject line for pre-authorization request
-- Professional greeting
+- Subject line for pre-authorization request (include patient name: {user_first_name} {user_last_name})
+- Professional greeting addressed to {insurance_company_name}
 - Medical necessity justification
 - Provider qualifications and relevance to patient's condition
 - Request for approval
-- Professional closing
+- Professional closing signed by {user_first_name} {user_last_name}
 
-Format as an email body only - no letterhead, addresses, or signature placeholders. Start with the subject line, then the email body.
+Format as an email body only - no letterhead, addresses, or signature placeholders. Start with the subject line, then the email body. Use the actual names provided instead of placeholders.
 """
             )
             
@@ -204,7 +226,11 @@ Format as an email body only - no letterhead, addresses, or signature placeholde
                 "experience_summary": experience_summary,
                 "specificity_summary": specificity_summary,
                 "patient_diagnosis": patient_diagnosis,
-                "patient_symptoms_line": patient_symptoms_line
+                "patient_symptoms_line": patient_symptoms_line,
+                "user_first_name": user_first_name,
+                "user_last_name": user_last_name,
+                "insurance_company_name": insurance_company_name,
+                "insurance_company_email": insurance_company_email
             }
             
             # Log summary lengths
