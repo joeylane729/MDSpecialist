@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { MapPin, Phone, Star, Award, Calendar, Building, HelpCircle, Clock, FileText, Shield, ExternalLink, BookOpen, Flag, ChevronDown, ChevronUp, TrendingUp, GraduationCap, Briefcase, Video, Activity } from 'lucide-react';
-import { NPIProvider, ProviderContent, VumediContent, PubMedArticle } from '../services/api';
+import { MapPin, Phone, Star, Award, Calendar, Building, HelpCircle, Clock, FileText, Shield, ExternalLink, BookOpen, Flag, ChevronDown, ChevronUp, TrendingUp, GraduationCap, Briefcase, Video, Activity, Loader2 } from 'lucide-react';
+import { NPIProvider, ProviderContent, VumediContent, PubMedArticle, generatePreAuthLetter } from '../services/api';
 import SchedulingModal from './SchedulingModal';
 
 interface NPIProviderCardProps {
@@ -12,6 +12,8 @@ interface NPIProviderCardProps {
   scoreData?: any;
   isCertified?: boolean;
   providerContent?: ProviderContent;
+  patientDiagnosis?: string;
+  patientSymptoms?: string;
 }
 
 // Red flag types and their descriptions
@@ -41,11 +43,11 @@ const RED_FLAG_DEFINITIONS: Record<RedFlagType, RedFlagInfo> = {
     type: 'low_clinical_volume',
     title: 'Low Clinical Volume',
     description: 'This provider has low clinical volume (<25%) compared to other providers in the search results. This may indicate limited experience with the specific procedures or treatments relevant to your condition.',
-    severity: 'warning'
+    severity: 'error'
   }
 };
 
-export default function NPIProviderCard({ provider, onClick, isHighlighted = false, score, scoreBreakdown, scoreData, isCertified = false, providerContent }: NPIProviderCardProps) {
+export default function NPIProviderCard({ provider, onClick, isHighlighted = false, score, scoreBreakdown, scoreData, isCertified = false, providerContent, patientDiagnosis, patientSymptoms }: NPIProviderCardProps) {
   const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
   const [isQuestionsModalOpen, setIsQuestionsModalOpen] = useState(false);
   const [isPreAuthModalOpen, setIsPreAuthModalOpen] = useState(false);
@@ -55,6 +57,9 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
   const [isScoreBreakdownModalOpen, setIsScoreBreakdownModalOpen] = useState(false);
   const [redFlagModalOpen, setRedFlagModalOpen] = useState(false);
   const [selectedRedFlagType, setSelectedRedFlagType] = useState<RedFlagType | null>(null);
+  const [isGeneratingLetter, setIsGeneratingLetter] = useState(false);
+  const [generatedLetter, setGeneratedLetter] = useState<string | null>(null);
+  const [letterError, setLetterError] = useState<string | null>(null);
   
   const MAX_ITEMS_TO_SHOW = 5;
 
@@ -96,6 +101,67 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
   const handleRedFlagClick = (flagType: RedFlagType) => {
     setSelectedRedFlagType(flagType);
     setRedFlagModalOpen(true);
+  };
+
+  const handleGeneratePreAuthLetter = async () => {
+    if (!patientDiagnosis) {
+      setLetterError('Patient diagnosis is required to generate the letter.');
+      return;
+    }
+
+    setIsGeneratingLetter(true);
+    setLetterError(null);
+    setGeneratedLetter(null);
+
+    try {
+      // Collect provider information
+      const providerInfo: any = {
+        name: provider.name,
+        npi: provider.npi,
+        specialty: provider.specialty,
+        years_experience: provider.yearsExperience,
+        yearsExperience: provider.yearsExperience,
+        education: provider.education || {},
+      };
+
+      // Add publications from providerContent
+      if (providerContent?.pubmed_articles && providerContent.pubmed_articles.length > 0) {
+        providerInfo.publications = providerContent.pubmed_articles.map(article => ({
+          title: article.title,
+          pmid: article.pmid
+        }));
+      }
+
+      // Add clinical volume from scoreData
+      if (scoreData?.weighted_breakdown?.breakdown_details?.clinical_volume) {
+        const clinicalVolumeData = scoreData.weighted_breakdown.breakdown_details.clinical_volume;
+        providerInfo.clinical_volume = {
+          raw: clinicalVolumeData.raw || 0,
+          tot_srvcs: clinicalVolumeData.raw || 0,
+        };
+      }
+
+      // Prepare specificity/relevance data
+      const specificityRelevance = scoreData ? {
+        score: score || 0,
+        ...scoreData
+      } : undefined;
+
+      // Generate the letter
+      const response = await generatePreAuthLetter({
+        provider_info: providerInfo,
+        patient_diagnosis: patientDiagnosis,
+        patient_symptoms: patientSymptoms || undefined,
+        specificity_relevance: specificityRelevance
+      });
+
+      setGeneratedLetter(response.letter);
+    } catch (error: any) {
+      console.error('Error generating pre-authorization letter:', error);
+      setLetterError(error.message || 'Failed to generate pre-authorization letter. Please try again.');
+    } finally {
+      setIsGeneratingLetter(false);
+    }
   };
 
   const activeRedFlags = getActiveRedFlags();
@@ -417,6 +483,8 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
             <button 
               onClick={(e) => {
                 e.stopPropagation();
+                setGeneratedLetter(null);
+                setLetterError(null);
                 setIsPreAuthModalOpen(true);
               }}
               className="flex items-center justify-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-xs font-bold whitespace-nowrap"
@@ -514,11 +582,15 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
       {/* Pre-authorization Modal */}
       {isPreAuthModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">Pre-authorization Letter Request</h3>
+              <h3 className="text-xl font-semibold text-gray-900">Pre-authorization Letter</h3>
               <button
-                onClick={() => setIsPreAuthModalOpen(false)}
+                onClick={() => {
+                  setIsPreAuthModalOpen(false);
+                  setGeneratedLetter(null);
+                  setLetterError(null);
+                }}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -526,47 +598,97 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                 </svg>
               </button>
             </div>
-            <div className="space-y-4">
-              <p className="text-gray-600">
-                We'll help you generate a pre-authorization letter for your insurance company. 
-                This letter will explain why the specialist consultation is medically necessary.
-              </p>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-gray-900 mb-2">Information Needed:</h4>
-                <ul className="text-gray-700 space-y-1 text-sm">
-                  <li>• Your insurance information</li>
-                  <li>• Referring physician details (if applicable)</li>
-                  <li>• Specific procedure codes (if known)</li>
-                  <li>• Medical justification for the consultation</li>
-                </ul>
+
+            {!generatedLetter && !isGeneratingLetter && (
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                  We'll generate a professional pre-authorization letter for your insurance company. 
+                  This letter will explain why the specialist consultation is medically necessary and 
+                  highlight the provider's qualifications.
+                </p>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-semibold text-gray-900 mb-2">What We'll Include:</h4>
+                  <ul className="text-gray-700 space-y-1 text-sm">
+                    <li>• Medical necessity justification</li>
+                    <li>• Provider qualifications (publications, clinical volume, education, experience)</li>
+                    <li>• Relevance of provider expertise to your condition</li>
+                    <li>• Expected outcomes and benefits</li>
+                  </ul>
+                </div>
+                {!patientDiagnosis && (
+                  <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                    <p className="text-yellow-800 text-sm">
+                      ⚠️ Patient diagnosis information is required to generate the letter.
+                    </p>
+                  </div>
+                )}
               </div>
-              <div className="bg-green-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-green-900 mb-2">What We'll Include:</h4>
-                <ul className="text-green-800 space-y-1 text-sm">
-                  <li>• Medical necessity justification</li>
-                  <li>• Specialist qualifications and expertise</li>
-                  <li>• Expected outcomes and benefits</li>
-                  <li>• Cost-effectiveness analysis</li>
-                </ul>
+            )}
+
+            {isGeneratingLetter && (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Loader2 className="w-12 h-12 text-green-600 animate-spin mb-4" />
+                <p className="text-gray-600">Generating your pre-authorization letter...</p>
+                <p className="text-gray-500 text-sm mt-2">This may take a few moments</p>
               </div>
-            </div>
+            )}
+
+            {letterError && (
+              <div className="bg-red-50 border border-red-200 p-4 rounded-lg mb-4">
+                <p className="text-red-800 text-sm">{letterError}</p>
+              </div>
+            )}
+
+            {generatedLetter && (
+              <div className="space-y-4">
+                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                  <p className="text-green-800 text-sm font-semibold mb-2">✅ Letter Generated Successfully</p>
+                  <p className="text-green-700 text-sm">You can copy the letter below and customize it as needed.</p>
+                </div>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-semibold text-gray-900">Generated Letter</h4>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedLetter);
+                        alert('Letter copied to clipboard!');
+                      }}
+                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Copy to Clipboard
+                    </button>
+                  </div>
+                  <div className="bg-white p-4 rounded border border-gray-300 max-h-96 overflow-y-auto">
+                    <pre className="whitespace-pre-wrap text-sm text-gray-800 font-sans">
+                      {generatedLetter}
+                    </pre>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="mt-6 flex justify-end space-x-3">
               <button
-                onClick={() => setIsPreAuthModalOpen(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
                 onClick={() => {
-                  // TODO: Implement pre-authorization letter generation
-                  alert('Pre-authorization letter generation will be implemented soon!');
                   setIsPreAuthModalOpen(false);
+                  setGeneratedLetter(null);
+                  setLetterError(null);
                 }}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                disabled={isGeneratingLetter}
               >
-                Generate Letter
+                {generatedLetter ? 'Close' : 'Cancel'}
               </button>
+              {!generatedLetter && (
+                <button
+                  onClick={handleGeneratePreAuthLetter}
+                  disabled={isGeneratingLetter || !patientDiagnosis}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {isGeneratingLetter && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Generate Letter
+                </button>
+              )}
             </div>
           </div>
         </div>

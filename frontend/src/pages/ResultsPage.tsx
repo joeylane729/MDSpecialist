@@ -2285,6 +2285,8 @@ const ResultsPage: React.FC = () => {
                     console.log('DEBUG: Available provider content:', providerLinks);
                     return contentData;
                   })()}
+                  patientDiagnosis={searchParams?.diagnosis}
+                  patientSymptoms={searchParams?.symptoms}
                 />
               </div>
             );

@@ -514,4 +514,60 @@ export const rankNPIProviders = async (request: NPIRankingRequest): Promise<NPIR
   }
 };
 
+// Pre-authorization Letter API
+export interface PreAuthLetterRequest {
+  provider_info: {
+    name: string;
+    npi: string;
+    specialty: string;
+    publications?: Array<{ title: string; pmid?: string }>;
+    clinical_volume?: {
+      raw?: number;
+      tot_srvcs?: number;
+    };
+    education?: {
+      medicalSchool?: string;
+      residency?: string;
+      fellowship?: string;
+    };
+    years_experience?: number;
+    yearsExperience?: number;
+  };
+  patient_diagnosis: string;
+  patient_symptoms?: string;
+  specificity_relevance?: {
+    score?: number;
+    [key: string]: any;
+  };
+}
+
+export interface PreAuthLetterResponse {
+  status: string;
+  letter: string;
+  message: string;
+}
+
+export const generatePreAuthLetter = async (
+  request: PreAuthLetterRequest
+): Promise<PreAuthLetterResponse> => {
+  try {
+    console.log('🔍 [Frontend] Generating pre-authorization letter for provider:', request.provider_info.npi);
+    
+    const response = await api.post('/api/v1/preauth-letter', request, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    console.log('✅ [Frontend] Pre-authorization letter generated successfully');
+    return response.data;
+  } catch (error) {
+    console.error('❌ [Frontend] Error generating pre-authorization letter:', error);
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.detail || 'Failed to generate pre-authorization letter');
+    }
+    throw error;
+  }
+};
+
 export default api
