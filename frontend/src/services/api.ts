@@ -543,11 +543,13 @@ export interface PreAuthLetterRequest {
   user_last_name: string;
   insurance_company_name: string;
   insurance_company_email: string;
+  custom_prompt?: string;  // Custom prompt text if user wants to edit and re-run
 }
 
 export interface PreAuthLetterResponse {
   status: string;
   letter: string;
+  prompt_text: string;  // The actual GPT prompt that was used
   message: string;
 }
 

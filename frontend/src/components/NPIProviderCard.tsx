@@ -64,6 +64,8 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
   const [userLastName, setUserLastName] = useState('');
   const [insuranceCompanyName, setInsuranceCompanyName] = useState('');
   const [insuranceCompanyEmail, setInsuranceCompanyEmail] = useState('');
+  const [promptText, setPromptText] = useState<string | null>(null);
+  const [editablePromptText, setEditablePromptText] = useState<string>('');
   
   const MAX_ITEMS_TO_SHOW = 5;
 
@@ -107,7 +109,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
     setRedFlagModalOpen(true);
   };
 
-  const handleGeneratePreAuthLetter = async () => {
+  const handleGeneratePreAuthLetter = async (useCustomPrompt: boolean = false) => {
     if (!patientDiagnosis) {
       setLetterError('Patient diagnosis is required to generate the letter.');
       return;
@@ -135,7 +137,9 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
 
     setIsGeneratingLetter(true);
     setLetterError(null);
-    setGeneratedLetter(null);
+    if (!useCustomPrompt) {
+      setGeneratedLetter(null);
+    }
 
     try {
       // Collect provider information
@@ -180,10 +184,13 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
         user_first_name: userFirstName.trim(),
         user_last_name: userLastName.trim(),
         insurance_company_name: insuranceCompanyName.trim(),
-        insurance_company_email: insuranceCompanyEmail.trim()
+        insurance_company_email: insuranceCompanyEmail.trim(),
+        custom_prompt: useCustomPrompt && editablePromptText ? editablePromptText : undefined
       });
 
       setGeneratedLetter(response.letter);
+      setPromptText(response.prompt_text);
+      setEditablePromptText(response.prompt_text);
     } catch (error: any) {
       console.error('Error generating pre-authorization letter:', error);
       setLetterError(error.message || 'Failed to generate pre-authorization letter. Please try again.');
@@ -517,6 +524,8 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                 setUserLastName('');
                 setInsuranceCompanyName('');
                 setInsuranceCompanyEmail('');
+                setPromptText(null);
+                setEditablePromptText('');
                 setIsPreAuthModalOpen(true);
               }}
               className="flex items-center justify-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-xs font-bold whitespace-nowrap"
@@ -626,6 +635,8 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                   setUserLastName('');
                   setInsuranceCompanyName('');
                   setInsuranceCompanyEmail('');
+                  setPromptText(null);
+                  setEditablePromptText('');
                 }}
                 className="text-gray-400 hover:text-gray-600"
               >
@@ -764,6 +775,37 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                     </pre>
                   </div>
                 </div>
+
+                {promptText && (
+                  <details className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <summary className="cursor-pointer font-semibold text-gray-900 mb-2">
+                      GPT Prompt (Click to view/edit and re-run)
+                    </summary>
+                    <div className="mt-4">
+                      <p className="text-xs text-gray-600 mb-2">The following prompt was sent to GPT to generate the letter:</p>
+                      <textarea
+                        className="w-full text-xs text-gray-800 bg-white p-3 rounded border border-gray-300 font-mono min-h-[200px] resize-y"
+                        value={editablePromptText || promptText || ''}
+                        onChange={(e) => setEditablePromptText(e.target.value)}
+                        placeholder="Prompt text..."
+                      />
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            await handleGeneratePreAuthLetter(true);
+                          }}
+                          disabled={isGeneratingLetter || !editablePromptText}
+                          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                        >
+                          {isGeneratingLetter && <Loader2 className="w-4 h-4 animate-spin" />}
+                          Re-run with Edited Prompt
+                        </button>
+                      </div>
+                    </div>
+                  </details>
+                )}
               </div>
             )}
 
@@ -777,6 +819,8 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                   setUserLastName('');
                   setInsuranceCompanyName('');
                   setInsuranceCompanyEmail('');
+                  setPromptText(null);
+                  setEditablePromptText('');
                 }}
                 className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 disabled={isGeneratingLetter}

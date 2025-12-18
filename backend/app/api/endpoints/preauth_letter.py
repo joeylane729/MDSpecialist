@@ -30,6 +30,7 @@ class PreAuthLetterRequest(BaseModel):
     user_last_name: str
     insurance_company_name: str
     insurance_company_email: str
+    custom_prompt: Optional[str] = None  # Custom prompt text if user wants to edit and re-run
 
 @router.post("/preauth-letter")
 async def generate_preauth_letter(
@@ -75,7 +76,9 @@ async def generate_preauth_letter(
         
         # Generate the letter
         logger.info("📝 [Backend] Starting pre-authorization letter generation...")
-        letter = await preauth_service.generate_preauth_letter(
+        if request.custom_prompt:
+            logger.info("📝 [Backend] Using custom prompt provided by user")
+        letter, prompt_text = await preauth_service.generate_preauth_letter(
             provider_info=request.provider_info,
             patient_diagnosis=request.patient_diagnosis,
             patient_symptoms=request.patient_symptoms,
@@ -83,7 +86,8 @@ async def generate_preauth_letter(
             user_first_name=request.user_first_name,
             user_last_name=request.user_last_name,
             insurance_company_name=request.insurance_company_name,
-            insurance_company_email=request.insurance_company_email
+            insurance_company_email=request.insurance_company_email,
+            custom_prompt=request.custom_prompt
         )
         
         letter_length = len(letter) if letter else 0
@@ -94,6 +98,7 @@ async def generate_preauth_letter(
             content={
                 "status": "success",
                 "letter": letter,
+                "prompt_text": prompt_text,
                 "message": "Pre-authorization letter generated successfully"
             }
         )

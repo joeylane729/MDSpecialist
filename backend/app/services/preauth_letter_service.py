@@ -6,7 +6,7 @@ using GPT, incorporating doctor qualifications and patient diagnosis information
 """
 
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
 
@@ -27,8 +27,9 @@ class PreAuthLetterService:
         user_first_name: str = "",
         user_last_name: str = "",
         insurance_company_name: str = "",
-        insurance_company_email: str = ""
-    ) -> str:
+        insurance_company_email: str = "",
+        custom_prompt: Optional[str] = None
+    ) -> Tuple[str, str]:
         """
         Generate a pre-authorization letter for insurance approval.
         
@@ -155,24 +156,26 @@ class PreAuthLetterService:
             logger.info(f"👤 [PreAuth] User: {user_first_name} {user_last_name}")
             logger.info(f"🏢 [PreAuth] Insurance: {insurance_company_name} ({insurance_company_email})")
             
-            prompt = PromptTemplate(
-                input_variables=[
-                    "provider_name",
-                    "provider_npi",
-                    "provider_specialty",
-                    "publications_summary",
-                    "clinical_volume_summary",
-                    "education_summary",
-                    "experience_summary",
-                    "specificity_summary",
-                    "patient_diagnosis",
-                    "patient_symptoms_line",
-                    "user_first_name",
-                    "user_last_name",
-                    "insurance_company_name",
-                    "insurance_company_email"
-                ],
-                template="""
+            # Prepare prompt variables
+            prompt_vars = {
+                "provider_name": provider_name,
+                "provider_npi": provider_npi,
+                "provider_specialty": provider_specialty,
+                "publications_summary": publications_summary,
+                "clinical_volume_summary": clinical_volume_summary,
+                "education_summary": education_summary,
+                "experience_summary": experience_summary,
+                "specificity_summary": specificity_summary,
+                "patient_diagnosis": patient_diagnosis,
+                "patient_symptoms_line": patient_symptoms_line,
+                "user_first_name": user_first_name,
+                "user_last_name": user_last_name,
+                "insurance_company_name": insurance_company_name,
+                "insurance_company_email": insurance_company_email
+            }
+            
+            # Default template
+            default_template = """
 Write a professional pre-authorization email to an insurance company justifying medical necessity for a specialist consultation.
 
 Provider Information:
@@ -213,25 +216,41 @@ Write a professional email (400-600 words) with:
 
 Format as an email body only - no letterhead, addresses, or signature placeholders. Start with the subject line, then the email body. Use the actual names provided instead of placeholders.
 """
-            )
             
-            # Prepare prompt variables
-            prompt_vars = {
-                "provider_name": provider_name,
-                "provider_npi": provider_npi,
-                "provider_specialty": provider_specialty,
-                "publications_summary": publications_summary,
-                "clinical_volume_summary": clinical_volume_summary,
-                "education_summary": education_summary,
-                "experience_summary": experience_summary,
-                "specificity_summary": specificity_summary,
-                "patient_diagnosis": patient_diagnosis,
-                "patient_symptoms_line": patient_symptoms_line,
-                "user_first_name": user_first_name,
-                "user_last_name": user_last_name,
-                "insurance_company_name": insurance_company_name,
-                "insurance_company_email": insurance_company_email
-            }
+            # Use custom prompt if provided, otherwise use default
+            if custom_prompt:
+                logger.info("📝 [PreAuth] Using custom prompt provided by user")
+                try:
+                    # Try to format the custom prompt with variables
+                    rendered_prompt = custom_prompt.format(**prompt_vars)
+                except KeyError as e:
+                    logger.warning(f"⚠️ [PreAuth] Custom prompt missing variable {e}, using as-is")
+                    rendered_prompt = custom_prompt
+                template_text = custom_prompt
+            else:
+                template_text = default_template
+                rendered_prompt = default_template.format(**prompt_vars)
+            
+            # Create PromptTemplate
+            prompt = PromptTemplate(
+                input_variables=[
+                    "provider_name",
+                    "provider_npi",
+                    "provider_specialty",
+                    "publications_summary",
+                    "clinical_volume_summary",
+                    "education_summary",
+                    "experience_summary",
+                    "specificity_summary",
+                    "patient_diagnosis",
+                    "patient_symptoms_line",
+                    "user_first_name",
+                    "user_last_name",
+                    "insurance_company_name",
+                    "insurance_company_email"
+                ],
+                template=template_text
+            )
             
             # Log summary lengths
             logger.info(f"📊 [PreAuth] Summary lengths - Publications: {len(publications_summary)}, Clinical Volume: {len(clinical_volume_summary)}, Education: {len(education_summary)}, Experience: {len(experience_summary)}, Specificity: {len(specificity_summary)}")
@@ -255,7 +274,7 @@ Format as an email body only - no letterhead, addresses, or signature placeholde
                 logger.warning(f"⚠️ [PreAuth] Generated letter is unusually long ({letter_length} chars)")
             
             logger.info(f"✅ [PreAuth] Successfully generated pre-authorization letter for provider {provider_npi}")
-            return letter
+            return letter, rendered_prompt
             
         except Exception as e:
             logger.error(f"❌ [PreAuth] Error generating pre-authorization letter: {str(e)}")
