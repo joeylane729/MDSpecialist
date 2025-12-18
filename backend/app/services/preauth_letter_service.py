@@ -45,16 +45,21 @@ class PreAuthLetterService:
             Generated pre-authorization letter as a string
         """
         try:
+            logger.info("🔧 [PreAuth] Starting letter generation process")
+            
             # Extract provider information
             provider_name = provider_info.get('name', 'Provider')
             provider_npi = provider_info.get('npi', 'N/A')
             provider_specialty = provider_info.get('specialty', 'Specialist')
+            logger.info(f"👤 [PreAuth] Provider: {provider_name} (NPI: {provider_npi}, Specialty: {provider_specialty})")
             
             # Build publications summary
             publications = provider_info.get('publications', [])
+            logger.info(f"📚 [PreAuth] Processing publications: {len(publications)} found")
             publications_summary = ""
             if publications and len(publications) > 0:
                 pub_count = len(publications)
+                logger.info(f"📚 [PreAuth] Building publications summary for {pub_count} articles")
                 publications_summary = f"Dr. {provider_name.split()[0] if provider_name else 'Provider'} has authored or co-authored {pub_count} peer-reviewed research article(s) in medical journals, demonstrating expertise in the field."
                 if pub_count > 0:
                     # Include a few recent/relevant publications
@@ -62,58 +67,80 @@ class PreAuthLetterService:
                     pub_titles = [pub.get('title', '') for pub in recent_pubs if isinstance(pub, dict)]
                     if pub_titles:
                         publications_summary += f" Recent publications include research on topics relevant to the patient's condition."
+                        logger.info(f"📚 [PreAuth] Added recent publications note")
             else:
                 publications_summary = "The provider maintains active involvement in the medical community."
+                logger.info("📚 [PreAuth] No publications found, using default summary")
             
             # Build clinical volume summary
             clinical_volume = provider_info.get('clinical_volume', {})
+            logger.info(f"🏥 [PreAuth] Processing clinical volume data: {bool(clinical_volume)}")
             clinical_volume_summary = ""
             if clinical_volume:
                 tot_srvcs = clinical_volume.get('raw', 0) or clinical_volume.get('tot_srvcs', 0)
+                logger.info(f"🏥 [PreAuth] Total services (Tot_Srvcs): {tot_srvcs}")
                 if tot_srvcs and tot_srvcs > 0:
                     clinical_volume_summary = f"Dr. {provider_name.split()[0] if provider_name else 'Provider'} has performed {int(tot_srvcs):,} relevant procedures according to CMS data, demonstrating substantial clinical experience and expertise in managing cases similar to this patient's condition."
+                    logger.info(f"🏥 [PreAuth] Built clinical volume summary with {int(tot_srvcs):,} procedures")
                 else:
                     clinical_volume_summary = "The provider has relevant clinical experience in managing similar cases."
+                    logger.info("🏥 [PreAuth] No Tot_Srvcs found, using default summary")
             else:
                 clinical_volume_summary = "The provider has relevant clinical experience in managing similar cases."
+                logger.info("🏥 [PreAuth] No clinical volume data provided, using default summary")
             
             # Build education summary
             education = provider_info.get('education', {})
+            logger.info(f"🎓 [PreAuth] Processing education data: {bool(education)}")
             education_summary = ""
             education_parts = []
             if education:
                 if education.get('medicalSchool'):
                     education_parts.append(f"medical school at {education['medicalSchool']}")
+                    logger.info(f"🎓 [PreAuth] Medical school: {education['medicalSchool']}")
                 if education.get('residency'):
                     education_parts.append(f"residency training at {education['residency']}")
+                    logger.info(f"🎓 [PreAuth] Residency: {education['residency']}")
                 if education.get('fellowship'):
                     education_parts.append(f"fellowship training at {education['fellowship']}")
+                    logger.info(f"🎓 [PreAuth] Fellowship: {education['fellowship']}")
             
             if education_parts:
                 education_summary = f"Dr. {provider_name.split()[0] if provider_name else 'Provider'} completed {' and '.join(education_parts)}."
+                logger.info(f"🎓 [PreAuth] Built education summary with {len(education_parts)} components")
             else:
                 education_summary = f"Dr. {provider_name.split()[0] if provider_name else 'Provider'} has completed comprehensive medical training and board certification in {provider_specialty}."
+                logger.info("🎓 [PreAuth] No education details found, using default summary")
             
             # Build years of experience summary
             years_experience = provider_info.get('years_experience') or provider_info.get('yearsExperience')
+            logger.info(f"⏱️ [PreAuth] Years of experience: {years_experience or 'N/A'}")
             experience_summary = ""
             if years_experience:
                 experience_summary = f"With over {years_experience} years of clinical experience, Dr. {provider_name.split()[0] if provider_name else 'Provider'} brings extensive expertise to the management of this patient's condition."
+                logger.info(f"⏱️ [PreAuth] Built experience summary with {years_experience} years")
             else:
                 experience_summary = f"Dr. {provider_name.split()[0] if provider_name else 'Provider'} has extensive clinical experience in {provider_specialty}."
+                logger.info("⏱️ [PreAuth] No years of experience found, using default summary")
             
             # Build specificity/relevance summary
+            logger.info(f"🎯 [PreAuth] Processing specificity/relevance data: {bool(specificity_relevance)}")
             specificity_summary = ""
             if specificity_relevance:
                 score = specificity_relevance.get('score', 0)
+                logger.info(f"🎯 [PreAuth] Specificity score: {score}")
                 if score:
                     specificity_summary = f"Based on comprehensive analysis, this provider demonstrates a high level of relevance (score: {score:.2f}/10) to the patient's specific condition, with expertise directly aligned with the required treatment."
+                    logger.info(f"🎯 [PreAuth] Built specificity summary with score {score:.2f}")
                 else:
                     specificity_summary = "This provider's expertise is directly relevant to the patient's specific condition and treatment needs."
+                    logger.info("🎯 [PreAuth] No score found in specificity_relevance, using default summary")
             else:
                 specificity_summary = "This provider's expertise is directly relevant to the patient's specific condition and treatment needs."
+                logger.info("🎯 [PreAuth] No specificity_relevance data provided, using default summary")
             
             # Build the prompt
+            logger.info("📝 [PreAuth] Building GPT prompt template")
             prompt = PromptTemplate(
                 input_variables=[
                     "provider_name",
@@ -159,9 +186,8 @@ Write a formal business letter (400-600 words) with:
 """
             )
             
-            chain = prompt | self.llm
-            
-            response = await chain.ainvoke({
+            # Prepare prompt variables
+            prompt_vars = {
                 "provider_name": provider_name,
                 "provider_npi": provider_npi,
                 "provider_specialty": provider_specialty,
@@ -172,15 +198,38 @@ Write a formal business letter (400-600 words) with:
                 "specificity_summary": specificity_summary,
                 "patient_diagnosis": patient_diagnosis,
                 "patient_symptoms": patient_symptoms or ""
-            })
+            }
+            
+            # Log summary lengths
+            logger.info(f"📊 [PreAuth] Summary lengths - Publications: {len(publications_summary)}, Clinical Volume: {len(clinical_volume_summary)}, Education: {len(education_summary)}, Experience: {len(experience_summary)}, Specificity: {len(specificity_summary)}")
+            total_prompt_length = sum(len(str(v)) for v in prompt_vars.values())
+            logger.info(f"📊 [PreAuth] Total prompt length: ~{total_prompt_length} characters")
+            
+            chain = prompt | self.llm
+            
+            logger.info("🤖 [PreAuth] Calling GPT-4o API to generate letter...")
+            response = await chain.ainvoke(prompt_vars)
+            logger.info("✅ [PreAuth] GPT API call completed")
             
             # Extract the letter content
             letter = response.content.strip() if hasattr(response, 'content') else str(response).strip()
+            letter_length = len(letter)
+            logger.info(f"📄 [PreAuth] Generated letter length: {letter_length} characters")
             
-            logger.info(f"✅ Generated pre-authorization letter for provider {provider_npi}")
+            if letter_length < 100:
+                logger.warning(f"⚠️ [PreAuth] Generated letter is unusually short ({letter_length} chars)")
+            elif letter_length > 5000:
+                logger.warning(f"⚠️ [PreAuth] Generated letter is unusually long ({letter_length} chars)")
+            
+            logger.info(f"✅ [PreAuth] Successfully generated pre-authorization letter for provider {provider_npi}")
             return letter
             
         except Exception as e:
-            logger.error(f"❌ Error generating pre-authorization letter: {str(e)}")
+            logger.error(f"❌ [PreAuth] Error generating pre-authorization letter: {str(e)}")
+            logger.error(f"❌ [PreAuth] Error type: {type(e).__name__}")
+            import traceback
+            logger.error(f"❌ [PreAuth] Traceback: {traceback.format_exc()}")
+            logger.error(f"❌ [PreAuth] Provider NPI: {provider_info.get('npi', 'N/A')}")
+            logger.error(f"❌ [PreAuth] Patient diagnosis: {patient_diagnosis}")
             raise
 
