@@ -158,7 +158,7 @@ class PreAuthLetterService:
                     "patient_symptoms_line"
                 ],
                 template="""
-Write a formal pre-authorization letter to an insurance company justifying medical necessity for a specialist consultation.
+Write a professional pre-authorization email to an insurance company justifying medical necessity for a specialist consultation.
 
 Provider Information:
 - Name: {provider_name}
@@ -181,11 +181,15 @@ Patient Information:
 {patient_symptoms_line}
 
 Instructions:
-Write a formal business letter (400-600 words) with:
+Write a professional email (400-600 words) with:
 - Subject line for pre-authorization request
+- Professional greeting
 - Medical necessity justification
 - Provider qualifications and relevance to patient's condition
-- Request for approval with contact placeholders
+- Request for approval
+- Professional closing
+
+Format as an email body only - no letterhead, addresses, or signature placeholders. Start with the subject line, then the email body.
 """
             )
             
