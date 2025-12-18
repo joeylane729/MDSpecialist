@@ -558,6 +558,15 @@ export const generatePreAuthLetter = async (
 ): Promise<PreAuthLetterResponse> => {
   try {
     console.log('🔍 [Frontend] Generating pre-authorization letter for provider:', request.provider_info.npi);
+    console.log('🔍 [Frontend] Request payload:', {
+      provider_info: request.provider_info,
+      patient_diagnosis: request.patient_diagnosis,
+      user_first_name: request.user_first_name,
+      user_last_name: request.user_last_name,
+      insurance_company_name: request.insurance_company_name,
+      insurance_company_email: request.insurance_company_email,
+      has_custom_prompt: !!request.custom_prompt
+    });
     
     const response = await api.post('/api/v1/preauth-letter', request, {
       headers: {

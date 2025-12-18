@@ -647,92 +647,92 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
             </div>
 
             {!generatedLetter && !isGeneratingLetter && (
-            <div className="space-y-4">
-              <p className="text-gray-600">
-                  We'll generate a professional pre-authorization email for your insurance company. 
-                  This email will explain why the specialist consultation is medically necessary and 
-                  highlight the provider's qualifications.
-              </p>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold text-gray-900 mb-2">What We'll Include:</h4>
-                <ul className="text-gray-700 space-y-1 text-sm">
-                  <li>• Medical necessity justification</li>
-                    <li>• Provider qualifications (publications, clinical volume, education, experience)</li>
-                    <li>• Relevance of provider expertise to your condition</li>
-                  <li>• Expected outcomes and benefits</li>
-                </ul>
-              </div>
-                {!patientDiagnosis && (
-                  <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
-                    <p className="text-yellow-800 text-sm">
-                      ⚠️ Patient diagnosis information is required to generate the letter.
-                    </p>
-            </div>
-                )}
-              
-              <div className="border-t pt-4 mt-4">
-                <h4 className="font-semibold text-gray-900 mb-4">Your Information</h4>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label htmlFor="userFirstName" className="block text-sm font-medium text-gray-700 mb-1">
-                      Your First Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      id="userFirstName"
-                      value={userFirstName}
-                      onChange={(e) => setUserFirstName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      placeholder="John"
-                    />
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                    We'll generate a professional pre-authorization email for your insurance company. 
+                    This email will explain why the specialist consultation is medically necessary and 
+                    highlight the provider's qualifications.
+                </p>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-semibold text-gray-900 mb-2">What We'll Include:</h4>
+                  <ul className="text-gray-700 space-y-1 text-sm">
+                    <li>• Medical necessity justification</li>
+                      <li>• Provider qualifications (publications, clinical volume, education, experience)</li>
+                      <li>• Relevance of provider expertise to your condition</li>
+                    <li>• Expected outcomes and benefits</li>
+                  </ul>
+                </div>
+                  {!patientDiagnosis && (
+                    <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                      <p className="text-yellow-800 text-sm">
+                        ⚠️ Patient diagnosis information is required to generate the letter.
+                      </p>
                   </div>
-                  <div>
-                    <label htmlFor="userLastName" className="block text-sm font-medium text-gray-700 mb-1">
-                      Your Last Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      id="userLastName"
-                      value={userLastName}
-                      onChange={(e) => setUserLastName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      placeholder="Doe"
-                    />
+                  )}
+                
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="font-semibold text-gray-900 mb-4">Your Information</h4>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label htmlFor="userFirstName" className="block text-sm font-medium text-gray-700 mb-1">
+                        Your First Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="userFirstName"
+                        value={userFirstName}
+                        onChange={(e) => setUserFirstName(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        placeholder="John"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="userLastName" className="block text-sm font-medium text-gray-700 mb-1">
+                        Your Last Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="userLastName"
+                        value={userLastName}
+                        onChange={(e) => setUserLastName(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        placeholder="Doe"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="border-t pt-4">
-                <h4 className="font-semibold text-gray-900 mb-4">Insurance Company Information</h4>
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="insuranceCompanyName" className="block text-sm font-medium text-gray-700 mb-1">
-                      Insurance Company Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      id="insuranceCompanyName"
-                      value={insuranceCompanyName}
-                      onChange={(e) => setInsuranceCompanyName(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      placeholder="Blue Cross Blue Shield"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="insuranceCompanyEmail" className="block text-sm font-medium text-gray-700 mb-1">
-                      Insurance Company Email <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      id="insuranceCompanyEmail"
-                      value={insuranceCompanyEmail}
-                      onChange={(e) => setInsuranceCompanyEmail(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                      placeholder="preauth@insurance.com"
-                    />
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold text-gray-900 mb-4">Insurance Company Information</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label htmlFor="insuranceCompanyName" className="block text-sm font-medium text-gray-700 mb-1">
+                        Insurance Company Name <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="insuranceCompanyName"
+                        value={insuranceCompanyName}
+                        onChange={(e) => setInsuranceCompanyName(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        placeholder="Blue Cross Blue Shield"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="insuranceCompanyEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                        Insurance Company Email <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        id="insuranceCompanyEmail"
+                        value={insuranceCompanyEmail}
+                        onChange={(e) => setInsuranceCompanyEmail(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        placeholder="preauth@insurance.com"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
               </div>
             )}
 
