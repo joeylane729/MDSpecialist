@@ -17,6 +17,14 @@ railway_domain = os.getenv("RAILWAY_PUBLIC_DOMAIN")
 if railway_domain:
     cors_origins.append(f"https://{railway_domain}")
 
+# Add Vercel frontend domain
+cors_origins.append("https://md-specialist.vercel.app")
+
+# Remove duplicates and filter out empty strings
+cors_origins = list(set([origin for origin in cors_origins if origin.strip()]))
+
+print(f"🔧 CORS origins configured: {cors_origins}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
