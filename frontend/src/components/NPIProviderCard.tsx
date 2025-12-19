@@ -671,11 +671,12 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                   )}
                 
                 <div className="border-t pt-4 mt-4">
-                  <h4 className="font-semibold text-gray-900 mb-4">Your Information</h4>
+                  <h4 className="font-semibold text-gray-900 mb-2">Your Information</h4>
+                  <p className="text-xs text-gray-500 mb-4">Optional - placeholders will be used if left blank</p>
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
                       <label htmlFor="userFirstName" className="block text-sm font-medium text-gray-700 mb-1">
-                        Your First Name <span className="text-red-500">*</span>
+                        Your First Name
                       </label>
                       <input
                         type="text"
@@ -688,7 +689,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                     </div>
                     <div>
                       <label htmlFor="userLastName" className="block text-sm font-medium text-gray-700 mb-1">
-                        Your Last Name <span className="text-red-500">*</span>
+                        Your Last Name
                       </label>
                       <input
                         type="text"
@@ -703,11 +704,12 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                 </div>
 
                 <div className="border-t pt-4">
-                  <h4 className="font-semibold text-gray-900 mb-4">Insurance Company Information</h4>
+                  <h4 className="font-semibold text-gray-900 mb-2">Insurance Company Information</h4>
+                  <p className="text-xs text-gray-500 mb-4">Optional - placeholders will be used if left blank</p>
                   <div className="space-y-4">
                     <div>
                       <label htmlFor="insuranceCompanyName" className="block text-sm font-medium text-gray-700 mb-1">
-                        Insurance Company Name <span className="text-red-500">*</span>
+                        Insurance Company Name
                       </label>
                       <input
                         type="text"
@@ -720,7 +722,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                     </div>
                     <div>
                       <label htmlFor="insuranceCompanyEmail" className="block text-sm font-medium text-gray-700 mb-1">
-                        Insurance Company Email <span className="text-red-500">*</span>
+                        Insurance Company Email
                       </label>
                       <input
                         type="email"
@@ -830,7 +832,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
               {!generatedLetter && (
                 <button
                   onClick={handleGeneratePreAuthLetter}
-                  disabled={isGeneratingLetter || !patientDiagnosis || !userFirstName.trim() || !userLastName.trim() || !insuranceCompanyName.trim() || !insuranceCompanyEmail.trim()}
+                  disabled={isGeneratingLetter || !patientDiagnosis}
                   className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
               >
                   {isGeneratingLetter && <Loader2 className="w-4 h-4 animate-spin" />}

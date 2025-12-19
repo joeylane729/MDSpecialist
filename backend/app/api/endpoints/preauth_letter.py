@@ -26,10 +26,10 @@ class PreAuthLetterRequest(BaseModel):
     patient_diagnosis: str
     patient_symptoms: Optional[str] = None
     specificity_relevance: Optional[dict] = None  # Specificity/relevance data from scoreData
-    user_first_name: str
-    user_last_name: str
-    insurance_company_name: str
-    insurance_company_email: str
+    user_first_name: Optional[str] = ""
+    user_last_name: Optional[str] = ""
+    insurance_company_name: Optional[str] = ""
+    insurance_company_email: Optional[str] = ""
     custom_prompt: Optional[str] = None  # Custom prompt text if user wants to edit and re-run
 
 @router.post("/preauth-letter")

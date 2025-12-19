@@ -62,94 +62,94 @@ class PreAuthLetterService:
             provider_specialty = provider_info.get('specialty', 'Specialist')
             logger.info(f"👤 [PreAuth] Provider: {provider_name} (NPI: {provider_npi}, Specialty: {provider_specialty})")
             
-            # Build publications summary
+            # Build publications bullet point
             publications = provider_info.get('publications', [])
             logger.info(f"📚 [PreAuth] Processing publications: {len(publications)} found")
-            publications_summary = ""
+            publications_bullet = ""
             if publications and len(publications) > 0:
                 pub_count = len(publications)
-                logger.info(f"📚 [PreAuth] Building publications summary for {pub_count} articles")
-                publications_summary = f"Dr. {provider_name.split()[0] if provider_name else 'Provider'} has authored or co-authored {pub_count} peer-reviewed research article(s) in medical journals, demonstrating expertise in the field."
-                if pub_count > 0:
-                    # Include a few recent/relevant publications
-                    recent_pubs = publications[:3]  # Take first 3
-                    pub_titles = [pub.get('title', '') for pub in recent_pubs if isinstance(pub, dict)]
-                    if pub_titles:
-                        publications_summary += f" Recent publications include research on topics relevant to the patient's condition."
-                        logger.info(f"📚 [PreAuth] Added recent publications note")
-            else:
-                publications_summary = "The provider maintains active involvement in the medical community."
-                logger.info("📚 [PreAuth] No publications found, using default summary")
+                logger.info(f"📚 [PreAuth] Building publications bullet for {pub_count} articles")
+                
+                # Get top 3 publication titles
+                recent_pubs = publications[:3]  # Take first 3
+                pub_titles = [pub.get('title', '') for pub in recent_pubs if isinstance(pub, dict) and pub.get('title')]
+                
+                if pub_titles:
+                    titles_str = ', '.join([f'"{title}"' for title in pub_titles])
+                    publications_bullet = f"- Authored/co-authored {pub_count} peer-reviewed articles, including: {titles_str}"
+                    logger.info(f"📚 [PreAuth] Added {len(pub_titles)} publication titles")
+                else:
+                    publications_bullet = f"- Authored/co-authored {pub_count} peer-reviewed articles"
+                    logger.info(f"📚 [PreAuth] No titles available, using count only")
             
-            # Build clinical volume summary
+            # Build clinical volume bullet point
             clinical_volume = provider_info.get('clinical_volume', {})
             logger.info(f"🏥 [PreAuth] Processing clinical volume data: {bool(clinical_volume)}")
-            clinical_volume_summary = ""
+            clinical_volume_bullet = ""
             if clinical_volume:
                 tot_srvcs = clinical_volume.get('raw', 0) or clinical_volume.get('tot_srvcs', 0)
                 logger.info(f"🏥 [PreAuth] Total services (Tot_Srvcs): {tot_srvcs}")
                 if tot_srvcs and tot_srvcs > 0:
-                    clinical_volume_summary = f"Dr. {provider_name.split()[0] if provider_name else 'Provider'} has performed {int(tot_srvcs):,} relevant procedures according to CMS data, demonstrating substantial clinical experience and expertise in managing cases similar to this patient's condition."
-                    logger.info(f"🏥 [PreAuth] Built clinical volume summary with {int(tot_srvcs):,} procedures")
-                else:
-                    clinical_volume_summary = "The provider has relevant clinical experience in managing similar cases."
-                    logger.info("🏥 [PreAuth] No Tot_Srvcs found, using default summary")
-            else:
-                clinical_volume_summary = "The provider has relevant clinical experience in managing similar cases."
-                logger.info("🏥 [PreAuth] No clinical volume data provided, using default summary")
+                    clinical_volume_bullet = f"- Performed {int(tot_srvcs):,} relevant procedures (CMS data)"
+                    logger.info(f"🏥 [PreAuth] Built clinical volume bullet with {int(tot_srvcs):,} procedures")
             
-            # Build education summary
+            # Build education bullet points
             education = provider_info.get('education', {})
             logger.info(f"🎓 [PreAuth] Processing education data: {bool(education)}")
-            education_summary = ""
-            education_parts = []
+            education_bullets = []
             if education:
                 if education.get('medicalSchool'):
-                    education_parts.append(f"medical school at {education['medicalSchool']}")
+                    education_bullets.append(f"- Medical school: {education['medicalSchool']}")
                     logger.info(f"🎓 [PreAuth] Medical school: {education['medicalSchool']}")
                 if education.get('residency'):
-                    education_parts.append(f"residency training at {education['residency']}")
+                    education_bullets.append(f"- Residency: {education['residency']}")
                     logger.info(f"🎓 [PreAuth] Residency: {education['residency']}")
                 if education.get('fellowship'):
-                    education_parts.append(f"fellowship training at {education['fellowship']}")
+                    education_bullets.append(f"- Fellowship: {education['fellowship']}")
                     logger.info(f"🎓 [PreAuth] Fellowship: {education['fellowship']}")
             
-            if education_parts:
-                education_summary = f"Dr. {provider_name.split()[0] if provider_name else 'Provider'} completed {' and '.join(education_parts)}."
-                logger.info(f"🎓 [PreAuth] Built education summary with {len(education_parts)} components")
+            education_summary = '\n'.join(education_bullets) if education_bullets else ""
+            if education_bullets:
+                logger.info(f"🎓 [PreAuth] Built {len(education_bullets)} education bullets")
             else:
-                education_summary = f"Dr. {provider_name.split()[0] if provider_name else 'Provider'} has completed comprehensive medical training and board certification in {provider_specialty}."
-                logger.info("🎓 [PreAuth] No education details found, using default summary")
+                logger.info("🎓 [PreAuth] No education details found")
             
-            # Build years of experience summary
+            # Build years of experience bullet point
             years_experience = provider_info.get('years_experience') or provider_info.get('yearsExperience')
             logger.info(f"⏱️ [PreAuth] Years of experience: {years_experience or 'N/A'}")
-            experience_summary = ""
+            experience_bullet = ""
             if years_experience:
-                experience_summary = f"With over {years_experience} years of clinical experience, Dr. {provider_name.split()[0] if provider_name else 'Provider'} brings extensive expertise to the management of this patient's condition."
-                logger.info(f"⏱️ [PreAuth] Built experience summary with {years_experience} years")
-            else:
-                experience_summary = f"Dr. {provider_name.split()[0] if provider_name else 'Provider'} has extensive clinical experience in {provider_specialty}."
-                logger.info("⏱️ [PreAuth] No years of experience found, using default summary")
+                experience_bullet = f"- {years_experience} years of clinical experience"
+                logger.info(f"⏱️ [PreAuth] Built experience bullet with {years_experience} years")
             
-            # Build specificity/relevance summary
+            # Log specificity/relevance data (not included in letter)
             logger.info(f"🎯 [PreAuth] Processing specificity/relevance data: {bool(specificity_relevance)}")
-            specificity_summary = ""
             if specificity_relevance:
                 score = specificity_relevance.get('score', 0)
-                logger.info(f"🎯 [PreAuth] Specificity score: {score}")
-                if score:
-                    specificity_summary = f"Based on comprehensive analysis, this provider demonstrates a high level of relevance (score: {score:.2f}/10) to the patient's specific condition, with expertise directly aligned with the required treatment."
-                    logger.info(f"🎯 [PreAuth] Built specificity summary with score {score:.2f}")
-                else:
-                    specificity_summary = "This provider's expertise is directly relevant to the patient's specific condition and treatment needs."
-                    logger.info("🎯 [PreAuth] No score found in specificity_relevance, using default summary")
-            else:
-                specificity_summary = "This provider's expertise is directly relevant to the patient's specific condition and treatment needs."
-                logger.info("🎯 [PreAuth] No specificity_relevance data provided, using default summary")
+                logger.info(f"🎯 [PreAuth] Specificity score: {score} (not included in letter)")
             
             # Build patient symptoms line (handle conditionally outside template)
             patient_symptoms_line = f"- Symptoms: {patient_symptoms}" if patient_symptoms else ""
+            
+            # Assemble all provider qualification bullets
+            provider_qualifications_bullets = []
+            if publications_bullet:
+                provider_qualifications_bullets.append(publications_bullet)
+            if clinical_volume_bullet:
+                provider_qualifications_bullets.append(clinical_volume_bullet)
+            if education_summary:  # This is already joined bullets
+                provider_qualifications_bullets.append(education_summary)
+            if experience_bullet:
+                provider_qualifications_bullets.append(experience_bullet)
+            
+            provider_qualifications = '\n'.join(provider_qualifications_bullets)
+            logger.info(f"📋 [PreAuth] Assembled {len(provider_qualifications_bullets)} qualification bullets")
+            
+            # Use placeholders for optional fields if not provided
+            user_first_name = user_first_name.strip() if user_first_name else "[Patient First Name]"
+            user_last_name = user_last_name.strip() if user_last_name else "[Patient Last Name]"
+            insurance_company_name = insurance_company_name.strip() if insurance_company_name else "[Insurance Company]"
+            insurance_company_email = insurance_company_email.strip() if insurance_company_email else "[insurance@company.com]"
             
             # Build the prompt
             logger.info("📝 [PreAuth] Building GPT prompt template")
@@ -161,11 +161,7 @@ class PreAuthLetterService:
                 "provider_name": provider_name,
                 "provider_npi": provider_npi,
                 "provider_specialty": provider_specialty,
-                "publications_summary": publications_summary,
-                "clinical_volume_summary": clinical_volume_summary,
-                "education_summary": education_summary,
-                "experience_summary": experience_summary,
-                "specificity_summary": specificity_summary,
+                "provider_qualifications": provider_qualifications,
                 "patient_diagnosis": patient_diagnosis,
                 "patient_symptoms_line": patient_symptoms_line,
                 "user_first_name": user_first_name,
@@ -184,15 +180,7 @@ Provider Information:
 - Specialty: {provider_specialty}
 
 Provider Qualifications:
-{publications_summary}
-
-{clinical_volume_summary}
-
-{education_summary}
-
-{experience_summary}
-
-{specificity_summary}
+{provider_qualifications}
 
 Patient Information:
 - Diagnosis: {patient_diagnosis}
@@ -207,14 +195,14 @@ Recipient Information:
 
 Instructions:
 Write a professional email (400-600 words) with:
-- Subject line for pre-authorization request (include patient name: {user_first_name} {user_last_name})
-- Professional greeting addressed to {insurance_company_name}
-- Medical necessity justification
-- Provider qualifications and relevance to patient's condition
-- Request for approval
-- Professional closing signed by {user_first_name} {user_last_name}
+- Subject line for pre-authorization request
+- Professional greeting addressed to insurance company
+- Brief introduction stating the purpose
+- Medical necessity justification for the patient's diagnosis
+- Incorporate the provider's qualifications naturally into the letter to demonstrate expertise and suitability for treating this condition
+- Request for pre-authorization approval
+- Professional closing signed by the patient
 
-Format as an email body only - no letterhead, addresses, or signature placeholders. Start with the subject line, then the email body. Use the actual names provided instead of placeholders.
 """
             
             # Use custom prompt if provided, otherwise use default
@@ -252,8 +240,8 @@ Format as an email body only - no letterhead, addresses, or signature placeholde
                 template=template_text
             )
             
-            # Log summary lengths
-            logger.info(f"📊 [PreAuth] Summary lengths - Publications: {len(publications_summary)}, Clinical Volume: {len(clinical_volume_summary)}, Education: {len(education_summary)}, Experience: {len(experience_summary)}, Specificity: {len(specificity_summary)}")
+            # Log qualifications length
+            logger.info(f"📊 [PreAuth] Provider qualifications length: {len(provider_qualifications)} characters")
             total_prompt_length = sum(len(str(v)) for v in prompt_vars.values())
             logger.info(f"📊 [PreAuth] Total prompt length: ~{total_prompt_length} characters")
             
