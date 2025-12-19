@@ -69,8 +69,8 @@ class PreAuthLetterService:
             if publications and len(publications) > 0:
                 pub_count = len(publications)
                 logger.info(f"📚 [PreAuth] Building publications bullet for {pub_count} articles")
-                publications_bullet = f"- Authored/co-authored {pub_count} peer-reviewed articles"
-                logger.info(f"📚 [PreAuth] Built publications summary with count only")
+                publications_bullet = f"- Authored/co-authored {pub_count} peer-reviewed articles on {patient_diagnosis}"
+                logger.info(f"📚 [PreAuth] Built publications summary with count and diagnosis")
             
             # Build clinical volume bullet point
             clinical_volume = provider_info.get('clinical_volume', {})
