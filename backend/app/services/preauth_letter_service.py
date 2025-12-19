@@ -66,10 +66,31 @@ class PreAuthLetterService:
             publications = provider_info.get('publications', [])
             logger.info(f"📚 [PreAuth] Processing publications: {len(publications)} found")
             publications_bullet = ""
+            publications_list = ""  # For detailed list of articles with URLs
             if publications and len(publications) > 0:
                 pub_count = len(publications)
                 logger.info(f"📚 [PreAuth] Building publications bullet for {pub_count} articles")
                 publications_bullet = f"- Authored/co-authored {pub_count} peer-reviewed articles on {patient_diagnosis}"
+                
+                # Extract up to 5 publications with titles and URLs
+                top_publications = publications[:5]
+                publication_items = []
+                for pub in top_publications:
+                    if isinstance(pub, dict):
+                        title = pub.get('title', '')
+                        pmid = pub.get('pmid', '')
+                        if title and pmid:
+                            url = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
+                            publication_items.append(f"  - {title} ({url})")
+                            logger.info(f"📚 [PreAuth] Added publication: {title[:50]}... (PMID: {pmid})")
+                
+                if publication_items:
+                    publications_list = "Sample Research Articles:\n" + "\n".join(publication_items)
+                    logger.info(f"📚 [PreAuth] Built detailed list of {len(publication_items)} publications with URLs")
+                else:
+                    publications_list = ""
+                    logger.info("📚 [PreAuth] No valid publications with titles/PMIDs found")
+                
                 logger.info(f"📚 [PreAuth] Built publications summary with count and diagnosis")
             
             # Build clinical volume bullet point
@@ -152,6 +173,7 @@ class PreAuthLetterService:
                 "provider_npi": provider_npi,
                 "provider_specialty": provider_specialty,
                 "provider_qualifications": provider_qualifications,
+                "publications_list": publications_list,
                 "patient_diagnosis": patient_diagnosis,
                 "patient_symptoms_line": patient_symptoms_line,
                 "user_first_name": user_first_name,
@@ -171,6 +193,7 @@ Provider Information:
 
 Provider Qualifications:
 {provider_qualifications}
+{publications_list}
 
 Patient Information:
 - Diagnosis: {patient_diagnosis}
@@ -190,6 +213,7 @@ Write a professional email (400-600 words) with:
 - Brief introduction stating the purpose
 - Medical necessity justification for the patient's diagnosis
 - Incorporate the provider's qualifications naturally into the letter to demonstrate expertise and suitability for treating this condition
+- Include the specific research articles listed above (with their titles and URLs) to demonstrate the provider's expertise in this specific condition
 - Request for pre-authorization approval
 - Professional closing signed by the patient
 
@@ -215,11 +239,8 @@ Write a professional email (400-600 words) with:
                     "provider_name",
                     "provider_npi",
                     "provider_specialty",
-                    "publications_summary",
-                    "clinical_volume_summary",
-                    "education_summary",
-                    "experience_summary",
-                    "specificity_summary",
+                    "provider_qualifications",
+                    "publications_list",
                     "patient_diagnosis",
                     "patient_symptoms_line",
                     "user_first_name",
