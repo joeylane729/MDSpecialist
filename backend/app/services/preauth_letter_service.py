@@ -69,18 +69,8 @@ class PreAuthLetterService:
             if publications and len(publications) > 0:
                 pub_count = len(publications)
                 logger.info(f"📚 [PreAuth] Building publications bullet for {pub_count} articles")
-                
-                # Get top 3 publication titles
-                recent_pubs = publications[:3]  # Take first 3
-                pub_titles = [pub.get('title', '') for pub in recent_pubs if isinstance(pub, dict) and pub.get('title')]
-                
-                if pub_titles:
-                    titles_str = ', '.join([f'"{title}"' for title in pub_titles])
-                    publications_bullet = f"- Authored/co-authored {pub_count} peer-reviewed articles, including: {titles_str}"
-                    logger.info(f"📚 [PreAuth] Added {len(pub_titles)} publication titles")
-                else:
-                    publications_bullet = f"- Authored/co-authored {pub_count} peer-reviewed articles"
-                    logger.info(f"📚 [PreAuth] No titles available, using count only")
+                publications_bullet = f"- Authored/co-authored {pub_count} peer-reviewed articles"
+                logger.info(f"📚 [PreAuth] Built publications summary with count only")
             
             # Build clinical volume bullet point
             clinical_volume = provider_info.get('clinical_volume', {})
