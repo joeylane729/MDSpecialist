@@ -162,7 +162,7 @@ class PreAuthLetterService:
             
             # Default template
             default_template = """
-Write a professional pre-authorization email to an insurance company justifying medical necessity for a specialist consultation.
+Write a professional pre-authorization email from a patient to an insurance company justifying medical necessity for a specialist consultation.
 
 Provider Information:
 - Name: {provider_name}
