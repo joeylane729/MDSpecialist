@@ -272,6 +272,24 @@ Write a professional email (400-600 words) with:
             elif letter_length > 5000:
                 logger.warning(f"⚠️ [PreAuth] Generated letter is unusually long ({letter_length} chars)")
             
+            # Append full list of publications with URLs to the email
+            if publications and len(publications) > 0:
+                logger.info(f"📚 [PreAuth] Appending {len(publications)} publications to email")
+                publications_appendix = "\n\n---\n\n**Research Articles by Dr. " + provider_name.split()[0] + ":**\n\n"
+                
+                for i, pub in enumerate(publications, 1):
+                    if isinstance(pub, dict):
+                        title = pub.get('title', '')
+                        pmid = pub.get('pmid', '')
+                        if title and pmid:
+                            url = f"https://pubmed.ncbi.nlm.nih.gov/{pmid}/"
+                            publications_appendix += f"{i}. {title}\n   {url}\n\n"
+                
+                letter += publications_appendix
+                logger.info(f"📚 [PreAuth] Appended {len([p for p in publications if isinstance(p, dict) and p.get('title') and p.get('pmid')])} publications to email")
+            else:
+                logger.info("📚 [PreAuth] No publications to append")
+            
             logger.info(f"✅ [PreAuth] Successfully generated pre-authorization letter for provider {provider_npi}")
             return letter, rendered_prompt
             
