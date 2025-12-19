@@ -9,7 +9,8 @@ interface ProviderReviewsProps {
 export default function ProviderReviews({ npi }: ProviderReviewsProps) {
   const [reviews, setReviews] = useState<HealthgradesReview[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
@@ -18,7 +19,14 @@ export default function ProviderReviews({ npi }: ProviderReviewsProps) {
   useEffect(() => {
     const fetchReviewData = async () => {
       console.log(`🔍 [ProviderReviews] Fetching reviews for NPI: ${npi} (type: ${typeof npi})`);
-      setLoading(true);
+      
+      // Only show full loading on initial load
+      if (reviews.length === 0) {
+        setInitialLoading(true);
+      } else {
+        setLoadingMore(true);
+      }
+      
       try {
         const [reviewsData, count] = await Promise.all([
           getReviewsByNPI(npi, showAll ? 100 : PREVIEW_COUNT),
@@ -30,14 +38,15 @@ export default function ProviderReviews({ npi }: ProviderReviewsProps) {
       } catch (error) {
         console.error('❌ [ProviderReviews] Error loading reviews:', error);
       } finally {
-        setLoading(false);
+        setInitialLoading(false);
+        setLoadingMore(false);
       }
     };
 
     fetchReviewData();
   }, [npi, showAll]);
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="mt-4 p-4 bg-gray-50 rounded-lg">
         <div className="flex items-center gap-2 text-gray-600">
@@ -75,39 +84,49 @@ export default function ProviderReviews({ npi }: ProviderReviewsProps) {
 
       {expanded && (
         <div className="mt-3 space-y-3">
-          {displayedReviews.map((review, index) => (
-            <div
-              key={review.id}
-              className="bg-gray-50 rounded-lg p-4 border border-gray-200"
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex-1">
-                  {review.review_author && (
-                    <p className="text-sm font-medium text-gray-700">
-                      {review.review_author}
-                    </p>
-                  )}
-                  {review.review_date && (
-                    <p className="text-xs text-gray-500">{review.review_date}</p>
-                  )}
-                </div>
-              </div>
-              
-              <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
-                {review.review_text}
-              </p>
+          {loadingMore ? (
+            <div className="flex items-center justify-center gap-2 text-gray-600 py-4">
+              <MessageSquare className="w-5 h-5 animate-pulse" />
+              <span>Loading all reviews...</span>
             </div>
-          ))}
+          ) : (
+            <>
+              {displayedReviews.map((review, index) => (
+                <div
+                  key={review.id}
+                  className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      {review.review_author && (
+                        <p className="text-sm font-medium text-gray-700">
+                          {review.review_author}
+                        </p>
+                      )}
+                      {review.review_date && (
+                        <p className="text-xs text-gray-500">{review.review_date}</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
+                    {review.review_text}
+                  </p>
+                </div>
+              ))}
 
-          {totalCount > PREVIEW_COUNT && (
-            <button
-              onClick={() => setShowAll(!showAll)}
-              className="w-full py-2 px-4 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors font-medium"
-            >
-              {showAll
-                ? `Show Less`
-                : `Show All ${totalCount} Reviews`}
-            </button>
+              {totalCount > PREVIEW_COUNT && (
+                <button
+                  onClick={() => setShowAll(!showAll)}
+                  disabled={loadingMore}
+                  className="w-full py-2 px-4 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {showAll
+                    ? `Show Less`
+                    : `Show All ${totalCount} Reviews`}
+                </button>
+              )}
+            </>
           )}
         </div>
       )}
