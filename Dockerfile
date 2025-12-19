@@ -13,7 +13,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
-COPY main_container.py ./main.py
+COPY backend/main.py ./main.py
 COPY backend/app/ ./app/
 
 # Create data directory
