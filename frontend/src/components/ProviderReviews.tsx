@@ -1,52 +1,72 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, ChevronDown, ChevronUp, Star } from 'lucide-react';
-import { HealthgradesReview, getReviewsByNPI, getReviewCount } from '../services/api';
+import { MessageSquare, ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { 
+  HealthgradesReview, 
+  searchReviewsByKeywords, 
+  getSearchReviewCount,
+  getReviewCount 
+} from '../services/api';
 
 interface ProviderReviewsProps {
   npi: string | number;
+  diagnosis?: string;
+  symptoms?: string;
 }
 
-export default function ProviderReviews({ npi }: ProviderReviewsProps) {
+export default function ProviderReviews({ npi, diagnosis, symptoms }: ProviderReviewsProps) {
   const [reviews, setReviews] = useState<HealthgradesReview[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [matchingCount, setMatchingCount] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [viewMode, setViewMode] = useState<'relevant' | 'all'>('relevant');
 
   const PREVIEW_COUNT = 2; // Show 2 reviews by default
 
+  // Build keywords from diagnosis and symptoms (similar to PubMed search)
+  const keywords = React.useMemo(() => {
+    const terms: string[] = [];
+    if (diagnosis) terms.push(diagnosis.trim());
+    if (symptoms) terms.push(symptoms.trim());
+    return terms.length > 0 ? terms.join(' OR ') : undefined;
+  }, [diagnosis, symptoms]);
+
   useEffect(() => {
     const fetchReviewData = async () => {
-      console.log(`🔍 [ProviderReviews] Fetching reviews for NPI: ${npi} (type: ${typeof npi})`);
-      
-      // Only show full loading on initial load
-      if (reviews.length === 0) {
-        setInitialLoading(true);
-      } else {
-        setLoadingMore(true);
-      }
-      
+      setLoading(true);
       try {
-        const [reviewsData, count] = await Promise.all([
-          getReviewsByNPI(npi, showAll ? 100 : PREVIEW_COUNT),
-          getReviewCount(npi)
-        ]);
-        console.log(`✅ [ProviderReviews] Received ${reviewsData.length} reviews, count: ${count} for NPI: ${npi}`);
-        setReviews(reviewsData);
-        setTotalCount(count);
+        if (viewMode === 'relevant' && keywords) {
+          // Fetch keyword-filtered reviews
+          const [reviewsData, matchCount, allCount] = await Promise.all([
+            searchReviewsByKeywords(npi, keywords, showAll ? 100 : PREVIEW_COUNT),
+            getSearchReviewCount(npi, keywords),
+            getReviewCount(npi)
+          ]);
+          setReviews(reviewsData);
+          setMatchingCount(matchCount);
+          setTotalCount(allCount);
+        } else {
+          // Fetch all reviews (no filtering)
+          const [reviewsData, allCount] = await Promise.all([
+            searchReviewsByKeywords(npi, undefined, showAll ? 100 : PREVIEW_COUNT),
+            getReviewCount(npi)
+          ]);
+          setReviews(reviewsData);
+          setMatchingCount(allCount);
+          setTotalCount(allCount);
+        }
       } catch (error) {
-        console.error('❌ [ProviderReviews] Error loading reviews:', error);
+        console.error('Error loading reviews:', error);
       } finally {
-        setInitialLoading(false);
-        setLoadingMore(false);
+        setLoading(false);
       }
     };
 
     fetchReviewData();
-  }, [npi, showAll]);
+  }, [npi, showAll, viewMode, keywords]);
 
-  if (initialLoading) {
+  if (loading) {
     return (
       <div className="mt-4 p-4 bg-gray-50 rounded-lg">
         <div className="flex items-center gap-2 text-gray-600">
@@ -61,7 +81,10 @@ export default function ProviderReviews({ npi }: ProviderReviewsProps) {
     return null; // Don't show section if no reviews
   }
 
+  // If no keywords, always show all reviews
+  const hasKeywords = keywords !== undefined;
   const displayedReviews = showAll ? reviews : reviews.slice(0, PREVIEW_COUNT);
+  const currentCount = viewMode === 'relevant' ? matchingCount : totalCount;
 
   return (
     <div className="mt-4 border-t pt-4">
@@ -73,6 +96,11 @@ export default function ProviderReviews({ npi }: ProviderReviewsProps) {
           <MessageSquare className="w-5 h-5 text-blue-600" />
           <h3 className="font-semibold text-gray-900">
             Patient Reviews ({totalCount})
+            {hasKeywords && viewMode === 'relevant' && matchingCount < totalCount && (
+              <span className="text-sm font-normal text-blue-600 ml-2">
+                ({matchingCount} relevant)
+              </span>
+            )}
           </h3>
         </div>
         {expanded ? (
@@ -84,53 +112,92 @@ export default function ProviderReviews({ npi }: ProviderReviewsProps) {
 
       {expanded && (
         <div className="mt-3 space-y-3">
-          {loadingMore ? (
-            <div className="flex items-center justify-center gap-2 text-gray-600 py-4">
-              <MessageSquare className="w-5 h-5 animate-pulse" />
-              <span>Loading all reviews...</span>
+          {/* Mode Toggle (only show if we have keywords and relevant reviews exist) */}
+          {hasKeywords && matchingCount > 0 && (
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => {
+                  setViewMode('relevant');
+                  setShowAll(false);
+                }}
+                className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1 ${
+                  viewMode === 'relevant'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                <Search className="w-4 h-4" />
+                Relevant ({matchingCount})
+              </button>
+              <button
+                onClick={() => {
+                  setViewMode('all');
+                  setShowAll(false);
+                }}
+                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                  viewMode === 'all'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                All Reviews ({totalCount})
+              </button>
             </div>
-          ) : (
-            <>
-              {displayedReviews.map((review, index) => (
-                <div
-                  key={review.id}
-                  className="bg-gray-50 rounded-lg p-4 border border-gray-200"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      {review.review_author && (
-                        <p className="text-sm font-medium text-gray-700">
-                          {review.review_author}
-                        </p>
-                      )}
-                      {review.review_date && (
-                        <p className="text-xs text-gray-500">{review.review_date}</p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <p className="text-sm text-gray-700 leading-relaxed line-clamp-4">
-                    {review.review_text}
-                  </p>
-                </div>
-              ))}
+          )}
 
-              {totalCount > PREVIEW_COUNT && (
+          {/* No relevant reviews message */}
+          {hasKeywords && viewMode === 'relevant' && matchingCount === 0 && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <p className="text-sm text-yellow-800">
+                No reviews found matching your condition. 
                 <button
-                  onClick={() => setShowAll(!showAll)}
-                  disabled={loadingMore}
-                  className="w-full py-2 px-4 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setViewMode('all')}
+                  className="ml-1 underline font-medium hover:text-yellow-900"
                 >
-                  {showAll
-                    ? `Show Less`
-                    : `Show All ${totalCount} Reviews`}
+                  View all {totalCount} reviews
                 </button>
-              )}
-            </>
+              </p>
+            </div>
+          )}
+
+          {/* Display reviews */}
+          {displayedReviews.map((review, index) => (
+            <div
+              key={review.id}
+              className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+            >
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex-1">
+                  {review.review_author && (
+                    <p className="text-sm font-medium text-gray-700">
+                      {review.review_author}
+                    </p>
+                  )}
+                  {review.review_date && (
+                    <p className="text-xs text-gray-500">{review.review_date}</p>
+                  )}
+                </div>
+              </div>
+              
+              <p className="text-sm text-gray-700 leading-relaxed">
+                {review.review_text}
+              </p>
+            </div>
+          ))}
+
+          {/* Show More/Less Button */}
+          {currentCount > PREVIEW_COUNT && (
+            <button
+              onClick={() => setShowAll(!showAll)}
+              className="w-full py-2 px-4 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors font-medium"
+            >
+              {showAll
+                ? `Show Less`
+                : `Show ${currentCount > 100 ? 'More' : `All ${currentCount}`} Reviews`}
+            </button>
           )}
         </div>
       )}
     </div>
   );
 }
-

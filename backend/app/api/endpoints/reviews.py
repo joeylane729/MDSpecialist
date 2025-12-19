@@ -75,3 +75,97 @@ async def get_review_count(
     
     return {"npi": npi, "review_count": count or 0}
 
+
+@router.get("/reviews/{npi}/search", response_model=List[ReviewResponse])
+async def search_reviews_by_keywords(
+    npi: int,
+    keywords: Optional[str] = None,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    """
+    Search reviews for a provider by keywords.
+    If keywords are provided, only returns reviews containing those keywords.
+    If no keywords, returns all reviews (same as get_reviews_by_npi).
+    
+    Keywords should be separated by " OR " (e.g., "headache OR migraine").
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"🔍 [REVIEWS SEARCH API] NPI: {npi}, keywords: {keywords}, limit: {limit}")
+    
+    query = db.query(HealthgradesReview).filter(
+        HealthgradesReview.npi == npi
+    )
+    
+    if keywords:
+        # Split by " OR " to get keyword variations (same as PubMed search)
+        keyword_variations = [k.strip() for k in keywords.split(" OR ") if k.strip()]
+        
+        if keyword_variations:
+            # Build ILIKE conditions for each keyword
+            from sqlalchemy import or_
+            
+            conditions = []
+            for keyword in keyword_variations:
+                # Case-insensitive search in review_text
+                conditions.append(
+                    HealthgradesReview.review_text.ilike(f'%{keyword}%')
+                )
+            
+            # Combine with OR (any keyword match counts)
+            query = query.filter(or_(*conditions))
+            logger.info(f"🔍 [REVIEWS SEARCH API] Searching with {len(keyword_variations)} keyword(s): {keyword_variations}")
+    
+    # Order by review_index and limit
+    reviews = query.order_by(
+        HealthgradesReview.review_index
+    ).limit(limit).all()
+    
+    logger.info(f"🔍 [REVIEWS SEARCH API] Found {len(reviews)} matching reviews for NPI {npi}")
+    
+    return reviews
+
+
+@router.get("/reviews/{npi}/search/count")
+async def get_search_review_count(
+    npi: int,
+    keywords: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """Get the count of reviews matching the keywords"""
+    from sqlalchemy import func, or_
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"📊 [REVIEWS SEARCH COUNT API] NPI: {npi}, keywords: {keywords}")
+    
+    query = db.query(func.count(HealthgradesReview.id)).filter(
+        HealthgradesReview.npi == npi
+    )
+    
+    if keywords:
+        keyword_variations = [k.strip() for k in keywords.split(" OR ") if k.strip()]
+        
+        if keyword_variations:
+            from sqlalchemy import or_
+            
+            conditions = []
+            for keyword in keyword_variations:
+                conditions.append(
+                    HealthgradesReview.review_text.ilike(f'%{keyword}%')
+                )
+            
+            query = query.filter(or_(*conditions))
+    
+    count = query.scalar()
+    
+    logger.info(f"📊 [REVIEWS SEARCH COUNT API] Found {count or 0} matching reviews")
+    
+    return {
+        "npi": npi,
+        "keywords": keywords,
+        "matching_review_count": count or 0
+    }
+

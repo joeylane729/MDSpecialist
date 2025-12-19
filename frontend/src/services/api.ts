@@ -629,4 +629,57 @@ export const getReviewCount = async (npi: string | number): Promise<number> => {
   }
 };
 
+export interface SearchReviewCountResponse {
+  npi: number;
+  keywords: string | null;
+  matching_review_count: number;
+}
+
+export const searchReviewsByKeywords = async (
+  npi: string | number,
+  keywords?: string,
+  limit: number = 100
+): Promise<HealthgradesReview[]> => {
+  try {
+    const params: any = { limit };
+    if (keywords) {
+      params.keywords = keywords;
+    }
+    
+    console.log(`🔍 [API] GET /api/v1/reviews/${npi}/search?keywords=${keywords || 'none'}&limit=${limit}`);
+    const response = await api.get<HealthgradesReview[]>(
+      `/api/v1/reviews/${npi}/search`,
+      { params }
+    );
+    console.log(`✅ [API] Found ${response.data.length} reviews for NPI ${npi} with keywords`);
+    return response.data;
+  } catch (error) {
+    console.error(`❌ [API] Error searching reviews for NPI ${npi}:`, error);
+    return [];
+  }
+};
+
+export const getSearchReviewCount = async (
+  npi: string | number,
+  keywords?: string
+): Promise<number> => {
+  try {
+    const params: any = {};
+    if (keywords) {
+      params.keywords = keywords;
+    }
+    
+    console.log(`📊 [API] GET /api/v1/reviews/${npi}/search/count?keywords=${keywords || 'none'}`);
+    const response = await api.get<SearchReviewCountResponse>(
+      `/api/v1/reviews/${npi}/search/count`,
+      { params }
+    );
+    console.log(`✅ [API] Found ${response.data.matching_review_count} matching reviews for NPI ${npi}`);
+    return response.data.matching_review_count;
+  } catch (error) {
+    console.error(`❌ [API] Error fetching search review count for NPI ${npi}:`, error);
+    return 0;
+  }
+};
+
 export default api

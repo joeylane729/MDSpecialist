@@ -492,7 +492,11 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
             )}
 
             {/* Patient Reviews */}
-            <ProviderReviews npi={provider.npi} />
+            <ProviderReviews 
+              npi={provider.npi} 
+              diagnosis={patientDiagnosis}
+              symptoms={patientSymptoms}
+            />
           </div>
 
           {/* Action Buttons */}
