@@ -15,6 +15,7 @@ interface NPIProviderCardProps {
   providerContent?: ProviderContent;
   patientDiagnosis?: string;
   patientSymptoms?: string;
+  searchQuery?: string;  // Pre-generated search query from backend (same as PubMed)
 }
 
 // Red flag types and their descriptions
@@ -48,7 +49,7 @@ const RED_FLAG_DEFINITIONS: Record<RedFlagType, RedFlagInfo> = {
   }
 };
 
-export default function NPIProviderCard({ provider, onClick, isHighlighted = false, score, scoreBreakdown, scoreData, isCertified = false, providerContent, patientDiagnosis, patientSymptoms }: NPIProviderCardProps) {
+export default function NPIProviderCard({ provider, onClick, isHighlighted = false, score, scoreBreakdown, scoreData, isCertified = false, providerContent, patientDiagnosis, patientSymptoms, searchQuery }: NPIProviderCardProps) {
   const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
   const [isQuestionsModalOpen, setIsQuestionsModalOpen] = useState(false);
   const [isPreAuthModalOpen, setIsPreAuthModalOpen] = useState(false);
@@ -494,8 +495,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
             {/* Patient Reviews */}
             <ProviderReviews 
               npi={provider.npi} 
-              diagnosis={patientDiagnosis}
-              symptoms={patientSymptoms}
+              searchQuery={searchQuery}
             />
           </div>
 

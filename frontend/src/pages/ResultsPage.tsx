@@ -2287,6 +2287,7 @@ const ResultsPage: React.FC = () => {
                   })()}
                   patientDiagnosis={searchParams?.diagnosis}
                   patientSymptoms={searchParams?.symptoms}
+                  searchQuery={searchParams?.search_query}
                 />
               </div>
             );
