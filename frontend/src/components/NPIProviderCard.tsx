@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { MapPin, Phone, Star, Award, Calendar, Building, HelpCircle, Clock, FileText, Shield, ExternalLink, BookOpen, Flag, ChevronDown, ChevronUp, TrendingUp, GraduationCap, Briefcase, Video, Activity, Loader2 } from 'lucide-react';
 import { NPIProvider, ProviderContent, VumediContent, PubMedArticle, generatePreAuthLetter } from '../services/api';
 import SchedulingModal from './SchedulingModal';
+import ProviderReviews from './ProviderReviews';
 
 interface NPIProviderCardProps {
   provider: NPIProvider;
@@ -489,6 +490,9 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                 )}
               </div>
             )}
+
+            {/* Patient Reviews */}
+            <ProviderReviews npi={provider.npi} />
           </div>
 
           {/* Action Buttons */}

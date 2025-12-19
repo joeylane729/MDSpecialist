@@ -585,4 +585,44 @@ export const generatePreAuthLetter = async (
   }
 };
 
+// ==================== REVIEWS API ====================
+
+export interface HealthgradesReview {
+  id: number;
+  npi: number;
+  first_name: string | null;
+  last_name: string | null;
+  review_index: number | null;
+  review_text: string | null;
+  review_author: string | null;
+  review_date: string | null;
+}
+
+export interface ReviewCountResponse {
+  npi: number;
+  review_count: number;
+}
+
+export const getReviewsByNPI = async (npi: string | number, limit: number = 100): Promise<HealthgradesReview[]> => {
+  try {
+    const response = await api.get<HealthgradesReview[]>(`/api/v1/reviews/${npi}`, {
+      params: { limit }
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching reviews:', error);
+    return [];
+  }
+};
+
+export const getReviewCount = async (npi: string | number): Promise<number> => {
+  try {
+    const response = await api.get<ReviewCountResponse>(`/api/v1/reviews/${npi}/count`);
+    return response.data.review_count;
+  } catch (error) {
+    console.error('Error fetching review count:', error);
+    return 0;
+  }
+};
+
 export default api
