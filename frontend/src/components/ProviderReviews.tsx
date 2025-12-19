@@ -17,16 +17,18 @@ export default function ProviderReviews({ npi }: ProviderReviewsProps) {
 
   useEffect(() => {
     const fetchReviewData = async () => {
+      console.log(`🔍 [ProviderReviews] Fetching reviews for NPI: ${npi} (type: ${typeof npi})`);
       setLoading(true);
       try {
         const [reviewsData, count] = await Promise.all([
           getReviewsByNPI(npi, showAll ? 100 : PREVIEW_COUNT),
           getReviewCount(npi)
         ]);
+        console.log(`✅ [ProviderReviews] Received ${reviewsData.length} reviews, count: ${count} for NPI: ${npi}`);
         setReviews(reviewsData);
         setTotalCount(count);
       } catch (error) {
-        console.error('Error loading reviews:', error);
+        console.error('❌ [ProviderReviews] Error loading reviews:', error);
       } finally {
         setLoading(false);
       }

@@ -33,13 +33,23 @@ async def get_reviews_by_npi(
     Get all reviews for a specific provider by NPI.
     Returns up to `limit` reviews (default 100).
     """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"📋 [REVIEWS API] Received request for NPI: {npi} (type: {type(npi).__name__}), limit: {limit}")
+    
     reviews = db.query(HealthgradesReview).filter(
         HealthgradesReview.npi == npi
     ).order_by(
         HealthgradesReview.review_index
     ).limit(limit).all()
     
+    logger.info(f"📋 [REVIEWS API] Found {len(reviews)} reviews for NPI {npi}")
+    
     if not reviews:
+        # Log a sample of NPIs in the database for debugging
+        sample_npis = db.query(HealthgradesReview.npi).distinct().limit(5).all()
+        logger.warning(f"⚠️ [REVIEWS API] No reviews found for NPI {npi}. Sample NPIs in DB: {[n[0] for n in sample_npis]}")
         return []
     
     return reviews
@@ -52,10 +62,16 @@ async def get_review_count(
 ):
     """Get the total count of reviews for a provider"""
     from sqlalchemy import func
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"📊 [REVIEWS COUNT API] Received request for NPI: {npi} (type: {type(npi).__name__})")
     
     count = db.query(func.count(HealthgradesReview.id)).filter(
         HealthgradesReview.npi == npi
     ).scalar()
+    
+    logger.info(f"📊 [REVIEWS COUNT API] Found {count or 0} reviews for NPI {npi}")
     
     return {"npi": npi, "review_count": count or 0}
 

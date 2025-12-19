@@ -605,22 +605,26 @@ export interface ReviewCountResponse {
 
 export const getReviewsByNPI = async (npi: string | number, limit: number = 100): Promise<HealthgradesReview[]> => {
   try {
+    console.log(`🌐 [API] GET /api/v1/reviews/${npi}?limit=${limit}`);
     const response = await api.get<HealthgradesReview[]>(`/api/v1/reviews/${npi}`, {
       params: { limit }
     });
+    console.log(`✅ [API] Received ${response.data.length} reviews for NPI ${npi}`);
     return response.data;
   } catch (error) {
-    console.error('Error fetching reviews:', error);
+    console.error(`❌ [API] Error fetching reviews for NPI ${npi}:`, error);
     return [];
   }
 };
 
 export const getReviewCount = async (npi: string | number): Promise<number> => {
   try {
+    console.log(`🌐 [API] GET /api/v1/reviews/${npi}/count`);
     const response = await api.get<ReviewCountResponse>(`/api/v1/reviews/${npi}/count`);
+    console.log(`✅ [API] Review count for NPI ${npi}: ${response.data.review_count}`);
     return response.data.review_count;
   } catch (error) {
-    console.error('Error fetching review count:', error);
+    console.error(`❌ [API] Error fetching review count for NPI ${npi}:`, error);
     return 0;
   }
 };
