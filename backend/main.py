@@ -37,7 +37,7 @@ app.include_router(reviews.router, prefix="/api/v1", tags=["reviews"])
 
 @app.get("/")
 async def root():
-    return {"message": "MDSpecialist API is running"}
+    return {"message": "MDSpecialist API is running", "version": "1.0.1"}
 
 @app.get("/healthz")
 async def health_check():
