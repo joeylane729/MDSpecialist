@@ -25,12 +25,37 @@ export default function ProviderReviews({ npi, diagnosis, symptoms }: ProviderRe
   const PREVIEW_COUNT = 2; // Show 2 reviews by default
 
   // Build keywords from diagnosis and symptoms (similar to PubMed search)
+  // Extract individual significant words for more flexible matching
   const keywords = React.useMemo(() => {
-    const terms: string[] = [];
-    if (diagnosis) terms.push(diagnosis.trim());
-    if (symptoms) terms.push(symptoms.trim());
-    return terms.length > 0 ? terms.join(' OR ') : undefined;
-  }, [diagnosis, symptoms]);
+    const allTerms = new Set<string>();
+    
+    // Add diagnosis terms
+    if (diagnosis) {
+      // Split by spaces and filter out common words
+      const diagnosisWords = diagnosis.toLowerCase().split(/\s+/).filter(word => 
+        word.length > 3 && !['with', 'and', 'the', 'for', 'from'].includes(word)
+      );
+      diagnosisWords.forEach(word => allTerms.add(word));
+    }
+    
+    // Add symptom terms (deduplicated automatically by Set)
+    if (symptoms) {
+      const symptomWords = symptoms.toLowerCase().split(/\s+/).filter(word => 
+        word.length > 3 && !['with', 'and', 'the', 'for', 'from'].includes(word)
+      );
+      symptomWords.forEach(word => allTerms.add(word));
+    }
+    
+    // Convert to array and join with OR
+    const uniqueTerms = Array.from(allTerms);
+    const keywordString = uniqueTerms.length > 0 ? uniqueTerms.join(' OR ') : undefined;
+    
+    if (keywordString) {
+      console.log(`🔑 [ProviderReviews] Generated keywords for NPI ${npi}: ${keywordString}`);
+    }
+    
+    return keywordString;
+  }, [diagnosis, symptoms, npi]);
 
   useEffect(() => {
     const fetchReviewData = async () => {
@@ -38,26 +63,34 @@ export default function ProviderReviews({ npi, diagnosis, symptoms }: ProviderRe
       try {
         if (viewMode === 'relevant' && keywords) {
           // Fetch keyword-filtered reviews
+          console.log(`🔍 [ProviderReviews] Fetching relevant reviews for NPI ${npi} with keywords: ${keywords}`);
           const [reviewsData, matchCount, allCount] = await Promise.all([
             searchReviewsByKeywords(npi, keywords, showAll ? 100 : PREVIEW_COUNT),
             getSearchReviewCount(npi, keywords),
             getReviewCount(npi)
           ]);
+          console.log(`✅ [ProviderReviews] Found ${matchCount}/${allCount} relevant reviews for NPI ${npi}`);
           setReviews(reviewsData);
           setMatchingCount(matchCount);
           setTotalCount(allCount);
         } else {
           // Fetch all reviews (no filtering)
+          console.log(`📋 [ProviderReviews] Fetching all reviews for NPI ${npi}`);
           const [reviewsData, allCount] = await Promise.all([
             searchReviewsByKeywords(npi, undefined, showAll ? 100 : PREVIEW_COUNT),
             getReviewCount(npi)
           ]);
+          console.log(`✅ [ProviderReviews] Found ${allCount} total reviews for NPI ${npi}`);
           setReviews(reviewsData);
           setMatchingCount(allCount);
           setTotalCount(allCount);
         }
       } catch (error) {
-        console.error('Error loading reviews:', error);
+        console.error(`❌ [ProviderReviews] Error loading reviews for NPI ${npi}:`, error);
+        // Set empty state on error to avoid infinite loading
+        setReviews([]);
+        setMatchingCount(0);
+        setTotalCount(0);
       } finally {
         setLoading(false);
       }
