@@ -275,7 +275,9 @@ Write a professional email (400-600 words) with:
             # Append full list of publications with URLs to the email
             if publications and len(publications) > 0:
                 logger.info(f"📚 [PreAuth] Appending {len(publications)} publications to email")
-                publications_appendix = "\n\n---\n\n**Research Articles by Dr. " + provider_name.split()[0] + ":**\n\n"
+                # Get last name (last word in the name)
+                last_name = provider_name.split()[-1] if provider_name.split() else provider_name
+                publications_appendix = "\n\n---\n\n**Research Articles by Dr. " + last_name + ":**\n\n"
                 
                 for i, pub in enumerate(publications, 1):
                     if isinstance(pub, dict):
