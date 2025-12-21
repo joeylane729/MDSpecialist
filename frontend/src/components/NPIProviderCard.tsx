@@ -496,6 +496,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
             <ProviderReviews 
               npi={provider.npi} 
               searchQuery={searchQuery}
+              reviews={providerContent?.reviews || []}
             />
           </div>
 

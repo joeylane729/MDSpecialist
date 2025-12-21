@@ -396,6 +396,7 @@ export interface PubMedArticle {
 export interface ProviderContent {
   vumedi_content: VumediContent[];
   pubmed_articles: PubMedArticle[];
+  reviews?: HealthgradesReview[];  // Batch-fetched reviews from backend
 }
 
 export interface ProviderScore {

@@ -959,6 +959,24 @@ class LangChainRankingService:
                     if 'score' not in provider_scores[npi]:
                         provider_scores[npi]['score'] = 0.0
             
+            # Batch fetch reviews for all ranked providers (same as PubMed)
+            logger.info(f"📦 Batch fetching reviews for {len(ranked_npis)} providers")
+            reviews_by_npi = self._batch_fetch_reviews(ranked_npis, patient_profile)
+            
+            # Add reviews to provider_links
+            for npi in ranked_npis:
+                if npi in provider_links:
+                    provider_links[npi]['reviews'] = reviews_by_npi.get(npi, [])
+                else:
+                    # Provider has no PubMed/Vumedi but might have reviews
+                    provider_links[npi] = {
+                        'vumedi_content': [],
+                        'pubmed_articles': [],
+                        'reviews': reviews_by_npi.get(npi, [])
+                    }
+            
+            logger.info(f"✅ Added reviews to provider_links for {len(reviews_by_npi)} providers")
+            
             return {
                 'ranking': ranked_npis,
                 'provider_links': provider_links,  # NPI-keyed
@@ -1573,3 +1591,64 @@ class LangChainRankingService:
         except Exception as e:
             logger.error(f"❌ Error in treatment-specific ranking: {str(e)}")
             raise
+    
+    def _batch_fetch_reviews(self, npis: List[str], patient_profile: str) -> Dict[str, List[Dict]]:
+        """
+        Batch fetch Healthgrades reviews for multiple NPIs in a single query.
+        Similar to how PubMed articles are fetched.
+        
+        Args:
+            npis: List of NPI numbers
+            patient_profile: Patient symptoms/diagnosis for keyword filtering
+            
+        Returns:
+            Dictionary mapping NPI to list of reviews
+        """
+        from ..models.healthgrades_review import HealthgradesReview
+        from sqlalchemy import or_
+        
+        if not npis or not self.db:
+            return {}
+        
+        try:
+            logger.info(f"📦 [Reviews] Batch fetching reviews for {len(npis)} NPIs")
+            
+            # Extract keywords from patient_profile for filtering (optional)
+            # For now, fetch all reviews without keyword filtering
+            # TODO: Add keyword extraction if needed
+            
+            # Single query for all NPIs
+            reviews_query = self.db.query(HealthgradesReview).filter(
+                HealthgradesReview.npi.in_(npis)
+            ).order_by(
+                HealthgradesReview.npi,
+                HealthgradesReview.review_index
+            ).limit(100 * len(npis))  # Limit per NPI
+            
+            all_reviews = reviews_query.all()
+            
+            logger.info(f"📦 [Reviews] Found {len(all_reviews)} total reviews across {len(npis)} NPIs")
+            
+            # Group by NPI
+            reviews_by_npi = {}
+            for review in all_reviews:
+                npi_str = str(review.npi)
+                if npi_str not in reviews_by_npi:
+                    reviews_by_npi[npi_str] = []
+                
+                # Limit to 100 reviews per NPI
+                if len(reviews_by_npi[npi_str]) < 100:
+                    reviews_by_npi[npi_str].append({
+                        'id': review.id,
+                        'review_text': review.review_text,
+                        'review_author': review.review_author,
+                        'review_date': review.review_date,
+                        'review_index': review.review_index
+                    })
+            
+            logger.info(f"✅ [Reviews] Grouped reviews for {len(reviews_by_npi)} NPIs")
+            return reviews_by_npi
+            
+        except Exception as e:
+            logger.error(f"❌ [Reviews] Error batch fetching reviews: {e}")
+            return {}
