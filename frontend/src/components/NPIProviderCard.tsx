@@ -1377,9 +1377,6 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
         const percentageDisplay = percentageCalc.toFixed(1);
         const weightedPointsCalc = (percentageCalc / 100) * (reviews?.weight ?? 5);
         
-        // Get search query from providerContent if available
-        const searchQuery = providerContent?.reviews?.[0] ? 'N/A' : 'N/A'; // We'll need to pass this differently
-        
         return (
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
