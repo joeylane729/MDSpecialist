@@ -325,12 +325,20 @@ class LangChainRankingService:
             return {}
         
         # Find max values for normalization (including clinical volume which is now percentage-based)
+        theodore_npi = '1811916455'
+        
+        # Log all reviews_raw values for debugging
+        all_reviews_raw = [scores.get('reviews_raw', 0) for scores in raw_scores.values()]
+        logger.info(f"🔍 [Theodore Debug] _calculate_weighted_score: All reviews_raw values: {sorted(all_reviews_raw, reverse=True)[:10]}")
+        
         max_clinical_volume = max((scores.get('clinical_volume_raw', 0) for scores in raw_scores.values()), default=1.0)
         max_pubmed = max((scores.get('pubmed_raw', 0) for scores in raw_scores.values()), default=1.0)
         max_vumedi = max((scores.get('vumedi_raw', 0) for scores in raw_scores.values()), default=1.0)
         max_training = max((scores.get('training_raw', 0) for scores in raw_scores.values()), default=1.0)
         max_experience = max((scores.get('experience_raw', 0) for scores in raw_scores.values()), default=1.0)
         max_reviews = max((scores.get('reviews_raw', 0) for scores in raw_scores.values()), default=1.0)
+        
+        logger.info(f"🔍 [Theodore Debug] _calculate_weighted_score: max_reviews = {max_reviews}")
         
         # Avoid division by zero
         max_clinical_volume = max(max_clinical_volume, 1.0)
@@ -361,6 +369,14 @@ class LangChainRankingService:
             experience_pct = min(scores.get('experience_raw', 0) / max_experience, 1.0)
             reviews_pct = min(scores.get('reviews_raw', 0) / max_reviews, 1.0)
             
+            # Detailed logging for Theodore Schwartz
+            if str(npi) == theodore_npi:
+                logger.info(f"🔍 [Theodore Debug] _calculate_weighted_score processing NPI {npi}:")
+                logger.info(f"🔍 [Theodore Debug]   - scores dict: {scores}")
+                logger.info(f"🔍 [Theodore Debug]   - reviews_raw from scores: {scores.get('reviews_raw', 'NOT FOUND')}")
+                logger.info(f"🔍 [Theodore Debug]   - max_reviews: {max_reviews}")
+                logger.info(f"🔍 [Theodore Debug]   - reviews_pct calculation: {scores.get('reviews_raw', 0)} / {max_reviews} = {reviews_pct}")
+            
             # Apply weights and calculate final score (0-100)
             clinical_volume_weighted = clinical_volume_pct * 38.0  # 38% (reduced from 40%)
             pubmed_weighted = pubmed_pct * 38.0  # 38% (reduced from 40%)
@@ -369,7 +385,15 @@ class LangChainRankingService:
             vumedi_weighted = vumedi_pct * 3.0  # 3% (reduced from 4%)
             reviews_weighted = reviews_pct * 5.0  # 5% (NEW)
             
+            # Detailed logging for Theodore Schwartz after calculation
+            if str(npi) == theodore_npi:
+                logger.info(f"🔍 [Theodore Debug]   - reviews_weighted: {reviews_weighted} (reviews_pct={reviews_pct} * 5.0)")
+            
             final_score = clinical_volume_weighted + pubmed_weighted + training_weighted + experience_weighted + vumedi_weighted + reviews_weighted
+            
+            # Detailed logging for Theodore Schwartz final score
+            if str(npi) == theodore_npi:
+                logger.info(f"🔍 [Theodore Debug]   - final_score: {final_score}")
             
             weighted_scores[npi] = {
                 'clinical_volume_pct': clinical_volume_pct * 100,
@@ -991,6 +1015,8 @@ class LangChainRankingService:
             
             # Extract relevant review counts for scoring and add reviews to provider_links
             reviews_counts = {}  # NPI -> relevant_count
+            theodore_npi = '1811916455'
+            
             for npi in ranked_npis:
                 npi_str = str(npi)  # Normalize to string for lookup
                 review_data = reviews_data_by_npi.get(npi_str, {})
@@ -998,9 +1024,15 @@ class LangChainRankingService:
                 relevant_count = review_data.get('relevant_count', 0)
                 reviews_counts[npi] = relevant_count
                 
-                # Debug logging for Theodore Schwartz
-                if npi_str == '1811916455' or npi == '1811916455':
-                    logger.info(f"🔍 [Reviews Debug] NPI {npi_str}: found {relevant_count} relevant reviews out of {len(reviews_list)} total")
+                # Detailed logging for Theodore Schwartz
+                if npi_str == theodore_npi or npi == theodore_npi:
+                    logger.info(f"🔍 [Theodore Debug] Extracting reviews_counts:")
+                    logger.info(f"🔍 [Theodore Debug]   - npi (original): {npi}, npi_str: {npi_str}")
+                    logger.info(f"🔍 [Theodore Debug]   - review_data from reviews_data_by_npi: {review_data}")
+                    logger.info(f"🔍 [Theodore Debug]   - relevant_count extracted: {relevant_count}")
+                    logger.info(f"🔍 [Theodore Debug]   - reviews_list length: {len(reviews_list)}")
+                    logger.info(f"🔍 [Theodore Debug]   - reviews_counts[{npi}] = {relevant_count}")
+                    logger.info(f"🔍 [Theodore Debug]   - reviews_counts keys: {list(reviews_counts.keys())[:5]}...")
                 
                 if npi in provider_links:
                     provider_links[npi]['reviews'] = reviews_list
@@ -1015,15 +1047,30 @@ class LangChainRankingService:
             logger.info(f"✅ Added reviews to provider_links for {len(reviews_data_by_npi)} providers")
             
             # Add reviews_raw to raw_component_scores for all providers
+            theodore_npi = '1811916455'
+            
             for npi in ranked_npis:
                 npi_str = str(npi)  # Normalize to string
                 reviews_raw_value = reviews_counts.get(npi, 0)
                 
+                # Detailed logging for Theodore Schwartz BEFORE adding
+                if npi_str == theodore_npi or npi == theodore_npi:
+                    logger.info(f"🔍 [Theodore Debug] Adding reviews_raw to raw_component_scores:")
+                    logger.info(f"🔍 [Theodore Debug]   - npi: {npi}, npi_str: {npi_str}")
+                    logger.info(f"🔍 [Theodore Debug]   - reviews_counts.get({npi}, 0) = {reviews_raw_value}")
+                    logger.info(f"🔍 [Theodore Debug]   - npi in raw_component_scores: {npi in raw_component_scores}")
+                    logger.info(f"🔍 [Theodore Debug]   - npi_str in raw_component_scores: {npi_str in raw_component_scores}")
+                    logger.info(f"🔍 [Theodore Debug]   - raw_component_scores keys (first 5): {list(raw_component_scores.keys())[:5]}")
+                
                 if npi in raw_component_scores:
                     raw_component_scores[npi]['reviews_raw'] = reviews_raw_value
+                    if npi_str == theodore_npi or npi == theodore_npi:
+                        logger.info(f"🔍 [Theodore Debug]   - ✅ Set raw_component_scores[{npi}]['reviews_raw'] = {reviews_raw_value}")
                 elif npi_str in raw_component_scores:
                     # Try string version
                     raw_component_scores[npi_str]['reviews_raw'] = reviews_raw_value
+                    if npi_str == theodore_npi or npi == theodore_npi:
+                        logger.info(f"🔍 [Theodore Debug]   - ✅ Set raw_component_scores[{npi_str}]['reviews_raw'] = {reviews_raw_value}")
                 else:
                     # Provider not in raw_component_scores yet (unmatched provider)
                     raw_component_scores[npi] = {
@@ -1034,25 +1081,43 @@ class LangChainRankingService:
                         'clinical_volume_raw': 0,
                         'reviews_raw': reviews_raw_value
                     }
-                
-                # Debug logging for Theodore Schwartz
-                if npi_str == '1811916455' or npi == '1811916455':
-                    logger.info(f"🔍 [Reviews Debug] Added reviews_raw={reviews_raw_value} to raw_component_scores for NPI {npi}")
+                    if npi_str == theodore_npi or npi == theodore_npi:
+                        logger.info(f"🔍 [Theodore Debug]   - ✅ Created new entry with reviews_raw = {reviews_raw_value}")
             
             # Recalculate weighted scores now that reviews are included
             if raw_component_scores:
                 logger.info("🔄 Recalculating weighted scores with reviews data")
-                # Debug: Check reviews_raw for Theodore Schwartz
+                theodore_npi = '1811916455'
+                
+                # Debug: Check reviews_raw for Theodore Schwartz BEFORE recalculation
                 for npi_key in raw_component_scores:
-                    if str(npi_key) == '1811916455':
-                        logger.info(f"🔍 [Reviews Debug] raw_component_scores[{npi_key}]['reviews_raw'] = {raw_component_scores[npi_key].get('reviews_raw', 'NOT FOUND')}")
+                    if str(npi_key) == theodore_npi:
+                        logger.info(f"🔍 [Theodore Debug] BEFORE _calculate_weighted_score:")
+                        logger.info(f"🔍 [Theodore Debug]   - raw_component_scores[{npi_key}] = {raw_component_scores[npi_key]}")
+                        logger.info(f"🔍 [Theodore Debug]   - reviews_raw = {raw_component_scores[npi_key].get('reviews_raw', 'NOT FOUND')}")
                 
                 updated_weighted_scores = self._calculate_weighted_score(raw_component_scores)
+                
+                # Debug: Check weighted scores for Theodore Schwartz AFTER recalculation
+                for npi, weighted_data in updated_weighted_scores.items():
+                    if str(npi) == theodore_npi:
+                        logger.info(f"🔍 [Theodore Debug] AFTER _calculate_weighted_score:")
+                        logger.info(f"🔍 [Theodore Debug]   - reviews_raw: {raw_component_scores.get(str(npi), {}).get('reviews_raw', 'NOT FOUND')}")
+                        logger.info(f"🔍 [Theodore Debug]   - reviews_pct: {weighted_data.get('reviews_pct', 0)}")
+                        logger.info(f"🔍 [Theodore Debug]   - reviews_weighted: {weighted_data.get('reviews_weighted', 0)}")
+                        logger.info(f"🔍 [Theodore Debug]   - breakdown_details.reviews: {weighted_data.get('breakdown_details', {}).get('reviews', 'NOT FOUND')}")
+                
                 # Update provider_scores with new weighted values including reviews
                 for npi, weighted_data in updated_weighted_scores.items():
-                    # Debug logging for Theodore Schwartz
-                    if str(npi) == '1811916455':
-                        logger.info(f"🔍 [Reviews Debug] Updated weighted scores for NPI {npi}: reviews_pct={weighted_data.get('reviews_pct', 0)}, reviews_weighted={weighted_data.get('reviews_weighted', 0)}")
+                    # Detailed logging for Theodore Schwartz
+                    if str(npi) == theodore_npi:
+                        logger.info(f"🔍 [Theodore Debug] Updating provider_scores[{npi}] with weighted breakdown:")
+                        logger.info(f"🔍 [Theodore Debug]   - npi in provider_scores: {npi in provider_scores}")
+                        logger.info(f"🔍 [Theodore Debug]   - weighted_data keys: {list(weighted_data.keys())}")
+                        logger.info(f"🔍 [Theodore Debug]   - reviews_pct from weighted_data: {weighted_data.get('reviews_pct', 'NOT FOUND')}")
+                        logger.info(f"🔍 [Theodore Debug]   - reviews_weighted from weighted_data: {weighted_data.get('reviews_weighted', 'NOT FOUND')}")
+                        logger.info(f"🔍 [Theodore Debug]   - breakdown_details.reviews: {weighted_data.get('breakdown_details', {}).get('reviews', 'NOT FOUND')}")
+                    
                     if npi in provider_scores:
                         provider_scores[npi]['score'] = weighted_data['final_score']
                         # Update weighted breakdown with reviews
@@ -1065,6 +1130,12 @@ class LangChainRankingService:
                             # Update breakdown_details with reviews
                             if 'breakdown_details' in provider_scores[npi]['weighted_breakdown']:
                                 provider_scores[npi]['weighted_breakdown']['breakdown_details']['reviews'] = weighted_data.get('breakdown_details', {}).get('reviews', {})
+                            
+                            # Detailed logging for Theodore Schwartz after update
+                            if str(npi) == theodore_npi:
+                                logger.info(f"🔍 [Theodore Debug]   - ✅ Updated provider_scores[{npi}]['weighted_breakdown']['reviews']")
+                                logger.info(f"🔍 [Theodore Debug]   - Final value: {provider_scores[npi]['weighted_breakdown'].get('reviews', 'NOT FOUND')}")
+                                logger.info(f"🔍 [Theodore Debug]   - breakdown_details.reviews: {provider_scores[npi]['weighted_breakdown'].get('breakdown_details', {}).get('reviews', 'NOT FOUND')}")
                         else:
                             # Create weighted_breakdown if it doesn't exist
                             provider_scores[npi]['weighted_breakdown'] = {
@@ -1776,6 +1847,10 @@ class LangChainRankingService:
             
             # Group by NPI and count relevant reviews
             reviews_by_npi = {}
+            theodore_npi = '1811916455'
+            theodore_relevant_count = 0
+            theodore_total_count = 0
+            
             for review in all_reviews:
                 npi_str = str(review.npi)
                 if npi_str not in reviews_by_npi:
@@ -1799,14 +1874,35 @@ class LangChainRankingService:
                     reviews_by_npi[npi_str]['total_count'] += 1
                     
                     # Check if review contains any keyword
+                    is_relevant = False
                     if keyword_list and review.review_text:
                         review_text_lower = review.review_text.lower()
                         if any(keyword in review_text_lower for keyword in keyword_list):
+                            is_relevant = True
                             reviews_by_npi[npi_str]['relevant_count'] += 1
+                    
+                    # Detailed logging for Theodore Schwartz
+                    if npi_str == theodore_npi:
+                        theodore_total_count += 1
+                        if is_relevant:
+                            theodore_relevant_count += 1
+                            matched_keywords = [k for k in keyword_list if k in review.review_text.lower()]
+                            logger.info(f"🔍 [Theodore Debug] Review #{review.review_index} is RELEVANT. Matched keywords: {matched_keywords[:3]}")
+                            logger.info(f"🔍 [Theodore Debug] Review text preview: {review.review_text[:150]}...")
             
             # Log summary
             total_relevant = sum(data['relevant_count'] for data in reviews_by_npi.values())
             logger.info(f"✅ [Reviews] Grouped reviews for {len(reviews_by_npi)} NPIs, {total_relevant} relevant reviews found")
+            
+            # Detailed logging for Theodore Schwartz
+            if theodore_npi in reviews_by_npi:
+                theodore_data = reviews_by_npi[theodore_npi]
+                logger.info(f"🔍 [Theodore Debug] _batch_fetch_reviews RESULT:")
+                logger.info(f"🔍 [Theodore Debug]   - relevant_count: {theodore_data['relevant_count']}")
+                logger.info(f"🔍 [Theodore Debug]   - total_count: {theodore_data['total_count']}")
+                logger.info(f"🔍 [Theodore Debug]   - reviews list length: {len(theodore_data['reviews'])}")
+                logger.info(f"🔍 [Theodore Debug]   - Manual count check: {theodore_relevant_count} relevant out of {theodore_total_count} processed")
+            
             return reviews_by_npi
             
         except Exception as e:
