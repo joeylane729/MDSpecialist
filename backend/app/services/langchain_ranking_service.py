@@ -308,11 +308,12 @@ class LangChainRankingService:
         Calculate weighted scores from raw component scores.
         
         Weights:
-        - Clinical Volume: 40%
-        - PubMed: 40%
+        - Clinical Volume: 38%
+        - PubMed: 38%
         - Training: 10% (Med school + Residency + Certification)
         - Experience: 6%
-        - Vumedi: 4%
+        - Vumedi: 3%
+        - Reviews: 5%
         
         Args:
             raw_scores: Dict mapping NPI to dict of raw component scores
@@ -329,6 +330,7 @@ class LangChainRankingService:
         max_vumedi = max((scores.get('vumedi_raw', 0) for scores in raw_scores.values()), default=1.0)
         max_training = max((scores.get('training_raw', 0) for scores in raw_scores.values()), default=1.0)
         max_experience = max((scores.get('experience_raw', 0) for scores in raw_scores.values()), default=1.0)
+        max_reviews = max((scores.get('reviews_raw', 0) for scores in raw_scores.values()), default=1.0)
         
         # Avoid division by zero
         max_clinical_volume = max(max_clinical_volume, 1.0)
@@ -336,6 +338,7 @@ class LangChainRankingService:
         max_vumedi = max(max_vumedi, 1.0)
         max_training = max(max_training, 1.0)
         max_experience = max(max_experience, 1.0)
+        max_reviews = max(max_reviews, 1.0)
         
         # Store max values for frontend display
         max_values = {
@@ -343,7 +346,8 @@ class LangChainRankingService:
             'pubmed': max_pubmed,
             'vumedi': max_vumedi,
             'training': max_training,
-            'experience': max_experience
+            'experience': max_experience,
+            'reviews': max_reviews
         }
         
         weighted_scores = {}
@@ -355,15 +359,17 @@ class LangChainRankingService:
             vumedi_pct = min(scores.get('vumedi_raw', 0) / max_vumedi, 1.0)
             training_pct = min(scores.get('training_raw', 0) / max_training, 1.0)
             experience_pct = min(scores.get('experience_raw', 0) / max_experience, 1.0)
+            reviews_pct = min(scores.get('reviews_raw', 0) / max_reviews, 1.0)
             
             # Apply weights and calculate final score (0-100)
-            clinical_volume_weighted = clinical_volume_pct * 40.0  # 40%
-            pubmed_weighted = pubmed_pct * 40.0  # 40%
+            clinical_volume_weighted = clinical_volume_pct * 38.0  # 38% (reduced from 40%)
+            pubmed_weighted = pubmed_pct * 38.0  # 38% (reduced from 40%)
             training_weighted = training_pct * 10.0  # 10%
             experience_weighted = experience_pct * 6.0  # 6%
-            vumedi_weighted = vumedi_pct * 4.0  # 4%
+            vumedi_weighted = vumedi_pct * 3.0  # 3% (reduced from 4%)
+            reviews_weighted = reviews_pct * 5.0  # 5% (NEW)
             
-            final_score = clinical_volume_weighted + pubmed_weighted + training_weighted + experience_weighted + vumedi_weighted
+            final_score = clinical_volume_weighted + pubmed_weighted + training_weighted + experience_weighted + vumedi_weighted + reviews_weighted
             
             weighted_scores[npi] = {
                 'clinical_volume_pct': clinical_volume_pct * 100,
@@ -371,18 +377,21 @@ class LangChainRankingService:
                 'vumedi_pct': vumedi_pct * 100,
                 'training_pct': training_pct * 100,
                 'experience_pct': experience_pct * 100,
+                'reviews_pct': reviews_pct * 100,
                 'clinical_volume_weighted': clinical_volume_weighted,
                 'pubmed_weighted': pubmed_weighted,
                 'vumedi_weighted': vumedi_weighted,
                 'training_weighted': training_weighted,
                 'experience_weighted': experience_weighted,
+                'reviews_weighted': reviews_weighted,
                 'final_score': final_score,
                 'breakdown_details': {  # Store details for frontend display
-                    'clinical_volume': {'raw': scores.get('clinical_volume_raw', 0), 'max': max_values['clinical_volume'], 'percentage': clinical_volume_pct * 100, 'weighted_points': clinical_volume_weighted, 'weight': 40},
-                    'pubmed': {'raw': scores.get('pubmed_raw', 0), 'max': max_values['pubmed'], 'percentage': pubmed_pct * 100, 'weighted_points': pubmed_weighted, 'weight': 40},
+                    'clinical_volume': {'raw': scores.get('clinical_volume_raw', 0), 'max': max_values['clinical_volume'], 'percentage': clinical_volume_pct * 100, 'weighted_points': clinical_volume_weighted, 'weight': 38},
+                    'pubmed': {'raw': scores.get('pubmed_raw', 0), 'max': max_values['pubmed'], 'percentage': pubmed_pct * 100, 'weighted_points': pubmed_weighted, 'weight': 38},
                     'training': {'raw': scores.get('training_raw', 0), 'max': max_values['training'], 'percentage': training_pct * 100, 'weighted_points': training_weighted, 'weight': 10},
                     'experience': {'raw': scores.get('experience_raw', 0), 'max': max_values['experience'], 'percentage': experience_pct * 100, 'weighted_points': experience_weighted, 'weight': 6},
-                    'vumedi': {'raw': scores.get('vumedi_raw', 0), 'max': max_values['vumedi'], 'percentage': vumedi_pct * 100, 'weighted_points': vumedi_weighted, 'weight': 4},
+                    'vumedi': {'raw': scores.get('vumedi_raw', 0), 'max': max_values['vumedi'], 'percentage': vumedi_pct * 100, 'weighted_points': vumedi_weighted, 'weight': 3},
+                    'reviews': {'raw': scores.get('reviews_raw', 0), 'max': max_values['reviews'], 'percentage': reviews_pct * 100, 'weighted_points': reviews_weighted, 'weight': 5},
                 }
             }
         
@@ -815,12 +824,12 @@ class LangChainRankingService:
                             'clinical_volume': {
                                 'percentage': weighted_data['clinical_volume_pct'],
                                 'weighted_points': weighted_data['clinical_volume_weighted'],
-                                'weight': 40.0
+                                'weight': 38.0
                             },
                             'pubmed': {
                                 'percentage': weighted_data['pubmed_pct'],
                                 'weighted_points': weighted_data['pubmed_weighted'],
-                                'weight': 40.0
+                                'weight': 38.0
                             },
                             'training': {
                                 'percentage': weighted_data['training_pct'],
@@ -835,7 +844,12 @@ class LangChainRankingService:
                             'vumedi': {
                                 'percentage': weighted_data['vumedi_pct'],
                                 'weighted_points': weighted_data['vumedi_weighted'],
-                                'weight': 4.0
+                                'weight': 3.0
+                            },
+                            'reviews': {
+                                'percentage': weighted_data.get('reviews_pct', 0),
+                                'weighted_points': weighted_data.get('reviews_weighted', 0),
+                                'weight': 5.0
                             },
                             'breakdown_details': weighted_data.get('breakdown_details', {})
                         }
@@ -928,13 +942,13 @@ class LangChainRankingService:
                             'raw': 0.0,
                             'percentage': 0.0,
                             'weighted_points': 0.0,
-                            'weight': 40.0
+                            'weight': 38.0
                         },
                         'pubmed': {
                             'raw': 0.0,
                             'percentage': 0.0,
                             'weighted_points': 0.0,
-                            'weight': 40.0
+                            'weight': 38.0
                         },
                         'training': {
                             'raw': 0.0,
@@ -952,7 +966,13 @@ class LangChainRankingService:
                             'raw': 0.0,
                             'percentage': 0.0,
                             'weighted_points': 0.0,
-                            'weight': 4.0
+                            'weight': 3.0
+                        },
+                        'reviews': {
+                            'raw': 0.0,
+                            'percentage': 0.0,
+                            'weighted_points': 0.0,
+                            'weight': 5.0
                         }
                     }
                     # Also ensure score is set (might be 0 for unmatched providers)
@@ -961,21 +981,42 @@ class LangChainRankingService:
             
             # Batch fetch reviews for all ranked providers (same as PubMed)
             logger.info(f"📦 Batch fetching reviews for {len(ranked_npis)} providers")
-            reviews_by_npi = self._batch_fetch_reviews(ranked_npis, patient_profile)
+            reviews_data_by_npi = self._batch_fetch_reviews(ranked_npis, patient_profile)
             
-            # Add reviews to provider_links
+            # Extract relevant review counts for scoring and add reviews to provider_links
+            reviews_counts = {}  # NPI -> relevant_count
             for npi in ranked_npis:
+                review_data = reviews_data_by_npi.get(npi, {})
+                reviews_list = review_data.get('reviews', [])
+                relevant_count = review_data.get('relevant_count', 0)
+                reviews_counts[npi] = relevant_count
+                
                 if npi in provider_links:
-                    provider_links[npi]['reviews'] = reviews_by_npi.get(npi, [])
+                    provider_links[npi]['reviews'] = reviews_list
                 else:
                     # Provider has no PubMed/Vumedi but might have reviews
                     provider_links[npi] = {
                         'vumedi_content': [],
                         'pubmed_articles': [],
-                        'reviews': reviews_by_npi.get(npi, [])
+                        'reviews': reviews_list
                     }
             
-            logger.info(f"✅ Added reviews to provider_links for {len(reviews_by_npi)} providers")
+            logger.info(f"✅ Added reviews to provider_links for {len(reviews_data_by_npi)} providers")
+            
+            # Add reviews_raw to raw_component_scores for all providers
+            for npi in ranked_npis:
+                if npi in raw_component_scores:
+                    raw_component_scores[npi]['reviews_raw'] = reviews_counts.get(npi, 0)
+                else:
+                    # Provider not in raw_component_scores yet (unmatched provider)
+                    raw_component_scores[npi] = {
+                        'vumedi_raw': 0,
+                        'pubmed_raw': 0,
+                        'training_raw': 0,
+                        'experience_raw': 0,
+                        'clinical_volume_raw': 0,
+                        'reviews_raw': reviews_counts.get(npi, 0)
+                    }
             
             return {
                 'ranking': ranked_npis,
@@ -1390,7 +1431,8 @@ class LangChainRankingService:
                             'pubmed_raw': 0,
                             'training_raw': med_school_score + residency_score + certification_points,
                             'experience_raw': experience_points,
-                            'clinical_volume_raw': clinical_volume_raw  # Tot_Srvcs from CMS (will be normalized to percentage)
+                            'clinical_volume_raw': clinical_volume_raw,  # Tot_Srvcs from CMS (will be normalized to percentage)
+                            'reviews_raw': 0  # Will be updated if reviews are fetched
                         }
                         
                         # Note: clinical_volume_points removed - clinical volume now uses percentage-based scoring
@@ -1435,7 +1477,8 @@ class LangChainRankingService:
                                 'pubmed_raw': details.get('pubmed', {}).get('raw', 0),
                                 'training_raw': details.get('training', {}).get('raw', 0),
                                 'experience_raw': details.get('experience', {}).get('raw', 0),
-                                'clinical_volume_raw': details.get('clinical_volume', {}).get('raw', 0)
+                                'clinical_volume_raw': details.get('clinical_volume', {}).get('raw', 0),
+                                'reviews_raw': details.get('reviews', {}).get('raw', 0)
                             }
                     # Combine matched and unmatched raw scores for normalization
                     all_raw_scores = {**matched_raw_scores, **unmatched_raw_scores}
@@ -1450,12 +1493,12 @@ class LangChainRankingService:
                                 'clinical_volume': {
                                     'percentage': weighted_data['clinical_volume_pct'],
                                     'weighted_points': weighted_data['clinical_volume_weighted'],
-                                    'weight': 40.0
+                                    'weight': 38.0
                                 },
                                 'pubmed': {
                                     'percentage': weighted_data['pubmed_pct'],
                                     'weighted_points': weighted_data['pubmed_weighted'],
-                                    'weight': 40.0
+                                    'weight': 38.0
                                 },
                                 'training': {
                                     'percentage': weighted_data['training_pct'],
@@ -1470,7 +1513,12 @@ class LangChainRankingService:
                                 'vumedi': {
                                     'percentage': weighted_data['vumedi_pct'],
                                     'weighted_points': weighted_data['vumedi_weighted'],
-                                    'weight': 4.0
+                                    'weight': 3.0
+                                },
+                                'reviews': {
+                                    'percentage': weighted_data.get('reviews_pct', 0),
+                                    'weighted_points': weighted_data.get('reviews_weighted', 0),
+                                    'weight': 5.0
                                 },
                                 'breakdown_details': weighted_data.get('breakdown_details', {})
                             }
@@ -1482,12 +1530,12 @@ class LangChainRankingService:
                                 'clinical_volume': {
                                     'percentage': weighted_data['clinical_volume_pct'],
                                     'weighted_points': weighted_data['clinical_volume_weighted'],
-                                    'weight': 40.0
+                                    'weight': 38.0
                                 },
                                 'pubmed': {
                                     'percentage': weighted_data['pubmed_pct'],
                                     'weighted_points': weighted_data['pubmed_weighted'],
-                                    'weight': 40.0
+                                    'weight': 38.0
                                 },
                                 'training': {
                                     'percentage': weighted_data['training_pct'],
@@ -1502,7 +1550,12 @@ class LangChainRankingService:
                                 'vumedi': {
                                     'percentage': weighted_data['vumedi_pct'],
                                     'weighted_points': weighted_data['vumedi_weighted'],
-                                    'weight': 4.0
+                                    'weight': 3.0
+                                },
+                                'reviews': {
+                                    'percentage': weighted_data.get('reviews_pct', 0),
+                                    'weighted_points': weighted_data.get('reviews_weighted', 0),
+                                    'weight': 5.0
                                 },
                                 'breakdown_details': weighted_data.get('breakdown_details', {})
                             }
@@ -1516,13 +1569,13 @@ class LangChainRankingService:
                                             'raw': 0.0,
                                             'percentage': 0.0,
                                             'weighted_points': 0.0,
-                                            'weight': 40.0
+                                            'weight': 38.0
                                         },
                                         'pubmed': {
                                             'raw': 0.0,
                                             'percentage': 0.0,
                                             'weighted_points': 0.0,
-                                            'weight': 40.0
+                                            'weight': 38.0
                                         },
                                         'training': {
                                             'raw': 0.0,
@@ -1540,7 +1593,13 @@ class LangChainRankingService:
                                             'raw': 0.0,
                                             'percentage': 0.0,
                                             'weighted_points': 0.0,
-                                            'weight': 4.0
+                                            'weight': 3.0
+                                        },
+                                        'reviews': {
+                                            'raw': 0.0,
+                                            'percentage': 0.0,
+                                            'weighted_points': 0.0,
+                                            'weight': 5.0
                                         }
                                     }
                                     # Also ensure score is set (might be 0 for unmatched providers)
@@ -1592,17 +1651,17 @@ class LangChainRankingService:
             logger.error(f"❌ Error in treatment-specific ranking: {str(e)}")
             raise
     
-    def _batch_fetch_reviews(self, npis: List[str], patient_profile: str) -> Dict[str, List[Dict]]:
+    def _batch_fetch_reviews(self, npis: List[str], patient_profile: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
         """
         Batch fetch Healthgrades reviews for multiple NPIs in a single query.
         Similar to how PubMed articles are fetched.
         
         Args:
             npis: List of NPI numbers
-            patient_profile: Patient symptoms/diagnosis for keyword filtering
+            patient_profile: Patient profile dict containing search_query for keyword filtering
             
         Returns:
-            Dictionary mapping NPI to list of reviews
+            Dictionary mapping NPI to dict with 'reviews' (list) and 'relevant_count' (int)
         """
         from ..models.healthgrades_review import HealthgradesReview
         from sqlalchemy import or_
@@ -1613,9 +1672,12 @@ class LangChainRankingService:
         try:
             logger.info(f"📦 [Reviews] Batch fetching reviews for {len(npis)} NPIs")
             
-            # Extract keywords from patient_profile for filtering (optional)
-            # For now, fetch all reviews without keyword filtering
-            # TODO: Add keyword extraction if needed
+            # Extract search_query from patient_profile for keyword filtering
+            search_query = patient_profile.get('search_query', '') if isinstance(patient_profile, dict) else ''
+            keyword_list = []
+            if search_query:
+                keyword_list = [k.strip().lower() for k in search_query.split(' OR ') if k.strip()]
+                logger.info(f"🔍 [Reviews] Using {len(keyword_list)} keywords for filtering: {', '.join(keyword_list[:3])}{'...' if len(keyword_list) > 3 else ''}")
             
             # Single query for all NPIs
             reviews_query = self.db.query(HealthgradesReview).filter(
@@ -1629,24 +1691,39 @@ class LangChainRankingService:
             
             logger.info(f"📦 [Reviews] Found {len(all_reviews)} total reviews across {len(npis)} NPIs")
             
-            # Group by NPI
+            # Group by NPI and count relevant reviews
             reviews_by_npi = {}
             for review in all_reviews:
                 npi_str = str(review.npi)
                 if npi_str not in reviews_by_npi:
-                    reviews_by_npi[npi_str] = []
+                    reviews_by_npi[npi_str] = {
+                        'reviews': [],
+                        'relevant_count': 0,
+                        'total_count': 0
+                    }
+                
+                review_data = {
+                    'id': review.id,
+                    'review_text': review.review_text,
+                    'review_author': review.review_author,
+                    'review_date': review.review_date,
+                    'review_index': review.review_index
+                }
                 
                 # Limit to 100 reviews per NPI
-                if len(reviews_by_npi[npi_str]) < 100:
-                    reviews_by_npi[npi_str].append({
-                        'id': review.id,
-                        'review_text': review.review_text,
-                        'review_author': review.review_author,
-                        'review_date': review.review_date,
-                        'review_index': review.review_index
-                    })
+                if len(reviews_by_npi[npi_str]['reviews']) < 100:
+                    reviews_by_npi[npi_str]['reviews'].append(review_data)
+                    reviews_by_npi[npi_str]['total_count'] += 1
+                    
+                    # Check if review contains any keyword
+                    if keyword_list and review.review_text:
+                        review_text_lower = review.review_text.lower()
+                        if any(keyword in review_text_lower for keyword in keyword_list):
+                            reviews_by_npi[npi_str]['relevant_count'] += 1
             
-            logger.info(f"✅ [Reviews] Grouped reviews for {len(reviews_by_npi)} NPIs")
+            # Log summary
+            total_relevant = sum(data['relevant_count'] for data in reviews_by_npi.values())
+            logger.info(f"✅ [Reviews] Grouped reviews for {len(reviews_by_npi)} NPIs, {total_relevant} relevant reviews found")
             return reviews_by_npi
             
         except Exception as e:
