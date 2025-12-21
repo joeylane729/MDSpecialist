@@ -682,29 +682,4 @@ export const getSearchReviewCount = async (
   }
 };
 
-// Batch fetch reviews for multiple NPIs (similar to PubMed batch fetching)
-export const batchFetchReviews = async (
-  npis: (string | number)[],
-  keywords?: string,
-  limitPerNpi: number = 100
-): Promise<{ [npi: string]: HealthgradesReview[] }> => {
-  try {
-    console.log(`📦 [API] Batch fetching reviews for ${npis.length} NPIs with keywords: ${keywords || 'none'}`);
-    const response = await api.post<{ [npi: string]: HealthgradesReview[] }>(
-      `/api/v1/reviews/batch`,
-      {
-        npis,
-        keywords,
-        limit_per_npi: limitPerNpi
-      }
-    );
-    const totalReviews = Object.values(response.data).reduce((sum, reviews) => sum + reviews.length, 0);
-    console.log(`✅ [API] Fetched ${totalReviews} total reviews across ${Object.keys(response.data).length} NPIs`);
-    return response.data;
-  } catch (error) {
-    console.error(`❌ [API] Error batch fetching reviews:`, error);
-    return {};
-  }
-};
-
 export default api

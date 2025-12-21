@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { NPIProvider, getSpecialistRecommendations, SpecialistRecommendationRequest, searchNPIProviders, rankNPIProviders, NPISearchRequest, NPIRankingRequest, ProviderContent, generateCPTCodes, getMedicalAnalysis, HealthgradesReview, batchFetchReviews } from '../services/api';
+import { NPIProvider, getSpecialistRecommendations, SpecialistRecommendationRequest, searchNPIProviders, rankNPIProviders, NPISearchRequest, NPIRankingRequest, ProviderContent, generateCPTCodes, getMedicalAnalysis } from '../services/api';
 import NPIProviderCard from '../components/NPIProviderCard';
 
 interface Provider extends NPIProvider {
@@ -134,7 +134,6 @@ const ResultsPage: React.FC = () => {
   const [rankedProviders, setRankedProviders] = useState<Provider[]>([]);
   const [filteredProviders, setFilteredProviders] = useState<Provider[]>([]);
   const [providerLinks, setProviderLinks] = useState<{ [npi: string]: ProviderContent }>({});
-  const [providerReviews, setProviderReviews] = useState<{ [npi: string]: HealthgradesReview[] }>({});
   const [providerScores, setProviderScores] = useState<{ [npi: string]: any }>({});
   const [treatmentRankings, setTreatmentRankings] = useState<{ [treatmentId: string]: any }>({});
   const [selectedTreatmentId, setSelectedTreatmentId] = useState<string>('');
@@ -171,28 +170,6 @@ const ResultsPage: React.FC = () => {
       }
     }
   }, [searchParams?.searchOptions]);
-  
-  // Batch fetch reviews for current page providers (same pattern as PubMed)
-  useEffect(() => {
-    const fetchReviewsForCurrentPage = async () => {
-      if (!currentProviders || currentProviders.length === 0) {
-        setProviderReviews({});
-        return;
-      }
-      
-      const npis = currentProviders.map(p => p.npi);
-      const keywords = searchParams?.search_query;
-      
-      console.log(`📦 [ResultsPage] Batch fetching reviews for ${npis.length} providers`);
-      
-      const reviewsData = await batchFetchReviews(npis, keywords, 100);
-      setProviderReviews(reviewsData);
-      
-      console.log(`✅ [ResultsPage] Loaded reviews for ${Object.keys(reviewsData).length} providers`);
-    };
-    
-    fetchReviewsForCurrentPage();
-  }, [currentProviders, searchParams?.search_query]);
   
   // Debug logging
   useEffect(() => {
@@ -2311,7 +2288,6 @@ const ResultsPage: React.FC = () => {
                   patientDiagnosis={searchParams?.diagnosis}
                   patientSymptoms={searchParams?.symptoms}
                   searchQuery={searchParams?.search_query}
-                  providerReviews={providerReviews[provider.npi]}
                 />
               </div>
             );

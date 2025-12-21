@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List, Optional, Dict
+from typing import List, Optional
 from ...database import get_db
 from ...models.healthgrades_review import HealthgradesReview
 from pydantic import BaseModel
@@ -168,63 +168,4 @@ async def get_search_review_count(
         "keywords": keywords,
         "matching_review_count": count or 0
     }
-
-
-@router.post("/reviews/batch")
-async def batch_get_reviews(
-    npis: List[int],
-    keywords: Optional[str] = None,
-    limit_per_npi: int = 100,
-    db: Session = Depends(get_db)
-) -> Dict[str, List[ReviewResponse]]:
-    """
-    Batch fetch reviews for multiple NPIs in a single query.
-    Returns a dictionary mapping NPI to list of reviews.
-    
-    Similar to how PubMed articles are batched in the ranking API.
-    """
-    import logging
-    logger = logging.getLogger(__name__)
-    
-    logger.info(f"🔍 [BATCH REVIEWS API] Fetching reviews for {len(npis)} NPIs with keywords: {keywords}")
-    
-    # Build query for all NPIs at once
-    query = db.query(HealthgradesReview).filter(
-        HealthgradesReview.npi.in_(npis)
-    )
-    
-    # Add keyword filtering if provided
-    if keywords:
-        keyword_variations = [k.strip() for k in keywords.split(" OR ") if k.strip()]
-        if keyword_variations:
-            from sqlalchemy import or_
-            conditions = []
-            for keyword in keyword_variations:
-                conditions.append(
-                    HealthgradesReview.review_text.ilike(f'%{keyword}%')
-                )
-            query = query.filter(or_(*conditions))
-            logger.info(f"🔍 [BATCH REVIEWS API] Filtering with {len(keyword_variations)} keyword(s)")
-    
-    # Fetch all reviews and group by NPI
-    all_reviews = query.order_by(
-        HealthgradesReview.npi,
-        HealthgradesReview.review_index
-    ).all()
-    
-    logger.info(f"📦 [BATCH REVIEWS API] Found {len(all_reviews)} total reviews across {len(npis)} NPIs")
-    
-    # Group by NPI and limit per NPI
-    reviews_by_npi: Dict[str, List[ReviewResponse]] = {}
-    for review in all_reviews:
-        npi_str = str(review.npi)
-        if npi_str not in reviews_by_npi:
-            reviews_by_npi[npi_str] = []
-        
-        if len(reviews_by_npi[npi_str]) < limit_per_npi:
-            reviews_by_npi[npi_str].append(ReviewResponse.model_validate(review))
-    
-    logger.info(f"✅ [BATCH REVIEWS API] Returning reviews for {len(reviews_by_npi)} NPIs")
-    
-    return reviews_by_npi
 

@@ -10,14 +10,13 @@ import {
 interface ProviderReviewsProps {
   npi: string | number;
   searchQuery?: string;  // Pre-generated search query from backend (same as PubMed)
-  providerReviews?: HealthgradesReview[];  // Pre-fetched reviews (batched like PubMed)
 }
 
-export default function ProviderReviews({ npi, searchQuery, providerReviews }: ProviderReviewsProps) {
-  const [reviews, setReviews] = useState<HealthgradesReview[]>(providerReviews || []);
-  const [totalCount, setTotalCount] = useState<number>(providerReviews?.length || 0);
-  const [matchingCount, setMatchingCount] = useState<number>(providerReviews?.length || 0);
-  const [loading, setLoading] = useState(!providerReviews);  // Only load if not pre-fetched
+export default function ProviderReviews({ npi, searchQuery }: ProviderReviewsProps) {
+  const [reviews, setReviews] = useState<HealthgradesReview[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [matchingCount, setMatchingCount] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [viewMode, setViewMode] = useState<'relevant' | 'all'>('relevant');
@@ -34,16 +33,6 @@ export default function ProviderReviews({ npi, searchQuery, providerReviews }: P
   }, [searchQuery, npi]);
 
   useEffect(() => {
-    // If reviews were pre-fetched (batched), use them directly
-    if (providerReviews) {
-      setReviews(providerReviews);
-      setTotalCount(providerReviews.length);
-      setMatchingCount(providerReviews.length);
-      setLoading(false);
-      return;
-    }
-    
-    // Otherwise, fetch individually (fallback)
     const fetchReviewData = async () => {
       setLoading(true);
       try {
@@ -83,7 +72,7 @@ export default function ProviderReviews({ npi, searchQuery, providerReviews }: P
     };
 
     fetchReviewData();
-  }, [npi, showAll, viewMode, keywords, providerReviews]);
+  }, [npi, showAll, viewMode, keywords]);
 
   if (loading) {
     return (

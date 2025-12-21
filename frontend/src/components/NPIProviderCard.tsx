@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MapPin, Phone, Star, Award, Calendar, Building, HelpCircle, Clock, FileText, Shield, ExternalLink, BookOpen, Flag, ChevronDown, ChevronUp, TrendingUp, GraduationCap, Briefcase, Video, Activity, Loader2 } from 'lucide-react';
-import { NPIProvider, ProviderContent, VumediContent, PubMedArticle, generatePreAuthLetter, HealthgradesReview } from '../services/api';
+import { NPIProvider, ProviderContent, VumediContent, PubMedArticle, generatePreAuthLetter } from '../services/api';
 import SchedulingModal from './SchedulingModal';
 import ProviderReviews from './ProviderReviews';
 
@@ -16,7 +16,6 @@ interface NPIProviderCardProps {
   patientDiagnosis?: string;
   patientSymptoms?: string;
   searchQuery?: string;  // Pre-generated search query from backend (same as PubMed)
-  providerReviews?: HealthgradesReview[];  // Pre-fetched reviews (batched like PubMed)
 }
 
 // Red flag types and their descriptions
@@ -50,7 +49,7 @@ const RED_FLAG_DEFINITIONS: Record<RedFlagType, RedFlagInfo> = {
   }
 };
 
-export default function NPIProviderCard({ provider, onClick, isHighlighted = false, score, scoreBreakdown, scoreData, isCertified = false, providerContent, patientDiagnosis, patientSymptoms, searchQuery, providerReviews }: NPIProviderCardProps) {
+export default function NPIProviderCard({ provider, onClick, isHighlighted = false, score, scoreBreakdown, scoreData, isCertified = false, providerContent, patientDiagnosis, patientSymptoms, searchQuery }: NPIProviderCardProps) {
   const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
   const [isQuestionsModalOpen, setIsQuestionsModalOpen] = useState(false);
   const [isPreAuthModalOpen, setIsPreAuthModalOpen] = useState(false);
@@ -497,7 +496,6 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
             <ProviderReviews 
               npi={provider.npi} 
               searchQuery={searchQuery}
-              providerReviews={providerReviews}
             />
           </div>
 
