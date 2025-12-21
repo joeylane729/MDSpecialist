@@ -7,6 +7,7 @@ import csv
 import json
 import time
 import re
+import subprocess
 from pathlib import Path
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -125,21 +126,98 @@ def setup_selenium_driver():
     # User agent to avoid detection
     chrome_options.add_argument("user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     
+    # Try multiple strategies to get ChromeDriver working
+    strategies = []
+    
+    # Strategy 1: Try webdriver-manager (if available)
+    if USE_WEBDRIVER_MANAGER:
+        try:
+            print("   🔧 Attempting to use webdriver-manager...")
+            driver_path = ChromeDriverManager().install()
+            print(f"   ✓ ChromeDriver found at: {driver_path}")
+            
+            # On macOS, we need to fix permissions and remove quarantine
+            import subprocess
+            import os
+            import stat
+            if os.path.exists(driver_path):
+                try:
+                    # Make executable
+                    os.chmod(driver_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
+                    print("   ✓ Made ChromeDriver executable")
+                    
+                    # Remove all extended attributes (quarantine, etc.)
+                    result = subprocess.run(['xattr', '-c', driver_path], 
+                                          capture_output=True, check=False)
+                    if result.returncode == 0:
+                        print("   ✓ Removed all extended attributes")
+                    else:
+                        # Try individual removal
+                        for attr in ['com.apple.quarantine', 'com.apple.metadata:kMDItemWhereFroms']:
+                            subprocess.run(['xattr', '-d', attr, driver_path], 
+                                          capture_output=True, check=False)
+                        print("   ✓ Removed quarantine attributes")
+                except Exception as e:
+                    print(f"   ⚠️  Could not fix permissions: {e}")
+            
+            service = Service(driver_path)
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+            print("   ✅ ChromeDriver initialized successfully")
+            return driver
+        except Exception as e:
+            print(f"   ⚠️  webdriver-manager failed: {e}")
+            strategies.append(("webdriver-manager", str(e)))
+    
+    # Strategy 2: Try system ChromeDriver in PATH
     try:
-        # Use webdriver-manager if available, otherwise use system ChromeDriver
-        if USE_WEBDRIVER_MANAGER:
-            service = Service(ChromeDriverManager().install())
-        else:
-            service = Service()
-        
+        print("   🔧 Attempting to use system ChromeDriver...")
+        service = Service()  # Will use ChromeDriver from PATH
         driver = webdriver.Chrome(service=service, options=chrome_options)
+        print("   ✅ ChromeDriver initialized successfully (system)")
         return driver
     except Exception as e:
-        print(f"❌ Error setting up Chrome driver: {e}")
-        print("   Make sure ChromeDriver is installed and in PATH")
-        print("   Or install webdriver-manager: pip install webdriver-manager")
-        print("   You may need to allow chromedriver in System Preferences > Security & Privacy")
-        return None
+        print(f"   ⚠️  System ChromeDriver failed: {e}")
+        strategies.append(("system", str(e)))
+    
+    # Strategy 3: Try common ChromeDriver locations
+    common_paths = [
+        '/usr/local/bin/chromedriver',
+        '/opt/homebrew/bin/chromedriver',
+        '/usr/bin/chromedriver',
+    ]
+    
+    for path in common_paths:
+        import os
+        if os.path.exists(path):
+            try:
+                print(f"   🔧 Attempting to use ChromeDriver at {path}...")
+                # Remove quarantine if needed
+                try:
+                    subprocess.run(['xattr', '-d', 'com.apple.quarantine', path], 
+                                  capture_output=True, check=False)
+                except:
+                    pass
+                
+                service = Service(path)
+                driver = webdriver.Chrome(service=service, options=chrome_options)
+                print(f"   ✅ ChromeDriver initialized successfully ({path})")
+                return driver
+            except Exception as e:
+                print(f"   ⚠️  ChromeDriver at {path} failed: {e}")
+                strategies.append((path, str(e)))
+    
+    # All strategies failed
+    print(f"\n❌ Error: Could not set up Chrome driver after trying {len(strategies)} strategies")
+    print("\n💡 Solutions:")
+    print("   1. Install webdriver-manager: pip install webdriver-manager")
+    print("   2. Install ChromeDriver: brew install chromedriver")
+    print("   3. Allow ChromeDriver in System Preferences > Security & Privacy")
+    print("   4. Remove quarantine: xattr -d com.apple.quarantine /path/to/chromedriver")
+    print("\n   Failed attempts:")
+    for strategy, error in strategies:
+        print(f"      - {strategy}: {error[:100]}")
+    
+    return None
 
 def click_show_more_reviews(driver, max_clicks=1000):
     """Click 'Show more reviews' button until all reviews are loaded"""
@@ -256,6 +334,71 @@ def click_more_details_buttons(driver):
     
     return clicks
 
+def extract_rating_from_element(elem_soup):
+    """Extract star rating from a review element"""
+    rating = None
+    
+    # Strategy 1: Look for aria-label with rating text (e.g., "5 out of 5 stars")
+    aria_labels = elem_soup.find_all(attrs={'aria-label': re.compile(r'(\d+)\s*(?:out\s*of\s*)?\d*\s*star', re.I)})
+    for label in aria_labels:
+        match = re.search(r'(\d+)', label.get('aria-label', ''))
+        if match:
+            rating = int(match.group(1))
+            if 1 <= rating <= 5:
+                return rating
+    
+    # Strategy 2: Look for data-rating attribute
+    data_rating = elem_soup.find(attrs={'data-rating': True})
+    if data_rating:
+        try:
+            rating = int(data_rating.get('data-rating', 0))
+            if 1 <= rating <= 5:
+                return rating
+        except:
+            pass
+    
+    # Strategy 3: Count filled stars in SVG elements
+    # Look for SVG stars - filled stars typically have a fill color or specific class
+    star_elements = elem_soup.find_all(['svg', 'i', 'span'], class_=re.compile(r'star|rating', re.I))
+    if star_elements:
+        filled_count = 0
+        for star in star_elements:
+            # Check if star is filled (has fill color, or class indicating filled)
+            classes = star.get('class', [])
+            if isinstance(classes, str):
+                classes = [classes]
+            fill_attr = star.get('fill', '')
+            style = star.get('style', '')
+            
+            # Check for filled indicators
+            if (any('fill' in c.lower() or 'active' in c.lower() or 'full' in c.lower() for c in classes) or
+                fill_attr and fill_attr not in ['none', 'transparent'] or
+                'fill' in style.lower() and 'none' not in style.lower()):
+                filled_count += 1
+        
+        if 1 <= filled_count <= 5:
+            return filled_count
+    
+    # Strategy 4: Look for text patterns like "5.0" or "5 stars" near the review
+    text = elem_soup.get_text()
+    rating_patterns = [
+        r'(\d+)\.?\d*\s*(?:out\s*of\s*)?\d*\s*star',
+        r'rating[:\s]+(\d+)',
+        r'(\d+)/5',
+        r'(\d+)\s*star',
+    ]
+    for pattern in rating_patterns:
+        match = re.search(pattern, text, re.I)
+        if match:
+            try:
+                rating = int(match.group(1))
+                if 1 <= rating <= 5:
+                    return rating
+            except:
+                pass
+    
+    return None
+
 def extract_reviews_from_page(driver):
     """Extract review comments from the current page"""
     reviews = []
@@ -301,14 +444,16 @@ def extract_reviews_from_page(driver):
         # Reviews are typically in sections or divs with specific patterns
         review_containers = []
         
-        # If we found elements with Selenium, try to get their HTML
+        # Store review elements with their HTML for rating extraction
+        review_elements_with_html = []
         if review_elements_selenium:
-            for elem in review_elements_selenium:  # Process all elements, not just first 20
+            for elem in review_elements_selenium:
                 try:
                     html = elem.get_attribute('outerHTML')
                     if html:
                         elem_soup = BeautifulSoup(html, 'html.parser')
                         review_containers.append(elem_soup)
+                        review_elements_with_html.append(elem_soup)
                 except:
                     continue
         
@@ -421,10 +566,36 @@ def extract_reviews_from_page(driver):
                 if (30 < len(review_text) < 5000 and 
                     review_text not in seen_texts and
                     any(indicator in text_lower for indicator in review_indicators)):
+                    # Try to find rating for this review
+                    # Look for rating in the review block text or nearby HTML
+                    rating = None
+                    
+                    # Try to match this review text to one of our Selenium elements
+                    for elem_soup in review_elements_with_html:
+                        elem_text = elem_soup.get_text()
+                        # If this element contains our review text, extract rating from it
+                        if review_text[:100] in elem_text or elem_text[:100] in review_text:
+                            rating = extract_rating_from_element(elem_soup)
+                            if rating:
+                                break
+                    
+                    # If still no rating, try to find it in the block text
+                    if not rating:
+                        # Look for rating patterns in the block text near this review
+                        rating_match = re.search(r'(\d+)\s*(?:out\s*of\s*)?\d*\s*star', block[start_pos:date_match.start()], re.I)
+                        if rating_match:
+                            try:
+                                rating = int(rating_match.group(1))
+                                if not (1 <= rating <= 5):
+                                    rating = None
+                            except:
+                                pass
+                    
                     reviews.append({
                         'text': review_text,
                         'date': date_str,
-                        'author': author
+                        'author': author,
+                        'rating': rating
                     })
                     seen_texts.add(review_text)
         
@@ -465,10 +636,24 @@ def extract_reviews_from_page(driver):
                     if (50 < len(review_text) < 5000 and 
                         review_text not in seen_texts and
                         any(indicator in text_lower for indicator in review_indicators)):
+                        # Try to extract rating from container
+                        rating = extract_rating_from_element(container)
+                        if not rating:
+                            # Try text pattern matching
+                            rating_match = re.search(r'(\d+)\s*(?:out\s*of\s*)?\d*\s*star', full_text[start_pos:date_match.start()], re.I)
+                            if rating_match:
+                                try:
+                                    rating = int(rating_match.group(1))
+                                    if not (1 <= rating <= 5):
+                                        rating = None
+                                except:
+                                    rating = None
+                        
                         reviews.append({
                             'text': review_text,
                             'date': date_str,
-                            'author': author
+                            'author': author,
+                            'rating': rating
                         })
                         seen_texts.add(review_text)
         
@@ -782,6 +967,8 @@ def scrape_doctor_reviews(driver, npi, first_name, last_name, url, skip_existing
             md_content += "## Extracted Reviews\n\n"
             for i, review in enumerate(reviews, 1):
                 md_content += f"### Review {i}\n\n"
+                if review.get('rating'):
+                    md_content += f"**Rating:** {review['rating']} out of 5 stars\n\n"
                 if review.get('author'):
                     md_content += f"**Author:** {review['author']}\n\n"
                 if review.get('date'):
@@ -905,7 +1092,8 @@ def main(limit=None):
                         'review_index': review_idx,
                         'review_text': review.get('text', ''),
                         'review_author': review.get('author', ''),
-                        'review_date': review.get('date', '')
+                        'review_date': review.get('date', ''),
+                        'review_rating': review.get('rating', '')
                     })
             elif md_filename:
                 # Doctor processed but no reviews found - still create one row
@@ -936,7 +1124,7 @@ def main(limit=None):
     if results:
         print(f"\n💾 Saving results to {MAPPING_CSV}")
         with open(MAPPING_CSV, 'w', encoding='utf-8', newline='') as f:
-            fieldnames = ['npi', 'first_name', 'last_name', 'reviews_md_file', 'review_index', 'review_text', 'review_author', 'review_date']
+            fieldnames = ['npi', 'first_name', 'last_name', 'reviews_md_file', 'review_index', 'review_text', 'review_author', 'review_date', 'review_rating']
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(results)

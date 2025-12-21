@@ -981,15 +981,26 @@ class LangChainRankingService:
             
             # Batch fetch reviews for all ranked providers (same as PubMed)
             logger.info(f"📦 Batch fetching reviews for {len(ranked_npis)} providers")
+            # Debug: Check if patient_profile has search_query
+            if isinstance(patient_profile, dict):
+                search_query = patient_profile.get('search_query', 'NOT FOUND')
+                logger.info(f"🔍 [Reviews Debug] patient_profile.search_query = {search_query[:100] if search_query != 'NOT FOUND' else 'NOT FOUND'}")
+            else:
+                logger.warning(f"⚠️ [Reviews Debug] patient_profile is not a dict: {type(patient_profile)}")
             reviews_data_by_npi = self._batch_fetch_reviews(ranked_npis, patient_profile)
             
             # Extract relevant review counts for scoring and add reviews to provider_links
             reviews_counts = {}  # NPI -> relevant_count
             for npi in ranked_npis:
-                review_data = reviews_data_by_npi.get(npi, {})
+                npi_str = str(npi)  # Normalize to string for lookup
+                review_data = reviews_data_by_npi.get(npi_str, {})
                 reviews_list = review_data.get('reviews', [])
                 relevant_count = review_data.get('relevant_count', 0)
                 reviews_counts[npi] = relevant_count
+                
+                # Debug logging for Theodore Schwartz
+                if npi_str == '1811916455' or npi == '1811916455':
+                    logger.info(f"🔍 [Reviews Debug] NPI {npi_str}: found {relevant_count} relevant reviews out of {len(reviews_list)} total")
                 
                 if npi in provider_links:
                     provider_links[npi]['reviews'] = reviews_list
@@ -1005,8 +1016,14 @@ class LangChainRankingService:
             
             # Add reviews_raw to raw_component_scores for all providers
             for npi in ranked_npis:
+                npi_str = str(npi)  # Normalize to string
+                reviews_raw_value = reviews_counts.get(npi, 0)
+                
                 if npi in raw_component_scores:
-                    raw_component_scores[npi]['reviews_raw'] = reviews_counts.get(npi, 0)
+                    raw_component_scores[npi]['reviews_raw'] = reviews_raw_value
+                elif npi_str in raw_component_scores:
+                    # Try string version
+                    raw_component_scores[npi_str]['reviews_raw'] = reviews_raw_value
                 else:
                     # Provider not in raw_component_scores yet (unmatched provider)
                     raw_component_scores[npi] = {
@@ -1015,15 +1032,27 @@ class LangChainRankingService:
                         'training_raw': 0,
                         'experience_raw': 0,
                         'clinical_volume_raw': 0,
-                        'reviews_raw': reviews_counts.get(npi, 0)
+                        'reviews_raw': reviews_raw_value
                     }
+                
+                # Debug logging for Theodore Schwartz
+                if npi_str == '1811916455' or npi == '1811916455':
+                    logger.info(f"🔍 [Reviews Debug] Added reviews_raw={reviews_raw_value} to raw_component_scores for NPI {npi}")
             
             # Recalculate weighted scores now that reviews are included
             if raw_component_scores:
                 logger.info("🔄 Recalculating weighted scores with reviews data")
+                # Debug: Check reviews_raw for Theodore Schwartz
+                for npi_key in raw_component_scores:
+                    if str(npi_key) == '1811916455':
+                        logger.info(f"🔍 [Reviews Debug] raw_component_scores[{npi_key}]['reviews_raw'] = {raw_component_scores[npi_key].get('reviews_raw', 'NOT FOUND')}")
+                
                 updated_weighted_scores = self._calculate_weighted_score(raw_component_scores)
                 # Update provider_scores with new weighted values including reviews
                 for npi, weighted_data in updated_weighted_scores.items():
+                    # Debug logging for Theodore Schwartz
+                    if str(npi) == '1811916455':
+                        logger.info(f"🔍 [Reviews Debug] Updated weighted scores for NPI {npi}: reviews_pct={weighted_data.get('reviews_pct', 0)}, reviews_weighted={weighted_data.get('reviews_weighted', 0)}")
                     if npi in provider_scores:
                         provider_scores[npi]['score'] = weighted_data['final_score']
                         # Update weighted breakdown with reviews
