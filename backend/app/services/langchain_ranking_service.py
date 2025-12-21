@@ -1018,6 +1018,60 @@ class LangChainRankingService:
                         'reviews_raw': reviews_counts.get(npi, 0)
                     }
             
+            # Recalculate weighted scores now that reviews are included
+            if raw_component_scores:
+                logger.info("🔄 Recalculating weighted scores with reviews data")
+                updated_weighted_scores = self._calculate_weighted_score(raw_component_scores)
+                # Update provider_scores with new weighted values including reviews
+                for npi, weighted_data in updated_weighted_scores.items():
+                    if npi in provider_scores:
+                        provider_scores[npi]['score'] = weighted_data['final_score']
+                        # Update weighted breakdown with reviews
+                        if 'weighted_breakdown' in provider_scores[npi]:
+                            provider_scores[npi]['weighted_breakdown']['reviews'] = {
+                                'percentage': weighted_data.get('reviews_pct', 0),
+                                'weighted_points': weighted_data.get('reviews_weighted', 0),
+                                'weight': 5.0
+                            }
+                            # Update breakdown_details with reviews
+                            if 'breakdown_details' in provider_scores[npi]['weighted_breakdown']:
+                                provider_scores[npi]['weighted_breakdown']['breakdown_details']['reviews'] = weighted_data.get('breakdown_details', {}).get('reviews', {})
+                        else:
+                            # Create weighted_breakdown if it doesn't exist
+                            provider_scores[npi]['weighted_breakdown'] = {
+                                'clinical_volume': {
+                                    'percentage': weighted_data.get('clinical_volume_pct', 0),
+                                    'weighted_points': weighted_data.get('clinical_volume_weighted', 0),
+                                    'weight': 38.0
+                                },
+                                'pubmed': {
+                                    'percentage': weighted_data.get('pubmed_pct', 0),
+                                    'weighted_points': weighted_data.get('pubmed_weighted', 0),
+                                    'weight': 38.0
+                                },
+                                'training': {
+                                    'percentage': weighted_data.get('training_pct', 0),
+                                    'weighted_points': weighted_data.get('training_weighted', 0),
+                                    'weight': 10.0
+                                },
+                                'experience': {
+                                    'percentage': weighted_data.get('experience_pct', 0),
+                                    'weighted_points': weighted_data.get('experience_weighted', 0),
+                                    'weight': 6.0
+                                },
+                                'vumedi': {
+                                    'percentage': weighted_data.get('vumedi_pct', 0),
+                                    'weighted_points': weighted_data.get('vumedi_weighted', 0),
+                                    'weight': 3.0
+                                },
+                                'reviews': {
+                                    'percentage': weighted_data.get('reviews_pct', 0),
+                                    'weighted_points': weighted_data.get('reviews_weighted', 0),
+                                    'weight': 5.0
+                                },
+                                'breakdown_details': weighted_data.get('breakdown_details', {})
+                            }
+            
             return {
                 'ranking': ranked_npis,
                 'provider_links': provider_links,  # NPI-keyed
