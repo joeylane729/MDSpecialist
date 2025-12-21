@@ -981,46 +981,10 @@ class LangChainRankingService:
             
             # Batch fetch reviews for all ranked providers (same as PubMed)
             logger.info(f"📦 Batch fetching reviews for {len(ranked_npis)} providers")
-            # Ensure patient_profile has search_query - extract from nested structure if needed
+            # Debug: Check if patient_profile has search_query
             if isinstance(patient_profile, dict):
-                search_query = patient_profile.get('search_query', '')
-                # If search_query is missing, try to extract from nested structures or regenerate
-                if not search_query:
-                    # Try to get diagnosis from patient_profile
-                    diagnosis_terms = []
-                    
-                    # Check primary diagnosis
-                    if 'diagnoses' in patient_profile and isinstance(patient_profile['diagnoses'], dict):
-                        primary = patient_profile['diagnoses'].get('primary', {})
-                        if isinstance(primary, dict):
-                            desc = primary.get('description', '')
-                            if desc:
-                                # Extract key terms from description
-                                desc_lower = desc.lower()
-                                if 'pituitary' in desc_lower:
-                                    diagnosis_terms.append('pituitary adenoma')
-                                    diagnosis_terms.append('pituitary tumor')
-                                    diagnosis_terms.append('pituitary tumour')
-                                    diagnosis_terms.append('pituitary neoplasm')
-                                    if 'microadenoma' in desc_lower or 'micro' in desc_lower:
-                                        diagnosis_terms.append('pituitary microadenoma')
-                                    if 'macroadenoma' in desc_lower or 'macro' in desc_lower:
-                                        diagnosis_terms.append('pituitary macroadenoma')
-                    
-                    # Also check icd10_description
-                    icd10_desc = patient_profile.get('icd10_description', '')
-                    if icd10_desc and 'pituitary' in icd10_desc.lower() and not diagnosis_terms:
-                        diagnosis_terms = ['pituitary adenoma', 'pituitary tumor', 'pituitary tumour', 'pituitary neoplasm', 'pituitary microadenoma', 'pituitary macroadenoma']
-                    
-                    if diagnosis_terms:
-                        search_query = ' OR '.join(diagnosis_terms)
-                        logger.warning(f"⚠️ [Reviews Debug] search_query missing, generated fallback: {search_query}")
-                        patient_profile['search_query'] = search_query
-                    else:
-                        logger.warning(f"⚠️ [Reviews Debug] Could not generate search_query from patient_profile")
-                        logger.info(f"🔍 [Reviews Debug] patient_profile keys: {list(patient_profile.keys())[:10]}")
-                else:
-                    logger.info(f"✅ [Reviews Debug] Found search_query in patient_profile: {search_query[:100]}")
+                search_query = patient_profile.get('search_query', 'NOT FOUND')
+                logger.info(f"🔍 [Reviews Debug] patient_profile.search_query = {search_query[:100] if search_query != 'NOT FOUND' else 'NOT FOUND'}")
             else:
                 logger.warning(f"⚠️ [Reviews Debug] patient_profile is not a dict: {type(patient_profile)}")
             reviews_data_by_npi = self._batch_fetch_reviews(ranked_npis, patient_profile)
