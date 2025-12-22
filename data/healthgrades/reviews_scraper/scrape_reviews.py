@@ -411,7 +411,9 @@ def extract_reviews_from_page(driver):
         # Look for actual review items, not summary sections
         review_elements_selenium = []
         selectors = [
-            # Look for individual review items (not summary sections)
+            # PRIMARY: Use the actual review container class from Healthgrades
+            "//div[contains(@class, 'l-single-comment-container')]",
+            # Fallback selectors
             "//div[contains(@class, 'review-item')]",
             "//div[contains(@class, 'review-card')]",
             "//div[contains(@class, 'review-content')]",
@@ -421,7 +423,7 @@ def extract_reviews_from_page(driver):
             "//div[contains(@data-testid, 'review-item')]",
             "//div[contains(@data-testid, 'review-card')]",
             "//div[contains(@data-testid, 'comment-item')]",
-            # Fallback to broader selectors but we'll filter them
+            # Last resort fallback
             "//div[contains(@class, 'review')]",
             "//article[contains(@class, 'review')]",
             "//div[contains(@class, 'comment')]",
@@ -493,8 +495,10 @@ def extract_reviews_from_page(driver):
             for idx, elem in enumerate(review_elements_selenium):
                 try:
                     rating = None
-                    # Try multiple selectors for rating - expanded list
+                    # Try multiple selectors for rating - prioritize aria-label with "Rated X out of 5"
                     rating_selectors = [
+                        # PRIMARY: Look for aria-label="Rated X out of 5" (exact Healthgrades format)
+                        (By.XPATH, ".//*[contains(@aria-label, 'Rated') and contains(@aria-label, 'out of 5')]"),
                         (By.XPATH, ".//*[contains(@aria-label, 'star')]"),
                         (By.XPATH, ".//*[@data-rating]"),
                         (By.XPATH, ".//*[contains(@class, 'star')]"),
@@ -509,9 +513,16 @@ def extract_reviews_from_page(driver):
                         try:
                             rating_elems = elem.find_elements(by, selector)
                             for rating_elem in rating_elems:
-                                # Try aria-label
+                                # Try aria-label - prioritize "Rated X out of 5" format
                                 aria_label = rating_elem.get_attribute('aria-label') or ''
-                                if 'star' in aria_label.lower() or 'rating' in aria_label.lower():
+                                if 'rated' in aria_label.lower() and 'out of 5' in aria_label.lower():
+                                    # Extract from "Rated 5 out of 5"
+                                    match = re.search(r'rated\s+(\d+)', aria_label, re.I)
+                                    if match:
+                                        rating = int(match.group(1))
+                                        if 1 <= rating <= 5:
+                                            break
+                                elif 'star' in aria_label.lower() or 'rating' in aria_label.lower():
                                     match = re.search(r'(\d+)', aria_label)
                                     if match:
                                         rating = int(match.group(1))
@@ -606,15 +617,64 @@ def extract_reviews_from_page(driver):
                         continue
                     
                     # Try to extract review text, date, and author from element
-                    date_match = date_pattern.search(elem_text)
-                    if not date_match and idx < 3:
-                        print(f"      ⚠️  No date found in element {idx+1}, preview: {elem_text[:100]}")
+                    # First, try to find the review comment section directly
+                    review_comment_elem = None
+                    review_text = None
+                    try:
+                        # Look for the actual comment div
+                        review_comment_elem = elem.find_element(By.XPATH, ".//div[@data-qa-target='user-comment']")
+                        if review_comment_elem:
+                            review_text = review_comment_elem.text.strip()
+                            elem_text = review_text  # Use this for date matching
+                    except:
+                        pass
                     
-                    if date_match:
+                    # Also try to find date in commenter-info
+                    date_elem = None
+                    date_str = None
+                    author = None
+                    try:
+                        date_elem = elem.find_element(By.XPATH, ".//div[@data-qa-target='comment-date']")
+                        if date_elem:
+                            date_text = date_elem.text
+                            # Extract date and author from date element text
+                            date_match = date_pattern.search(date_text)
+                            if date_match:
+                                date_str = date_match.group(1).strip()
+                                # Extract author if present
+                                author_match = re.search(r'^([A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)?)\s+–\s+', date_str)
+                                if author_match:
+                                    author = author_match.group(1)
+                                    date_str = re.sub(r'^[A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)?\s+–\s+', '', date_str)
+                    except:
+                        pass
+                    
+                    # Fallback: try to find date in element text
+                    if not date_str:
+                        date_match = date_pattern.search(elem_text)
+                        if date_match:
+                            date_str = date_match.group(1).strip()
+                            # Extract author if present
+                            author_match = re.search(r'^([A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)?)\s+–\s+', date_str)
+                            if author_match:
+                                author = author_match.group(1)
+                                date_str = re.sub(r'^[A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)?\s+–\s+', '', date_str)
+                    
+                    # If we found review text from comment element, use it directly
+                    if review_text and date_str:
+                    
+                        # Clean up review text (already extracted from comment element)
+                        review_text = re.sub(r'(×|Post\s+a\s+Response|Are\s+you.*?\?|Yes|No|Reply\s+Flag)', '', review_text, flags=re.I)
+                        review_text = re.sub(r'More\s+details', '', review_text, flags=re.I)
+                        review_text = re.sub(r'\d+\s+other.*?found\s+this\s+helpful', '', review_text, flags=re.I)
+                        review_text = re.sub(r'Helpful', '', review_text, flags=re.I)
+                        review_text = re.sub(r'\s+', ' ', review_text)
+                        review_text = review_text.strip()
+                    elif date_match:
+                        # Fallback: extract from element text if comment element not found
                         date_str = date_match.group(1).strip()
                         
                         # Extract author if present
-                        author = None
                         author_match = re.search(r'^([A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)?)\s+–\s+', date_str)
                         if author_match:
                             author = author_match.group(1)
@@ -631,6 +691,12 @@ def extract_reviews_from_page(driver):
                         review_text = re.sub(r'Helpful', '', review_text, flags=re.I)
                         review_text = re.sub(r'\s+', ' ', review_text)
                         review_text = review_text.strip()
+                    else:
+                        if idx < 3:
+                            print(f"      ⚠️  No date found in element {idx+1}, preview: {elem_text[:100]}")
+                        continue
+                    
+                    if review_text and date_str:
                         
                         # Validate review
                         text_lower = review_text.lower()

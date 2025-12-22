@@ -23,6 +23,7 @@ class NPIRankingRequest(BaseModel):
     patient_input: str
     shared_specialist_information: Optional[Dict[str, Any]] = None
     cms_data: Optional[Dict[str, Any]] = None  # CMS data for clinical volume bonus
+    search_query: Optional[str] = None  # Pre-generated search query from first medical analysis (same as used for PubMed)
 
 @router.post("/rank-npi-providers")
 async def rank_npi_providers(
@@ -103,12 +104,19 @@ async def rank_npi_providers(
         # Initialize the LangChain service
         langchain_service = LangChainSpecialistRecommendationService(db)
         
+        # Log search_query if provided
+        if request.search_query:
+            logger.info(f"🔍 [NPI Ranking] Received search_query: {request.search_query[:100]}{'...' if len(request.search_query) > 100 else ''}")
+        else:
+            logger.warning(f"⚠️ [NPI Ranking] No search_query provided in request")
+        
         # Rank the NPI providers using shared data if available
         ranking_result = await langchain_service.rank_npi_providers_with_pinecone(
             npi_providers=request.npi_providers,
             patient_input=request.patient_input,
             shared_specialist_information=shared_data,
-            cms_tot_srvcs=cms_tot_srvcs
+            cms_tot_srvcs=cms_tot_srvcs,
+            search_query=request.search_query  # Pass search_query from first analysis
         )
         
         treatment_rankings = ranking_result['treatment_rankings']

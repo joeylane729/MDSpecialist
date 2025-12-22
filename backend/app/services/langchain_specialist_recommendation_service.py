@@ -200,7 +200,8 @@ class LangChainSpecialistRecommendationService:
         npi_providers: List[Dict[str, Any]],
         patient_input: str,
         shared_specialist_information: Optional[List[Dict[str, Any]]] = None,
-        cms_tot_srvcs: Optional[Dict[str, int]] = None
+        cms_tot_srvcs: Optional[Dict[str, int]] = None,
+        search_query: Optional[str] = None  # Pre-generated search query from first medical analysis
     ) -> List[str]:
         """
         Rank NPI providers based on Pinecone specialist information.
@@ -221,6 +222,16 @@ class LangChainSpecialistRecommendationService:
             # Note: For NPI ranking, we could also accept pre-generated CPT codes, but typically
             # this is called separately so we generate fresh CPT codes here
             medical_analysis_results = await self.medical_analysis.comprehensive_analysis(patient_input)
+            
+            # Ensure search_query is set from first analysis (same as used for PubMed)
+            if search_query and isinstance(medical_analysis_results, dict):
+                if not medical_analysis_results.get('search_query'):
+                    logger.info(f"🔍 [Ranking] Setting search_query from first analysis: {search_query[:100]}{'...' if len(search_query) > 100 else ''}")
+                    medical_analysis_results['search_query'] = search_query
+                else:
+                    logger.info(f"🔍 [Ranking] medical_analysis_results already has search_query: {medical_analysis_results.get('search_query', '')[:100]}")
+            elif not search_query:
+                logger.warning(f"⚠️ [Ranking] No search_query provided - medical_analysis_results.search_query = {medical_analysis_results.get('search_query', 'NOT FOUND') if isinstance(medical_analysis_results, dict) else 'NOT A DICT'}")
             
             # Step 2: Use shared Pinecone specialist information (required)
             if not shared_specialist_information:

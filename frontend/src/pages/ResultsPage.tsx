@@ -1233,7 +1233,8 @@ const ResultsPage: React.FC = () => {
         npi_providers: npiData.providers,
         patient_input: `Symptoms: ${searchParams?.symptoms}\nDiagnosis: ${searchParams?.diagnosis}`,
         shared_specialist_information: specialistResponse.shared_specialist_information || [],
-        cms_data: specialistResponse.cms_data // Pass CMS data for clinical volume bonus
+        cms_data: specialistResponse.cms_data, // Pass CMS data for clinical volume bonus
+        search_query: searchParams?.search_query || location.state?.aiRecommendations?.patient_profile?.search_query // Pass search_query from first analysis (same as used for PubMed)
       };
 
       console.log('🔍 [Frontend] Ranking request cms_data:', rankingRequest.cms_data ? 'PRESENT' : 'MISSING');

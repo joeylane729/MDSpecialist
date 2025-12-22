@@ -1825,31 +1825,12 @@ class LangChainRankingService:
         try:
             logger.info(f"📦 [Reviews] Batch fetching ALL reviews for {len(npis)} NPIs")
             
-            # Extract search_query from patient_profile
+            # Extract search_query from patient_profile (must be set from first medical analysis, same as PubMed)
             search_query = patient_profile.get('search_query', '') if isinstance(patient_profile, dict) else ''
             
-            # If search_query is missing, try to extract it from diagnosis data
-            if not search_query and isinstance(patient_profile, dict):
-                primary_diagnosis = None
-                if patient_profile.get('diagnoses') and patient_profile['diagnoses'].get('primary'):
-                    primary_diagnosis = patient_profile['diagnoses']['primary'].get('description', '')
-                elif patient_profile.get('icd10_description'):
-                    primary_diagnosis = patient_profile.get('icd10_description', '')
-                
-                user_diagnosis = patient_profile.get('user_diagnosis', '') or patient_profile.get('diagnosis', '')
-                
-                if primary_diagnosis and user_diagnosis:
-                    # Generate simple search query from diagnosis
-                    diagnosis_terms = [user_diagnosis.lower()]
-                    if primary_diagnosis:
-                        # Extract key medical terms from primary diagnosis
-                        terms = primary_diagnosis.lower().replace(',', ' ').replace('(', ' ').replace(')', ' ').split()
-                        medical_terms = [t for t in terms if len(t) > 4 and t not in ['benign', 'neoplasm', 'of', 'the', 'and', 'or']]
-                        diagnosis_terms.extend(medical_terms[:3])  # Add top 3 terms
-                    
-                    # Create OR-separated query (simplified version)
-                    search_query = ' OR '.join(set(diagnosis_terms))  # Remove duplicates
-                    logger.info(f"🔍 [Reviews Debug] Generated search_query from diagnosis: {search_query}")
+            if not search_query:
+                logger.error(f"❌ [Reviews] CRITICAL: search_query is missing from patient_profile! This should be set from the first medical analysis (same as used for PubMed).")
+                logger.error(f"❌ [Reviews] patient_profile keys: {list(patient_profile.keys()) if isinstance(patient_profile, dict) else 'NOT A DICT'}")
             
             # Extract keywords for relevance checking
             keyword_list = []

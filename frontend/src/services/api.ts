@@ -381,6 +381,7 @@ export interface NPIRankingRequest {
   patient_input: string;
   shared_specialist_information?: any[];
   cms_data?: any; // Optional CMS data for clinical volume bonus
+  search_query?: string; // Pre-generated search query from first medical analysis (same as used for PubMed)
 }
 
 export interface VumediContent {

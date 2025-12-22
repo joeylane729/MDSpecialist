@@ -624,7 +624,8 @@ const HomePage: React.FC = () => {
           rankingResponse = await rankNPIProviders({
             npi_providers: npiData.providers,
             patient_input: `Symptoms: ${symptoms}\nDiagnosis: ${diagnosis}`,
-            shared_specialist_information: (aiRecommendations as any)?.shared_specialist_information || []
+            shared_specialist_information: (aiRecommendations as any)?.shared_specialist_information || [],
+            search_query: (aiRecommendations as any)?.patient_profile?.search_query // Pass search_query from first analysis (same as used for PubMed)
           });
           
           // Handle new treatment-specific ranking structure
