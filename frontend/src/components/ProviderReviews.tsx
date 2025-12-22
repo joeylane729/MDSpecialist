@@ -62,54 +62,54 @@ export default function ProviderReviews({ reviews: allReviews }: ProviderReviews
     : `Patient Reviews (${totalCount})`;
 
   return (
-    <div className="mt-4">
+    <div className="mt-2">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center justify-between p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+        className="w-full flex items-center justify-between p-2 bg-blue-50 hover:bg-blue-100 rounded transition-colors"
       >
-        <div className="flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-blue-600" />
-          <span className="font-medium text-blue-900">{headerText}</span>
+        <div className="flex items-center gap-1.5">
+          <MessageSquare className="w-4 h-4 text-blue-600" />
+          <span className="text-xs font-medium text-blue-900">{headerText}</span>
         </div>
         {expanded ? (
-          <ChevronUp className="w-5 h-5 text-blue-600" />
+          <ChevronUp className="w-4 h-4 text-blue-600" />
         ) : (
-          <ChevronDown className="w-5 h-5 text-blue-600" />
+          <ChevronDown className="w-4 h-4 text-blue-600" />
         )}
       </button>
 
       {expanded && (
-        <div className="mt-2 p-4 bg-gray-50 rounded-lg space-y-3">
+        <div className="mt-2 p-2.5 bg-gray-50 rounded space-y-2">
           {viewMode === 'relevant' && matchingCount < totalCount && (
-            <div className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-100">
-              <span className="text-sm text-blue-800">
-                Showing reviews relevant to your search
+            <div className="flex items-center justify-between p-1.5 bg-blue-50 rounded border border-blue-100">
+              <span className="text-xs text-blue-800">
+                Showing relevant reviews
               </span>
               <button
                 onClick={() => setViewMode('all')}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium underline"
+                className="text-xs text-blue-600 hover:text-blue-800 font-medium underline"
               >
-                View all {totalCount} reviews
+                View all {totalCount}
               </button>
             </div>
           )}
 
           {viewMode === 'all' && matchingCount < totalCount && (
-            <div className="flex items-center justify-between p-2 bg-gray-100 rounded border border-gray-200">
-              <span className="text-sm text-gray-700">
+            <div className="flex items-center justify-between p-1.5 bg-gray-100 rounded border border-gray-200">
+              <span className="text-xs text-gray-700">
                 Showing all reviews
               </span>
               <button
                 onClick={() => setViewMode('relevant')}
-                className="text-sm text-blue-600 hover:text-blue-800 font-medium underline"
+                className="text-xs text-blue-600 hover:text-blue-800 font-medium underline"
               >
-                Show only relevant ({matchingCount})
+                Relevant only ({matchingCount})
               </button>
             </div>
           )}
 
           {displayedReviews.length === 0 ? (
-            <p className="text-sm text-gray-600 text-center py-4">
+            <p className="text-xs text-gray-600 text-center py-2">
               No reviews available
             </p>
           ) : (
@@ -117,12 +117,12 @@ export default function ProviderReviews({ reviews: allReviews }: ProviderReviews
               {displayedReviews.map((review) => (
                 <div
                   key={review.id}
-                  className="p-3 bg-white rounded-lg border border-gray-200"
+                  className="p-2 bg-white rounded border border-gray-200"
                 >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-start justify-between mb-1">
+                    <div className="flex items-center gap-1.5">
                       {review.review_author && (
-                        <span className="font-medium text-gray-900 text-sm">
+                        <span className="font-medium text-gray-900 text-xs">
                           {review.review_author}
                         </span>
                       )}
@@ -133,7 +133,7 @@ export default function ProviderReviews({ reviews: allReviews }: ProviderReviews
                       )}
                     </div>
                   </div>
-                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap line-clamp-3">
                     {review.review_text}
                   </p>
                 </div>
@@ -142,17 +142,17 @@ export default function ProviderReviews({ reviews: allReviews }: ProviderReviews
               {filteredReviews.length > PREVIEW_COUNT && (
                 <button
                   onClick={() => setShowAll(!showAll)}
-                  className="w-full mt-2 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center justify-center gap-1"
+                  className="w-full mt-1.5 py-1.5 text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center justify-center gap-1"
                 >
                   {showAll ? (
                     <>
-                      <ChevronUp className="w-4 h-4" />
-                      Show fewer reviews
+                      <ChevronUp className="w-3.5 h-3.5" />
+                      Show fewer
                     </>
                   ) : (
                     <>
-                      <ChevronDown className="w-4 h-4" />
-                      Show all {filteredReviews.length} reviews
+                      <ChevronDown className="w-3.5 h-3.5" />
+                      Show all {filteredReviews.length}
                     </>
                   )}
                 </button>

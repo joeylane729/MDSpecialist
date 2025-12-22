@@ -1823,6 +1823,7 @@ class LangChainRankingService:
             return {}
         
         try:
+            start_time = time.time()
             logger.info(f"📦 [Reviews] Batch fetching ALL reviews for {len(npis)} NPIs")
             
             # Extract search_query from patient_profile (must be set from first medical analysis, same as PubMed)
@@ -1841,14 +1842,17 @@ class LangChainRankingService:
                 logger.warning(f"⚠️ [Reviews] No search_query available - all reviews will be marked as not relevant")
             
             # Fetch ALL reviews (no SQL filtering)
+            query_start = time.time()
             all_reviews = self.db.query(HealthgradesReview).filter(
                 HealthgradesReview.npi.in_(npis)
             ).order_by(
                 HealthgradesReview.npi,
                 HealthgradesReview.review_index
             ).limit(100 * len(npis)).all()
+            query_duration = time.time() - query_start
             
             logger.info(f"📦 [Reviews] Found {len(all_reviews)} total reviews across {len(npis)} NPIs")
+            logger.info(f"⏱️  [Reviews] Database query took {query_duration:.3f} seconds ({query_duration*1000:.1f}ms)")
             
             # Group by NPI and mark each review as relevant/not relevant
             reviews_by_npi = {}

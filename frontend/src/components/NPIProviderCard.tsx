@@ -68,8 +68,11 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
   const [insuranceCompanyEmail, setInsuranceCompanyEmail] = useState('');
   const [promptText, setPromptText] = useState<string | null>(null);
   const [editablePromptText, setEditablePromptText] = useState<string>('');
+  const [showEducation, setShowEducation] = useState(false);
+  const [showContent, setShowContent] = useState(false);
+  const [showReviews, setShowReviews] = useState(false);
   
-  const MAX_ITEMS_TO_SHOW = 5;
+  const MAX_ITEMS_TO_SHOW = 3; // Reduced from 5 to 3 for more compact display
 
   const yearsExperienceValue = provider.yearsExperience;
   const yearsExperienceLabel = typeof yearsExperienceValue === 'number' && !Number.isNaN(yearsExperienceValue)
@@ -269,17 +272,17 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
   return (
     <>
       <div 
-        className={`rounded-lg shadow-sm border p-6 hover:shadow-md transition-all ${
+        className={`rounded-lg shadow-sm border p-4 hover:shadow-md transition-all ${
           isHighlighted 
             ? 'bg-white border-2 border-yellow-400 shadow-lg' 
             : 'bg-white border border-gray-200'
         }`}
       >
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            {/* Provider Header */}
-            <div className="flex items-center mb-3">
-              <h2 className="text-xl font-semibold text-gray-900 mr-3">
+            {/* Provider Header - More Compact */}
+            <div className="flex items-center mb-2 gap-2">
+              <h2 className="text-lg font-semibold text-gray-900">
                 {provider.name}
               </h2>
               {score !== undefined && (
@@ -288,7 +291,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                     e.stopPropagation();
                     setIsScoreBreakdownModalOpen(true);
                   }}
-                  className={`inline-flex items-center justify-center w-12 h-8 ${getScoreColor(score)} text-white text-sm font-bold rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow`}
+                  className={`inline-flex items-center justify-center w-10 h-6 ${getScoreColor(score)} text-white text-xs font-bold rounded shadow-sm cursor-pointer hover:shadow-md transition-shadow`}
                   title="Click to view score breakdown"
                 >
                   {score.toFixed(2)}
@@ -296,18 +299,23 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
               )}
             </div>
 
-            {/* Specialty and Experience */}
-            <div className="flex items-center text-gray-600 mb-3 flex-wrap gap-2">
+            {/* Specialty and Experience - More Compact */}
+            <div className="flex items-center text-gray-600 mb-2 flex-wrap gap-x-2 gap-y-1 text-sm">
               <span className="font-medium">{provider.specialty}</span>
-              <span className="mx-2">•</span>
-              <Calendar className="h-4 w-4 mr-1" />
-              <span>{yearsExperienceLabel}</span>
+              <span>•</span>
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                <span>{yearsExperienceValue || '--'}y</span>
+              </div>
               {isCertified && (
-                <div className="flex items-center gap-1 ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">
                   <Shield className="h-3 w-3" />
-                  <span>Board Certified</span>
+                  <span>Certified</span>
                 </div>
               )}
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                Accepting Patients
+              </span>
               {/* Red Flags - Show as clickable icons */}
               {activeRedFlags.map((flagType) => {
                 const flagInfo = RED_FLAG_DEFINITIONS[flagType];
@@ -318,199 +326,203 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                       e.stopPropagation();
                       handleRedFlagClick(flagType);
                     }}
-                    className="ml-2 p-1.5 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors cursor-pointer"
+                    className="p-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors cursor-pointer"
                     title={`Click to learn more about this flag`}
                   >
-                    <Flag className="h-4 w-4" />
+                    <Flag className="h-3 w-3" />
                   </button>
                 );
               })}
             </div>
 
-            {/* Location */}
-            <div className="flex items-center text-gray-600 mb-3">
-              <MapPin className="h-4 w-4 mr-2" />
-              <span>{provider.address}, {provider.city}, {provider.state} {provider.zip}</span>
-            </div>
-
-            {/* Contact Info */}
-            <div className="flex items-center space-x-6 text-gray-600 mb-4">
+            {/* Location and Contact - Single Line */}
+            <div className="flex items-center text-gray-600 mb-2 text-sm flex-wrap gap-x-3 gap-y-1">
+              <div className="flex items-center gap-1">
+                <MapPin className="h-3 w-3" />
+                <span className="truncate max-w-md">{provider.city}, {provider.state}</span>
+              </div>
               {provider.phone && (
-                <div className="flex items-center">
-                  <Phone className="h-4 w-4 mr-2" />
+                <div className="flex items-center gap-1">
+                  <Phone className="h-3 w-3" />
                   <span>{provider.phone}</span>
                 </div>
               )}
             </div>
 
-            {/* Additional Info */}
-            <div className="mt-4">
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">Education</h3>
-              {provider.education && (provider.education.medicalSchool || provider.education.residency || provider.education.fellowship) ? (
-                <div className="text-gray-600 space-y-2">
-                  {provider.education.medicalSchool && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Medical School</span>
-                      <div className="break-words mt-1">{provider.education.medicalSchool}</div>
-                    </div>
-                  )}
-                  {provider.education.residency && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Residency</span>
-                      <div className="break-words mt-1">{provider.education.residency}</div>
-                    </div>
-                  )}
-                  {provider.education.fellowship && (
-                    <div>
-                      <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Fellowship</span>
-                      <div className="break-words mt-1">{provider.education.fellowship}</div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p className="text-gray-600 mt-1">--</p>
-              )}
-            </div>
-
-            {/* Status */}
-            <div className="mt-4">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                Accepting Patients
-              </span>
-            </div>
-
-            {/* Provider Content - Vumedi and PubMed */}
-            {providerContent && (
-              <div className="mt-4 space-y-3">
-                {/* Vumedi Content */}
-                {providerContent.vumedi_content && providerContent.vumedi_content.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
-                      <ExternalLink className="w-4 h-4 mr-1" />
-                      Educational Videos ({providerContent.vumedi_content.length})
-                    </h4>
-                    <div className="space-y-2">
-                      {(showAllVumedi ? providerContent.vumedi_content : providerContent.vumedi_content.slice(0, MAX_ITEMS_TO_SHOW)).map((content, index) => (
-                        <a
-                          key={index}
-                          href={content.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="block p-2 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
-                        >
-                          <div className="text-sm font-medium text-purple-800 break-words">
-                            {content.title}
-                          </div>
-                          <div className="text-xs text-purple-600 mt-1">
-                            View Video →
-                          </div>
-                        </a>
-                      ))}
-                    </div>
-                    {providerContent.vumedi_content.length > MAX_ITEMS_TO_SHOW && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowAllVumedi(!showAllVumedi);
-                        }}
-                        className="mt-2 text-sm text-purple-600 hover:text-purple-800 font-medium flex items-center gap-1"
-                      >
-                        {showAllVumedi ? (
-                          <>
-                            <span>Show less</span>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                            </svg>
-                          </>
-                        ) : (
-                          <>
-                            <span>Show all {providerContent.vumedi_content.length} videos</span>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </>
-                        )}
-                      </button>
+            {/* Education - Collapsible */}
+            {provider.education && (provider.education.medicalSchool || provider.education.residency || provider.education.fellowship) && (
+              <div className="mb-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowEducation(!showEducation);
+                  }}
+                  className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-gray-900"
+                >
+                  {showEducation ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  <span>Education</span>
+                </button>
+                {showEducation && (
+                  <div className="text-gray-600 text-xs mt-1 ml-4 space-y-1">
+                    {provider.education.medicalSchool && (
+                      <div>
+                        <span className="font-medium text-gray-500">MS: </span>
+                        <span className="break-words">{provider.education.medicalSchool}</span>
+                      </div>
                     )}
-                  </div>
-                )}
-
-                {/* PubMed Articles */}
-                {providerContent.pubmed_articles && providerContent.pubmed_articles.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
-                      <BookOpen className="w-4 h-4 mr-1" />
-                      Research Articles ({providerContent.pubmed_articles.length})
-                    </h4>
-                    <div className="space-y-2">
-                      {(showAllPubMed ? providerContent.pubmed_articles : providerContent.pubmed_articles.slice(0, MAX_ITEMS_TO_SHOW)).map((article, index) => (
-                        <a
-                          key={index}
-                          href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}/`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="block p-2 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-                        >
-                          <div className="text-sm font-medium text-blue-800 break-words">
-                            {article.title}
-                          </div>
-                          <div className="text-xs text-blue-600 mt-1">
-                            PMID: {article.pmid} →
-                          </div>
-                        </a>
-                      ))}
-                    </div>
-                    {providerContent.pubmed_articles.length > MAX_ITEMS_TO_SHOW && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowAllPubMed(!showAllPubMed);
-                        }}
-                        className="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
-                      >
-                        {showAllPubMed ? (
-                          <>
-                            <span>Show less</span>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                            </svg>
-                          </>
-                        ) : (
-                          <>
-                            <span>Show all {providerContent.pubmed_articles.length} articles</span>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </>
-                        )}
-                      </button>
+                    {provider.education.residency && (
+                      <div>
+                        <span className="font-medium text-gray-500">Res: </span>
+                        <span className="break-words">{provider.education.residency}</span>
+                      </div>
+                    )}
+                    {provider.education.fellowship && (
+                      <div>
+                        <span className="font-medium text-gray-500">Fell: </span>
+                        <span className="break-words">{provider.education.fellowship}</span>
+                      </div>
                     )}
                   </div>
                 )}
               </div>
             )}
 
-            {/* Patient Reviews */}
-            <ProviderReviews 
-              npi={provider.npi} 
-              searchQuery={searchQuery}
-              reviews={providerContent?.reviews || []}
-            />
+            {/* Provider Content - Vumedi and PubMed - Collapsible */}
+            {providerContent && (providerContent.vumedi_content?.length > 0 || providerContent.pubmed_articles?.length > 0) && (
+              <div className="mb-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowContent(!showContent);
+                  }}
+                  className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-gray-900"
+                >
+                  {showContent ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  <span>
+                    Content ({[
+                      providerContent.vumedi_content?.length || 0,
+                      providerContent.pubmed_articles?.length || 0
+                    ].filter(Boolean).join(' + ')} items)
+                  </span>
+                </button>
+                {showContent && (
+                  <div className="mt-2 ml-4 space-y-2">
+                    {/* Vumedi Content */}
+                    {providerContent.vumedi_content && providerContent.vumedi_content.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-medium text-gray-700 mb-1.5 flex items-center">
+                          <Video className="w-3 h-3 mr-1" />
+                          Videos ({providerContent.vumedi_content.length})
+                        </h4>
+                        <div className="space-y-1">
+                          {(showAllVumedi ? providerContent.vumedi_content : providerContent.vumedi_content.slice(0, MAX_ITEMS_TO_SHOW)).map((content, index) => (
+                            <a
+                              key={index}
+                              href={content.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="block p-1.5 bg-purple-50 hover:bg-purple-100 rounded text-xs transition-colors"
+                            >
+                              <div className="font-medium text-purple-800 break-words line-clamp-1">
+                                {content.title}
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                        {providerContent.vumedi_content.length > MAX_ITEMS_TO_SHOW && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowAllVumedi(!showAllVumedi);
+                            }}
+                            className="mt-1 text-xs text-purple-600 hover:text-purple-800 font-medium"
+                          >
+                            {showAllVumedi ? 'Show less' : `Show all ${providerContent.vumedi_content.length}`}
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* PubMed Articles */}
+                    {providerContent.pubmed_articles && providerContent.pubmed_articles.length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-medium text-gray-700 mb-1.5 flex items-center">
+                          <BookOpen className="w-3 h-3 mr-1" />
+                          Articles ({providerContent.pubmed_articles.length})
+                        </h4>
+                        <div className="space-y-1">
+                          {(showAllPubMed ? providerContent.pubmed_articles : providerContent.pubmed_articles.slice(0, MAX_ITEMS_TO_SHOW)).map((article, index) => (
+                            <a
+                              key={index}
+                              href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}/`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="block p-1.5 bg-blue-50 hover:bg-blue-100 rounded text-xs transition-colors"
+                            >
+                              <div className="font-medium text-blue-800 break-words line-clamp-1">
+                                {article.title}
+                              </div>
+                              <div className="text-blue-600 text-xs">PMID: {article.pmid}</div>
+                            </a>
+                          ))}
+                        </div>
+                        {providerContent.pubmed_articles.length > MAX_ITEMS_TO_SHOW && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowAllPubMed(!showAllPubMed);
+                            }}
+                            className="mt-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            {showAllPubMed ? 'Show less' : `Show all ${providerContent.pubmed_articles.length}`}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Patient Reviews - Collapsible */}
+            {providerContent?.reviews && providerContent.reviews.length > 0 && (
+              <div className="mb-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowReviews(!showReviews);
+                  }}
+                  className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-gray-900"
+                >
+                  {showReviews ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  <span>Reviews ({providerContent.reviews.length})</span>
+                </button>
+                {showReviews && (
+                  <div className="mt-2 ml-4">
+                    <ProviderReviews 
+                      npi={provider.npi} 
+                      searchQuery={searchQuery}
+                      reviews={providerContent.reviews}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col space-y-2 w-48 flex-shrink-0">
+          {/* Action Buttons - More Compact */}
+          <div className="flex flex-col gap-1.5 w-40 flex-shrink-0">
             <button 
               onClick={(e) => {
                 e.stopPropagation();
                 setIsQuestionsModalOpen(true);
               }}
-              className="flex items-center justify-center space-x-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-xs font-bold whitespace-nowrap"
+              className="flex items-center justify-center gap-1.5 bg-purple-600 text-white px-2.5 py-1.5 rounded hover:bg-purple-700 transition-colors text-xs font-semibold whitespace-nowrap"
             >
-              <HelpCircle className="h-4 w-4" />
-              <span>Questions to Ask</span>
+              <HelpCircle className="h-3.5 w-3.5" />
+              <span>Questions</span>
             </button>
             
             <button 
@@ -518,10 +530,10 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                 e.stopPropagation();
                 openSchedulingModal();
               }}
-              className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-xs font-bold whitespace-nowrap"
+              className="flex items-center justify-center gap-1.5 bg-blue-600 text-white px-2.5 py-1.5 rounded hover:bg-blue-700 transition-colors text-xs font-semibold whitespace-nowrap"
             >
-              <Clock className="h-4 w-4" />
-              <span>Book appointment</span>
+              <Clock className="h-3.5 w-3.5" />
+              <span>Book</span>
             </button>
             
             <button 
@@ -537,10 +549,10 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                 setEditablePromptText('');
                 setIsPreAuthModalOpen(true);
               }}
-              className="flex items-center justify-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-xs font-bold whitespace-nowrap"
+              className="flex items-center justify-center gap-1.5 bg-green-600 text-white px-2.5 py-1.5 rounded hover:bg-green-700 transition-colors text-xs font-semibold whitespace-nowrap"
             >
-              <FileText className="h-4 w-4" />
-              <span>Pre-authorization Letter</span>
+              <FileText className="h-3.5 w-3.5" />
+              <span>Pre-auth</span>
             </button>
             
             <button 
@@ -548,10 +560,10 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                 e.stopPropagation();
                 setIsInsuranceModalOpen(true);
               }}
-              className="flex items-center justify-center space-x-2 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors text-xs font-bold whitespace-nowrap"
+              className="flex items-center justify-center gap-1.5 bg-orange-600 text-white px-2.5 py-1.5 rounded hover:bg-orange-700 transition-colors text-xs font-semibold whitespace-nowrap"
             >
-              <Shield className="h-4 w-4" />
-              <span>Insurance approval</span>
+              <Shield className="h-3.5 w-3.5" />
+              <span>Insurance</span>
             </button>
           </div>
         </div>
