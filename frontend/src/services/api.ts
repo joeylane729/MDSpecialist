@@ -597,6 +597,7 @@ export interface HealthgradesReview {
   review_text: string | null;
   review_author: string | null;
   review_date: string | null;
+  is_relevant?: boolean;  // Boolean flag indicating if review is relevant to search query
 }
 
 export interface ReviewCountResponse {

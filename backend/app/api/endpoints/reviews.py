@@ -18,6 +18,7 @@ class ReviewResponse(BaseModel):
     review_text: Optional[str]
     review_author: Optional[str]
     review_date: Optional[str]
+    is_relevant: Optional[bool] = False  # Boolean flag indicating if review is relevant to search query
     
     class Config:
         from_attributes = True
@@ -52,7 +53,24 @@ async def get_reviews_by_npi(
         logger.warning(f"⚠️ [REVIEWS API] No reviews found for NPI {npi}. Sample NPIs in DB: {[n[0] for n in sample_npis]}")
         return []
     
-    return reviews
+    # Convert to ReviewResponse with is_relevant flag
+    # Since this endpoint doesn't filter, all reviews have is_relevant=False (no search context)
+    review_responses = []
+    for review in reviews:
+        review_dict = {
+            'id': review.id,
+            'npi': review.npi,
+            'first_name': review.first_name,
+            'last_name': review.last_name,
+            'review_index': review.review_index,
+            'review_text': review.review_text,
+            'review_author': review.review_author,
+            'review_date': review.review_date,
+            'is_relevant': False  # No search context, so cannot determine relevance
+        }
+        review_responses.append(ReviewResponse(**review_dict))
+    
+    return review_responses
 
 
 @router.get("/reviews/{npi}/count")
@@ -125,7 +143,25 @@ async def search_reviews_by_keywords(
     
     logger.info(f"🔍 [REVIEWS SEARCH API] Found {len(reviews)} matching reviews for NPI {npi}")
     
-    return reviews
+    # Convert to ReviewResponse with is_relevant flag
+    # Since this endpoint filters in SQL, all returned reviews are relevant
+    from pydantic import TypeAdapter
+    review_responses = []
+    for review in reviews:
+        review_dict = {
+            'id': review.id,
+            'npi': review.npi,
+            'first_name': review.first_name,
+            'last_name': review.last_name,
+            'review_index': review.review_index,
+            'review_text': review.review_text,
+            'review_author': review.review_author,
+            'review_date': review.review_date,
+            'is_relevant': True  # All reviews returned from filtered query are relevant
+        }
+        review_responses.append(ReviewResponse(**review_dict))
+    
+    return review_responses
 
 
 @router.get("/reviews/{npi}/search/count")

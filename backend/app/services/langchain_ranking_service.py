@@ -1807,45 +1807,69 @@ class LangChainRankingService:
     
     def _batch_fetch_reviews(self, npis: List[str], patient_profile: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
         """
-        Batch fetch Healthgrades reviews for multiple NPIs in a single query.
-        Similar to how PubMed articles are fetched.
+        Batch fetch ALL reviews for multiple NPIs and mark each as relevant/not relevant.
+        Returns reviews with is_relevant boolean flag.
         
         Args:
             npis: List of NPI numbers
             patient_profile: Patient profile dict containing search_query for keyword filtering
             
         Returns:
-            Dictionary mapping NPI to dict with 'reviews' (list) and 'relevant_count' (int)
+            Dictionary mapping NPI to dict with 'reviews' (list with is_relevant flag) and 'relevant_count' (int)
         """
         from ..models.healthgrades_review import HealthgradesReview
-        from sqlalchemy import or_
         
         if not npis or not self.db:
             return {}
         
         try:
-            logger.info(f"📦 [Reviews] Batch fetching reviews for {len(npis)} NPIs")
+            logger.info(f"📦 [Reviews] Batch fetching ALL reviews for {len(npis)} NPIs")
             
-            # Extract search_query from patient_profile for keyword filtering
+            # Extract search_query from patient_profile
             search_query = patient_profile.get('search_query', '') if isinstance(patient_profile, dict) else ''
+            
+            # If search_query is missing, try to extract it from diagnosis data
+            if not search_query and isinstance(patient_profile, dict):
+                primary_diagnosis = None
+                if patient_profile.get('diagnoses') and patient_profile['diagnoses'].get('primary'):
+                    primary_diagnosis = patient_profile['diagnoses']['primary'].get('description', '')
+                elif patient_profile.get('icd10_description'):
+                    primary_diagnosis = patient_profile.get('icd10_description', '')
+                
+                user_diagnosis = patient_profile.get('user_diagnosis', '') or patient_profile.get('diagnosis', '')
+                
+                if primary_diagnosis and user_diagnosis:
+                    # Generate simple search query from diagnosis
+                    diagnosis_terms = [user_diagnosis.lower()]
+                    if primary_diagnosis:
+                        # Extract key medical terms from primary diagnosis
+                        terms = primary_diagnosis.lower().replace(',', ' ').replace('(', ' ').replace(')', ' ').split()
+                        medical_terms = [t for t in terms if len(t) > 4 and t not in ['benign', 'neoplasm', 'of', 'the', 'and', 'or']]
+                        diagnosis_terms.extend(medical_terms[:3])  # Add top 3 terms
+                    
+                    # Create OR-separated query (simplified version)
+                    search_query = ' OR '.join(set(diagnosis_terms))  # Remove duplicates
+                    logger.info(f"🔍 [Reviews Debug] Generated search_query from diagnosis: {search_query}")
+            
+            # Extract keywords for relevance checking
             keyword_list = []
             if search_query:
                 keyword_list = [k.strip().lower() for k in search_query.split(' OR ') if k.strip()]
-                logger.info(f"🔍 [Reviews] Using {len(keyword_list)} keywords for filtering: {', '.join(keyword_list[:3])}{'...' if len(keyword_list) > 3 else ''}")
+                logger.info(f"🔍 [Reviews] Using {len(keyword_list)} keywords for relevance checking: {', '.join(keyword_list[:3])}{'...' if len(keyword_list) > 3 else ''}")
+            else:
+                logger.warning(f"⚠️ [Reviews] No search_query available - all reviews will be marked as not relevant")
             
-            # Single query for all NPIs
-            reviews_query = self.db.query(HealthgradesReview).filter(
+            # Fetch ALL reviews (no SQL filtering)
+            all_reviews = self.db.query(HealthgradesReview).filter(
                 HealthgradesReview.npi.in_(npis)
             ).order_by(
                 HealthgradesReview.npi,
                 HealthgradesReview.review_index
-            ).limit(100 * len(npis))  # Limit per NPI
-            
-            all_reviews = reviews_query.all()
+            ).limit(100 * len(npis)).all()
             
             logger.info(f"📦 [Reviews] Found {len(all_reviews)} total reviews across {len(npis)} NPIs")
             
-            # Group by NPI and count relevant reviews
+            # Group by NPI and mark each review as relevant/not relevant
             reviews_by_npi = {}
             theodore_npi = '1811916455'
             theodore_relevant_count = 0
@@ -1860,35 +1884,36 @@ class LangChainRankingService:
                         'total_count': 0
                     }
                 
+                # Check if review is relevant (contains any keyword)
+                is_relevant = False
+                if keyword_list and review.review_text:
+                    review_text_lower = review.review_text.lower()
+                    is_relevant = any(keyword in review_text_lower for keyword in keyword_list)
+                
                 review_data = {
                     'id': review.id,
                     'review_text': review.review_text,
                     'review_author': review.review_author,
                     'review_date': review.review_date,
-                    'review_index': review.review_index
+                    'review_index': review.review_index,
+                    'is_relevant': is_relevant  # Add boolean flag
                 }
                 
                 # Limit to 100 reviews per NPI
                 if len(reviews_by_npi[npi_str]['reviews']) < 100:
                     reviews_by_npi[npi_str]['reviews'].append(review_data)
                     reviews_by_npi[npi_str]['total_count'] += 1
-                    
-                    # Check if review contains any keyword
-                    is_relevant = False
-                    if keyword_list and review.review_text:
-                        review_text_lower = review.review_text.lower()
-                        if any(keyword in review_text_lower for keyword in keyword_list):
-                            is_relevant = True
-                            reviews_by_npi[npi_str]['relevant_count'] += 1
-                    
-                    # Detailed logging for Theodore Schwartz
-                    if npi_str == theodore_npi:
-                        theodore_total_count += 1
-                        if is_relevant:
-                            theodore_relevant_count += 1
-                            matched_keywords = [k for k in keyword_list if k in review.review_text.lower()]
-                            logger.info(f"🔍 [Theodore Debug] Review #{review.review_index} is RELEVANT. Matched keywords: {matched_keywords[:3]}")
-                            logger.info(f"🔍 [Theodore Debug] Review text preview: {review.review_text[:150]}...")
+                    if is_relevant:
+                        reviews_by_npi[npi_str]['relevant_count'] += 1
+                
+                # Detailed logging for Theodore Schwartz
+                if npi_str == theodore_npi:
+                    theodore_total_count += 1
+                    if is_relevant:
+                        theodore_relevant_count += 1
+                        matched_keywords = [k for k in keyword_list if k in review.review_text.lower()]
+                        logger.info(f"🔍 [Theodore Debug] Review #{review.review_index} is RELEVANT. Matched keywords: {matched_keywords[:3]}")
+                        logger.info(f"🔍 [Theodore Debug] Review text preview: {review.review_text[:150]}...")
             
             # Log summary
             total_relevant = sum(data['relevant_count'] for data in reviews_by_npi.values())

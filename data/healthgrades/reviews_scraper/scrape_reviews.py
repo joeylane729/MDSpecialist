@@ -438,7 +438,8 @@ def extract_reviews_from_page(driver):
                 continue
         
         # Get page source and parse with BeautifulSoup
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
+        page_source = driver.page_source  # Store for rating extraction
+        soup = BeautifulSoup(page_source, 'html.parser')
         
         # Healthgrades reviews page structure - try to find review containers
         # Reviews are typically in sections or divs with specific patterns
@@ -483,6 +484,105 @@ def extract_reviews_from_page(driver):
         page_text = soup.get_text(separator='\n')
         seen_texts = set()
         
+        # Initialize element_ratings dictionary (will be populated by rating extraction)
+        element_ratings = {}
+        
+        # FIRST: Extract ratings from Selenium elements
+        if review_elements_selenium:
+            print(f"      🔍 Extracting ratings from {len(review_elements_selenium)} review elements...")
+            for idx, elem in enumerate(review_elements_selenium):
+                try:
+                    rating = None
+                    # Try multiple selectors for rating - expanded list
+                    rating_selectors = [
+                        (By.XPATH, ".//*[contains(@aria-label, 'star')]"),
+                        (By.XPATH, ".//*[@data-rating]"),
+                        (By.XPATH, ".//*[contains(@class, 'star')]"),
+                        (By.XPATH, ".//*[contains(@class, 'rating')]"),
+                        (By.XPATH, ".//svg[contains(@class, 'star')]"),
+                        (By.XPATH, ".//*[contains(@aria-label, 'rating')]"),
+                        (By.XPATH, ".//*[contains(@title, 'star')]"),
+                        (By.XPATH, ".//span[contains(@class, 'star')]"),
+                        (By.XPATH, ".//div[contains(@class, 'star')]"),
+                    ]
+                    for by, selector in rating_selectors:
+                        try:
+                            rating_elems = elem.find_elements(by, selector)
+                            for rating_elem in rating_elems:
+                                # Try aria-label
+                                aria_label = rating_elem.get_attribute('aria-label') or ''
+                                if 'star' in aria_label.lower() or 'rating' in aria_label.lower():
+                                    match = re.search(r'(\d+)', aria_label)
+                                    if match:
+                                        rating = int(match.group(1))
+                                        if 1 <= rating <= 5:
+                                            break
+                                
+                                # Try title
+                                title = rating_elem.get_attribute('title') or ''
+                                if 'star' in title.lower() or 'rating' in title.lower():
+                                    match = re.search(r'(\d+)', title)
+                                    if match:
+                                        rating = int(match.group(1))
+                                        if 1 <= rating <= 5:
+                                            break
+                                
+                                # Try data-rating
+                                data_rating = rating_elem.get_attribute('data-rating')
+                                if data_rating:
+                                    try:
+                                        rating = int(data_rating)
+                                        if 1 <= rating <= 5:
+                                            break
+                                    except:
+                                        pass
+                                
+                                # Try text content
+                                elem_text = rating_elem.text
+                                if elem_text:
+                                    rating_match = re.search(r'(\d+)\s*(?:out\s*of\s*)?\d*\s*star', elem_text, re.I)
+                                    if rating_match:
+                                        try:
+                                            rating = int(rating_match.group(1))
+                                            if 1 <= rating <= 5:
+                                                break
+                                        except:
+                                            pass
+                            if rating:
+                                break
+                        except:
+                            continue
+                    
+                    # If still no rating, try parsing from element text directly
+                    if not rating:
+                        elem_text = elem.text[:300]
+                        rating_patterns = [
+                            r'(\d+)\s*(?:out\s*of\s*)?\d*\s*star',
+                            r'rating[:\s]+(\d+)',
+                            r'(\d+)/5',
+                        ]
+                        for pattern in rating_patterns:
+                            rating_match = re.search(pattern, elem_text, re.I)
+                            if rating_match:
+                                try:
+                                    rating = int(rating_match.group(1))
+                                    if 1 <= rating <= 5:
+                                        break
+                                except:
+                                    pass
+                    
+                    if rating:
+                        element_ratings[idx] = rating
+                        print(f"      ✓ Found rating {rating} for element {idx+1}")
+                    elif idx < 3:  # Debug first 3
+                        print(f"      ⚠️  No rating for element {idx+1}, preview: {elem.text[:80]}")
+                except Exception as e:
+                    if idx < 3:
+                        print(f"      ⚠️  Error extracting rating from element {idx+1}: {e}")
+                    continue
+            
+            print(f"      📊 Extracted {len(element_ratings)} ratings from {len(review_elements_selenium)} elements")
+        
         # Pattern to match dates: "Sep 10, 2025" or "January 12, 2024"
         # Month abbreviations: Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec
         date_pattern = re.compile(
@@ -491,8 +591,87 @@ def extract_reviews_from_page(driver):
             r'[A-Z][a-z]+\s+\d{1,2},\s+\d{4}))'  # "January 12, 2024"
         )
         
-        # Strategy: Split by "Reply Flag" first to get individual review blocks
-        # Then within each block, find the date and extract the review text
+        # SECOND: Extract reviews directly from Selenium elements (with ratings already paired)
+        # This ensures ratings match reviews perfectly since they come from the same element
+        if review_elements_selenium and len(element_ratings) > 0:
+            print(f"      🔍 Extracting reviews from {len(review_elements_selenium)} Selenium elements (with ratings)...")
+            selenium_reviews_found = 0
+            for idx, elem in enumerate(review_elements_selenium):
+                try:
+                    elem_text = elem.text
+                    # Skip if this looks like a header/navigation element
+                    if len(elem_text) < 50 or 'Your trust is our top concern' in elem_text:
+                        if idx < 3:
+                            print(f"      ⚠️  Skipping element {idx+1}: too short or header text")
+                        continue
+                    
+                    # Try to extract review text, date, and author from element
+                    date_match = date_pattern.search(elem_text)
+                    if not date_match and idx < 3:
+                        print(f"      ⚠️  No date found in element {idx+1}, preview: {elem_text[:100]}")
+                    
+                    if date_match:
+                        date_str = date_match.group(1).strip()
+                        
+                        # Extract author if present
+                        author = None
+                        author_match = re.search(r'^([A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)?)\s+–\s+', date_str)
+                        if author_match:
+                            author = author_match.group(1)
+                            date_str = re.sub(r'^[A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)?\s+–\s+', '', date_str)
+                        
+                        # Extract review text (everything before the date)
+                        review_text_raw = elem_text[:date_match.start()].strip()
+                        
+                        # Clean up review text
+                        review_text = review_text_raw
+                        review_text = re.sub(r'(×|Post\s+a\s+Response|Are\s+you.*?\?|Yes|No|Reply\s+Flag)', '', review_text, flags=re.I)
+                        review_text = re.sub(r'More\s+details', '', review_text, flags=re.I)
+                        review_text = re.sub(r'\d+\s+other.*?found\s+this\s+helpful', '', review_text, flags=re.I)
+                        review_text = re.sub(r'Helpful', '', review_text, flags=re.I)
+                        review_text = re.sub(r'\s+', ' ', review_text)
+                        review_text = review_text.strip()
+                        
+                        # Validate review
+                        text_lower = review_text.lower()
+                        review_indicators = ['doctor', 'dr.', 'patient', 'visit', 'appointment', 
+                                             'treatment', 'care', 'experience', 'recommend', 
+                                             'good', 'bad', 'office', 'staff', 'time', 'surgery', 
+                                             'procedure', 'helped', 'would recommend', 'worst', 'best', 
+                                             'veterinarian', 'dismissive', 'rude', 'arrogant', 'terrible',
+                                             'seizures', 'neurologist', 'hospital', 'uncle', 'nice', 'fast']
+                        
+                        if (30 < len(review_text) < 5000 and 
+                            review_text not in seen_texts and
+                            any(indicator in text_lower for indicator in review_indicators)):
+                            # Get rating from element_ratings (paired by index!)
+                            rating = element_ratings.get(idx)
+                            
+                            reviews.append({
+                                'text': review_text,
+                                'date': date_str,
+                                'author': author,
+                                'rating': rating
+                            })
+                            seen_texts.add(review_text)
+                            selenium_reviews_found += 1
+                            if rating:
+                                print(f"      ✓ Extracted review {len(reviews)} with rating {rating}")
+                            else:
+                                print(f"      ✓ Extracted review {len(reviews)} (no rating)")
+                except Exception as e:
+                    if idx < 3:
+                        print(f"      ⚠️  Error extracting review from element {idx+1}: {e}")
+                    continue
+            
+            print(f"      📊 Extracted {selenium_reviews_found} reviews from Selenium elements")
+        
+        # FALLBACK: Extract from text blocks if Selenium extraction didn't work
+        if len(reviews) == 0:
+            print(f"      ⚠️  No reviews from Selenium elements, falling back to text extraction...")
+        elif len(reviews) < 5:
+            print(f"      ⚠️  Only {len(reviews)} reviews from Selenium, supplementing with text extraction...")
+        
         review_blocks = re.split(r'Reply\s+Flag', page_text, flags=re.I)
         
         for block in review_blocks:
@@ -566,22 +745,67 @@ def extract_reviews_from_page(driver):
                 if (30 < len(review_text) < 5000 and 
                     review_text not in seen_texts and
                     any(indicator in text_lower for indicator in review_indicators)):
-                    # Try to find rating for this review
-                    # Look for rating in the review block text or nearby HTML
+                    # Try to find rating for this review by matching to Selenium elements
                     rating = None
                     
-                    # Try to match this review text to one of our Selenium elements
-                    for elem_soup in review_elements_with_html:
-                        elem_text = elem_soup.get_text()
-                        # If this element contains our review text, extract rating from it
-                        if review_text[:100] in elem_text or elem_text[:100] in review_text:
-                            rating = extract_rating_from_element(elem_soup)
-                            if rating:
-                                break
+                    # Strategy 1: Search HTML source near this review for rating patterns
+                    # Look in a wider context around the review in the page source
+                    try:
+                        # Find the review text in the page source
+                        review_start = page_source.find(review_text[:100])
+                        if review_start > 0:
+                            # Search 500 chars before and after the review for rating patterns
+                            search_start = max(0, review_start - 500)
+                            search_end = min(len(page_source), review_start + len(review_text) + 500)
+                            context_html = page_source[search_start:search_end]
+                            
+                            # Look for rating in HTML attributes
+                            rating_patterns_html = [
+                                r'aria-label=["\']([^"\']*?(\d+)\s*(?:out\s*of\s*)?\d*\s*star[^"\']*?)["\']',
+                                r'data-rating=["\'](\d+)["\']',
+                                r'title=["\']([^"\']*?(\d+)\s*(?:out\s*of\s*)?\d*\s*star[^"\']*?)["\']',
+                            ]
+                            for pattern in rating_patterns_html:
+                                match = re.search(pattern, context_html, re.I)
+                                if match:
+                                    # Extract number from match
+                                    num_match = re.search(r'(\d+)', match.group(0))
+                                    if num_match:
+                                        try:
+                                            rating = int(num_match.group(1))
+                                            if 1 <= rating <= 5:
+                                                print(f"      ✓ Found rating {rating} in HTML near review: {review_text[:50]}...")
+                                                break
+                                        except:
+                                            pass
+                    except:
+                        pass
                     
-                    # If still no rating, try to find it in the block text
+                    # Strategy 2: Match review text to Selenium elements by content overlap
+                    if not rating and review_elements_selenium and element_ratings:
+                        review_snippet = review_text[:150].strip().lower()
+                        for elem_idx, elem in enumerate(review_elements_selenium):
+                            try:
+                                elem_text = elem.text.lower()
+                                if review_snippet and len(review_snippet) > 50:
+                                    if review_snippet[:100] in elem_text and elem_idx in element_ratings:
+                                        rating = element_ratings[elem_idx]
+                                        print(f"      ✓ Matched rating {rating} to review (element {elem_idx+1})")
+                                        break
+                            except:
+                                continue
+                    
+                    # Strategy 2: Try to match to BeautifulSoup elements
                     if not rating:
-                        # Look for rating patterns in the block text near this review
+                        for elem_soup in review_elements_with_html:
+                            elem_text = elem_soup.get_text()
+                            if review_text[:100] in elem_text or elem_text[:100] in review_text:
+                                rating = extract_rating_from_element(elem_soup)
+                                if rating:
+                                    break
+                    
+                    # Strategy 3: Try text pattern matching in the block
+                    if not rating:
                         rating_match = re.search(r'(\d+)\s*(?:out\s*of\s*)?\d*\s*star', block[start_pos:date_match.start()], re.I)
                         if rating_match:
                             try:

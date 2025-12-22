@@ -4,31 +4,26 @@ import { HealthgradesReview } from '../services/api';
 
 interface ProviderReviewsProps {
   npi: string | number;
-  searchQuery?: string;  // Pre-generated search query from backend (same as PubMed)
-  reviews: HealthgradesReview[];  // Pre-fetched reviews from backend (batched like PubMed)
+  searchQuery?: string;  // Optional, kept for backward compatibility but not used for filtering
+  reviews: HealthgradesReview[];  // Pre-fetched reviews from backend with is_relevant flag
 }
 
-export default function ProviderReviews({ searchQuery, reviews: allReviews }: ProviderReviewsProps) {
+export default function ProviderReviews({ reviews: allReviews }: ProviderReviewsProps) {
   const [showAll, setShowAll] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [viewMode, setViewMode] = useState<'relevant' | 'all'>('relevant');
 
   const PREVIEW_COUNT = 2; // Show 2 reviews by default
 
-  // Filter reviews by keywords (client-side filtering)
+  // Filter reviews by is_relevant boolean (backend already calculated this)
   const filteredReviews = React.useMemo(() => {
-    if (!searchQuery || viewMode === 'all') {
+    if (viewMode === 'all') {
       return allReviews;
     }
     
-    // Parse keywords from search query (split by " OR ")
-    const keywordList = searchQuery.split(' OR ').map(k => k.trim().toLowerCase());
-    
-    return allReviews.filter(review => {
-      const reviewText = review.review_text?.toLowerCase() || '';
-      return keywordList.some(keyword => reviewText.includes(keyword));
-    });
-  }, [allReviews, searchQuery, viewMode]);
+    // Filter by is_relevant boolean flag (set by backend)
+    return allReviews.filter(review => review.is_relevant === true);
+  }, [allReviews, viewMode]);
 
   const displayedReviews = showAll ? filteredReviews : filteredReviews.slice(0, PREVIEW_COUNT);
   const matchingCount = filteredReviews.length;
@@ -62,7 +57,7 @@ export default function ProviderReviews({ searchQuery, reviews: allReviews }: Pr
     );
   }
 
-  const headerText = viewMode === 'relevant' && searchQuery
+  const headerText = viewMode === 'relevant' && matchingCount > 0
     ? `Relevant Patient Reviews (${matchingCount} of ${totalCount})`
     : `Patient Reviews (${totalCount})`;
 
@@ -85,7 +80,7 @@ export default function ProviderReviews({ searchQuery, reviews: allReviews }: Pr
 
       {expanded && (
         <div className="mt-2 p-4 bg-gray-50 rounded-lg space-y-3">
-          {viewMode === 'relevant' && searchQuery && matchingCount < totalCount && (
+          {viewMode === 'relevant' && matchingCount < totalCount && (
             <div className="flex items-center justify-between p-2 bg-blue-50 rounded border border-blue-100">
               <span className="text-sm text-blue-800">
                 Showing reviews relevant to your search
@@ -99,7 +94,7 @@ export default function ProviderReviews({ searchQuery, reviews: allReviews }: Pr
             </div>
           )}
 
-          {viewMode === 'all' && searchQuery && matchingCount < totalCount && (
+          {viewMode === 'all' && matchingCount < totalCount && (
             <div className="flex items-center justify-between p-2 bg-gray-100 rounded border border-gray-200">
               <span className="text-sm text-gray-700">
                 Showing all reviews
