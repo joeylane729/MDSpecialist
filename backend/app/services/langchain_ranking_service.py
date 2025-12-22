@@ -325,20 +325,11 @@ class LangChainRankingService:
             return {}
         
         # Find max values for normalization (including clinical volume which is now percentage-based)
-        theodore_npi = '1811916455'
-        
-        # Log all reviews_raw values for debugging
-        all_reviews_raw = [scores.get('reviews_raw', 0) for scores in raw_scores.values()]
-        logger.info(f"🔍 [Theodore Debug] _calculate_weighted_score: All reviews_raw values: {sorted(all_reviews_raw, reverse=True)[:10]}")
-        
         max_clinical_volume = max((scores.get('clinical_volume_raw', 0) for scores in raw_scores.values()), default=1.0)
         max_pubmed = max((scores.get('pubmed_raw', 0) for scores in raw_scores.values()), default=1.0)
         max_vumedi = max((scores.get('vumedi_raw', 0) for scores in raw_scores.values()), default=1.0)
         max_training = max((scores.get('training_raw', 0) for scores in raw_scores.values()), default=1.0)
         max_experience = max((scores.get('experience_raw', 0) for scores in raw_scores.values()), default=1.0)
-        max_reviews = max((scores.get('reviews_raw', 0) for scores in raw_scores.values()), default=1.0)
-        
-        logger.info(f"🔍 [Theodore Debug] _calculate_weighted_score: max_reviews = {max_reviews}")
         
         # Avoid division by zero
         max_clinical_volume = max(max_clinical_volume, 1.0)
@@ -346,7 +337,6 @@ class LangChainRankingService:
         max_vumedi = max(max_vumedi, 1.0)
         max_training = max(max_training, 1.0)
         max_experience = max(max_experience, 1.0)
-        max_reviews = max(max_reviews, 1.0)
         
         # Store max values for frontend display
         max_values = {
@@ -354,8 +344,7 @@ class LangChainRankingService:
             'pubmed': max_pubmed,
             'vumedi': max_vumedi,
             'training': max_training,
-            'experience': max_experience,
-            'reviews': max_reviews
+            'experience': max_experience
         }
         
         weighted_scores = {}
@@ -367,33 +356,16 @@ class LangChainRankingService:
             vumedi_pct = min(scores.get('vumedi_raw', 0) / max_vumedi, 1.0)
             training_pct = min(scores.get('training_raw', 0) / max_training, 1.0)
             experience_pct = min(scores.get('experience_raw', 0) / max_experience, 1.0)
-            reviews_pct = min(scores.get('reviews_raw', 0) / max_reviews, 1.0)
-            
-            # Detailed logging for Theodore Schwartz
-            if str(npi) == theodore_npi:
-                logger.info(f"🔍 [Theodore Debug] _calculate_weighted_score processing NPI {npi}:")
-                logger.info(f"🔍 [Theodore Debug]   - scores dict: {scores}")
-                logger.info(f"🔍 [Theodore Debug]   - reviews_raw from scores: {scores.get('reviews_raw', 'NOT FOUND')}")
-                logger.info(f"🔍 [Theodore Debug]   - max_reviews: {max_reviews}")
-                logger.info(f"🔍 [Theodore Debug]   - reviews_pct calculation: {scores.get('reviews_raw', 0)} / {max_reviews} = {reviews_pct}")
             
             # Apply weights and calculate final score (0-100)
-            clinical_volume_weighted = clinical_volume_pct * 38.0  # 38% (reduced from 40%)
-            pubmed_weighted = pubmed_pct * 38.0  # 38% (reduced from 40%)
+            # Redistributed 5% from reviews: +2.5% to clinical_volume, +2.5% to pubmed
+            clinical_volume_weighted = clinical_volume_pct * 40.5  # 40.5% (was 38%, +2.5%)
+            pubmed_weighted = pubmed_pct * 40.5  # 40.5% (was 38%, +2.5%)
             training_weighted = training_pct * 10.0  # 10%
             experience_weighted = experience_pct * 6.0  # 6%
-            vumedi_weighted = vumedi_pct * 3.0  # 3% (reduced from 4%)
-            reviews_weighted = reviews_pct * 5.0  # 5% (NEW)
+            vumedi_weighted = vumedi_pct * 3.0  # 3%
             
-            # Detailed logging for Theodore Schwartz after calculation
-            if str(npi) == theodore_npi:
-                logger.info(f"🔍 [Theodore Debug]   - reviews_weighted: {reviews_weighted} (reviews_pct={reviews_pct} * 5.0)")
-            
-            final_score = clinical_volume_weighted + pubmed_weighted + training_weighted + experience_weighted + vumedi_weighted + reviews_weighted
-            
-            # Detailed logging for Theodore Schwartz final score
-            if str(npi) == theodore_npi:
-                logger.info(f"🔍 [Theodore Debug]   - final_score: {final_score}")
+            final_score = clinical_volume_weighted + pubmed_weighted + training_weighted + experience_weighted + vumedi_weighted
             
             weighted_scores[npi] = {
                 'clinical_volume_pct': clinical_volume_pct * 100,
@@ -401,21 +373,18 @@ class LangChainRankingService:
                 'vumedi_pct': vumedi_pct * 100,
                 'training_pct': training_pct * 100,
                 'experience_pct': experience_pct * 100,
-                'reviews_pct': reviews_pct * 100,
                 'clinical_volume_weighted': clinical_volume_weighted,
                 'pubmed_weighted': pubmed_weighted,
                 'vumedi_weighted': vumedi_weighted,
                 'training_weighted': training_weighted,
                 'experience_weighted': experience_weighted,
-                'reviews_weighted': reviews_weighted,
                 'final_score': final_score,
                 'breakdown_details': {  # Store details for frontend display
-                    'clinical_volume': {'raw': scores.get('clinical_volume_raw', 0), 'max': max_values['clinical_volume'], 'percentage': clinical_volume_pct * 100, 'weighted_points': clinical_volume_weighted, 'weight': 38},
-                    'pubmed': {'raw': scores.get('pubmed_raw', 0), 'max': max_values['pubmed'], 'percentage': pubmed_pct * 100, 'weighted_points': pubmed_weighted, 'weight': 38},
+                    'clinical_volume': {'raw': scores.get('clinical_volume_raw', 0), 'max': max_values['clinical_volume'], 'percentage': clinical_volume_pct * 100, 'weighted_points': clinical_volume_weighted, 'weight': 40.5},
+                    'pubmed': {'raw': scores.get('pubmed_raw', 0), 'max': max_values['pubmed'], 'percentage': pubmed_pct * 100, 'weighted_points': pubmed_weighted, 'weight': 40.5},
                     'training': {'raw': scores.get('training_raw', 0), 'max': max_values['training'], 'percentage': training_pct * 100, 'weighted_points': training_weighted, 'weight': 10},
                     'experience': {'raw': scores.get('experience_raw', 0), 'max': max_values['experience'], 'percentage': experience_pct * 100, 'weighted_points': experience_weighted, 'weight': 6},
                     'vumedi': {'raw': scores.get('vumedi_raw', 0), 'max': max_values['vumedi'], 'percentage': vumedi_pct * 100, 'weighted_points': vumedi_weighted, 'weight': 3},
-                    'reviews': {'raw': scores.get('reviews_raw', 0), 'max': max_values['reviews'], 'percentage': reviews_pct * 100, 'weighted_points': reviews_weighted, 'weight': 5},
                 }
             }
         
@@ -870,11 +839,6 @@ class LangChainRankingService:
                                 'weighted_points': weighted_data['vumedi_weighted'],
                                 'weight': 3.0
                             },
-                            'reviews': {
-                                'percentage': weighted_data.get('reviews_pct', 0),
-                                'weighted_points': weighted_data.get('reviews_weighted', 0),
-                                'weight': 5.0
-                            },
                             'breakdown_details': weighted_data.get('breakdown_details', {})
                         }
             
@@ -991,12 +955,6 @@ class LangChainRankingService:
                             'percentage': 0.0,
                             'weighted_points': 0.0,
                             'weight': 3.0
-                        },
-                        'reviews': {
-                            'raw': 0.0,
-                            'percentage': 0.0,
-                            'weighted_points': 0.0,
-                            'weight': 5.0
                         }
                     }
                     # Also ensure score is set (might be 0 for unmatched providers)
@@ -1046,131 +1004,7 @@ class LangChainRankingService:
             
             logger.info(f"✅ Added reviews to provider_links for {len(reviews_data_by_npi)} providers")
             
-            # Add reviews_raw to raw_component_scores for all providers
-            theodore_npi = '1811916455'
-            
-            for npi in ranked_npis:
-                npi_str = str(npi)  # Normalize to string
-                reviews_raw_value = reviews_counts.get(npi, 0)
-                
-                # Detailed logging for Theodore Schwartz BEFORE adding
-                if npi_str == theodore_npi or npi == theodore_npi:
-                    logger.info(f"🔍 [Theodore Debug] Adding reviews_raw to raw_component_scores:")
-                    logger.info(f"🔍 [Theodore Debug]   - npi: {npi}, npi_str: {npi_str}")
-                    logger.info(f"🔍 [Theodore Debug]   - reviews_counts.get({npi}, 0) = {reviews_raw_value}")
-                    logger.info(f"🔍 [Theodore Debug]   - npi in raw_component_scores: {npi in raw_component_scores}")
-                    logger.info(f"🔍 [Theodore Debug]   - npi_str in raw_component_scores: {npi_str in raw_component_scores}")
-                    logger.info(f"🔍 [Theodore Debug]   - raw_component_scores keys (first 5): {list(raw_component_scores.keys())[:5]}")
-                
-                if npi in raw_component_scores:
-                    raw_component_scores[npi]['reviews_raw'] = reviews_raw_value
-                    if npi_str == theodore_npi or npi == theodore_npi:
-                        logger.info(f"🔍 [Theodore Debug]   - ✅ Set raw_component_scores[{npi}]['reviews_raw'] = {reviews_raw_value}")
-                elif npi_str in raw_component_scores:
-                    # Try string version
-                    raw_component_scores[npi_str]['reviews_raw'] = reviews_raw_value
-                    if npi_str == theodore_npi or npi == theodore_npi:
-                        logger.info(f"🔍 [Theodore Debug]   - ✅ Set raw_component_scores[{npi_str}]['reviews_raw'] = {reviews_raw_value}")
-                else:
-                    # Provider not in raw_component_scores yet (unmatched provider)
-                    raw_component_scores[npi] = {
-                        'vumedi_raw': 0,
-                        'pubmed_raw': 0,
-                        'training_raw': 0,
-                        'experience_raw': 0,
-                        'clinical_volume_raw': 0,
-                        'reviews_raw': reviews_raw_value
-                    }
-                    if npi_str == theodore_npi or npi == theodore_npi:
-                        logger.info(f"🔍 [Theodore Debug]   - ✅ Created new entry with reviews_raw = {reviews_raw_value}")
-            
-            # Recalculate weighted scores now that reviews are included
-            if raw_component_scores:
-                logger.info("🔄 Recalculating weighted scores with reviews data")
-                theodore_npi = '1811916455'
-                
-                # Debug: Check reviews_raw for Theodore Schwartz BEFORE recalculation
-                for npi_key in raw_component_scores:
-                    if str(npi_key) == theodore_npi:
-                        logger.info(f"🔍 [Theodore Debug] BEFORE _calculate_weighted_score:")
-                        logger.info(f"🔍 [Theodore Debug]   - raw_component_scores[{npi_key}] = {raw_component_scores[npi_key]}")
-                        logger.info(f"🔍 [Theodore Debug]   - reviews_raw = {raw_component_scores[npi_key].get('reviews_raw', 'NOT FOUND')}")
-                
-                updated_weighted_scores = self._calculate_weighted_score(raw_component_scores)
-                
-                # Debug: Check weighted scores for Theodore Schwartz AFTER recalculation
-                for npi, weighted_data in updated_weighted_scores.items():
-                    if str(npi) == theodore_npi:
-                        logger.info(f"🔍 [Theodore Debug] AFTER _calculate_weighted_score:")
-                        logger.info(f"🔍 [Theodore Debug]   - reviews_raw: {raw_component_scores.get(str(npi), {}).get('reviews_raw', 'NOT FOUND')}")
-                        logger.info(f"🔍 [Theodore Debug]   - reviews_pct: {weighted_data.get('reviews_pct', 0)}")
-                        logger.info(f"🔍 [Theodore Debug]   - reviews_weighted: {weighted_data.get('reviews_weighted', 0)}")
-                        logger.info(f"🔍 [Theodore Debug]   - breakdown_details.reviews: {weighted_data.get('breakdown_details', {}).get('reviews', 'NOT FOUND')}")
-                
-                # Update provider_scores with new weighted values including reviews
-                for npi, weighted_data in updated_weighted_scores.items():
-                    # Detailed logging for Theodore Schwartz
-                    if str(npi) == theodore_npi:
-                        logger.info(f"🔍 [Theodore Debug] Updating provider_scores[{npi}] with weighted breakdown:")
-                        logger.info(f"🔍 [Theodore Debug]   - npi in provider_scores: {npi in provider_scores}")
-                        logger.info(f"🔍 [Theodore Debug]   - weighted_data keys: {list(weighted_data.keys())}")
-                        logger.info(f"🔍 [Theodore Debug]   - reviews_pct from weighted_data: {weighted_data.get('reviews_pct', 'NOT FOUND')}")
-                        logger.info(f"🔍 [Theodore Debug]   - reviews_weighted from weighted_data: {weighted_data.get('reviews_weighted', 'NOT FOUND')}")
-                        logger.info(f"🔍 [Theodore Debug]   - breakdown_details.reviews: {weighted_data.get('breakdown_details', {}).get('reviews', 'NOT FOUND')}")
-                    
-                    if npi in provider_scores:
-                        provider_scores[npi]['score'] = weighted_data['final_score']
-                        # Update weighted breakdown with reviews
-                        if 'weighted_breakdown' in provider_scores[npi]:
-                            provider_scores[npi]['weighted_breakdown']['reviews'] = {
-                                'percentage': weighted_data.get('reviews_pct', 0),
-                                'weighted_points': weighted_data.get('reviews_weighted', 0),
-                                'weight': 5.0
-                            }
-                            # Update breakdown_details with reviews
-                            if 'breakdown_details' in provider_scores[npi]['weighted_breakdown']:
-                                provider_scores[npi]['weighted_breakdown']['breakdown_details']['reviews'] = weighted_data.get('breakdown_details', {}).get('reviews', {})
-                            
-                            # Detailed logging for Theodore Schwartz after update
-                            if str(npi) == theodore_npi:
-                                logger.info(f"🔍 [Theodore Debug]   - ✅ Updated provider_scores[{npi}]['weighted_breakdown']['reviews']")
-                                logger.info(f"🔍 [Theodore Debug]   - Final value: {provider_scores[npi]['weighted_breakdown'].get('reviews', 'NOT FOUND')}")
-                                logger.info(f"🔍 [Theodore Debug]   - breakdown_details.reviews: {provider_scores[npi]['weighted_breakdown'].get('breakdown_details', {}).get('reviews', 'NOT FOUND')}")
-                        else:
-                            # Create weighted_breakdown if it doesn't exist
-                            provider_scores[npi]['weighted_breakdown'] = {
-                                'clinical_volume': {
-                                    'percentage': weighted_data.get('clinical_volume_pct', 0),
-                                    'weighted_points': weighted_data.get('clinical_volume_weighted', 0),
-                                    'weight': 38.0
-                                },
-                                'pubmed': {
-                                    'percentage': weighted_data.get('pubmed_pct', 0),
-                                    'weighted_points': weighted_data.get('pubmed_weighted', 0),
-                                    'weight': 38.0
-                                },
-                                'training': {
-                                    'percentage': weighted_data.get('training_pct', 0),
-                                    'weighted_points': weighted_data.get('training_weighted', 0),
-                                    'weight': 10.0
-                                },
-                                'experience': {
-                                    'percentage': weighted_data.get('experience_pct', 0),
-                                    'weighted_points': weighted_data.get('experience_weighted', 0),
-                                    'weight': 6.0
-                                },
-                                'vumedi': {
-                                    'percentage': weighted_data.get('vumedi_pct', 0),
-                                    'weighted_points': weighted_data.get('vumedi_weighted', 0),
-                                    'weight': 3.0
-                                },
-                                'reviews': {
-                                    'percentage': weighted_data.get('reviews_pct', 0),
-                                    'weighted_points': weighted_data.get('reviews_weighted', 0),
-                                    'weight': 5.0
-                                },
-                                'breakdown_details': weighted_data.get('breakdown_details', {})
-                            }
+            # Note: Reviews are included in provider_links for UI display but NOT used in scoring
             
             return {
                 'ranking': ranked_npis,
@@ -1585,8 +1419,7 @@ class LangChainRankingService:
                             'pubmed_raw': 0,
                             'training_raw': med_school_score + residency_score + certification_points,
                             'experience_raw': experience_points,
-                            'clinical_volume_raw': clinical_volume_raw,  # Tot_Srvcs from CMS (will be normalized to percentage)
-                            'reviews_raw': 0  # Will be updated if reviews are fetched
+                            'clinical_volume_raw': clinical_volume_raw  # Tot_Srvcs from CMS (will be normalized to percentage)
                         }
                         
                         # Note: clinical_volume_points removed - clinical volume now uses percentage-based scoring
@@ -1631,8 +1464,7 @@ class LangChainRankingService:
                                 'pubmed_raw': details.get('pubmed', {}).get('raw', 0),
                                 'training_raw': details.get('training', {}).get('raw', 0),
                                 'experience_raw': details.get('experience', {}).get('raw', 0),
-                                'clinical_volume_raw': details.get('clinical_volume', {}).get('raw', 0),
-                                'reviews_raw': details.get('reviews', {}).get('raw', 0)
+                                'clinical_volume_raw': details.get('clinical_volume', {}).get('raw', 0)
                             }
                     # Combine matched and unmatched raw scores for normalization
                     all_raw_scores = {**matched_raw_scores, **unmatched_raw_scores}
@@ -1669,11 +1501,6 @@ class LangChainRankingService:
                                     'weighted_points': weighted_data['vumedi_weighted'],
                                     'weight': 3.0
                                 },
-                                'reviews': {
-                                    'percentage': weighted_data.get('reviews_pct', 0),
-                                    'weighted_points': weighted_data.get('reviews_weighted', 0),
-                                    'weight': 5.0
-                                },
                                 'breakdown_details': weighted_data.get('breakdown_details', {})
                             }
                     # Also update matched providers if not already updated
@@ -1706,11 +1533,6 @@ class LangChainRankingService:
                                     'weighted_points': weighted_data['vumedi_weighted'],
                                     'weight': 3.0
                                 },
-                                'reviews': {
-                                    'percentage': weighted_data.get('reviews_pct', 0),
-                                    'weighted_points': weighted_data.get('reviews_weighted', 0),
-                                    'weight': 5.0
-                                },
                                 'breakdown_details': weighted_data.get('breakdown_details', {})
                             }
                             # Ensure ALL providers have weighted_breakdown (even if all zeros)
@@ -1723,13 +1545,13 @@ class LangChainRankingService:
                                             'raw': 0.0,
                                             'percentage': 0.0,
                                             'weighted_points': 0.0,
-                                            'weight': 38.0
+                                            'weight': 40.5
                                         },
                                         'pubmed': {
                                             'raw': 0.0,
                                             'percentage': 0.0,
                                             'weighted_points': 0.0,
-                                            'weight': 38.0
+                                            'weight': 40.5
                                         },
                                         'training': {
                                             'raw': 0.0,
@@ -1748,12 +1570,6 @@ class LangChainRankingService:
                                             'percentage': 0.0,
                                             'weighted_points': 0.0,
                                             'weight': 3.0
-                                        },
-                                        'reviews': {
-                                            'raw': 0.0,
-                                            'percentage': 0.0,
-                                            'weighted_points': 0.0,
-                                            'weight': 5.0
                                         }
                                     }
                                     # Also ensure score is set (might be 0 for unmatched providers)

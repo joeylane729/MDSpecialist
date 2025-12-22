@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPin, Phone, Star, Award, Calendar, Building, HelpCircle, Clock, FileText, Shield, ExternalLink, BookOpen, Flag, ChevronDown, ChevronUp, TrendingUp, GraduationCap, Briefcase, Video, Activity, Loader2, MessageSquare } from 'lucide-react';
+import { MapPin, Phone, Star, Award, Calendar, Building, HelpCircle, Clock, FileText, Shield, ExternalLink, BookOpen, Flag, ChevronDown, ChevronUp, TrendingUp, GraduationCap, Briefcase, Video, Activity, Loader2 } from 'lucide-react';
 import { NPIProvider, ProviderContent, VumediContent, PubMedArticle, generatePreAuthLetter } from '../services/api';
 import SchedulingModal from './SchedulingModal';
 import ProviderReviews from './ProviderReviews';
@@ -1365,54 +1365,6 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
           </div>
         </div>
       )
-    },
-    {
-      key: 'reviews',
-      title: 'Patient Reviews',
-      icon: MessageSquare,
-      color: 'bg-cyan-50 border-cyan-200',
-      iconColor: 'text-cyan-600',
-      barColor: 'bg-cyan-600',
-      weight: reviews?.weight ?? 5,
-      percentage: reviews?.percentage ?? 0,
-      weightedPoints: reviews?.weighted_points ?? 0,
-      summary: weighted_breakdown?.breakdown_details?.reviews ? `${weighted_breakdown.breakdown_details.reviews.raw} relevant review${weighted_breakdown.breakdown_details.reviews.raw !== 1 ? 's' : ''}` : 'No relevant reviews',
-      details: (() => {
-        const breakdownDetails = weighted_breakdown?.breakdown_details?.reviews;
-        if (!breakdownDetails) {
-          return <div className="text-sm text-gray-600">No reviews data available for this provider.</div>;
-        }
-        
-        const relevantCount = breakdownDetails?.raw ?? 0;
-        const maxRelevant = breakdownDetails?.max ?? 1;
-        const percentageCalc = maxRelevant > 0 ? (relevantCount / maxRelevant * 100) : 0;
-        const percentageDisplay = percentageCalc.toFixed(1);
-        const weightedPointsCalc = (percentageCalc / 100) * (reviews?.weight ?? 5);
-        
-        return (
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Relevant Reviews:</span>
-              <span className="font-semibold">{relevantCount}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Max Relevant Reviews (in category):</span>
-              <span className="font-semibold">{maxRelevant}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Percentage Calculation:</span>
-              <span className="font-semibold">{relevantCount} ÷ {maxRelevant} = {percentageDisplay}%</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Weighted Points:</span>
-              <span className="font-semibold">{(percentageCalc / 100).toFixed(2)} × {reviews?.weight ?? 5}% = {weightedPointsCalc.toFixed(2)} points</span>
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              Reviews containing diagnosis keywords from search query
-            </p>
-          </div>
-        );
-      })()
     }
   ];
 
@@ -1455,13 +1407,13 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
           <div className="mb-6">
             <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-4 border border-gray-200">
               <h3 className="font-semibold text-gray-900 mb-2">Weight Distribution</h3>
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
                 <div className="text-center">
-                  <div className="font-bold text-blue-600">38%</div>
+                  <div className="font-bold text-blue-600">40.5%</div>
                   <div className="text-gray-600 text-xs">Clinical Volume</div>
                 </div>
                 <div className="text-center">
-                  <div className="font-bold text-purple-600">38%</div>
+                  <div className="font-bold text-purple-600">40.5%</div>
                   <div className="text-gray-600 text-xs">PubMed</div>
                 </div>
                 <div className="text-center">
@@ -1475,10 +1427,6 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
                 <div className="text-center">
                   <div className="font-bold text-pink-600">3%</div>
                   <div className="text-gray-600 text-xs">Medical Lectures</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-bold text-cyan-600">5%</div>
-                  <div className="text-gray-600 text-xs">Reviews</div>
                 </div>
               </div>
             </div>
