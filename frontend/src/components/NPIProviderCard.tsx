@@ -552,7 +552,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
               className="flex items-center justify-center gap-1.5 bg-green-600 text-white px-2.5 py-1.5 rounded hover:bg-green-700 transition-colors text-xs font-semibold whitespace-nowrap"
             >
               <FileText className="h-3.5 w-3.5" />
-              <span>Pre-auth</span>
+              <span>Pre-authorization</span>
             </button>
             
             <button 
