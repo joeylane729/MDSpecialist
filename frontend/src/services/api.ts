@@ -451,7 +451,8 @@ export const rankNPIProviders = async (request: NPIRankingRequest): Promise<NPIR
       npi_providers: request.npi_providers,
       patient_input: request.patient_input,
       shared_specialist_information: request.shared_specialist_information,
-      cms_data: request.cms_data // Include CMS data for clinical volume bonus
+      cms_data: request.cms_data, // Include CMS data for clinical volume bonus
+      search_query: request.search_query // Include search_query from first medical analysis (same as used for PubMed)
     };
     
     if (request.cms_data) {
@@ -474,7 +475,9 @@ export const rankNPIProviders = async (request: NPIRankingRequest): Promise<NPIR
     console.log(`🔍 [Frontend] Payload contains:`, {
       npiProvidersCount: payload.npi_providers?.length || 0,
       hasPatientInput: !!payload.patient_input,
-      hasSharedSpecialistInfo: !!payload.shared_specialist_information
+      hasSharedSpecialistInfo: !!payload.shared_specialist_information,
+      hasSearchQuery: !!payload.search_query,
+      searchQueryPreview: payload.search_query ? payload.search_query.substring(0, 100) + '...' : 'NOT INCLUDED'
     });
     
     const response = await api.post(`/api/v1/rank-npi-providers`, payload, {

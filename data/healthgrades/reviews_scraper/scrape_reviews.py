@@ -9,6 +9,7 @@ import time
 import re
 import subprocess
 from pathlib import Path
+from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -65,18 +66,65 @@ def get_url_from_all_matches(match_id):
     return None
 
 def extract_url_from_md_file(md_filepath):
-    """Try to extract URL from markdown file by looking for healthgrades.com links"""
+    """Extract URL from markdown file by looking in the reviews section only.
+    First checks if there are any written reviews. If no written reviews, returns None immediately.
+    If written reviews exist, extracts URLs that appear next to 'Post a Response'."""
     try:
         with open(md_filepath, 'r', encoding='utf-8') as f:
             content = f.read()
+        
+        # FIRST: Check if there are any written reviews
+        # Look for patterns indicating written reviews exist
+        written_review_patterns = [
+            r'\d+\s+with\s+a\s+written\s+review',
+            r'\d+\s+written\s+review',
+            r'with\s+a\s+written\s+review',
+            r'written\s+review',
+        ]
+        
+        has_written_reviews = False
+        for pattern in written_review_patterns:
+            if re.search(pattern, content, re.I):
+                has_written_reviews = True
+                break
+        
+        # If no written reviews found, return None immediately (skip URL extraction)
+        if not has_written_reviews:
+            return None
+        
+        # SECOND: Extract URLs that appear next to "Post a Response" (only if written reviews exist)
+        # Pattern 1: [×](URL#) Post a Response (most common format)
+        pattern1 = r'\[×\]\(https://www\.healthgrades\.com/physician/dr-([a-z0-9-]+)#\)\s*Post\s+a\s+Response'
+        matches1 = re.findall(pattern1, content, re.IGNORECASE)
+        
+        # Pattern 2: URL# followed by Post a Response on same line or nearby
+        lines = content.split('\n')
+        matches2 = []
+        for i, line in enumerate(lines):
+            if 'Post a Response' in line:
+                # Check this line and adjacent lines for URLs with #
+                context_lines = lines[max(0, i-2):min(len(lines), i+3)]
+                context = '\n'.join(context_lines)
+                url_matches = re.findall(r'https://www\.healthgrades\.com/physician/dr-([a-z0-9-]+)#', context, re.IGNORECASE)
+                matches2.extend(url_matches)
+        
+        # Combine all matches and get unique base URLs
+        all_slugs = list(set(matches1 + matches2))
+        
+        if all_slugs:
+            # Count occurrences of each slug (most common is likely the correct one)
+            slug_counts = {}
+            for slug in all_slugs:
+                slug_counts[slug] = slug_counts.get(slug, 0) + 1
             
-        # Look for links to healthgrades.com/physician
-        pattern = r'https://www\.healthgrades\.com/physician/[^\s\)]+'
-        matches = re.findall(pattern, content)
-        if matches:
-            # Get the base URL (remove /comments if present)
-            url = matches[0].split('/comments')[0]
-            return url
+            # Get the most common slug
+            most_common_slug = max(slug_counts.items(), key=lambda x: x[1])[0]
+            base_url = f"https://www.healthgrades.com/physician/dr-{most_common_slug}"
+            return base_url
+        
+        # Written reviews exist but no URL found next to "Post a Response" - return None
+        return None
+            
     except Exception as e:
         print(f"   ⚠️  Error reading md file {md_filepath}: {e}")
     
@@ -99,7 +147,7 @@ def get_doctor_url(npi, filename):
     return None
 
 def setup_selenium_driver():
-    """Setup and return Selenium WebDriver"""
+    """Setup and return Selenium WebDriver - optimized with hardcoded path"""
     chrome_options = Options()
     # Run in headless mode for production, remove for debugging
     # chrome_options.add_argument("--headless")
@@ -108,305 +156,270 @@ def setup_selenium_driver():
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-    
-    # Fix macOS security popup issue
     chrome_options.add_argument("--disable-features=VizDisplayCompositor")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--disable-infobars")
+    chrome_options.add_argument("--disable-notifications")
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation", "enable-logging"])
     chrome_options.add_experimental_option('useAutomationExtension', False)
     chrome_options.add_experimental_option("detach", True)
+    chrome_options.page_load_strategy = "eager"
     
     # User agent to avoid detection
     chrome_options.add_argument("user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     
-    # Try multiple strategies to get ChromeDriver working
-    strategies = []
+    # Hardcoded ChromeDriver path (adjust if needed)
+    # For Apple Silicon Mac: /opt/homebrew/bin/chromedriver
+    # For Intel Mac: /usr/local/bin/chromedriver
+    chromedriver_path = "/opt/homebrew/bin/chromedriver"
     
-    # Strategy 1: Try webdriver-manager (if available)
-    if USE_WEBDRIVER_MANAGER:
-        try:
-            print("   🔧 Attempting to use webdriver-manager...")
-            driver_path = ChromeDriverManager().install()
-            print(f"   ✓ ChromeDriver found at: {driver_path}")
-            
-            # On macOS, we need to fix permissions and remove quarantine
-            import subprocess
-            import os
-            import stat
-            if os.path.exists(driver_path):
-                try:
-                    # Make executable
-                    os.chmod(driver_path, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
-                    print("   ✓ Made ChromeDriver executable")
-                    
-                    # Remove all extended attributes (quarantine, etc.)
-                    result = subprocess.run(['xattr', '-c', driver_path], 
-                                          capture_output=True, check=False)
-                    if result.returncode == 0:
-                        print("   ✓ Removed all extended attributes")
-                    else:
-                        # Try individual removal
-                        for attr in ['com.apple.quarantine', 'com.apple.metadata:kMDItemWhereFroms']:
-                            subprocess.run(['xattr', '-d', attr, driver_path], 
-                                          capture_output=True, check=False)
-                        print("   ✓ Removed quarantine attributes")
-                except Exception as e:
-                    print(f"   ⚠️  Could not fix permissions: {e}")
-            
-            service = Service(driver_path)
-            driver = webdriver.Chrome(service=service, options=chrome_options)
-            print("   ✅ ChromeDriver initialized successfully")
-            return driver
-        except Exception as e:
-            print(f"   ⚠️  webdriver-manager failed: {e}")
-            strategies.append(("webdriver-manager", str(e)))
-    
-    # Strategy 2: Try system ChromeDriver in PATH
-    try:
-        print("   🔧 Attempting to use system ChromeDriver...")
-        service = Service()  # Will use ChromeDriver from PATH
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-        print("   ✅ ChromeDriver initialized successfully (system)")
-        return driver
-    except Exception as e:
-        print(f"   ⚠️  System ChromeDriver failed: {e}")
-        strategies.append(("system", str(e)))
-    
-    # Strategy 3: Try common ChromeDriver locations
-    common_paths = [
-        '/usr/local/bin/chromedriver',
-        '/opt/homebrew/bin/chromedriver',
-        '/usr/bin/chromedriver',
-    ]
-    
-    for path in common_paths:
-        import os
-        if os.path.exists(path):
-            try:
-                print(f"   🔧 Attempting to use ChromeDriver at {path}...")
-                # Remove quarantine if needed
-                try:
-                    subprocess.run(['xattr', '-d', 'com.apple.quarantine', path], 
-                                  capture_output=True, check=False)
-                except:
-                    pass
-                
-                service = Service(path)
-                driver = webdriver.Chrome(service=service, options=chrome_options)
-                print(f"   ✅ ChromeDriver initialized successfully ({path})")
-                return driver
-            except Exception as e:
-                print(f"   ⚠️  ChromeDriver at {path} failed: {e}")
-                strategies.append((path, str(e)))
-    
-    # All strategies failed
-    print(f"\n❌ Error: Could not set up Chrome driver after trying {len(strategies)} strategies")
-    print("\n💡 Solutions:")
-    print("   1. Install webdriver-manager: pip install webdriver-manager")
-    print("   2. Install ChromeDriver: brew install chromedriver")
-    print("   3. Allow ChromeDriver in System Preferences > Security & Privacy")
-    print("   4. Remove quarantine: xattr -d com.apple.quarantine /path/to/chromedriver")
-    print("\n   Failed attempts:")
-    for strategy, error in strategies:
-        print(f"      - {strategy}: {error[:100]}")
-    
-    return None
+    service = Service(chromedriver_path)
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    print(f"   ✅ ChromeDriver initialized successfully ({chromedriver_path})")
+    return driver
 
 def click_show_more_reviews(driver, max_clicks=1000):
-    """Click 'Show more reviews' button until all reviews are loaded"""
+    """Click 'Show more reviews' button until all reviews are loaded - optimized with CSS selectors"""
+    start_time = time.time()
+    print(f"      ⏱️  [TIMING] Starting 'Show more reviews' expansion...")
     clicks = 0
     
-    # Keep clicking until no more buttons found (removed click limit - will click as many times as needed)
-    while True:
+    # Keep clicking until no more buttons found
+    while clicks < max_clicks:
         try:
-            # Try multiple selectors for the "Show more reviews" button
-            selectors = [
-                # PRIMARY: Match by data-qa-target (most reliable)
-                "//a[@data-qa-target='show-more-comments']",
-                "//a[contains(@data-qa-target, 'show-more')]",
-                # SECONDARY: Match by class
-                "//a[contains(@class, 'c-comment-list__show-more')]",
-                "//a[contains(@class, 'show-more')]",
-                # TERTIARY: Match by text and href
-                "//a[contains(text(), 'Show more reviews')]",
-                "//button[contains(text(), 'Show more reviews')]",
-                "//a[contains(@href, '/comments') and contains(text(), 'Show more')]",
-                "//button[contains(@class, 'show-more')]",
-                "//a[contains(@class, 'show-more-reviews')]",
-            ]
+            # Find all links once using CSS selector (faster than XPath)
+            all_links = driver.find_elements(By.CSS_SELECTOR, "a[data-qa-target='show-more-comments']")
             
-            button_found = False
-            for selector in selectors:
-                try:
-                    # Use find_elements (no wait!) - returns empty list immediately if not found
-                    buttons = driver.find_elements(By.XPATH, selector)
-                    
-                    # Check if any are visible and clickable
-                    for button in buttons:
-                        if button.is_displayed() and button.is_enabled():
-                            # Scroll to button
-                            driver.execute_script("arguments[0].scrollIntoView(true);", button)
-                            time.sleep(0.5)  # Brief pause before clicking
-                            # Click using JavaScript to avoid interception
-                            driver.execute_script("arguments[0].click();", button)
-                            button_found = True
-                            clicks += 1
-                            print(f"      ✓ Clicked 'Show more reviews' ({clicks})")
-                            # Wait for new reviews to appear and page to load
-                            time.sleep(2)  # Wait for reviews to load
-                            # Scroll down a bit to trigger any lazy loading
-                            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                            time.sleep(1)
-                            break
-                    
-                    if button_found:
-                        break
-                        
-                except Exception:
+            # Filter to only visible, review-related buttons
+            button = None
+            for link in all_links:
+                if not link.is_displayed() or not link.is_enabled():
                     continue
-            
-            if not button_found:
-                # No more "Show more" buttons found
-                break
-            
-            # Safety check to prevent infinite loops
-            if clicks >= max_clicks:
-                print(f"      ⚠️  Reached max clicks ({max_clicks}), stopping")
-                break
                 
+                # Verify it's review-related (not specialty/directory link)
+                href = link.get_attribute('href') or ''
+                if '/directory' in href or '/vascular-neurology' in href or '/search' in href:
+                    continue
+                
+                button = link
+                break
+            
+            if not button:
+                # No more buttons found
+                break
+            
+            # Store current URL before clicking
+            current_url_before = driver.current_url
+            initial_count = len(driver.find_elements(By.CSS_SELECTOR, "div.c-single-comment"))
+            
+            # Click using JavaScript
+            driver.execute_script("arguments[0].click();", button)
+            
+            # Wait briefly for either: button disappears (all loaded) OR new reviews appear
+            # This avoids waiting full timeout when reviews are already loaded
+            try:
+                WebDriverWait(driver, 1).until(
+                    lambda d: (
+                        len(d.find_elements(By.CSS_SELECTOR, "a[data-qa-target='show-more-comments']")) == 0
+                        or len(d.find_elements(By.CSS_SELECTOR, "div.c-single-comment")) > initial_count
+                    )
+                )
+            except:
+                # If timeout, check page ready state (brief wait)
+                try:
+                    WebDriverWait(driver, 0.5).until(
+                        lambda d: d.execute_script('return document.readyState') == 'complete'
+                    )
+                except:
+                    pass  # Continue anyway - don't wait unnecessarily
+            
+            # Check if URL changed (navigation occurred)
+            current_url_after = driver.current_url
+            if current_url_after != current_url_before:
+                if '/directory' in current_url_after or '/vascular-neurology' in current_url_after:
+                    print(f"      ⚠️  Click navigated to directory page, going back...")
+                    driver.back()
+                    WebDriverWait(driver, 10).until(lambda d: d.execute_script('return document.readyState') == 'complete')
+                    break
+            
+            clicks += 1
+            print(f"      ✓ Clicked 'Show more reviews' ({clicks})")
+            
         except Exception as e:
-            # No more buttons or error
             break
     
+    total_duration = time.time() - start_time
     if clicks > 0:
         print(f"      ✓ Expanded reviews with {clicks} clicks")
+        print(f"      ⏱️  [TIMING] Total 'Show more reviews' expansion took {total_duration:.2f}s ({clicks} clicks, avg {total_duration/clicks:.2f}s per click)")
     else:
         print(f"      ℹ No 'Show more reviews' button found or already expanded")
+        print(f"      ⏱️  [TIMING] 'Show more reviews' check took {total_duration:.2f}s")
     
     return clicks
 
 def click_more_details_buttons(driver):
-    """Click all 'More details' buttons to expand truncated review text"""
+    """Click all 'More details' buttons to expand truncated review text - optimized with CSS selectors"""
+    start_time = time.time()
     print(f"      🔍 Looking for 'More details' buttons...")
     
-    # Try multiple selectors for the "More details" button
-    more_details_selectors = [
-        "//button[contains(text(), 'More details')]",
-        "//a[contains(text(), 'More details')]",
-        "//span[contains(text(), 'More details')]/parent::button",
-        "//span[contains(text(), 'More details')]/parent::a",
-        "//button[contains(., 'More details')]",
-        "//a[contains(., 'More details')]",
-    ]
+    # Find all "More details" buttons within review containers using CSS selector (faster)
+    buttons = driver.find_elements(By.CSS_SELECTOR, "div.c-single-comment button, div.c-single-comment a")
     
     clicks = 0
-    max_attempts = 100  # Safety limit
-    
-    while clicks < max_attempts:
-        button_clicked = False
-        
-        for selector in more_details_selectors:
-            try:
-                buttons = driver.find_elements(By.XPATH, selector)
-                for button in buttons:
-                    try:
-                        if button.is_displayed() and button.is_enabled():
-                            # Scroll to button to make it visible
-                            driver.execute_script("arguments[0].scrollIntoView({behavior: 'instant', block: 'center'});", button)
-                            
-                            # Click using JavaScript for more reliability
-                            driver.execute_script("arguments[0].click();", button)
-                            clicks += 1
-                            button_clicked = True
-                            break
-                    except Exception as e:
-                        continue
-                
-                if button_clicked:
-                    break
-            except:
+    for button in buttons:
+        try:
+            # Check if button text contains "More details"
+            button_text = (button.text or '').strip()
+            if 'more details' not in button_text.lower():
                 continue
-        
-        # If no button was clicked in this iteration, we're done
-        if not button_clicked:
-            break
+            
+            if not button.is_displayed() or not button.is_enabled():
+                continue
+            
+            # Click using JavaScript
+            driver.execute_script("arguments[0].click();", button)
+            clicks += 1
+            
+            # Brief wait for content to update
+            try:
+                WebDriverWait(driver, 0.3).until(
+                    lambda d: d.execute_script('return document.readyState') == 'complete'
+                )
+            except:
+                pass
+            
+        except Exception:
+            continue
     
+    total_duration = time.time() - start_time
     if clicks > 0:
         print(f"      ✓ Clicked {clicks} 'More details' buttons to expand reviews")
+        print(f"      ⏱️  [TIMING] 'More details' expansion took {total_duration:.2f}s ({clicks} clicks, avg {total_duration/clicks:.2f}s per click)")
     else:
         print(f"      ℹ️  No 'More details' buttons found (reviews may already be expanded)")
+        print(f"      ⏱️  [TIMING] 'More details' check took {total_duration:.2f}s")
     
     return clicks
 
-def extract_rating_from_element(elem_soup):
-    """Extract star rating from a review element"""
-    rating = None
-    
-    # Strategy 1: Look for aria-label with rating text (e.g., "5 out of 5 stars")
-    aria_labels = elem_soup.find_all(attrs={'aria-label': re.compile(r'(\d+)\s*(?:out\s*of\s*)?\d*\s*star', re.I)})
-    for label in aria_labels:
-        match = re.search(r'(\d+)', label.get('aria-label', ''))
+def extract_rating_from_element(review_elem):
+    """Extract star rating from a review element using stable selectors"""
+    # Strategy 1: aria-label with "out of 5" (most reliable)
+    rating_elem = review_elem.select_one("[aria-label*='out of 5']")
+    if rating_elem:
+        aria_label = rating_elem.get('aria-label', '')
+        match = re.search(r'(\d+)', aria_label)
         if match:
             rating = int(match.group(1))
             if 1 <= rating <= 5:
                 return rating
     
-    # Strategy 2: Look for data-rating attribute
-    data_rating = elem_soup.find(attrs={'data-rating': True})
-    if data_rating:
+    # Strategy 2: data-rating attribute
+    rating_elem = review_elem.select_one("[data-rating]")
+    if rating_elem:
         try:
-            rating = int(data_rating.get('data-rating', 0))
+            rating = int(rating_elem.get('data-rating', 0))
             if 1 <= rating <= 5:
                 return rating
         except:
             pass
     
-    # Strategy 3: Count filled stars in SVG elements
-    # Look for SVG stars - filled stars typically have a fill color or specific class
-    star_elements = elem_soup.find_all(['svg', 'i', 'span'], class_=re.compile(r'star|rating', re.I))
-    if star_elements:
-        filled_count = 0
-        for star in star_elements:
-            # Check if star is filled (has fill color, or class indicating filled)
-            classes = star.get('class', [])
-            if isinstance(classes, str):
-                classes = [classes]
-            fill_attr = star.get('fill', '')
-            style = star.get('style', '')
-            
-            # Check for filled indicators
-            if (any('fill' in c.lower() or 'active' in c.lower() or 'full' in c.lower() for c in classes) or
-                fill_attr and fill_attr not in ['none', 'transparent'] or
-                'fill' in style.lower() and 'none' not in style.lower()):
-                filled_count += 1
-        
-        if 1 <= filled_count <= 5:
-            return filled_count
-    
-    # Strategy 4: Look for text patterns like "5.0" or "5 stars" near the review
-    text = elem_soup.get_text()
-    rating_patterns = [
-        r'(\d+)\.?\d*\s*(?:out\s*of\s*)?\d*\s*star',
-        r'rating[:\s]+(\d+)',
-        r'(\d+)/5',
-        r'(\d+)\s*star',
-    ]
-    for pattern in rating_patterns:
-        match = re.search(pattern, text, re.I)
-        if match:
-            try:
-                rating = int(match.group(1))
-                if 1 <= rating <= 5:
-                    return rating
-            except:
-                pass
-    
     return None
 
 def extract_reviews_from_page(driver):
-    """Extract review comments from the current page"""
+    """Extract review comments from the current page - optimized: parse once, use CSS selectors"""
+    start_time = time.time()
+    print(f"      ⏱️  [TIMING] Starting review extraction...")
     reviews = []
     
     try:
+        # Parse HTML once per page (not multiple times)
+        page_source = driver.page_source
+        try:
+            soup = BeautifulSoup(page_source, 'lxml')  # lxml is faster than html.parser
+        except:
+            soup = BeautifulSoup(page_source, 'html.parser')  # Fallback to html.parser
+        
+        # Find all review containers using stable CSS selector (faster than XPath)
+        review_containers = soup.select("div.c-single-comment")
+        
+        if not review_containers:
+            print(f"      ⚠️  No reviews found with selector 'div.c-single-comment'")
+            extraction_duration = time.time() - start_time
+            print(f"      ⏱️  [TIMING] Review extraction took {extraction_duration:.2f}s (0 reviews)")
+            return reviews
+        
+        print(f"      ✓ Found {len(review_containers)} review containers")
+        
+        # Date pattern for extraction
+        date_pattern = re.compile(
+            r'((?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)?\s+–\s+)?'
+            r'(?:[A-Z][a-z]{2,3}\s+\d{1,2},\s+\d{4}|'
+            r'[A-Z][a-z]+\s+\d{1,2},\s+\d{4}))'
+        )
+        
+        seen_texts = set()
+        
+        # Extract each review using stable selectors
+        for review_elem in review_containers:
+            try:
+                # Extract review text using stable selector
+                comment_elem = review_elem.select_one("[data-qa-target='user-comment']")
+                if not comment_elem:
+                    continue
+                
+                review_text = comment_elem.get_text(strip=True)
+                if len(review_text) < 30:
+                    continue
+                
+                # Clean up review text
+                review_text = re.sub(r'(×|Post\s+a\s+Response|Are\s+you.*?\?|Yes|No|Reply\s+Flag)', '', review_text, flags=re.I)
+                review_text = re.sub(r'More\s+details', '', review_text, flags=re.I)
+                review_text = re.sub(r'\d+\s+other.*?found\s+this\s+helpful', '', review_text, flags=re.I)
+                review_text = re.sub(r'Helpful', '', review_text, flags=re.I)
+                review_text = re.sub(r'\s+', ' ', review_text).strip()
+                
+                # Extract date using stable selector
+                date_elem = review_elem.select_one("[data-qa-target='comment-date']")
+                if not date_elem:
+                    continue
+                
+                date_text = date_elem.get_text()
+                date_match = date_pattern.search(date_text)
+                if not date_match:
+                    continue
+                
+                date_str = date_match.group(1).strip()
+                
+                # Extract author if present
+                author = None
+                author_match = re.search(r'^([A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)?)\s+–\s+', date_str)
+                if author_match:
+                    author = author_match.group(1)
+                    date_str = re.sub(r'^[A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)?\s+–\s+', '', date_str)
+                
+                # Extract rating using stable selector
+                rating = extract_rating_from_element(review_elem)
+                
+                # Validate and add review
+                if (30 < len(review_text) < 5000 and 
+                    review_text not in seen_texts):
+                    reviews.append({
+                        'text': review_text,
+                        'date': date_str,
+                        'author': author,
+                        'rating': rating
+                    })
+                    seen_texts.add(review_text)
+                    
+            except Exception as e:
+                continue  # Skip this review if extraction fails
+        
+        extraction_duration = time.time() - start_time
+        print(f"      ✓ Extracted {len(reviews)} reviews")
+        print(f"      ⏱️  [TIMING] Review extraction took {extraction_duration:.2f}s ({len(reviews)} reviews, avg {extraction_duration/len(reviews) if reviews else 0:.3f}s per review)")
+        
+    except Exception as e:
         # First, try to find review elements using Selenium (more reliable for dynamic content)
         print(f"      🔍 Searching for review elements...")
         
@@ -971,143 +984,6 @@ def extract_reviews_from_page(driver):
                         seen_texts.add(review_text)
         
         # If still no reviews found, try alternative extraction from containers
-                date_str = date_match.group(1).strip()
-                
-                # Extract author if present in date string (format: "Author Name – Sep 10, 2025")
-                author = None
-                author_match = re.search(r'^([A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)?)\s+–\s+', date_str)
-                if author_match:
-                    author = author_match.group(1)
-                    # Extract just the date part
-                    date_str = re.sub(r'^[A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)?\s+–\s+', '', date_str)
-                
-                # Find the start of this review text (everything before this date, but after previous date if exists)
-                if i > 0:
-                    # Start from the end of previous date match
-                    start_pos = date_matches[i-1].end()
-                else:
-                    # For first date in block, start from beginning of block
-                    start_pos = 0
-                
-                # Extract review text between start_pos and date_match.start()
-                review_text_raw = block[start_pos:date_match.start()].strip()
-                
-                # Clean up review text - remove UI elements
-                review_text = review_text_raw
-                review_text = re.sub(r'(×|Post\s+a\s+Response|Are\s+you.*?\?|Yes|No)', '', review_text, flags=re.I)
-                review_text = re.sub(r'More\s+details', '', review_text, flags=re.I)
-                review_text = re.sub(r'\d+\s+other.*?found\s+this\s+helpful', '', review_text, flags=re.I)
-                review_text = re.sub(r'Helpful', '', review_text, flags=re.I)
-                review_text = re.sub(r'\s+', ' ', review_text)  # Normalize whitespace
-                review_text = review_text.strip()
-                
-                # Filter out navigation and summary content
-                text_lower = review_text.lower()
-                nav_keywords = ['find a doctor', 'menu', 'search', 'sign in', 'healthgrades']
-                if any(kw in text_lower for kw in nav_keywords) and len(review_text) > 500:
-                    continue
-                
-                # Exclude summary/statistics
-                exclude_patterns = [
-                    r'likelihood to recommend',
-                    r'\d+\s+ratings?\s*,\s*\d+\s+with',
-                    r'leave a review',
-                    r'how was your experience',
-                ]
-                if any(re.search(pattern, review_text, re.I) for pattern in exclude_patterns):
-                    continue
-                
-                # Must have review-like content
-                review_indicators = ['doctor', 'dr.', 'patient', 'visit', 'appointment', 
-                                     'treatment', 'care', 'experience', 'recommend', 
-                                     'good', 'bad', 'office', 'staff', 'time', 'surgery', 
-                                     'procedure', 'helped', 'would recommend', 'worst', 'best', 
-                                     'veterinarian', 'dismissive', 'rude', 'arrogant', 'terrible',
-                                     'seizures', 'neurologist', 'hospital', 'uncle', 'nice', 'fast']
-                
-                # Valid review: substantial length, contains review indicators, not duplicate
-                if (30 < len(review_text) < 5000 and 
-                    review_text not in seen_texts and
-                    any(indicator in text_lower for indicator in review_indicators)):
-                    # Try to find rating for this review by matching to Selenium elements
-                    rating = None
-                    
-                    # Strategy 1: Search HTML source near this review for rating patterns
-                    # Look in a wider context around the review in the page source
-                    try:
-                        # Find the review text in the page source
-                        review_start = page_source.find(review_text[:100])
-                        if review_start > 0:
-                            # Search 500 chars before and after the review for rating patterns
-                            search_start = max(0, review_start - 500)
-                            search_end = min(len(page_source), review_start + len(review_text) + 500)
-                            context_html = page_source[search_start:search_end]
-                            
-                            # Look for rating in HTML attributes
-                            rating_patterns_html = [
-                                r'aria-label=["\']([^"\']*?(\d+)\s*(?:out\s*of\s*)?\d*\s*star[^"\']*?)["\']',
-                                r'data-rating=["\'](\d+)["\']',
-                                r'title=["\']([^"\']*?(\d+)\s*(?:out\s*of\s*)?\d*\s*star[^"\']*?)["\']',
-                            ]
-                            for pattern in rating_patterns_html:
-                                match = re.search(pattern, context_html, re.I)
-                                if match:
-                                    # Extract number from match
-                                    num_match = re.search(r'(\d+)', match.group(0))
-                                    if num_match:
-                                        try:
-                                            rating = int(num_match.group(1))
-                                            if 1 <= rating <= 5:
-                                                print(f"      ✓ Found rating {rating} in HTML near review: {review_text[:50]}...")
-                                                break
-                                        except:
-                                            pass
-                    except:
-                        pass
-                    
-                    # Strategy 2: Match review text to Selenium elements by content overlap
-                    if not rating and review_elements_selenium and element_ratings:
-                        review_snippet = review_text[:150].strip().lower()
-                        for elem_idx, elem in enumerate(review_elements_selenium):
-                            try:
-                                elem_text = elem.text.lower()
-                                if review_snippet and len(review_snippet) > 50:
-                                    if review_snippet[:100] in elem_text and elem_idx in element_ratings:
-                                        rating = element_ratings[elem_idx]
-                                        print(f"      ✓ Matched rating {rating} to review (element {elem_idx+1})")
-                                        break
-                            except:
-                                continue
-                    
-                    # Strategy 2: Try to match to BeautifulSoup elements
-                    if not rating:
-                        for elem_soup in review_elements_with_html:
-                            elem_text = elem_soup.get_text()
-                            if review_text[:100] in elem_text or elem_text[:100] in review_text:
-                                rating = extract_rating_from_element(elem_soup)
-                                if rating:
-                                    break
-                    
-                    # Strategy 3: Try text pattern matching in the block
-                    if not rating:
-                        rating_match = re.search(r'(\d+)\s*(?:out\s*of\s*)?\d*\s*star', block[start_pos:date_match.start()], re.I)
-                        if rating_match:
-                            try:
-                                rating = int(rating_match.group(1))
-                                if not (1 <= rating <= 5):
-                                    rating = None
-                            except:
-                                pass
-                    
-                    reviews.append({
-                        'text': review_text,
-                        'date': date_str,
-                        'author': author,
-                        'rating': rating
-                    })
-                    seen_texts.add(review_text)
-        
-        # If still no reviews found, try alternative extraction from containers
         if not reviews and review_containers:
             for container in review_containers:
                 full_text = container.get_text(separator='\n', strip=True)
@@ -1165,10 +1041,14 @@ def extract_reviews_from_page(driver):
                         })
                         seen_texts.add(review_text)
         
+        extraction_duration = time.time() - start_time
         print(f"      ✓ Extracted {len(reviews)} reviews")
+        print(f"      ⏱️  [TIMING] Review extraction took {extraction_duration:.2f}s ({len(reviews)} reviews, avg {extraction_duration/len(reviews) if reviews else 0:.3f}s per review)")
         
     except Exception as e:
+        extraction_duration = time.time() - start_time
         print(f"      ⚠️  Error extracting reviews: {e}")
+        print(f"      ⏱️  [TIMING] Review extraction failed after {extraction_duration:.2f}s")
         import traceback
         traceback.print_exc()
     
@@ -1176,8 +1056,10 @@ def extract_reviews_from_page(driver):
 
 def scrape_doctor_reviews(driver, npi, first_name, last_name, url, skip_existing=True):
     """Scrape reviews for a single doctor using provided driver"""
+    doctor_start_time = time.time()
     print(f"\n   📋 Processing: {first_name} {last_name} (NPI: {npi})")
     print(f"      URL: {url}")
+    print(f"      ⏱️  [TIMING] Starting doctor processing at {datetime.now().strftime('%H:%M:%S')}")
     
     # Check if already scraped
     safe_name = f"{npi}_{first_name}_{last_name}".replace(' ', '_')
@@ -1185,7 +1067,9 @@ def scrape_doctor_reviews(driver, npi, first_name, last_name, url, skip_existing
     md_filepath = REVIEWS_OUTPUT_DIR / md_filename
     
     if skip_existing and md_filepath.exists():
+        skip_duration = time.time() - doctor_start_time
         print(f"      ⏭️  Already exists, skipping...")
+        print(f"      ⏱️  [TIMING] Skip check took {skip_duration:.2f}s")
         # Try to load existing reviews JSON
         try:
             with open(md_filepath, 'r', encoding='utf-8') as f:
@@ -1216,6 +1100,7 @@ def scrape_doctor_reviews(driver, npi, first_name, last_name, url, skip_existing
     print(f"      🔗 Profile URL: {profile_url}")
     
     try:
+        nav_start = time.time()
         print(f"      🌐 Navigating to profile page...")
         # Navigate to the main profile page (not /comments directly)
         driver.get(profile_url)
@@ -1223,6 +1108,8 @@ def scrape_doctor_reviews(driver, npi, first_name, last_name, url, skip_existing
         # Wait for navigation to complete
         wait = WebDriverWait(driver, 20)
         wait.until(lambda d: d.execute_script('return document.readyState') == 'complete')
+        nav_duration = time.time() - nav_start
+        print(f"      ⏱️  [TIMING] Navigation took {nav_duration:.2f}s")
         
         # Check the actual URL we're on
         current_url = driver.current_url
@@ -1248,7 +1135,8 @@ def scrape_doctor_reviews(driver, npi, first_name, last_name, url, skip_existing
             print(f"      🔄 Retrying navigation...")
             # Try navigating again
             driver.get(profile_url)
-            time.sleep(5)
+            # Wait for page to load
+            WebDriverWait(driver, 10).until(lambda d: d.execute_script('return document.readyState') == 'complete')
             current_url = driver.current_url
             print(f"      ✓ After retry, current URL: {current_url}")
             
@@ -1264,12 +1152,16 @@ def scrape_doctor_reviews(driver, npi, first_name, last_name, url, skip_existing
             return None, None, None
         
         # Wait for page to fully load (React-based page)
+        load_start = time.time()
         print(f"      ⏳ Waiting for page content to load...")
         WebDriverWait(driver, 10).until(
             lambda d: d.execute_script("return document.readyState") == "complete"
         )
+        load_duration = time.time() - load_start
+        print(f"      ⏱️  [TIMING] Page load wait took {load_duration:.2f}s")
         
         # Close popups and modals that might be blocking the page
+        popup_start = time.time()
         print(f"      🚫 Closing popups and modals...")
         
         popups_closed = False
@@ -1365,14 +1257,18 @@ def scrape_doctor_reviews(driver, npi, first_name, last_name, url, skip_existing
         except:
             pass
         
+        popup_duration = time.time() - popup_start
         print(f"      ✓ Popup handling complete")
+        print(f"      ⏱️  [TIMING] Popup handling took {popup_duration:.2f}s")
         
         # Scroll down to find reviews section
+        scroll_start = time.time()
         print(f"      📜 Scrolling to reviews section...")
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight/3);")
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight/2);") 
         
         # Wait for reviews section to appear
+        review_wait_start = time.time()
         print(f"      ⏳ Waiting for reviews section to load...")
         try:
             # Try to find review elements or review container
@@ -1398,8 +1294,11 @@ def scrape_doctor_reviews(driver, npi, first_name, last_name, url, skip_existing
                 print(f"      ⚠️  Reviews section not found, continuing anyway...")
         except Exception as e:
             print(f"      ⚠️  Error waiting for reviews: {e}")
+        review_wait_duration = time.time() - review_wait_start
+        print(f"      ⏱️  [TIMING] Reviews section wait took {review_wait_duration:.2f}s")
         
         # Verify popups are closed before trying to click "Show more reviews"
+        verify_start = time.time()
         print(f"      🔍 Verifying popups are closed...")
         try:
             # Check if any blocking modals are still visible
@@ -1415,12 +1314,15 @@ def scrape_doctor_reviews(driver, npi, first_name, last_name, url, skip_existing
                 driver.find_element(By.TAG_NAME, 'body').send_keys(Keys.ESCAPE)
         except:
             pass
+        verify_duration = time.time() - verify_start
+        print(f"      ⏱️  [TIMING] Popup verification took {verify_duration:.2f}s")
         
         # Click "Show more reviews" button/link until all reviews loaded
         print(f"      🔽 Expanding reviews by clicking 'Show more reviews'...")
         click_show_more_reviews(driver)  # Will click as many times as needed
         
         # Scroll thoroughly to trigger lazy loading of all reviews
+        scroll_all_start = time.time()
         print(f"      📜 Scrolling to load all reviews...")
         last_height = driver.execute_script("return document.body.scrollHeight")
         scroll_attempts = 0
@@ -1435,11 +1337,23 @@ def scrape_doctor_reviews(driver, npi, first_name, last_name, url, skip_existing
             # Scroll in smaller increments
             for step in range(0, max_scroll, scroll_step):
                 driver.execute_script(f"window.scrollTo(0, {step});")
-                time.sleep(0.2)  # Wait for lazy loading
+                # Wait for lazy loading to trigger
+                try:
+                    WebDriverWait(driver, 0.5).until(
+                        lambda d: d.execute_script('return document.readyState') == 'complete'
+                    )
+                except:
+                    pass  # Continue if timeout
             
             # Final scroll to bottom
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(1)  # Wait for any final lazy loading
+            # Wait for any final lazy loading
+            try:
+                WebDriverWait(driver, 2).until(
+                    lambda d: d.execute_script('return document.readyState') == 'complete'
+                )
+            except:
+                pass
             
             # Wait for page height to stabilize
             try:
@@ -1454,9 +1368,19 @@ def scrape_doctor_reviews(driver, npi, first_name, last_name, url, skip_existing
             if new_height == last_height:
                 # No new content loaded, try scrolling up a bit and back down
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight - 1000);")
-                time.sleep(0.5)
+                try:
+                    WebDriverWait(driver, 0.5).until(
+                        lambda d: d.execute_script('return document.readyState') == 'complete'
+                    )
+                except:
+                    pass
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                time.sleep(1)
+                try:
+                    WebDriverWait(driver, 1).until(
+                        lambda d: d.execute_script('return document.readyState') == 'complete'
+                    )
+                except:
+                    pass
                 new_height = driver.execute_script("return document.body.scrollHeight")
                 if new_height == last_height:
                     break
@@ -1465,7 +1389,15 @@ def scrape_doctor_reviews(driver, npi, first_name, last_name, url, skip_existing
         
         # Final scroll to bottom and wait
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        time.sleep(2)  # Final wait for lazy loading
+        # Final wait for lazy loading
+        try:
+            WebDriverWait(driver, 3).until(
+                lambda d: d.execute_script('return document.readyState') == 'complete'
+            )
+        except:
+            pass
+        scroll_all_duration = time.time() - scroll_all_start
+        print(f"      ⏱️  [TIMING] Full page scrolling took {scroll_all_duration:.2f}s ({scroll_attempts} attempts)")
         
         # Click all "More details" buttons to expand truncated reviews
         click_more_details_buttons(driver)
@@ -1488,6 +1420,8 @@ def scrape_doctor_reviews(driver, npi, first_name, last_name, url, skip_existing
         reviews = extract_reviews_from_page(driver)
         
         # Get page source and save as markdown
+        save_start = time.time()
+        print(f"      💾 Saving results to markdown file...")
         page_source = driver.page_source
         soup = BeautifulSoup(page_source, 'html.parser')
         
@@ -1532,21 +1466,29 @@ def scrape_doctor_reviews(driver, npi, first_name, last_name, url, skip_existing
         with open(md_filepath, 'w', encoding='utf-8') as f:
             f.write(md_content)
         
+        save_duration = time.time() - save_start
+        doctor_total_duration = time.time() - doctor_start_time
         print(f"      ✅ Saved: {md_filename}")
+        print(f"      ⏱️  [TIMING] File save took {save_duration:.2f}s")
+        print(f"      ⏱️  [TIMING] Total doctor processing time: {doctor_total_duration:.2f}s ({doctor_total_duration/60:.1f} minutes)")
         
         return md_filename, reviews, md_filepath
         
     except Exception as e:
+        doctor_total_duration = time.time() - doctor_start_time
         print(f"      ❌ Error scraping reviews: {e}")
+        print(f"      ⏱️  [TIMING] Doctor processing failed after {doctor_total_duration:.2f}s")
         import traceback
         traceback.print_exc()
         return None, None, None
 
 def main(limit=None):
+    main_start_time = time.time()
     print("🏥 Starting Healthgrades Reviews Scraper")
     if limit:
         print(f"🧪 TEST MODE: Limiting to {limit} doctors")
     print("=" * 60)
+    print(f"⏱️  [TIMING] Script started at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     # Read verification results CSV
     doctors = []
@@ -1559,8 +1501,9 @@ def main(limit=None):
                 print(f"🧪 Limiting to first {limit} doctors (skipping URL lookup for others)")
             
             for row in reader:
-                # Early exit if we've hit our limit
+                # Early exit if we've hit our limit (only count doctors with valid URLs)
                 if limit and len(doctors) >= limit:
+                    print(f"   ✅ Reached limit of {limit} doctors with valid URLs, stopping URL lookup")
                     break
                 
                 npi = row['npi']
@@ -1573,13 +1516,17 @@ def main(limit=None):
                     continue
                 
                 # Get URL for this doctor
+                url_lookup_start = time.time()
                 print(f"   🔍 Looking up URL for {first_name} {last_name} (NPI: {npi}, filename: {filename})")
                 url = get_doctor_url(npi, filename)
+                url_lookup_duration = time.time() - url_lookup_start
                 if not url:
                     print(f"   ⚠️  Skipping {first_name} {last_name} (NPI: {npi}): No URL found")
+                    print(f"   ⏱️  [TIMING] URL lookup took {url_lookup_duration:.2f}s")
                     continue
                 
                 print(f"   ✅ Found URL: {url}")
+                print(f"   ⏱️  [TIMING] URL lookup took {url_lookup_duration:.2f}s")
                 
                 doctors.append({
                     'npi': npi,
@@ -1588,6 +1535,11 @@ def main(limit=None):
                     'filename': filename,
                     'url': url
                 })
+                
+                # Check limit again after adding (in case we just hit the limit)
+                if limit and len(doctors) >= limit:
+                    print(f"   ✅ Reached limit of {limit} doctors with valid URLs, stopping URL lookup")
+                    break
     except Exception as e:
         print(f"❌ Error reading verification CSV: {e}")
         return
@@ -1595,19 +1547,24 @@ def main(limit=None):
     print(f"📊 Found {len(doctors)} doctors with valid URLs")
     
     # Setup single browser session for all doctors (MAJOR OPTIMIZATION)
+    browser_setup_start = time.time()
     print(f"🌐 Setting up browser session...")
     driver = setup_selenium_driver()
+    browser_setup_duration = time.time() - browser_setup_start
     if not driver:
         print("❌ Failed to setup browser. Exiting.")
         return
     
     print(f"✅ Browser ready - reusing session for all {len(doctors)} doctors")
+    print(f"⏱️  [TIMING] Browser setup took {browser_setup_duration:.2f}s")
     
     try:
         # Process each doctor using shared browser session
         results = []
         for i, doctor in enumerate(doctors, 1):
+            doctor_iter_start = time.time()
             print(f"\n[{i}/{len(doctors)}]")
+            print(f"⏱️  [TIMING] Starting doctor {i} at {datetime.now().strftime('%H:%M:%S')}")
             
             md_filename, reviews_json, md_filepath = scrape_doctor_reviews(
                 driver,  # Pass shared driver
@@ -1644,20 +1601,21 @@ def main(limit=None):
                     'review_date': ''
                 })
             
-            # Be nice to the server - add delay between requests
-            if i < len(doctors):
-                delay = 3
-                print(f"      ⏳ Waiting {delay} seconds before next request...")
-                time.sleep(delay)
+            doctor_iter_duration = time.time() - doctor_iter_start
+            print(f"⏱️  [TIMING] Doctor {i} iteration total: {doctor_iter_duration:.2f}s")
     
     finally:
         # Always quit the browser when done
+        browser_close_start = time.time()
         print(f"\n🔚 Closing browser session...")
         driver.quit()
+        browser_close_duration = time.time() - browser_close_start
         print(f"✅ Browser closed")
+        print(f"⏱️  [TIMING] Browser close took {browser_close_duration:.2f}s")
     
     # Save results to CSV
     if results:
+        csv_save_start = time.time()
         print(f"\n💾 Saving results to {MAPPING_CSV}")
         with open(MAPPING_CSV, 'w', encoding='utf-8', newline='') as f:
             fieldnames = ['npi', 'first_name', 'last_name', 'reviews_md_file', 'review_index', 'review_text', 'review_author', 'review_date', 'review_rating']
@@ -1666,11 +1624,18 @@ def main(limit=None):
             writer.writerows(results)
         
         total_reviews = sum(1 for r in results if r['review_index'] > 0)
+        csv_save_duration = time.time() - csv_save_start
+        main_total_duration = time.time() - main_start_time
         print(f"✅ Saved {len(results)} review rows ({total_reviews} reviews from {len(set(r['npi'] for r in results))} doctors)")
         print(f"   📁 Reviews saved in: {REVIEWS_OUTPUT_DIR}")
         print(f"   📄 Mapping saved in: {MAPPING_CSV}")
+        print(f"⏱️  [TIMING] CSV save took {csv_save_duration:.2f}s")
+        print(f"⏱️  [TIMING] Total script execution time: {main_total_duration:.2f}s ({main_total_duration/60:.1f} minutes)")
+        print(f"⏱️  [TIMING] Script completed at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     else:
+        main_total_duration = time.time() - main_start_time
         print("❌ No results to save")
+        print(f"⏱️  [TIMING] Total script execution time: {main_total_duration:.2f}s ({main_total_duration/60:.1f} minutes)")
 
 if __name__ == "__main__":
     import sys
