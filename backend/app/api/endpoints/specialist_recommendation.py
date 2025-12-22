@@ -81,6 +81,17 @@ async def get_specialist_recommendations(
             if recommendations.cms_data:
                 logger.info("🔍 DEBUG: cms_data keys: %s", recommendations.cms_data.keys() if isinstance(recommendations.cms_data, dict) else "not a dict")
         
+        # Log search_query information
+        logger.info("🔍 DEBUG: search_query in recommendations: %s", hasattr(recommendations, 'search_query'))
+        if hasattr(recommendations, 'search_query'):
+            search_query_value = recommendations.search_query
+            logger.info("🔍 DEBUG: search_query value: %s", search_query_value[:150] + '...' if search_query_value and len(search_query_value) > 150 else search_query_value or 'EMPTY/NONE')
+        
+        # Log patient_profile.search_query
+        if hasattr(recommendations, 'patient_profile') and isinstance(recommendations.patient_profile, dict):
+            patient_profile_sq = recommendations.patient_profile.get('search_query', 'NOT FOUND')
+            logger.info("🔍 DEBUG: patient_profile.search_query: %s", patient_profile_sq[:150] + '...' if patient_profile_sq and isinstance(patient_profile_sq, str) and len(patient_profile_sq) > 150 else patient_profile_sq)
+        
         # Convert dataclass to dict for serialization
         # This ensures all fields including cms_data are serialized
         recommendations_dict = asdict(recommendations)

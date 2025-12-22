@@ -1230,18 +1230,30 @@ const ResultsPage: React.FC = () => {
       }
       
       // Extract search_query from specialistResponse (it should be in patient_profile.search_query)
-      const searchQuery = specialistResponse?.patient_profile?.search_query 
-        || specialistResponse?.search_query 
-        || searchParams?.search_query 
-        || location.state?.aiRecommendations?.patient_profile?.search_query;
+      const searchQueryFromPatientProfile = specialistResponse?.patient_profile?.search_query;
+      const searchQueryFromTopLevel = specialistResponse?.search_query;
+      const searchQueryFromParams = searchParams?.search_query;
+      const searchQueryFromState = location.state?.aiRecommendations?.patient_profile?.search_query;
       
-      console.log('🔍 [Frontend] Extracting search_query for ranking:', {
-        from_specialistResponse_patient_profile: !!specialistResponse?.patient_profile?.search_query,
-        from_specialistResponse_top_level: !!specialistResponse?.search_query,
-        from_searchParams: !!searchParams?.search_query,
-        from_location_state: !!location.state?.aiRecommendations?.patient_profile?.search_query,
-        final_search_query: searchQuery?.substring(0, 100) + (searchQuery && searchQuery.length > 100 ? '...' : '')
-      });
+      const searchQuery = searchQueryFromPatientProfile 
+        || searchQueryFromTopLevel 
+        || searchQueryFromParams 
+        || searchQueryFromState;
+      
+      console.log('🔍 [Frontend] Extracting search_query for ranking:');
+      console.log('  - specialistResponse.patient_profile.search_query:', searchQueryFromPatientProfile?.substring(0, 150) || 'NOT FOUND');
+      console.log('  - specialistResponse.search_query:', searchQueryFromTopLevel?.substring(0, 150) || 'NOT FOUND');
+      console.log('  - searchParams.search_query:', searchQueryFromParams?.substring(0, 150) || 'NOT FOUND');
+      console.log('  - location.state.aiRecommendations.patient_profile.search_query:', searchQueryFromState?.substring(0, 150) || 'NOT FOUND');
+      console.log('  - FINAL search_query being sent:', searchQuery?.substring(0, 150) || 'NOT FOUND');
+      console.log('  - specialistResponse keys:', Object.keys(specialistResponse || {}));
+      console.log('  - patient_profile keys:', Object.keys(specialistResponse?.patient_profile || {}));
+      
+      // If search_query is not found, log the full patient_profile to debug
+      if (!searchQuery && specialistResponse?.patient_profile) {
+        console.warn('⚠️ [Frontend] search_query NOT FOUND - logging full patient_profile:');
+        console.warn('  - patient_profile:', JSON.stringify(specialistResponse.patient_profile, null, 2).substring(0, 500));
+      }
       
       const rankingRequest: NPIRankingRequest = {
         npi_providers: npiData.providers,

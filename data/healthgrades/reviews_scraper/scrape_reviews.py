@@ -83,16 +83,8 @@ def extract_url_from_md_file(md_filepath):
     return None
 
 def get_doctor_url(npi, filename):
-    """Get URL for a doctor using filename lookup or md file extraction"""
-    # First, try to get URL from all_matches CSV using match_id
-    match_id = extract_match_id_from_filename(filename)
-    if match_id:
-        url = get_url_from_all_matches(match_id)
-        if url:
-            print(f"      ✓ Found URL from all_matches CSV: {url}")
-            return url
-    
-    # Fallback: try to extract from md file
+    """Get URL for a doctor by extracting from markdown file"""
+    # Extract URL directly from md file
     if filename and filename != "None" and "None" not in filename:
         md_filepath = SCRAPED_PAGES_DIR / filename
         if md_filepath.exists():
@@ -228,6 +220,13 @@ def click_show_more_reviews(driver, max_clicks=1000):
         try:
             # Try multiple selectors for the "Show more reviews" button
             selectors = [
+                # PRIMARY: Match by data-qa-target (most reliable)
+                "//a[@data-qa-target='show-more-comments']",
+                "//a[contains(@data-qa-target, 'show-more')]",
+                # SECONDARY: Match by class
+                "//a[contains(@class, 'c-comment-list__show-more')]",
+                "//a[contains(@class, 'show-more')]",
+                # TERTIARY: Match by text and href
                 "//a[contains(text(), 'Show more reviews')]",
                 "//button[contains(text(), 'Show more reviews')]",
                 "//a[contains(@href, '/comments') and contains(text(), 'Show more')]",
@@ -246,13 +245,17 @@ def click_show_more_reviews(driver, max_clicks=1000):
                         if button.is_displayed() and button.is_enabled():
                             # Scroll to button
                             driver.execute_script("arguments[0].scrollIntoView(true);", button)
+                            time.sleep(0.5)  # Brief pause before clicking
                             # Click using JavaScript to avoid interception
                             driver.execute_script("arguments[0].click();", button)
                             button_found = True
                             clicks += 1
                             print(f"      ✓ Clicked 'Show more reviews' ({clicks})")
-                            # Wait for new reviews to appear
-                            time.sleep(0.3)  # Brief wait for DOM update
+                            # Wait for new reviews to appear and page to load
+                            time.sleep(2)  # Wait for reviews to load
+                            # Scroll down a bit to trigger any lazy loading
+                            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                            time.sleep(1)
                             break
                     
                     if button_found:
@@ -411,7 +414,12 @@ def extract_reviews_from_page(driver):
         # Look for actual review items, not summary sections
         review_elements_selenium = []
         selectors = [
-            # PRIMARY: Use the actual review container class from Healthgrades
+            # PRIMARY: Use c-single-comment (top-level review container with unique data-comment-id)
+            # This is the outer container for each review, avoiding nested duplicates
+            "//div[contains(@class, 'c-single-comment') and @data-comment-id]",
+            # SECONDARY: Fallback to c-single-comment without requiring data-comment-id
+            "//div[contains(@class, 'c-single-comment')]",
+            # TERTIARY: Use l-single-comment-container (but prefer c-single-comment)
             "//div[contains(@class, 'l-single-comment-container')]",
             # Fallback selectors
             "//div[contains(@class, 'review-item')]",
@@ -426,18 +434,73 @@ def extract_reviews_from_page(driver):
             # Last resort fallback
             "//div[contains(@class, 'review')]",
             "//article[contains(@class, 'review')]",
-            "//div[contains(@class, 'comment')]",
         ]
         
+        # Try all selectors and use the one that finds the most elements
+        # This handles cases where the primary selector is too specific
+        print(f"      🔍 Trying {len(selectors)} selectors...")
+        best_match = None
+        best_count = 0
         for selector in selectors:
             try:
                 elements = driver.find_elements(By.XPATH, selector)
-                if elements:
-                    print(f"      ✓ Found {len(elements)} elements with selector: {selector[:50]}...")
-                    review_elements_selenium = elements
-                    break
-            except:
+                count = len(elements)
+                if count > 0:
+                    print(f"      ✓ Found {count} elements with selector: {selector[:50]}...")
+                    # Use the selector that finds the most elements (but prefer specific ones if counts are similar)
+                    if count > best_count or (count >= best_count and 'l-single-comment-container' in selector):
+                        best_match = elements
+                        best_count = count
+                        # If we found a good match with the primary selector and it has reasonable count, use it
+                        if 'l-single-comment-container' in selector and count >= 3:
+                            review_elements_selenium = elements
+                            print(f"      ✅ Using primary selector (found {count} elements)")
+                            break
+            except Exception as e:
+                print(f"      ⚠️  Error with selector {selector[:50]}...: {e}")
                 continue
+        
+        # If we didn't break early, use the best match
+        if not review_elements_selenium and best_match:
+            # Filter best_match to only include elements that look like actual review containers
+            # Also deduplicate by data-comment-id to avoid matching nested elements
+            filtered_elements = []
+            seen_comment_ids = set()
+            
+            for elem in best_match:
+                try:
+                    # Get unique comment ID if available (for deduplication)
+                    comment_id = elem.get_attribute('data-comment-id')
+                    if comment_id and comment_id in seen_comment_ids:
+                        continue  # Skip duplicate
+                    if comment_id:
+                        seen_comment_ids.add(comment_id)
+                    
+                    # Check if this element has review-specific markers
+                    has_comment = len(elem.find_elements(By.XPATH, ".//div[@data-qa-target='user-comment']")) > 0
+                    has_date = len(elem.find_elements(By.XPATH, ".//div[@data-qa-target='comment-date']")) > 0
+                    has_container_class = 'l-single-comment-container' in (elem.get_attribute('class') or '')
+                    is_single_comment = 'c-single-comment' in (elem.get_attribute('class') or '')
+                    text_length = len(elem.text)
+                    
+                    # Include if it has review markers or is a known container class
+                    # Prefer c-single-comment (top-level) over nested elements
+                    if is_single_comment or (has_comment and has_date) or has_container_class or (text_length > 100 and 'review' in (elem.get_attribute('class') or '')):
+                        filtered_elements.append(elem)
+                except:
+                    # If we can't check, include it (better to have false positives than miss reviews)
+                    if len(elem.text) > 50:
+                        filtered_elements.append(elem)
+            
+            if filtered_elements:
+                review_elements_selenium = filtered_elements
+                print(f"      ✅ Using filtered best match (found {len(filtered_elements)}/{best_count} actual review elements)")
+            else:
+                review_elements_selenium = best_match
+                print(f"      ✅ Using best match selector (found {best_count} elements, couldn't filter)")
+        
+        if not review_elements_selenium:
+            print(f"      ⚠️  No review elements found with any selector")
         
         # Get page source and parse with BeautifulSoup
         page_source = driver.page_source  # Store for rating extraction
@@ -604,16 +667,16 @@ def extract_reviews_from_page(driver):
         
         # SECOND: Extract reviews directly from Selenium elements (with ratings already paired)
         # This ensures ratings match reviews perfectly since they come from the same element
-        if review_elements_selenium and len(element_ratings) > 0:
+        if review_elements_selenium:
             print(f"      🔍 Extracting reviews from {len(review_elements_selenium)} Selenium elements (with ratings)...")
+            print(f"      📊 Elements with ratings: {len(element_ratings)}/{len(review_elements_selenium)}")
             selenium_reviews_found = 0
             for idx, elem in enumerate(review_elements_selenium):
                 try:
                     elem_text = elem.text
                     # Skip if this looks like a header/navigation element
                     if len(elem_text) < 50 or 'Your trust is our top concern' in elem_text:
-                        if idx < 3:
-                            print(f"      ⚠️  Skipping element {idx+1}: too short or header text")
+                        print(f"      ⚠️  Skipping element {idx+1}: too short ({len(elem_text)} chars) or header text")
                         continue
                     
                     # Try to extract review text, date, and author from element
@@ -659,6 +722,12 @@ def extract_reviews_from_page(driver):
                             if author_match:
                                 author = author_match.group(1)
                                 date_str = re.sub(r'^[A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)?\s+–\s+', '', date_str)
+                    
+                    # Debug: print what we found for first few elements
+                    if idx < 5:
+                        print(f"      🔍 Element {idx+1}: review_text={bool(review_text)}, date_str={bool(date_str)}, rating={element_ratings.get(idx, 'N/A')}")
+                        if not review_text and not date_str:
+                            print(f"         Preview: {elem_text[:150]}...")
                     
                     # If we found review text from comment element, use it directly
                     if review_text and date_str:
@@ -707,6 +776,19 @@ def extract_reviews_from_page(driver):
                                              'veterinarian', 'dismissive', 'rude', 'arrogant', 'terrible',
                                              'seizures', 'neurologist', 'hospital', 'uncle', 'nice', 'fast']
                         
+                        # Debug validation for first few elements
+                        if idx < 5:
+                            text_len = len(review_text)
+                            is_duplicate = review_text in seen_texts
+                            has_indicator = any(indicator in text_lower for indicator in review_indicators)
+                            print(f"      🔍 Element {idx+1} validation: len={text_len}, duplicate={is_duplicate}, has_indicator={has_indicator}")
+                            if not (30 < text_len < 5000):
+                                print(f"         ❌ Length check failed: {text_len} not in (30, 5000)")
+                            if is_duplicate:
+                                print(f"         ❌ Duplicate check failed")
+                            if not has_indicator:
+                                print(f"         ❌ Indicator check failed, preview: {review_text[:100]}...")
+                        
                         if (30 < len(review_text) < 5000 and 
                             review_text not in seen_texts and
                             any(indicator in text_lower for indicator in review_indicators)):
@@ -725,6 +807,8 @@ def extract_reviews_from_page(driver):
                                 print(f"      ✓ Extracted review {len(reviews)} with rating {rating}")
                             else:
                                 print(f"      ✓ Extracted review {len(reviews)} (no rating)")
+                        elif idx < 5:
+                            print(f"      ⚠️  Element {idx+1} failed validation, not extracted")
                 except Exception as e:
                     if idx < 3:
                         print(f"      ⚠️  Error extracting review from element {idx+1}: {e}")
@@ -1340,15 +1424,26 @@ def scrape_doctor_reviews(driver, npi, first_name, last_name, url, skip_existing
         print(f"      📜 Scrolling to load all reviews...")
         last_height = driver.execute_script("return document.body.scrollHeight")
         scroll_attempts = 0
-        max_scroll_attempts = 5
+        max_scroll_attempts = 10  # Increased attempts
         
         while scroll_attempts < max_scroll_attempts:
-            # Scroll down
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            # Scroll down incrementally to trigger lazy loading
+            current_scroll = driver.execute_script("return window.pageYOffset || document.documentElement.scrollTop")
+            scroll_step = 500
+            max_scroll = driver.execute_script("return document.body.scrollHeight")
             
-            # Wait for page height to stabilize (state-based)
+            # Scroll in smaller increments
+            for step in range(0, max_scroll, scroll_step):
+                driver.execute_script(f"window.scrollTo(0, {step});")
+                time.sleep(0.2)  # Wait for lazy loading
+            
+            # Final scroll to bottom
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(1)  # Wait for any final lazy loading
+            
+            # Wait for page height to stabilize
             try:
-                WebDriverWait(driver, 0.5).until(
+                WebDriverWait(driver, 1).until(
                     lambda d: d.execute_script("return document.body.scrollHeight") != last_height or True
                 )
             except:
@@ -1359,18 +1454,35 @@ def scrape_doctor_reviews(driver, npi, first_name, last_name, url, skip_existing
             if new_height == last_height:
                 # No new content loaded, try scrolling up a bit and back down
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight - 1000);")
+                time.sleep(0.5)
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                time.sleep(1)
                 new_height = driver.execute_script("return document.body.scrollHeight")
                 if new_height == last_height:
                     break
             last_height = new_height
             scroll_attempts += 1
         
-        # Final scroll to bottom
+        # Final scroll to bottom and wait
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(2)  # Final wait for lazy loading
         
         # Click all "More details" buttons to expand truncated reviews
         click_more_details_buttons(driver)
+        
+        # DEBUG: Count review elements before extraction
+        print(f"      🔍 DEBUG: Counting review elements before extraction...")
+        debug_selectors = [
+            "//div[contains(@class, 'l-single-comment-container')]",
+            "//div[contains(@class, 'review')]",
+            "//div[contains(@class, 'comment')]",
+        ]
+        for selector in debug_selectors:
+            try:
+                elements = driver.find_elements(By.XPATH, selector)
+                print(f"         Found {len(elements)} elements with: {selector[:60]}...")
+            except:
+                pass
         
         # Extract reviews first (while page is loaded)
         reviews = extract_reviews_from_page(driver)
