@@ -1229,12 +1229,26 @@ const ResultsPage: React.FC = () => {
         console.warn('  ⚠️  NO CMS DATA AVAILABLE FOR RANKING');
       }
       
+      // Extract search_query from specialistResponse (it should be in patient_profile.search_query)
+      const searchQuery = specialistResponse?.patient_profile?.search_query 
+        || specialistResponse?.search_query 
+        || searchParams?.search_query 
+        || location.state?.aiRecommendations?.patient_profile?.search_query;
+      
+      console.log('🔍 [Frontend] Extracting search_query for ranking:', {
+        from_specialistResponse_patient_profile: !!specialistResponse?.patient_profile?.search_query,
+        from_specialistResponse_top_level: !!specialistResponse?.search_query,
+        from_searchParams: !!searchParams?.search_query,
+        from_location_state: !!location.state?.aiRecommendations?.patient_profile?.search_query,
+        final_search_query: searchQuery?.substring(0, 100) + (searchQuery && searchQuery.length > 100 ? '...' : '')
+      });
+      
       const rankingRequest: NPIRankingRequest = {
         npi_providers: npiData.providers,
         patient_input: `Symptoms: ${searchParams?.symptoms}\nDiagnosis: ${searchParams?.diagnosis}`,
         shared_specialist_information: specialistResponse.shared_specialist_information || [],
         cms_data: specialistResponse.cms_data, // Pass CMS data for clinical volume bonus
-        search_query: searchParams?.search_query || location.state?.aiRecommendations?.patient_profile?.search_query // Pass search_query from first analysis (same as used for PubMed)
+        search_query: searchQuery // Pass search_query from first analysis (same as used for PubMed)
       };
 
       console.log('🔍 [Frontend] Ranking request cms_data:', rankingRequest.cms_data ? 'PRESENT' : 'MISSING');

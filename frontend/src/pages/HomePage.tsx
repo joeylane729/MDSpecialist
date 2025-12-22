@@ -621,11 +621,21 @@ const HomePage: React.FC = () => {
       if (searchOptions.specialists && npiData) {
         rankedNPIProviders = npiData.providers;
         try {
+          // Extract search_query from aiRecommendations (it should be in patient_profile.search_query or top level)
+          const searchQuery = (aiRecommendations as any)?.patient_profile?.search_query 
+            || (aiRecommendations as any)?.search_query;
+          
+          console.log('🔍 [HomePage] Extracting search_query for ranking:', {
+            from_patient_profile: !!(aiRecommendations as any)?.patient_profile?.search_query,
+            from_top_level: !!(aiRecommendations as any)?.search_query,
+            final_search_query: searchQuery?.substring(0, 100) + (searchQuery && searchQuery.length > 100 ? '...' : '')
+          });
+          
           rankingResponse = await rankNPIProviders({
             npi_providers: npiData.providers,
             patient_input: `Symptoms: ${symptoms}\nDiagnosis: ${diagnosis}`,
             shared_specialist_information: (aiRecommendations as any)?.shared_specialist_information || [],
-            search_query: (aiRecommendations as any)?.patient_profile?.search_query // Pass search_query from first analysis (same as used for PubMed)
+            search_query: searchQuery // Pass search_query from first analysis (same as used for PubMed)
           });
           
           // Handle new treatment-specific ranking structure
