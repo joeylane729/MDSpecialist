@@ -1467,11 +1467,29 @@ const ResultsPage: React.FC = () => {
         ? Math.max(...Object.values(providerCategoryTotSrvcs)) 
         : 1;
       
+      // Debug logging for category filter
+      console.log('🔍 Category filter debug:', {
+        category,
+        categoryCptCodes: cptCodesByCategory[category]?.map(c => c.code) || [],
+        categoryCptCodesCount: cptCodesByCategory[category]?.length || 0,
+        providerCategoryTotSrvcsCount: Object.keys(providerCategoryTotSrvcs).length,
+        sampleProviderCategoryTotSrvcs: Object.entries(providerCategoryTotSrvcs).slice(0, 5),
+        maxCategoryTotSrvcs,
+        totalProvidersToFilter: Object.keys(filteredProviderScores).length
+      });
+      
       // Now, filter clinical volume based on category CPT codes for each provider
-      Object.keys(filteredProviderScores).forEach(npi => {
+      Object.keys(filteredProviderScores).forEach((npi, index) => {
         const scoreData = filteredProviderScores[npi];
         const categoryTotSrvcs = providerCategoryTotSrvcs[npi] || 0;
         const hasCategoryCptCodes = categoryTotSrvcs > 0;
+        
+        // Add logging for first few providers
+        if (index < 5) {
+          const originalCV = scoreData.weighted_breakdown?.breakdown_details?.clinical_volume?.weighted_points || 0;
+          const originalRaw = scoreData.weighted_breakdown?.breakdown_details?.clinical_volume?.raw || 0;
+          console.log(`🔍 Provider ${npi} (${index + 1}/${Math.min(5, Object.keys(filteredProviderScores).length)}): categoryTotSrvcs=${categoryTotSrvcs}, hasCategoryCptCodes=${hasCategoryCptCodes}, originalCV=${originalCV}, originalRaw=${originalRaw}`);
+        }
         
         if (hasCategoryCptCodes && scoreData.weighted_breakdown) {
           // Calculate percentage based on max Tot_Srvcs for this category only
@@ -1503,6 +1521,7 @@ const ResultsPage: React.FC = () => {
         } else {
           // Provider doesn't have CPT codes in this category - set clinical volume to 0
           if (scoreData.weighted_breakdown?.breakdown_details?.clinical_volume) {
+            const beforeCV = scoreData.weighted_breakdown.breakdown_details.clinical_volume.weighted_points || 0;
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.raw = 0;
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.max_raw = maxCategoryTotSrvcs; // Still set max so percentage calculation is correct
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.percentage = 0;
@@ -1516,6 +1535,13 @@ const ResultsPage: React.FC = () => {
             const vumedi = scoreData.weighted_breakdown.breakdown_details.vumedi?.weighted_points || 0;
             scoreData.weighted_breakdown.final_score = pubmed + training + experience + vumedi;
             scoreData.score = scoreData.weighted_breakdown.final_score;
+            
+            // Log for first few providers
+            if (index < 5) {
+              console.log(`🔍 Provider ${npi}: Set clinical volume to 0 (was ${beforeCV}), new final_score=${scoreData.score}`);
+            }
+          } else if (index < 5) {
+            console.log(`🔍 Provider ${npi}: No weighted_breakdown.breakdown_details.clinical_volume found`);
           }
         }
       });
