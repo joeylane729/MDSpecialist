@@ -351,35 +351,42 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
 
             {/* Education - Collapsible */}
             {provider.education && (provider.education.medicalSchool || provider.education.residency || provider.education.fellowship) && (
-              <div className="mb-2">
+              <div className="mb-3">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowEducation(!showEducation);
                   }}
-                  className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-gray-900"
+                  className="flex items-center gap-2 text-sm font-semibold text-gray-800 hover:text-gray-900 transition-colors"
                 >
-                  {showEducation ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  {showEducation ? <ChevronUp className="h-4 w-4 text-gray-600" /> : <ChevronDown className="h-4 w-4 text-gray-600" />}
+                  <GraduationCap className="h-4 w-4 text-gray-700" />
                   <span>Education</span>
                 </button>
                 {showEducation && (
-                  <div className="text-gray-600 text-xs mt-1 ml-4 space-y-1">
+                  <div className="mt-2 ml-6 space-y-2">
                     {provider.education.medicalSchool && (
-                      <div>
-                        <span className="font-medium text-gray-500">MS: </span>
-                        <span className="break-words">{provider.education.medicalSchool}</span>
+                      <div className="text-sm text-gray-700 leading-relaxed">
+                        <span className="text-gray-500">• </span>
+                        <span className="break-words">{provider.education.medicalSchool.replace(/^MS:\s*/i, '').replace(/\(Medical School\)/i, '– MD')}</span>
                       </div>
                     )}
                     {provider.education.residency && (
-                      <div>
-                        <span className="font-medium text-gray-500">Res: </span>
-                        <span className="break-words">{provider.education.residency}</span>
+                      <div className="text-sm text-gray-700 leading-relaxed">
+                        <span className="text-gray-500">• </span>
+                        <span className="break-words">{provider.education.residency.replace(/^Res:\s*/i, '').replace(/\(Residency[^)]*\)/i, (match) => {
+                          const yearMatch = match.match(/(\d{4})-(\d{4})/);
+                          if (yearMatch) {
+                            return `– Residency (${yearMatch[1]}–${yearMatch[2]})`;
+                          }
+                          return '– Residency';
+                        })}</span>
                       </div>
                     )}
                     {provider.education.fellowship && (
-                      <div>
-                        <span className="font-medium text-gray-500">Fell: </span>
-                        <span className="break-words">{provider.education.fellowship}</span>
+                      <div className="text-sm text-gray-700 leading-relaxed">
+                        <span className="text-gray-500">• </span>
+                        <span className="break-words">{provider.education.fellowship.replace(/^Fell:\s*/i, '').replace(/\(Fellowship[^)]*\)/i, '– Fellowship')}</span>
                       </div>
                     )}
                   </div>
@@ -389,15 +396,16 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
 
             {/* Provider Content - Vumedi and PubMed - Collapsible */}
             {providerContent && (providerContent.vumedi_content?.length > 0 || providerContent.pubmed_articles?.length > 0) && (
-              <div className="mb-2">
+              <div className="mb-3">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowContent(!showContent);
                   }}
-                  className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-gray-900"
+                  className="flex items-center gap-2 text-sm font-semibold text-gray-800 hover:text-gray-900 transition-colors"
                 >
-                  {showContent ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  {showContent ? <ChevronUp className="h-4 w-4 text-gray-600" /> : <ChevronDown className="h-4 w-4 text-gray-600" />}
+                  <Video className="h-4 w-4 text-gray-700" />
                   <span>
                     Content ({[
                       providerContent.vumedi_content?.length || 0,
@@ -406,15 +414,15 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                   </span>
                 </button>
                 {showContent && (
-                  <div className="mt-2 ml-4 space-y-2">
+                  <div className="mt-3 ml-6 space-y-4">
                     {/* Vumedi Content */}
                     {providerContent.vumedi_content && providerContent.vumedi_content.length > 0 && (
                       <div>
-                        <h4 className="text-xs font-medium text-gray-700 mb-1.5 flex items-center">
-                          <Video className="w-3 h-3 mr-1" />
+                        <h4 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
+                          <Video className="w-3.5 h-3.5 text-purple-600" />
                           Videos ({providerContent.vumedi_content.length})
                         </h4>
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                           {(showAllVumedi ? providerContent.vumedi_content : providerContent.vumedi_content.slice(0, MAX_ITEMS_TO_SHOW)).map((content, index) => (
                             <a
                               key={index}
@@ -422,24 +430,27 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="block p-1.5 bg-purple-50 hover:bg-purple-100 rounded text-xs transition-colors"
+                              className="flex items-start gap-2 p-2 bg-purple-50 hover:bg-purple-100 rounded-md transition-colors group"
                             >
-                              <div className="font-medium text-purple-800 break-words line-clamp-1">
+                              <span className="text-purple-600 mt-0.5 text-xs">▶</span>
+                              <div className="font-medium text-purple-800 text-sm break-words line-clamp-2 flex-1 group-hover:text-purple-900">
                                 {content.title}
                               </div>
                             </a>
                           ))}
                         </div>
                         {providerContent.vumedi_content.length > MAX_ITEMS_TO_SHOW && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowAllVumedi(!showAllVumedi);
-                            }}
-                            className="mt-1 text-xs text-purple-600 hover:text-purple-800 font-medium"
-                          >
-                            {showAllVumedi ? 'Show less' : `Show all ${providerContent.vumedi_content.length}`}
-                          </button>
+                          <div className="mt-2 text-right">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowAllVumedi(!showAllVumedi);
+                              }}
+                              className="text-xs text-purple-600 hover:text-purple-800 font-medium hover:underline"
+                            >
+                              {showAllVumedi ? 'Show less' : `Show all ${providerContent.vumedi_content.length}`}
+                            </button>
+                          </div>
                         )}
                       </div>
                     )}
@@ -447,11 +458,11 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                     {/* PubMed Articles */}
                     {providerContent.pubmed_articles && providerContent.pubmed_articles.length > 0 && (
                       <div>
-                        <h4 className="text-xs font-medium text-gray-700 mb-1.5 flex items-center">
-                          <BookOpen className="w-3 h-3 mr-1" />
+                        <h4 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
+                          <BookOpen className="w-3.5 h-3.5 text-blue-600" />
                           Articles ({providerContent.pubmed_articles.length})
                         </h4>
-                        <div className="space-y-1">
+                        <div className="space-y-1.5">
                           {(showAllPubMed ? providerContent.pubmed_articles : providerContent.pubmed_articles.slice(0, MAX_ITEMS_TO_SHOW)).map((article, index) => (
                             <a
                               key={index}
@@ -459,25 +470,27 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="block p-1.5 bg-blue-50 hover:bg-blue-100 rounded text-xs transition-colors"
+                              className="block p-2 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors group"
                             >
-                              <div className="font-medium text-blue-800 break-words line-clamp-1">
+                              <div className="font-medium text-blue-800 text-sm break-words line-clamp-2 group-hover:text-blue-900">
                                 {article.title}
                               </div>
-                              <div className="text-blue-600 text-xs">PMID: {article.pmid}</div>
+                              <div className="text-blue-500 text-xs mt-1">PMID: {article.pmid}</div>
                             </a>
                           ))}
                         </div>
                         {providerContent.pubmed_articles.length > MAX_ITEMS_TO_SHOW && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowAllPubMed(!showAllPubMed);
-                            }}
-                            className="mt-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
-                          >
-                            {showAllPubMed ? 'Show less' : `Show all ${providerContent.pubmed_articles.length}`}
-                          </button>
+                          <div className="mt-2 text-right">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowAllPubMed(!showAllPubMed);
+                              }}
+                              className="text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline"
+                            >
+                              {showAllPubMed ? 'Show less' : `Show all ${providerContent.pubmed_articles.length}`}
+                            </button>
+                          </div>
                         )}
                       </div>
                     )}
@@ -488,23 +501,25 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
 
             {/* Patient Reviews - Collapsible */}
             {providerContent?.reviews && providerContent.reviews.length > 0 && (
-              <div className="mb-2">
+              <div className="mb-3">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowReviews(!showReviews);
                   }}
-                  className="flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-gray-900"
+                  className="flex items-center gap-2 text-sm font-semibold text-gray-800 hover:text-gray-900 transition-colors"
                 >
-                  {showReviews ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  {showReviews ? <ChevronUp className="h-4 w-4 text-gray-600" /> : <ChevronDown className="h-4 w-4 text-gray-600" />}
+                  <Star className="h-4 w-4 text-gray-700 fill-yellow-400 text-yellow-400" />
                   <span>Reviews ({providerContent.reviews.length})</span>
                 </button>
                 {showReviews && (
-                  <div className="mt-2 ml-4">
+                  <div className="mt-3">
                     <ProviderReviews 
                       npi={provider.npi} 
                       searchQuery={searchQuery}
                       reviews={providerContent.reviews}
+                      patientDiagnosis={patientDiagnosis}
                     />
                   </div>
                 )}
