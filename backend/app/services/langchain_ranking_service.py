@@ -1693,10 +1693,14 @@ class LangChainRankingService:
                 
                 review_data = {
                     'id': review.id,
+                    'npi': review.npi,
+                    'first_name': review.first_name,
+                    'last_name': review.last_name,
                     'review_text': review.review_text,
                     'review_author': review.review_author,
                     'review_date': review.review_date,
                     'review_index': review.review_index,
+                    'review_rating': review.review_rating,  # Include star rating
                     'is_relevant': is_relevant  # Add boolean flag
                 }
                 
