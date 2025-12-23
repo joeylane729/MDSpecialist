@@ -17,6 +17,7 @@ class HealthgradesReview(Base):
     review_text = Column(Text)
     review_author = Column(String(255))
     review_date = Column(String(50))  # Store as string since format varies
+    review_rating = Column(Integer)  # Star rating (1-5)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     def __repr__(self):
