@@ -217,23 +217,31 @@ class LangChainSpecialistRecommendationService:
         try:
             logger.info(f"🎯 Starting NPI ranking with {len(npi_providers)} providers")
             
-            # Step 1: Get medical analysis
-            logger.info("🔍 Step 1: Performing medical analysis for NPI ranking...")
-            # Note: For NPI ranking, we could also accept pre-generated CPT codes, but typically
-            # this is called separately so we generate fresh CPT codes here
-            medical_analysis_results = await self.medical_analysis.comprehensive_analysis(patient_input)
-            
-            # ALWAYS override search_query with the one from first analysis (same as used for PubMed)
-            # This ensures consistency - the search_query passed in is the authoritative one
-            if search_query and isinstance(medical_analysis_results, dict):
-                generated_query = medical_analysis_results.get('search_query', '')
-                if generated_query != search_query:
-                    logger.info(f"🔍 [Ranking] Overriding generated search_query with first analysis query")
-                    logger.info(f"   Generated: {generated_query[:100]}{'...' if len(generated_query) > 100 else ''}")
-                    logger.info(f"   Using: {search_query[:100]}{'...' if len(search_query) > 100 else ''}")
-                medical_analysis_results['search_query'] = search_query
-            elif not search_query:
-                logger.warning(f"⚠️ [Ranking] No search_query provided - medical_analysis_results.search_query = {medical_analysis_results.get('search_query', 'NOT FOUND') if isinstance(medical_analysis_results, dict) else 'NOT A DICT'}")
+            # Step 1: Create minimal patient_profile from existing data (no need to re-run medical analysis)
+            # We already have search_query from the first medical analysis and shared_specialist_information
+            if not search_query:
+                logger.warning(f"⚠️ [Ranking] No search_query provided - will need to generate one")
+                # Fallback: Only call comprehensive_analysis if search_query is missing
+                logger.info("🔍 [Ranking] No search_query provided, calling comprehensive_analysis as fallback...")
+                medical_analysis_results = await self.medical_analysis.comprehensive_analysis(patient_input)
+            else:
+                # Create minimal patient_profile with just search_query (no need to re-run analysis)
+                logger.info(f"🔍 [Ranking] Using search_query from first medical analysis (skipping redundant analysis)")
+                logger.info(f"   Search query: {search_query[:100]}{'...' if len(search_query) > 100 else ''}")
+                # Parse patient_input to extract symptoms for patient_profile (simple parsing)
+                symptoms = []
+                diagnosis = ""
+                for line in patient_input.split('\n'):
+                    line = line.strip()
+                    if line.startswith('Symptoms:'):
+                        symptoms = [s.strip() for s in line.replace('Symptoms:', '').strip().split(',') if s.strip()]
+                    elif line.startswith('Diagnosis:'):
+                        diagnosis = line.replace('Diagnosis:', '').strip()
+                medical_analysis_results = {
+                    'search_query': search_query,
+                    'symptoms': symptoms,
+                    'diagnosis': diagnosis
+                }
             
             # Step 2: Use shared Pinecone specialist information (required)
             if not shared_specialist_information:
