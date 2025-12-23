@@ -58,7 +58,8 @@ def import_reviews(csv_path: str, batch_size: int = 1000):
                     review_index=int(row['review_index']) if row['review_index'] else None,
                     review_text=row['review_text'] or None,
                     review_author=row['review_author'] or None,
-                    review_date=row['review_date'] or None
+                    review_date=row['review_date'] or None,
+                    review_rating=int(row['review_rating']) if row.get('review_rating') and row['review_rating'].strip() else None
                 )
                 
                 batch.append(review)
