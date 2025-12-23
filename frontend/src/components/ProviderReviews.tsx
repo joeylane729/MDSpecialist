@@ -120,7 +120,15 @@ export default function ProviderReviews({ reviews: allReviews }: ProviderReviews
                   className="p-2 bg-white rounded border border-gray-200"
                 >
                   <div className="flex items-start justify-between mb-1">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {review.review_rating && (
+                        <div className="flex items-center gap-0.5">
+                          <span className="text-xs font-medium text-yellow-600">★</span>
+                          <span className="text-xs font-medium text-gray-900">
+                            {review.review_rating}
+                          </span>
+                        </div>
+                      )}
                       {review.review_author && (
                         <span className="font-medium text-gray-900 text-xs">
                           {review.review_author}

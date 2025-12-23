@@ -18,6 +18,7 @@ class ReviewResponse(BaseModel):
     review_text: Optional[str]
     review_author: Optional[str]
     review_date: Optional[str]
+    review_rating: Optional[int]  # Star rating (1-5)
     is_relevant: Optional[bool] = False  # Boolean flag indicating if review is relevant to search query
     
     class Config:
@@ -66,6 +67,7 @@ async def get_reviews_by_npi(
             'review_text': review.review_text,
             'review_author': review.review_author,
             'review_date': review.review_date,
+            'review_rating': review.review_rating,
             'is_relevant': False  # No search context, so cannot determine relevance
         }
         review_responses.append(ReviewResponse(**review_dict))
@@ -157,6 +159,7 @@ async def search_reviews_by_keywords(
             'review_text': review.review_text,
             'review_author': review.review_author,
             'review_date': review.review_date,
+            'review_rating': review.review_rating,
             'is_relevant': True  # All reviews returned from filtered query are relevant
         }
         review_responses.append(ReviewResponse(**review_dict))

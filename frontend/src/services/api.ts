@@ -601,6 +601,7 @@ export interface HealthgradesReview {
   review_text: string | null;
   review_author: string | null;
   review_date: string | null;
+  review_rating: number | null;  // Star rating (1-5)
   is_relevant?: boolean;  // Boolean flag indicating if review is relevant to search query
 }
 
