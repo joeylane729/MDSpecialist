@@ -1477,12 +1477,19 @@ const ResultsPage: React.FC = () => {
           // Calculate percentage based on max Tot_Srvcs for this category only
           const categoryPct = maxCategoryTotSrvcs > 0 ? (categoryTotSrvcs / maxCategoryTotSrvcs) : 0;
           
+          // Calculate percentile for this category
+          const categoryTotSrvcsValues = Object.values(providerCategoryTotSrvcs);
+          const categoryPercentile = categoryTotSrvcsValues.length > 0 && categoryTotSrvcs > 0
+            ? ((categoryTotSrvcsValues.filter(v => v < categoryTotSrvcs).length / categoryTotSrvcsValues.length) * 100)
+            : 0;
+          
           // Update the weighted breakdown
           if (scoreData.weighted_breakdown.breakdown_details?.clinical_volume) {
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.raw = categoryTotSrvcs;
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.max_raw = maxCategoryTotSrvcs;
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.percentage = categoryPct * 100;
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.weighted_points = categoryPct * 40;
+            scoreData.weighted_breakdown.breakdown_details.clinical_volume.percentile = Math.round(categoryPercentile * 100) / 100; // Round to 2 decimal places
             
             // Recalculate final score
             const cv = scoreData.weighted_breakdown.breakdown_details.clinical_volume.weighted_points || 0;
@@ -1500,6 +1507,7 @@ const ResultsPage: React.FC = () => {
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.max_raw = maxCategoryTotSrvcs; // Still set max so percentage calculation is correct
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.percentage = 0;
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.weighted_points = 0;
+            scoreData.weighted_breakdown.breakdown_details.clinical_volume.percentile = 0;
             
             // Recalculate final score without clinical volume
             const pubmed = scoreData.weighted_breakdown.breakdown_details.pubmed?.weighted_points || 0;

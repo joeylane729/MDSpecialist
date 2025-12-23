@@ -1154,6 +1154,8 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
         // Recalculate weighted points from the recalculated percentage
         const weightedPointsCalc = (percentageCalc / 100) * clinical_volume.weight;
         
+        const percentile = breakdownDetails?.percentile;
+        
         return (
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
@@ -1168,6 +1170,14 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
               <span className="text-gray-600">Max Total Services (in category):</span>
               <span className="font-semibold">{maxTotSrvcs.toLocaleString()}</span>
             </div>
+            {percentile !== undefined && percentile !== null && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">Percentile Rank:</span>
+                <span className="font-semibold text-blue-600">
+                  {percentile.toFixed(1)}th percentile
+                </span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-gray-600">Percentage Calculation:</span>
               <span className="font-semibold">{totSrvcs.toLocaleString()} ÷ {maxTotSrvcs.toLocaleString()} = {percentageDisplay}%</span>
@@ -1191,18 +1201,30 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
       percentage: pubmed.percentage,
       weightedPoints: pubmed.weighted_points,
       summary: `${pubmed_count} article${pubmed_count !== 1 ? 's' : ''}`,
-      details: (
-        <div className="space-y-3 text-sm">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <span className="text-gray-600">Total Articles:</span>
-              <span className="ml-2 font-semibold">{pubmed_count}</span>
+      details: (() => {
+        const pubmedBreakdownDetails = weighted_breakdown?.breakdown_details?.pubmed;
+        const pubmedPercentile = pubmedBreakdownDetails?.percentile;
+        
+        return (
+          <div className="space-y-3 text-sm">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <span className="text-gray-600">Total Articles:</span>
+                <span className="ml-2 font-semibold">{pubmed_count}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">Weighted Points:</span>
+                <span className="ml-2 font-semibold">{pubmed_weighted_points.toFixed(2)}</span>
+              </div>
             </div>
-            <div>
-              <span className="text-gray-600">Weighted Points:</span>
-              <span className="ml-2 font-semibold">{pubmed_weighted_points.toFixed(2)}</span>
-            </div>
-          </div>
+            {pubmedPercentile !== undefined && pubmedPercentile !== null && (
+              <div className="flex justify-between">
+                <span className="text-gray-600">Percentile Rank:</span>
+                <span className="font-semibold text-purple-600">
+                  {pubmedPercentile.toFixed(1)}th percentile
+                </span>
+              </div>
+            )}
           {(pubmed_first_author_count > 0 || pubmed_middle_author_count > 0 || pubmed_last_author_count > 0) && (
             <div className="border-t pt-3">
               <div className="font-semibold text-gray-700 mb-2">Author Positions:</div>
@@ -1253,7 +1275,8 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
             </div>
           </div>
         </div>
-      )
+        );
+      })()
     },
     {
       key: 'training',

@@ -300,9 +300,42 @@ class LangChainRankingService:
         scores = self._batch_get_medical_school_scores([npi])
         return scores.get(npi, 0)
     
+    def _calculate_percentile(
+        self,
+        value: float,
+        all_values: List[float]
+    ) -> float:
+        """
+        Calculate percentile for a given value against a list of all values.
+        
+        Percentile = (count of values below this value / total count) * 100
+        
+        Args:
+            value: The value to calculate percentile for
+            all_values: List of all values to compare against
+            
+        Returns:
+            Percentile (0-100) where 0 = lowest, 100 = highest
+        """
+        if not all_values or value is None or value == 0:
+            return 0.0
+        
+        # Count how many values are below this value
+        values_below = sum(1 for v in all_values if v < value)
+        total_count = len(all_values)
+        
+        if total_count == 0:
+            return 0.0
+        
+        # Calculate percentile: percentage of providers with lower Tot_Srvcs
+        percentile = (values_below / total_count) * 100
+        
+        return round(percentile, 2)
+    
     def _calculate_weighted_score(
         self,
-        raw_scores: Dict[str, Dict[str, float]]
+        raw_scores: Dict[str, Dict[str, float]],
+        cms_tot_srvcs: Optional[Dict[str, int]] = None
     ) -> Dict[str, Dict[str, Any]]:
         """
         Calculate weighted scores from raw component scores.
@@ -317,12 +350,41 @@ class LangChainRankingService:
         
         Args:
             raw_scores: Dict mapping NPI to dict of raw component scores
+            cms_tot_srvcs: Optional dict mapping NPI (string) to Tot_Srvcs (int) for percentile calculation
             
         Returns:
             Dict mapping NPI to weighted score components and final score
         """
         if not raw_scores:
             return {}
+        
+        # Calculate percentile distribution from ALL CMS providers (if available)
+        percentile_map = {}
+        if cms_tot_srvcs:
+            all_tot_srvcs = list(cms_tot_srvcs.values())
+            # Create percentile map for each provider in raw_scores
+            for npi, scores in raw_scores.items():
+                clinical_volume_raw = scores.get('clinical_volume_raw', 0)
+                if clinical_volume_raw > 0:
+                    percentile_map[npi] = self._calculate_percentile(
+                        clinical_volume_raw,
+                        all_tot_srvcs
+                    )
+                else:
+                    percentile_map[npi] = 0.0
+        
+        # Calculate percentile distribution for PubMed from raw_scores
+        pubmed_percentile_map = {}
+        all_pubmed_raw = [scores.get('pubmed_raw', 0) for scores in raw_scores.values()]
+        for npi, scores in raw_scores.items():
+            pubmed_raw = scores.get('pubmed_raw', 0)
+            if pubmed_raw > 0:
+                pubmed_percentile_map[npi] = self._calculate_percentile(
+                    pubmed_raw,
+                    all_pubmed_raw
+                )
+            else:
+                pubmed_percentile_map[npi] = 0.0
         
         # Find max values for normalization (including clinical volume which is now percentage-based)
         max_clinical_volume = max((scores.get('clinical_volume_raw', 0) for scores in raw_scores.values()), default=1.0)
@@ -380,8 +442,22 @@ class LangChainRankingService:
                 'experience_weighted': experience_weighted,
                 'final_score': final_score,
                 'breakdown_details': {  # Store details for frontend display
-                    'clinical_volume': {'raw': scores.get('clinical_volume_raw', 0), 'max': max_values['clinical_volume'], 'percentage': clinical_volume_pct * 100, 'weighted_points': clinical_volume_weighted, 'weight': 40.5},
-                    'pubmed': {'raw': scores.get('pubmed_raw', 0), 'max': max_values['pubmed'], 'percentage': pubmed_pct * 100, 'weighted_points': pubmed_weighted, 'weight': 40.5},
+                    'clinical_volume': {
+                        'raw': scores.get('clinical_volume_raw', 0),
+                        'max': max_values['clinical_volume'],
+                        'percentage': clinical_volume_pct * 100,
+                        'weighted_points': clinical_volume_weighted,
+                        'weight': 40.5,
+                        'percentile': percentile_map.get(npi, 0.0)
+                    },
+                    'pubmed': {
+                        'raw': scores.get('pubmed_raw', 0),
+                        'max': max_values['pubmed'],
+                        'percentage': pubmed_pct * 100,
+                        'weighted_points': pubmed_weighted,
+                        'weight': 40.5,
+                        'percentile': pubmed_percentile_map.get(npi, 0.0)
+                    },
                     'training': {'raw': scores.get('training_raw', 0), 'max': max_values['training'], 'percentage': training_pct * 100, 'weighted_points': training_weighted, 'weight': 10},
                     'experience': {'raw': scores.get('experience_raw', 0), 'max': max_values['experience'], 'percentage': experience_pct * 100, 'weighted_points': experience_weighted, 'weight': 6},
                     'vumedi': {'raw': scores.get('vumedi_raw', 0), 'max': max_values['vumedi'], 'percentage': vumedi_pct * 100, 'weighted_points': vumedi_weighted, 'weight': 3},
@@ -807,7 +883,7 @@ class LangChainRankingService:
             
             # Calculate weighted scores from raw component scores
             if raw_component_scores:
-                weighted_scores = self._calculate_weighted_score(raw_component_scores)
+                weighted_scores = self._calculate_weighted_score(raw_component_scores, cms_tot_srvcs=cms_tot_srvcs)
                 # Update provider_scores with weighted values
                 for npi, weighted_data in weighted_scores.items():
                     if npi in provider_scores:
@@ -1468,7 +1544,7 @@ class LangChainRankingService:
                             }
                     # Combine matched and unmatched raw scores for normalization
                     all_raw_scores = {**matched_raw_scores, **unmatched_raw_scores}
-                    weighted_scores = self._calculate_weighted_score(all_raw_scores)
+                    weighted_scores = self._calculate_weighted_score(all_raw_scores, cms_tot_srvcs=cms_tot_srvcs)
                     
                     # Update unmatched provider scores with weighted values
                     for npi, weighted_data in weighted_scores.items():
