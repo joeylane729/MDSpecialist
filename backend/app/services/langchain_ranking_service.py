@@ -1670,6 +1670,17 @@ class LangChainRankingService:
             logger.info(f"📦 [Reviews] Found {len(all_reviews)} total reviews across {len(npis)} NPIs")
             logger.info(f"⏱️  [Reviews] Database query took {query_duration:.3f} seconds ({query_duration*1000:.1f}ms)")
             
+            # Debug: Check a few reviews to verify review_rating is loaded
+            if all_reviews:
+                sample_review = all_reviews[0]
+                logger.debug(f"🔍 [Reviews Debug] Sample review ID {sample_review.id}: review_rating={sample_review.review_rating}, type={type(sample_review.review_rating).__name__}")
+                # Check for Theodore's review_index 111 specifically
+                theodore_review_111 = next((r for r in all_reviews if str(r.npi) == '1811916455' and r.review_index == 111), None)
+                if theodore_review_111:
+                    logger.info(f"🔍 [Reviews Debug] Theodore review_index 111: review_rating={theodore_review_111.review_rating}, type={type(theodore_review_111.review_rating).__name__}")
+                else:
+                    logger.warning(f"⚠️  [Reviews Debug] Theodore review_index 111 not found in query results")
+            
             # Group by NPI and mark each review as relevant/not relevant
             reviews_by_npi = {}
             theodore_npi = '1811916455'
@@ -1691,6 +1702,13 @@ class LangChainRankingService:
                     review_text_lower = review.review_text.lower()
                     is_relevant = any(keyword in review_text_lower for keyword in keyword_list)
                 
+                # Access review_rating directly - it should be loaded by the query
+                review_rating_value = review.review_rating
+                
+                # Debug logging for Theodore's reviews
+                if str(review.npi) == '1811916455' and review.review_index in [1, 111]:
+                    logger.debug(f"🔍 [Reviews Debug] Theodore review_index {review.review_index}: review_rating={review_rating_value}, raw_attr={hasattr(review, 'review_rating')}")
+                
                 review_data = {
                     'id': review.id,
                     'npi': review.npi,
@@ -1700,7 +1718,7 @@ class LangChainRankingService:
                     'review_author': review.review_author,
                     'review_date': review.review_date,
                     'review_index': review.review_index,
-                    'review_rating': getattr(review, 'review_rating', None),  # Include star rating (defensive for deployment)
+                    'review_rating': review_rating_value,  # Include star rating (1-5, or None if not available)
                     'is_relevant': is_relevant  # Add boolean flag
                 }
                 

@@ -115,13 +115,13 @@ export default function ProviderReviews({ reviews: allReviews }: ProviderReviews
           ) : (
             <>
               {displayedReviews.map((review) => (
-                <div
-                  key={review.id}
+            <div
+              key={review.id}
                   className="p-2 bg-white rounded border border-gray-200"
-                >
+            >
                   <div className="flex items-start justify-between mb-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      {review.review_rating && (
+                      {review.review_rating != null && review.review_rating !== undefined && (
                         <div className="flex items-center gap-0.5">
                           <span className="text-xs font-medium text-yellow-600">★</span>
                           <span className="text-xs font-medium text-gray-900">
@@ -129,29 +129,29 @@ export default function ProviderReviews({ reviews: allReviews }: ProviderReviews
                           </span>
                         </div>
                       )}
-                      {review.review_author && (
+                  {review.review_author && (
                         <span className="font-medium text-gray-900 text-xs">
-                          {review.review_author}
+                      {review.review_author}
                         </span>
-                      )}
-                      {review.review_date && (
+                  )}
+                  {review.review_date && (
                         <span className="text-xs text-gray-500">
                           • {review.review_date}
                         </span>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap line-clamp-3">
-                    {review.review_text}
-                  </p>
+                  )}
                 </div>
-              ))}
+              </div>
+                  <p className="text-xs text-gray-700 leading-relaxed whitespace-pre-wrap line-clamp-3">
+                {review.review_text}
+              </p>
+            </div>
+          ))}
 
               {filteredReviews.length > PREVIEW_COUNT && (
-                <button
-                  onClick={() => setShowAll(!showAll)}
+            <button
+              onClick={() => setShowAll(!showAll)}
                   className="w-full mt-1.5 py-1.5 text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center justify-center gap-1"
-                >
+            >
                   {showAll ? (
                     <>
                       <ChevronUp className="w-3.5 h-3.5" />
@@ -163,7 +163,7 @@ export default function ProviderReviews({ reviews: allReviews }: ProviderReviews
                       Show all {filteredReviews.length}
                     </>
                   )}
-                </button>
+            </button>
               )}
             </>
           )}
