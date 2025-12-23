@@ -223,13 +223,15 @@ class LangChainSpecialistRecommendationService:
             # this is called separately so we generate fresh CPT codes here
             medical_analysis_results = await self.medical_analysis.comprehensive_analysis(patient_input)
             
-            # Ensure search_query is set from first analysis (same as used for PubMed)
+            # ALWAYS override search_query with the one from first analysis (same as used for PubMed)
+            # This ensures consistency - the search_query passed in is the authoritative one
             if search_query and isinstance(medical_analysis_results, dict):
-                if not medical_analysis_results.get('search_query'):
-                    logger.info(f"🔍 [Ranking] Setting search_query from first analysis: {search_query[:100]}{'...' if len(search_query) > 100 else ''}")
-                    medical_analysis_results['search_query'] = search_query
-                else:
-                    logger.info(f"🔍 [Ranking] medical_analysis_results already has search_query: {medical_analysis_results.get('search_query', '')[:100]}")
+                generated_query = medical_analysis_results.get('search_query', '')
+                if generated_query != search_query:
+                    logger.info(f"🔍 [Ranking] Overriding generated search_query with first analysis query")
+                    logger.info(f"   Generated: {generated_query[:100]}{'...' if len(generated_query) > 100 else ''}")
+                    logger.info(f"   Using: {search_query[:100]}{'...' if len(search_query) > 100 else ''}")
+                medical_analysis_results['search_query'] = search_query
             elif not search_query:
                 logger.warning(f"⚠️ [Ranking] No search_query provided - medical_analysis_results.search_query = {medical_analysis_results.get('search_query', 'NOT FOUND') if isinstance(medical_analysis_results, dict) else 'NOT A DICT'}")
             

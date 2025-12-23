@@ -1700,7 +1700,7 @@ class LangChainRankingService:
                     'review_author': review.review_author,
                     'review_date': review.review_date,
                     'review_index': review.review_index,
-                    'review_rating': review.review_rating,  # Include star rating
+                    'review_rating': getattr(review, 'review_rating', None),  # Include star rating (defensive for deployment)
                     'is_relevant': is_relevant  # Add boolean flag
                 }
                 
