@@ -1635,6 +1635,17 @@ class LangChainRankingService:
         """
         from ..models.healthgrades_review import HealthgradesReview
         
+        # DEBUG: Check model definition
+        logger.info(f"🔍 [Reviews Debug] HealthgradesReview class attributes: {[attr for attr in dir(HealthgradesReview) if not attr.startswith('_') and not callable(getattr(HealthgradesReview, attr, None))]}")
+        if hasattr(HealthgradesReview, '__table__'):
+            logger.info(f"🔍 [Reviews Debug] HealthgradesReview table columns: {list(HealthgradesReview.__table__.columns.keys())}")
+            if 'review_rating' in HealthgradesReview.__table__.columns:
+                logger.info(f"🔍 [Reviews Debug] review_rating column exists in table: {HealthgradesReview.__table__.columns['review_rating']}")
+            else:
+                logger.error(f"❌ [Reviews Debug] review_rating column MISSING from table definition!")
+        else:
+            logger.error(f"❌ [Reviews Debug] HealthgradesReview has no __table__ attribute!")
+        
         if not npis or not self.db:
             return {}
         
@@ -1673,11 +1684,35 @@ class LangChainRankingService:
             # Debug: Check a few reviews to verify review_rating is loaded
             if all_reviews:
                 sample_review = all_reviews[0]
-                logger.debug(f"🔍 [Reviews Debug] Sample review ID {sample_review.id}: review_rating={sample_review.review_rating}, type={type(sample_review.review_rating).__name__}")
+                logger.info(f"🔍 [Reviews Debug] Sample review object type: {type(sample_review)}")
+                logger.info(f"🔍 [Reviews Debug] Sample review ID {sample_review.id}: available attributes: {[attr for attr in dir(sample_review) if not attr.startswith('_') and not callable(getattr(sample_review, attr, None))]}")
+                logger.info(f"🔍 [Reviews Debug] Sample review has review_rating attr: {hasattr(sample_review, 'review_rating')}")
+                logger.info(f"🔍 [Reviews Debug] Sample review __dict__ keys: {list(sample_review.__dict__.keys())}")
+                
+                # Check SQLAlchemy mapper
+                from sqlalchemy.inspection import inspect as sql_inspect
+                mapper = sql_inspect(type(sample_review))
+                logger.info(f"🔍 [Reviews Debug] SQLAlchemy mapper columns: {list(mapper.columns.keys())}")
+                if 'review_rating' in mapper.columns:
+                    logger.info(f"🔍 [Reviews Debug] review_rating found in mapper.columns")
+                else:
+                    logger.error(f"❌ [Reviews Debug] review_rating NOT in mapper.columns!")
+                
+                # Now try to access review_rating
+                try:
+                    rating_value = sample_review.review_rating
+                    logger.info(f"🔍 [Reviews Debug] Sample review ID {sample_review.id}: review_rating={rating_value}, type={type(rating_value).__name__}")
+                except AttributeError as e:
+                    logger.error(f"❌ [Reviews Debug] AttributeError accessing review_rating: {e}")
+                
                 # Check for Theodore's review_index 111 specifically
                 theodore_review_111 = next((r for r in all_reviews if str(r.npi) == '1811916455' and r.review_index == 111), None)
                 if theodore_review_111:
-                    logger.info(f"🔍 [Reviews Debug] Theodore review_index 111: review_rating={theodore_review_111.review_rating}, type={type(theodore_review_111.review_rating).__name__}")
+                    logger.info(f"🔍 [Reviews Debug] Theodore review_index 111 found")
+                    try:
+                        logger.info(f"🔍 [Reviews Debug] Theodore review_index 111: review_rating={theodore_review_111.review_rating}, type={type(theodore_review_111.review_rating).__name__}")
+                    except AttributeError as e:
+                        logger.error(f"❌ [Reviews Debug] AttributeError accessing Theodore review_rating: {e}")
                 else:
                     logger.warning(f"⚠️  [Reviews Debug] Theodore review_index 111 not found in query results")
             
@@ -1703,11 +1738,19 @@ class LangChainRankingService:
                     is_relevant = any(keyword in review_text_lower for keyword in keyword_list)
                 
                 # Access review_rating directly - it should be loaded by the query
-                review_rating_value = review.review_rating
+                try:
+                    review_rating_value = review.review_rating
+                except AttributeError as e:
+                    logger.error(f"❌ [Reviews Debug] AttributeError on review ID {review.id}, NPI {review.npi}, index {review.review_index}: {e}")
+                    logger.error(f"❌ [Reviews Debug] Review object type: {type(review)}")
+                    logger.error(f"❌ [Reviews Debug] Review has review_rating: {hasattr(review, 'review_rating')}")
+                    logger.error(f"❌ [Reviews Debug] Review __dict__ keys: {list(review.__dict__.keys())}")
+                    # Re-raise to see full stack trace
+                    raise
                 
                 # Debug logging for Theodore's reviews
                 if str(review.npi) == '1811916455' and review.review_index in [1, 111]:
-                    logger.debug(f"🔍 [Reviews Debug] Theodore review_index {review.review_index}: review_rating={review_rating_value}, raw_attr={hasattr(review, 'review_rating')}")
+                    logger.info(f"🔍 [Reviews Debug] Theodore review_index {review.review_index}: review_rating={review_rating_value}, type={type(review_rating_value).__name__}, has_attr={hasattr(review, 'review_rating')}")
                 
                 review_data = {
                     'id': review.id,
