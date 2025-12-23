@@ -220,28 +220,27 @@ class LangChainSpecialistRecommendationService:
             # Step 1: Create minimal patient_profile from existing data (no need to re-run medical analysis)
             # We already have search_query from the first medical analysis and shared_specialist_information
             if not search_query:
-                logger.warning(f"⚠️ [Ranking] No search_query provided - will need to generate one")
-                # Fallback: Only call comprehensive_analysis if search_query is missing
-                logger.info("🔍 [Ranking] No search_query provided, calling comprehensive_analysis as fallback...")
-                medical_analysis_results = await self.medical_analysis.comprehensive_analysis(patient_input)
-            else:
-                # Create minimal patient_profile with just search_query (no need to re-run analysis)
-                logger.info(f"🔍 [Ranking] Using search_query from first medical analysis (skipping redundant analysis)")
-                logger.info(f"   Search query: {search_query[:100]}{'...' if len(search_query) > 100 else ''}")
-                # Parse patient_input to extract symptoms for patient_profile (simple parsing)
-                symptoms = []
-                diagnosis = ""
-                for line in patient_input.split('\n'):
-                    line = line.strip()
-                    if line.startswith('Symptoms:'):
-                        symptoms = [s.strip() for s in line.replace('Symptoms:', '').strip().split(',') if s.strip()]
-                    elif line.startswith('Diagnosis:'):
-                        diagnosis = line.replace('Diagnosis:', '').strip()
-                medical_analysis_results = {
-                    'search_query': search_query,
-                    'symptoms': symptoms,
-                    'diagnosis': diagnosis
-                }
+                error_msg = "search_query is required for NPI ranking. It must be provided from the first medical analysis step."
+                logger.error(f"❌ [Ranking] {error_msg}")
+                raise ValueError(error_msg)
+            
+            # Create minimal patient_profile with just search_query (no need to re-run analysis)
+            logger.info(f"🔍 [Ranking] Using search_query from first medical analysis (skipping redundant analysis)")
+            logger.info(f"   Search query: {search_query[:100]}{'...' if len(search_query) > 100 else ''}")
+            # Parse patient_input to extract symptoms for patient_profile (simple parsing)
+            symptoms = []
+            diagnosis = ""
+            for line in patient_input.split('\n'):
+                line = line.strip()
+                if line.startswith('Symptoms:'):
+                    symptoms = [s.strip() for s in line.replace('Symptoms:', '').strip().split(',') if s.strip()]
+                elif line.startswith('Diagnosis:'):
+                    diagnosis = line.replace('Diagnosis:', '').strip()
+            medical_analysis_results = {
+                'search_query': search_query,
+                'symptoms': symptoms,
+                'diagnosis': diagnosis
+            }
             
             # Step 2: Use shared Pinecone specialist information (required)
             if not shared_specialist_information:
