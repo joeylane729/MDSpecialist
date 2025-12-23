@@ -413,7 +413,9 @@ class LangChainRankingService:
         
         for npi, scores in raw_scores.items():
             # Normalize components to 0-1 (0-100%)
-            clinical_volume_pct = min(scores.get('clinical_volume_raw', 0) / max_clinical_volume, 1.0)  # Percentage of max Tot_Srvcs
+            clinical_volume_raw_value = scores.get('clinical_volume_raw', 0)
+            logger.debug(f"📊 CLINICAL_VOLUME_DEBUG: _calculate_weighted_score for NPI {npi}: clinical_volume_raw={clinical_volume_raw_value}, max_clinical_volume={max_clinical_volume}")
+            clinical_volume_pct = min(clinical_volume_raw_value / max_clinical_volume, 1.0) if max_clinical_volume > 0 else 0.0  # Percentage of max Tot_Srvcs
             pubmed_pct = min(scores.get('pubmed_raw', 0) / max_pubmed, 1.0)
             vumedi_pct = min(scores.get('vumedi_raw', 0) / max_vumedi, 1.0)
             training_pct = min(scores.get('training_raw', 0) / max_training, 1.0)
@@ -429,6 +431,10 @@ class LangChainRankingService:
             
             final_score = clinical_volume_weighted + pubmed_weighted + training_weighted + experience_weighted + vumedi_weighted
             
+            # Store raw value in breakdown_details
+            breakdown_clinical_volume_raw = clinical_volume_raw_value
+            logger.debug(f"📊 CLINICAL_VOLUME_DEBUG: Storing breakdown_details for NPI {npi}: clinical_volume.raw={breakdown_clinical_volume_raw}")
+            
             weighted_scores[npi] = {
                 'clinical_volume_pct': clinical_volume_pct * 100,
                 'pubmed_pct': pubmed_pct * 100,
@@ -443,7 +449,7 @@ class LangChainRankingService:
                 'final_score': final_score,
                 'breakdown_details': {  # Store details for frontend display
                     'clinical_volume': {
-                        'raw': scores.get('clinical_volume_raw', 0),
+                        'raw': breakdown_clinical_volume_raw,
                         'max': max_values['clinical_volume'],
                         'percentage': clinical_volume_pct * 100,
                         'weighted_points': clinical_volume_weighted,
@@ -799,9 +805,14 @@ class LangChainRankingService:
                     
                     # Calculate clinical volume raw score (Tot_Srvcs from CMS)
                     clinical_volume_raw = 0.0
-                    if cms_tot_srvcs and npi_str in cms_tot_srvcs:
-                        clinical_volume_raw = float(cms_tot_srvcs[npi_str])
-                        logger.debug(f"🔍 DEBUG: NPI {npi_str} has Tot_Srvcs: {clinical_volume_raw} from CMS")
+                    if cms_tot_srvcs:
+                        if npi_str in cms_tot_srvcs:
+                            clinical_volume_raw = float(cms_tot_srvcs[npi_str])
+                            logger.info(f"📊 CLINICAL_VOLUME_DEBUG: NPI {npi_str} has Tot_Srvcs: {clinical_volume_raw} from CMS")
+                        else:
+                            logger.warning(f"⚠️  CLINICAL_VOLUME_DEBUG: NPI {npi_str} NOT found in cms_tot_srvcs (has {len(cms_tot_srvcs)} entries)")
+                    else:
+                        logger.warning(f"⚠️  CLINICAL_VOLUME_DEBUG: cms_tot_srvcs is None/empty for NPI {npi_str}")
                     
                     # Calculate raw component scores for weighted system
                     # Store raw scores for normalization pass
@@ -812,6 +823,7 @@ class LangChainRankingService:
                         'experience_raw': experience_points,  # Experience raw score
                         'clinical_volume_raw': clinical_volume_raw  # Tot_Srvcs from CMS (will be normalized to percentage)
                     }
+                    logger.debug(f"📊 CLINICAL_VOLUME_DEBUG: Stored raw_component_scores[{npi}] with clinical_volume_raw={clinical_volume_raw}")
                     
                     # Calculate legacy scores for backward compatibility (will be replaced with weighted)
                     content_score = (vumedi_count * 4) + pubmed_weighted_points
@@ -1535,12 +1547,15 @@ class LangChainRankingService:
                     for npi, scores in provider_scores.items():
                         if npi in matched_npis and 'weighted_breakdown' in scores and 'breakdown_details' in scores['weighted_breakdown']:
                             details = scores['weighted_breakdown']['breakdown_details']
+                            clinical_volume_detail = details.get('clinical_volume', {})
+                            clinical_volume_raw_extracted = clinical_volume_detail.get('raw', 0) if isinstance(clinical_volume_detail, dict) else 0
+                            logger.info(f"📊 CLINICAL_VOLUME_DEBUG: Extracting from breakdown_details for NPI {npi}: clinical_volume_detail={clinical_volume_detail}, extracted_raw={clinical_volume_raw_extracted}")
                             matched_raw_scores[npi] = {
                                 'vumedi_raw': details.get('vumedi', {}).get('raw', 0),
                                 'pubmed_raw': details.get('pubmed', {}).get('raw', 0),
                                 'training_raw': details.get('training', {}).get('raw', 0),
                                 'experience_raw': details.get('experience', {}).get('raw', 0),
-                                'clinical_volume_raw': details.get('clinical_volume', {}).get('raw', 0)
+                                'clinical_volume_raw': clinical_volume_raw_extracted
                             }
                     # Combine matched and unmatched raw scores for normalization
                     all_raw_scores = {**matched_raw_scores, **unmatched_raw_scores}
