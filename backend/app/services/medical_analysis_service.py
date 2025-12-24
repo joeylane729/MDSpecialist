@@ -1198,14 +1198,30 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             # Extract the JSON response - LCEL returns AIMessage object
             response_text = response.content.strip() if hasattr(response, 'content') else str(response).strip()
             
+            # Log raw response for debugging (first 500 chars to avoid log spam)
+            logger.debug(f"Raw GPT response (first 500 chars): {response_text[:500]}")
+            
             # Clean up the response (remove markdown formatting if present)
             if response_text.startswith('```json'):
                 response_text = response_text.replace('```json', '').replace('```', '').strip()
             elif response_text.startswith('```'):
                 response_text = response_text.replace('```', '').strip()
             
+            # Try to extract JSON from response if it's embedded in other text
+            # Look for JSON object boundaries
+            json_start = response_text.find('{')
+            json_end = response_text.rfind('}')
+            if json_start != -1 and json_end != -1 and json_end > json_start:
+                response_text = response_text[json_start:json_end + 1]
+            
             # Parse the JSON response
-            diagnoses = json.loads(response_text)
+            try:
+                diagnoses = json.loads(response_text)
+            except json.JSONDecodeError as json_err:
+                logger.error(f"JSON parsing error at position {json_err.pos}: {json_err.msg}")
+                logger.error(f"Response text around error (chars {max(0, json_err.pos-100)}-{min(len(response_text), json_err.pos+100)}): {response_text[max(0, json_err.pos-100):min(len(response_text), json_err.pos+100)]}")
+                logger.error(f"Full response text length: {len(response_text)} characters")
+                raise
             
             # Validate the response structure
             if 'primary' in diagnoses:
