@@ -10,17 +10,6 @@ The UI enforces a specific sequence that users must follow:
 2. **Generate CPT Codes** (Phase 6): User must generate CPT codes before specialist search
 3. **Show Specialists** (Phase 7): User can then search for specialists (button only appears after CPT codes are generated)
 
-**Important**: The "Show me suggested specialists" button is conditionally rendered and only appears in the DOM after CPT codes have been generated. This enforces the dependency at the UI level.
-
-## Overview
-
-The search flow involves multiple components:
-- **Frontend (React)**: User interface and API calls
-- **Backend API (FastAPI)**: Request processing and business logic
-- **AI Services**: Medical analysis, specialist recommendations, and ranking
-- **Database (PostgreSQL)**: Provider data storage and retrieval
-- **External Services**: CMS data, PubMed, VuMedi
-
 ---
 
 ## Step-by-Step Flow
