@@ -33,7 +33,6 @@ class TreatmentRankingSchema(BaseModel):
     """Schema for treatment-specific ranking results."""
     name: str = Field(..., description="Treatment option name")
     ranked_providers: List[str] = Field(..., description="List of NPI numbers ranked by relevance")
-    explanation: str = Field(..., description="Explanation of ranking for this treatment")
     provider_links: Dict[str, Any] = Field(default_factory=dict, description="Provider-specific content links")
 
 class TreatmentRankingsResponseSchema(BaseModel):

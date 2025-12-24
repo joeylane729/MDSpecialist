@@ -2,6 +2,16 @@
 
 This document outlines every step that takes place when a user performs a search, from entering their information to seeing results.
 
+## **Required User Flow Sequence**
+
+The UI enforces a specific sequence that users must follow:
+
+1. **Medical Analysis** (Phase 1-5): User enters information and gets medical analysis results
+2. **Generate CPT Codes** (Phase 6): User must generate CPT codes before specialist search
+3. **Show Specialists** (Phase 7): User can then search for specialists (button only appears after CPT codes are generated)
+
+**Important**: The "Show me suggested specialists" button is conditionally rendered and only appears in the DOM after CPT codes have been generated. This enforces the dependency at the UI level.
+
 ## Overview
 
 The search flow involves multiple components:
@@ -81,7 +91,7 @@ The search flow involves multiple components:
     - Creates search query for specialist information retrieval
     - Returns patient profile with all analysis results including `determined_specialty`
 
-    **Note**: CPT codes are NOT generated in this step - they are generated separately later via a separate API call.
+    **Note**: CPT codes are NOT generated in this step - they are generated separately later via a separate API call (Phase 6). CPT code generation is **required** before specialist search can proceed.
 
 12. **Response returned to frontend** with medical analysis results
 
@@ -157,7 +167,7 @@ The search flow involves multiple components:
       - `category`: One of "Surgery", "Radiosurgery", "Endovascular", or "Other"
     - **search_query**: Optimized search string for specialist information retrieval queries (used later for finding relevant medical content)
     - **diagnoses_prompt_text**: The actual GPT prompt that was used to generate the diagnoses (useful for debugging/regeneration)
-    - **cpt_codes**: Empty array initially - CPT codes are generated separately via `/api/v1/medical-analysis/cpt-codes` endpoint
+    - **cpt_codes**: Empty array initially - CPT codes are generated separately via `/api/v1/cpt-codes/generate` endpoint (required before specialist search)
 
 ---
 
@@ -165,17 +175,31 @@ The search flow involves multiple components:
 
 13. **User sees medical analysis results**:
     - Treatment options
-    - CPT codes
     - Predicted diagnoses
     - Other medical insights
-
-14. **User clicks "Show me suggested specialists" button** (if they want to see providers)
+    - **Note**: CPT codes are not shown yet - they must be generated in the next step
 
 ---
 
-### **PHASE 6: Provider Search (ResultsPage.tsx - handleShowSpecialists)**
+### **PHASE 6: CPT Code Generation (ResultsPage.tsx)**
 
-15. **Frontend calls `getSpecialistRecommendations()` API** (`/api/v1/specialist-recommendations`):
+14. **Required: Generate CPT codes** (before specialist search):
+    - User must click "Generate CPT Codes" button
+    - Calls `/api/v1/medical-analysis/cpt-codes` endpoint
+    - Updates CPT codes in state
+    - **UI enforcement**: The "Show me suggested specialists" button only appears after CPT codes are generated
+    - The entire CPT codes section (including the button) is conditionally rendered - it doesn't exist in the DOM until CPT codes are present
+    - **Required sequence**: Medical Analysis → Generate CPT Codes → Show Specialists
+
+---
+
+### **PHASE 7: Provider Search (ResultsPage.tsx - handleShowSpecialists)**
+
+15. **User clicks "Show me suggested specialists" button** (only visible after CPT codes are generated):
+    - **Dependency enforcement**: The button is conditionally rendered - it only appears when CPT codes exist
+    - **Runtime safety check**: Even if the button is clicked, the handler validates CPT codes exist before proceeding
+
+16. **Frontend calls `getSpecialistRecommendations()` API** (`/api/v1/specialist-recommendations`):
     - **Request payload**:
       - Symptoms, Diagnosis (still needed for patient_input string)
       - Medical history, Medications, Surgical history
@@ -191,7 +215,7 @@ The search flow involves multiple components:
     - **This is a POST request with FormData**
     - **Optimization**: All medical analysis results are passed through, avoiding expensive duplicate GPT API calls
 
-16. **Frontend calls `searchNPIProviders()` API** (`/api/v1/npi/search-providers`):
+17. **Frontend calls `searchNPIProviders()` API** (`/api/v1/npi/search-providers`):
     - **Request payload**:
       - State, City, ZIP code, Proximity
       - Diagnosis, Symptoms
@@ -205,11 +229,11 @@ The search flow involves multiple components:
 
 ---
 
-### **PHASE 7: Backend NPI Provider Search (npi.py endpoint)**
+### **PHASE 8: Backend NPI Provider Search (npi.py endpoint)**
 
-17. **Endpoint receives request** at `/api/v1/npi/search-providers`
+18. **Endpoint receives request** at `/api/v1/npi/search-providers`
 
-18. **Use pre-determined values from medical analysis** (required):
+19. **Use pre-determined values from medical analysis** (required):
     - **Uses `determined_specialty`** (required) from medical analysis step
       - If missing, returns error - these values must come from medical analysis
     - **Uses `predicted_icd10` and `icd10_description`** (optional but recommended) from medical analysis step
@@ -217,12 +241,12 @@ The search flow involves multiple components:
     - **No fallback logic**: The system always relies on values from medical analysis step
       - This ensures consistency and avoids duplicate GPT API calls
 
-19. **Taxonomy code mapping**:
+20. **Taxonomy code mapping**:
     - Converts specialty name to taxonomy codes using `get_taxonomy_codes_for_specialty()`
-    - Uses the pre-determined specialty from step 18 (always from medical analysis)
+    - Uses the pre-determined specialty from step 19 (always from medical analysis)
     - Example: "Neurological Surgery" → `['207T00000X']`
 
-20. **Database query**:
+21. **Database query**:
     - Builds SQL query filtering by:
       - Entity type = '1' (individual providers only)
       - Taxonomy codes (matches any of 15 possible taxonomy code fields)
@@ -230,7 +254,7 @@ The search flow involves multiple components:
     - Orders by last name, first name
     - No LIMIT clause - fetches all matching providers
 
-21. **Provider enrichment**:
+22. **Provider enrichment**:
     For each provider found:
     - **Education data** (with fallback logic):
       - First tries US News data (`usnews_data` table)
@@ -244,7 +268,7 @@ The search flow involves multiple components:
       - If not found, checks by first name + last name
       - Sets `isExcluded` flag if found
 
-22. **Response formatting**:
+23. **Response formatting**:
     - Returns JSON with:
       - `total_providers`: Count of filtered providers
       - `providers`: Array of provider objects with all details
@@ -252,14 +276,14 @@ The search flow involves multiple components:
 
 ---
 
-### **PHASE 8: Backend Specialist Recommendations (specialist_recommendation.py endpoint)**
+### **PHASE 9: Backend Specialist Recommendations (specialist_recommendation.py endpoint)**
 
-23. **Endpoint receives request** at `/api/v1/specialist-recommendations`
+24. **Endpoint receives request** at `/api/v1/specialist-recommendations`
 
-24. **Service initialization**:
+25. **Service initialization**:
     - Creates `SpecialistRecommendationService` instance
 
-25. **Medical analysis** (reuses results from previous analysis - required, no fallback):
+26. **Medical analysis** (reuses results from previous analysis - required, no fallback):
     - **Uses pre-generated medical analysis results** from step 11 to avoid duplicate GPT calls:
       - Treatment options (reused - required)
       - Predicted ICD-10 code (reused - required)
@@ -270,7 +294,7 @@ The search flow involves multiple components:
     - **No GPT calls are made** - all values are passed through from the first medical analysis step
     - **Required fields validation**: If required medical analysis results (treatment_options, predicted_icd10, search_query) are missing, raises ValueError - no fallback to re-running analysis
 
-26. **Specialist information retrieval**:
+27. **Specialist information retrieval**:
     - Calls `specialist_information_retrieval_service.retrieve_specialist_information()`:
       - Uses Postgres database
       - Searches for relevant medical content (VuMedi videos, PubMed articles)
@@ -278,11 +302,11 @@ The search flow involves multiple components:
       - Retrieves all matching results (no limit)
     - Returns treatment-specific specialist information
 
-27. **CMS data retrieval**:
-    - Queries CMS provider data for clinical volume information using CPT codes from medical analysis
+28. **CMS data retrieval**:
+    - Queries CMS provider data for clinical volume information using CPT codes from step 14 (CPT code generation)
     - Extracts Tot_Srvcs (total services) for providers
 
-28. **Response construction**:
+29. **Response construction**:
     - Converts specialist information to recommendations
     - Includes:
       - `patient_profile`: Treatment options, CPT codes, search query, etc.
@@ -293,11 +317,11 @@ The search flow involves multiple components:
 
 ---
 
-### **PHASE 9: Frontend Ranking (ResultsPage.tsx)**
+### **PHASE 10: Frontend Ranking (ResultsPage.tsx)**
 
-29. **After both specialist recommendations and NPI data are received**:
+30. **After both specialist recommendations and NPI data are received**:
 
-30. **Call `rankNPIProviders()` API** (`/api/v1/npi/rank-npi-providers`):
+31. **Call `rankNPIProviders()` API** (`/api/v1/npi/rank-npi-providers`):
     - **Request payload**:
       - `npi_providers`: Array of provider objects from NPI search
       - `patient_input`: Combined symptoms and diagnosis
@@ -307,24 +331,24 @@ The search flow involves multiple components:
 
 ---
 
-### **PHASE 10: Backend NPI Ranking (npi_ranking.py endpoint)**
+### **PHASE 11: Backend NPI Ranking (npi_ranking.py endpoint)**
 
-31. **Endpoint receives request** at `/api/v1/npi/rank-npi-providers`
+32. **Endpoint receives request** at `/api/v1/npi/rank-npi-providers`
 
-32. **Extract CMS Tot_Srvcs data**:
+33. **Extract CMS Tot_Srvcs data**:
     - Extracts NPI → Tot_Srvcs mapping from CMS data
     - Used for clinical volume scoring
 
-33. **Initialize specialist recommendation service**:
+34. **Initialize specialist recommendation service**:
     - Creates `SpecialistRecommendationService` instance
 
-34. **Call ranking method**:
+35. **Call ranking method**:
     - `specialist_service.rank_npi_providers_with_specialist_data()`:
       - Takes NPI providers, patient input, shared specialist info
       - Uses treatment-specific specialist data
       - Ranks providers per treatment option
 
-35. **Ranking process** (in `ranking_service.py`):
+36. **Ranking process** (in `ranking_service.py`):
     - **For each treatment option**:
       - **Extract treatment-specific specialist data**
       - **Match provider names** with specialist content:
@@ -336,82 +360,75 @@ The search flow involves multiple components:
         - **Certification score**: Based on board certifications
         - **Clinical volume score**: Based on CMS Tot_Srvcs (percentage-based)
         - **Combined score**: Weighted combination of all factors
-      - **Use GPT-5-mini** to rank providers:
-        - Provides provider list and specialist matches
-        - GPT returns ranked list with explanations
-      - **Combine GPT ranking with calculated scores**
       - **Sort by final score** (descending)
 
-36. **Response formatting**:
+37. **Response formatting**:
     - Returns:
       - `treatment_rankings`: Object keyed by treatment ID
         - Each treatment contains:
           - `ranked_providers`: Array of NPI numbers in ranked order
           - `provider_links`: VuMedi links and PubMed articles per provider
           - `provider_scores`: Detailed scoring breakdown per provider
-          - `explanation`: GPT-generated explanation
       - `total_treatments`: Number of treatments processed
 
 ---
 
-### **PHASE 11: Frontend Result Processing (ResultsPage.tsx)**
+### **PHASE 12: Frontend Result Processing (ResultsPage.tsx)**
 
-37. **Process ranking response**:
+38. **Process ranking response**:
     - Extracts first treatment's ranking (can be filtered later)
     - Maps ranked NPI numbers back to full provider objects
-    - Captures ranking explanation and provider links
+    - Captures provider links and scores
 
-38. **Update state with ranked providers**:
+39. **Update state with ranked providers**:
     - Saves complete search state:
       - Search parameters (state, city, symptoms, diagnosis, etc.)
       - Ranked providers
-      - AI recommendations
-      - Ranking explanation
       - Treatment rankings
 
-39. **Switch to specialists view**:
+40. **Switch to specialists view**:
     - Updates `searchParams` to mark specialists as enabled
     - Sets `activeView` to 'specialists'
     - Displays ranked providers
 
 ---
 
-### **PHASE 12: Results Page Initialization (ResultsPage.tsx)**
+### **PHASE 13: Results Page Initialization (ResultsPage.tsx)**
 
-40. **Component mounts** and receives location.state
+41. **Component mounts** and receives location.state
 
-41. **Load data from location.state**:
+42. **Load data from location.state**:
     - Sets providers state
     - Sets search parameters
     - Sets AI recommendations
     - Sets ranking data
     - Sets treatment rankings
 
-42. **Fallback to localStorage** (if location.state is missing):
+43. **Fallback to localStorage** (if location.state is missing):
     - Attempts to load from `mdspecialist_search_results` in localStorage
     - Useful for page refresh scenarios
 
-43. **Determine initial view**:
+44. **Determine initial view**:
     - If `searchOptions.specialists` is true → 'specialists' view
     - If `searchOptions.diagnosis` is true → 'assessment' view
     - Otherwise → 'ai-recommendations' view
 
-44. **Initialize treatment selection**:
+45. **Initialize treatment selection**:
     - If treatment rankings exist, selects first treatment by default
     - Sets `selectedTreatmentId`
 
 ---
 
-### **PHASE 13: Results Display (ResultsPage.tsx)**
+### **PHASE 14: Results Display (ResultsPage.tsx)**
 
-45. **Provider filtering and pagination**:
+46. **Provider filtering and pagination**:
     - Filters providers by:
       - Search term (name search)
       - Selected treatment (if multiple treatments)
       - Category (if filtering by treatment category)
     - Paginates results (default: 20 per page)
 
-46. **Provider card rendering**:
+47. **Provider card rendering**:
     - For each provider in current page:
       - Calculates display score and breakdown
       - Determines if provider is "top result" (rank 1)
@@ -424,7 +441,7 @@ The search flow involves multiple components:
         - Red flags (if any)
         - Patient diagnosis and symptoms (for context)
 
-47. **Score calculation** (for display):
+48. **Score calculation** (for display):
     - Retrieves score data from `providerScores` state
     - Breakdown includes:
       - Content match points
@@ -433,7 +450,7 @@ The search flow involves multiple components:
       - Clinical volume points
       - Total score
 
-48. **Additional UI elements**:
+49. **Additional UI elements**:
     - Treatment option selector (if multiple treatments)
     - Category filter (Surgery, Radiosurgery, Endovascular, Other)
     - Search bar for filtering providers by name
@@ -442,25 +459,15 @@ The search flow involves multiple components:
 
 ---
 
-### **PHASE 14: User Interaction (ResultsPage.tsx)**
+### **PHASE 15: User Interaction (ResultsPage.tsx)**
 
-49. **User can interact with results**:
+50. **User can interact with results** (optional interactions that can happen at any time):
     - **Click provider card**: Opens detailed view (if implemented)
     - **Filter by treatment**: Changes which treatment's ranking is displayed
     - **Filter by category**: Shows only providers for specific treatment category
     - **Search by name**: Filters providers by name
     - **Change page**: Navigates through paginated results
     - **Switch views**: Toggle between Assessment, Specialists, AI Recommendations, Debug
-
-50. **Optional: Generate CPT codes**:
-    - User can click "Generate CPT Codes" button
-    - Calls `/api/v1/cpt-codes/generate` endpoint
-    - Updates CPT codes in state
-
-51. **Optional: Show specialists** (if not already shown):
-    - User can click "Show me specialists" button
-    - Triggers same flow as initial search but from results page
-    - Reuses existing CPT codes to avoid duplicate generation
 
 ---
 
@@ -512,8 +519,7 @@ The search flow involves multiple components:
           clinical_volume_points: number,
           breakdown: {...}
         }
-      },
-      explanation: string
+      }
     }
   },
   total_treatments: number
@@ -573,7 +579,6 @@ The search flow involves multiple components:
    - Specialty determination
    - Diagnosis prediction
    - Medical analysis
-   - Provider ranking
 3. **CMS Data**: Clinical volume information (Tot_Srvcs)
 
 ---

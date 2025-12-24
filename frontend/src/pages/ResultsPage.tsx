@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { NPIProvider, getSpecialistRecommendations, SpecialistRecommendationRequest, searchNPIProviders, rankNPIProviders, NPISearchRequest, NPIRankingRequest, ProviderContent, generateCPTCodes, getMedicalAnalysis } from '../services/api';
@@ -156,6 +156,28 @@ const ResultsPage: React.FC = () => {
   const [selectedTreatmentIndices, setSelectedTreatmentIndices] = useState<Set<number>>(new Set());
   const hasInitializedTreatments = useRef(false);
   const hasInitializedCategoryFilter = useRef(false);
+  
+  // Helper function to get existing CPT codes from all possible sources (reusable logic)
+  const getExistingCptCodes = useCallback((): Array<{code: string; description: string}> | null => {
+    // Check all possible sources for CPT codes
+    let existingCptCodes = cptCodes || searchParams?.cpt_codes || 
+                          location.state?.aiRecommendations?.patient_profile?.cpt_codes;
+    
+    // If we have category-based codes, combine them all (takes precedence)
+    if (Object.keys(cptCodesByCategory).length > 0) {
+      const allCategoryCodes = Object.values(cptCodesByCategory).flat();
+      if (allCategoryCodes.length > 0) {
+        existingCptCodes = allCategoryCodes;
+      }
+    }
+    
+    return existingCptCodes && existingCptCodes.length > 0 ? existingCptCodes : null;
+  }, [cptCodes, cptCodesByCategory, searchParams?.cpt_codes, location.state?.aiRecommendations?.patient_profile?.cpt_codes]);
+  
+  // Helper to check if CPT codes exist (boolean) - used for conditional rendering
+  const hasCptCodes = useMemo(() => {
+    return getExistingCptCodes() !== null;
+  }, [getExistingCptCodes]);
   
   // Set initial view based on search options
   useEffect(() => {
@@ -1019,19 +1041,10 @@ const ResultsPage: React.FC = () => {
       return;
     }
 
-    // Check if CPT codes are available - combine all categories if category-based codes exist
-    let existingCptCodes = cptCodes || searchParams?.cpt_codes || 
-                              location.state?.aiRecommendations?.patient_profile?.cpt_codes;
+    // Check if CPT codes are available using helper function
+    const existingCptCodes = getExistingCptCodes();
     
-    // If we have category-based codes, combine them all
-    if (Object.keys(cptCodesByCategory).length > 0) {
-      const allCategoryCodes = Object.values(cptCodesByCategory).flat();
-      if (allCategoryCodes.length > 0) {
-        existingCptCodes = allCategoryCodes;
-      }
-    }
-    
-    if (!existingCptCodes || existingCptCodes.length === 0) {
+    if (!existingCptCodes) {
       alert('Please generate CPT codes first before getting specialist recommendations');
       return;
     }
@@ -1881,17 +1894,16 @@ const ResultsPage: React.FC = () => {
               
               {/* CPT Codes Section - only show if we have actual CPT codes */}
               {(() => {
+                // Use helper function to check if CPT codes exist
+                if (!hasCptCodes) {
+                  return null;
+                }
+                
                 const hasCptCodesByCategory = Object.keys(cptCodesByCategory).length > 0;
-                const existingCptCodes = cptCodes || searchParams?.cpt_codes;
-                const hasCptCodes = Array.isArray(existingCptCodes) && existingCptCodes.length > 0;
                 
                 // Prefer category-based codes if available, otherwise fall back to legacy format
                 const categories = hasCptCodesByCategory ? Object.keys(cptCodesByCategory) : [];
                 const displayCategory = selectedCptCategory || (categories.length > 0 ? categories[0] : null);
-                
-                if (!hasCptCodesByCategory && !hasCptCodes) {
-                  return null;
-                }
                 
                 return (
                 <div className="bg-white border border-gray-200 rounded-lg p-6">

@@ -460,7 +460,6 @@ export interface ProviderScore {
 export interface TreatmentRanking {
   name: string;
   ranked_providers: string[];
-  explanation: string;
   provider_links: { [npi: string]: ProviderContent };
   provider_scores: { [npi: string]: ProviderScore };
 }
