@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from dataclasses import asdict
 from ...database import get_db
-from ...services.langchain_specialist_recommendation_service import LangChainSpecialistRecommendationService
+from ...services.langchain_specialist_recommendation_service import SpecialistRecommendationService
 from ...schemas.specialist_recommendation import SpecialistRecommendationRequestSchema, RecommendationResponseSchema
 from ..utils.patient_input_processor import build_patient_input, log_endpoint_call, log_response_info
 import logging
@@ -28,7 +28,7 @@ async def get_specialist_recommendations(
     db: Session = Depends(get_db)
 ):
     """
-    Get AI-powered specialist recommendations using LangChain.
+    Get AI-powered specialist recommendations.
     
     This endpoint processes patient information and returns intelligent
     specialist recommendations based on Pinecone data analysis.
@@ -53,8 +53,8 @@ async def get_specialist_recommendations(
             except json.JSONDecodeError as e:
                 logger.warning(f"⚠️  [Backend] Failed to parse CPT codes JSON: {e}. Will generate new CPT codes.")
         
-        # Initialize the LangChain service with database session
-        langchain_service = LangChainSpecialistRecommendationService(db)
+        # Initialize the specialist recommendation service with database session
+        specialist_service = SpecialistRecommendationService(db)
         
         # Build patient input using shared utility
         patient_input = await build_patient_input(
@@ -67,7 +67,7 @@ async def get_specialist_recommendations(
         )
         
         # Get recommendations
-        recommendations = await langchain_service.get_specialist_recommendations(
+        recommendations = await specialist_service.get_specialist_recommendations(
             patient_input=patient_input,
             state=state,
             cpt_codes=cpt_codes

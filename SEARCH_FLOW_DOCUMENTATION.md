@@ -250,7 +250,7 @@ The search flow involves multiple components:
 23. **Endpoint receives request** at `/api/v1/specialist-recommendations`
 
 24. **Service initialization**:
-    - Creates `LangChainSpecialistRecommendationService` instance
+    - Creates `SpecialistRecommendationService` instance
 
 25. **Medical analysis** (reuses CPT codes from previous analysis):
     - Calls `medical_analysis_service.analyze_patient()` with:
@@ -309,8 +309,8 @@ The search flow involves multiple components:
     - Extracts NPI → Tot_Srvcs mapping from CMS data
     - Used for clinical volume scoring
 
-33. **Initialize LangChain service**:
-    - Creates `LangChainSpecialistRecommendationService` instance
+33. **Initialize specialist recommendation service**:
+    - Creates `SpecialistRecommendationService` instance
 
 34. **Call ranking method**:
     - `langchain_service.rank_npi_providers_with_pinecone()`:

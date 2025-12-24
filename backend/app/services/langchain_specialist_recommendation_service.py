@@ -1,5 +1,5 @@
 """
-LangChain Specialist Recommendation Service
+Specialist Recommendation Service
 """
 
 import logging
@@ -15,8 +15,8 @@ from ..models.specialist_recommendation import PatientProfile, SpecialistRecomme
 
 logger = logging.getLogger(__name__)
 
-class LangChainSpecialistRecommendationService:
-    """LangChain-powered specialist recommendation service."""
+class SpecialistRecommendationService:
+    """Specialist recommendation service."""
     
     def __init__(self, db=None):
         self._pinecone_service = None
@@ -25,7 +25,7 @@ class LangChainSpecialistRecommendationService:
         self.medical_analysis = MedicalAnalysisService(db)
         self.ranking_service = LangChainRankingService(db)
 
-        logger.info("LangChainSpecialistRecommendationService initialized successfully")
+        logger.info("SpecialistRecommendationService initialized successfully")
     
     @property
     def pinecone_service(self):
@@ -55,7 +55,7 @@ class LangChainSpecialistRecommendationService:
         state: Optional[str] = None,
         cpt_codes: Optional[List[Dict[str, str]]] = None
     ) -> RecommendationResponse:
-        """Get specialist recommendations using LangChain.
+        """Get specialist recommendations.
         
         Args:
             patient_input: Patient input string
@@ -66,7 +66,7 @@ class LangChainSpecialistRecommendationService:
         
         try:
             # Step 1: Comprehensive medical analysis and patient processing
-            logger.info("🔍 Step 1: Performing comprehensive medical analysis with LangChain...")
+            logger.info("🔍 Step 1: Performing comprehensive medical analysis...")
             medical_analysis_results = await self.medical_analysis.comprehensive_analysis(patient_input)
             
             # Add provided CPT codes to medical analysis results if available
@@ -96,7 +96,7 @@ class LangChainSpecialistRecommendationService:
                 }
             
             # Step 2: LLM-powered retrieval of specialist information
-            logger.info("🔍 Step 2: Retrieving specialist information with LangChain...")
+            logger.info("🔍 Step 2: Retrieving specialist information...")
             logger.debug(f"🔍 Retrieval strategies type: {type(self.retrieval_strategies)}")
             logger.debug(f"🔍 Medical analysis results type: {type(medical_analysis_results)}")
             logger.debug(f"🔍 Medical analysis results keys: {list(medical_analysis_results.keys()) if isinstance(medical_analysis_results, dict) else 'Not a dict'}")

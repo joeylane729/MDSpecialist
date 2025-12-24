@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 from ...database import get_db
-from ...services.langchain_specialist_recommendation_service import LangChainSpecialistRecommendationService
+from ...services.langchain_specialist_recommendation_service import SpecialistRecommendationService
 import logging
 
 # Set up logging
@@ -101,8 +101,8 @@ async def rank_npi_providers(
         else:
             logger.warning(f"⚠️ [NPI Ranking] No CMS data provided or not a dict")
         
-        # Initialize the LangChain service
-        langchain_service = LangChainSpecialistRecommendationService(db)
+        # Initialize the specialist recommendation service
+        specialist_service = SpecialistRecommendationService(db)
         
         # Log search_query if provided
         if request.search_query:
@@ -111,7 +111,7 @@ async def rank_npi_providers(
             logger.warning(f"⚠️ [NPI Ranking] No search_query provided in request")
         
         # Rank the NPI providers using shared data if available
-        ranking_result = await langchain_service.rank_npi_providers_with_pinecone(
+        ranking_result = await specialist_service.rank_npi_providers_with_pinecone(
             npi_providers=request.npi_providers,
             patient_input=request.patient_input,
             shared_specialist_information=shared_data,
