@@ -44,11 +44,11 @@ class SpecialistRecommendationService:
         self,
         patient_input: str,
         state: Optional[str] = None,
-        cpt_codes: Optional[List[Dict[str, str]]] = None,
-        treatment_options: Optional[List[Dict[str, Any]]] = None,
-        predicted_icd10: Optional[str] = None,
+        cpt_codes: List[Dict[str, str]],
+        treatment_options: List[Dict[str, Any]],
+        predicted_icd10: str,
+        search_query: str,
         icd10_description: Optional[str] = None,
-        search_query: Optional[str] = None,
         determined_specialty: Optional[str] = None
     ) -> RecommendationResponse:
         """Get specialist recommendations.
@@ -56,17 +56,20 @@ class SpecialistRecommendationService:
         Args:
             patient_input: Patient input string (still needed for specialist information retrieval service)
             state: Optional state filter for CMS API
-            cpt_codes: Optional pre-generated CPT codes to reuse (avoids duplicate GPT calls)
-            treatment_options: Optional pre-generated treatment options to reuse (avoids duplicate GPT calls)
-            predicted_icd10: Optional pre-determined ICD-10 code to reuse (avoids duplicate GPT calls)
-            icd10_description: Optional pre-determined ICD-10 description to reuse (avoids duplicate GPT calls)
-            search_query: Optional pre-generated search query to reuse (avoids duplicate GPT calls)
-            determined_specialty: Optional pre-determined specialty to reuse (avoids duplicate GPT calls)
+            cpt_codes: Required pre-generated CPT codes (must be generated first)
+            treatment_options: Required pre-generated treatment options from medical analysis step
+            predicted_icd10: Required ICD-10 code from medical analysis step
+            search_query: Required pre-generated search query from medical analysis step
+            icd10_description: Optional ICD-10 description from medical analysis step
+            determined_specialty: Optional pre-determined specialty from medical analysis step
         """
         start_time = datetime.now()
         
         try:
             # Step 1: Validate that required medical analysis results are provided (no fallback - must be passed through)
+            if not cpt_codes or len(cpt_codes) == 0:
+                raise ValueError("CPT codes are required. Please generate CPT codes first before requesting specialist recommendations.")
+            
             if not (treatment_options and predicted_icd10 and search_query):
                 missing_fields = []
                 if not treatment_options:
@@ -95,7 +98,7 @@ class SpecialistRecommendationService:
                 "predicted_icd10": predicted_icd10,
                 "determined_specialty": determined_specialty,
                 "specialties_needed": [determined_specialty] if determined_specialty else [],
-                "cpt_codes": cpt_codes if cpt_codes else [],
+                "cpt_codes": cpt_codes,
                 
                 # Nested structure for backward compatibility (frontend uses as fallback)
                 "diagnoses": {
@@ -107,29 +110,18 @@ class SpecialistRecommendationService:
                 }
             }
             
-            if cpt_codes and len(cpt_codes) > 0:
-                logger.info(f"✅ Added {len(cpt_codes)} provided CPT codes to medical analysis results")
+            logger.info(f"✅ Added {len(cpt_codes)} CPT codes to medical analysis results")
             
-            # Step 1.5: Query CMS API with CPT codes (use provided codes or none)
+            # Step 1.5: Query CMS API with CPT codes (required)
             logger.info("🔍 Step 1.5: Querying CMS API with CPT codes...")
             if state:
                 logger.info(f"🔍 Step 1.5: State filter will be applied: {state}")
-            cms_results = {}
-            if cpt_codes and len(cpt_codes) > 0:
-                logger.info(f"♻️  Using provided CPT codes ({len(cpt_codes)} codes) for CMS API query")
-                cms_results = await self.medical_analysis.query_cms_api(
-                    cpt_codes,
-                    state=state
-                )
-                logger.info(f"✅ CMS API query complete: {cms_results.get('total_results', 0)} results found")
-            else:
-                logger.warning("⚠️  No CPT codes provided for CMS API query")
-                cms_results = {
-                    "url": None,
-                    "results": [],
-                    "total_results": 0,
-                    "error": "No CPT codes provided"
-                }
+            logger.info(f"♻️  Using provided CPT codes ({len(cpt_codes)} codes) for CMS API query")
+            cms_results = await self.medical_analysis.query_cms_api(
+                cpt_codes,
+                state=state
+            )
+            logger.info(f"✅ CMS API query complete: {cms_results.get('total_results', 0)} results found")
             
             # Step 2: Retrieval of specialist information
             logger.info("🔍 Step 2: Retrieving specialist information...")
