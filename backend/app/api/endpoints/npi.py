@@ -33,19 +33,6 @@ def convert_state_name_to_abbreviation(state_name: str) -> str:
     }
     return state_mapping.get(state_name, state_name)
 
-def is_within_search_radius(provider_state: str, search_state: str, proximity: str) -> bool:
-    """
-    Determine if a provider is within the search radius based on proximity setting.
-    Returns True for 'statewide' if same state, True for 'US-wide' always.
-    """
-    if proximity.lower() == 'us-wide':
-        return True
-    elif proximity.lower() == 'statewide':
-        return provider_state.upper() == search_state.upper()
-    else:
-        # Default to statewide if unknown proximity
-        return provider_state.upper() == search_state.upper()
-
 def extract_latest_year_from_residency(residency_text: Optional[str]) -> Optional[int]:
     """Extract the most recent 4-digit year from residency text."""
     if not residency_text:
@@ -119,7 +106,6 @@ async def search_providers_by_criteria(
     determined_specialty: str = Form(...),  # Required: Pre-determined specialty from medical analysis
     predicted_icd10: Optional[str] = Form(None),  # Pre-determined ICD-10 code from medical analysis
     icd10_description: Optional[str] = Form(None),  # Pre-determined ICD-10 description from medical analysis
-    limit: int = Form(10000),
     files: List[UploadFile] = File([]),
     db: Session = Depends(get_db)
 ):
@@ -169,7 +155,6 @@ async def search_providers_by_criteria(
             location_conditions = []
             
             # Add state filtering based on proximity setting
-            state_abbrev = None
             if state and proximity and proximity.lower() == 'statewide':
                 state_abbrev = convert_state_name_to_abbreviation(state)
                 location_conditions.append(f"provider_business_practice_location_address_state_name = '{state_abbrev}'")
@@ -213,7 +198,6 @@ async def search_providers_by_criteria(
                   AND ({' OR '.join(taxonomy_conditions)})  -- Match any taxonomy code
                   {location_filter}
                 ORDER BY provider_last_name, provider_first_name
-                LIMIT {limit * 3}  -- Get more results for distance filtering
             """
             
             result = db.execute(text(sql))
@@ -221,13 +205,6 @@ async def search_providers_by_criteria(
         
         filtered_providers = []
         for provider in providers:
-            # Apply proximity-based filtering
-            if proximity and provider.provider_business_practice_location_address_state_name:
-                # For US-wide searches, we don't need state_abbrev since we accept all states
-                search_state_for_filtering = state_abbrev if proximity.lower() == 'statewide' else state
-                if not is_within_search_radius(provider.provider_business_practice_location_address_state_name, search_state_for_filtering, proximity):
-                    continue  # Skip this provider if it's outside the search area
-            
             # Get the primary specialty for display
             primary_specialty = get_specialty_description(provider.healthcare_provider_taxonomy_code_1)
             
@@ -326,7 +303,6 @@ async def search_providers_by_criteria(
                 "state": provider.provider_business_practice_location_address_state_name or '',
                 "zip": provider.provider_business_practice_location_address_postal_code or '',
                 "phone": provider.provider_business_practice_location_address_telephone_number or '',
-                "rating": 5.0,  # Default rating
                 "yearsExperience": years_experience,
                 "boardCertified": None,  # No certification data available
                 "acceptingPatients": True,  # Default to accepting patients
@@ -341,10 +317,6 @@ async def search_providers_by_criteria(
                 }
             }
             filtered_providers.append(formatted_provider)
-        
-        # Apply limit after filtering
-        if limit and len(filtered_providers) > limit:
-            filtered_providers = filtered_providers[:limit]
         
         logger.info(f"Database filtering results: {len(filtered_providers)} providers found for specialty '{specialty_to_use}'")
         

@@ -7,7 +7,6 @@ import NPIProviderCard from '../components/NPIProviderCard';
 interface Provider extends NPIProvider {
   email?: string;
   website?: string;
-  rating?: number;
   languages?: string[];
   insurance?: string[];
 }
@@ -719,20 +718,10 @@ const ResultsPage: React.FC = () => {
     // If no saved data, check if we have searchParams but need to regenerate providers
     if (location.state?.searchParams) {
       setSearchParams(location.state.searchParams);
-      // Only generate mock data if we don't have real providers
-      if (!location.state.providers || location.state.providers.length === 0) {
-        generateMockProviders(location.state.searchParams);
-      }
       setCurrentPage(1);
     } else {
-      // Last resort: fallback mock data
-      generateMockProviders({
-        state: 'CA',
-        city: 'Los Angeles',
-        symptoms: 'Fever, cough',
-        diagnosis: 'A000',
-        determined_specialty: 'Neurological Surgery'  // PROOF OF CONCEPT: Hard-coded to Neurological Surgery
-      });
+      // No location.state data - should not happen in normal flow
+      console.warn('ResultsPage: No location.state data available');
       setCurrentPage(1);
     }
   }, [location.state]);
@@ -833,134 +822,6 @@ const ResultsPage: React.FC = () => {
       setFilteredProviders([]);
     }
   }, [rankedProviders]);
-
-  const generateMockProviders = (params: SearchParams) => {
-    setIsLoading(true);
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      const mockProviders: Provider[] = [
-        {
-          id: '1',
-          npi: '1234567890',
-          name: 'Dr. Sarah Johnson',
-          specialty: 'Neurological Surgery',  // PROOF OF CONCEPT: Hard-coded to Neurological Surgery
-          address: '123 Medical Center Dr',
-          city: params.city,
-          state: params.state,
-          zip: '90210',
-          phone: '(555) 123-4567',
-          email: 'sarah.johnson@healthcare.com',
-          website: 'https://drjohnson.com',
-          rating: 4.8,
-          yearsExperience: 15,
-          boardCertified: true,
-          acceptingPatients: true,
-          languages: ['English', 'Spanish'],
-          insurance: ['Blue Cross', 'Aetna', 'Cigna'],
-          education: {
-            medicalSchool: 'Stanford University School of Medicine',
-            residency: 'UCLA Medical Center'
-          }
-        },
-        {
-          id: '2',
-          npi: '2345678901',
-          name: 'Dr. Michael Chen',
-          specialty: 'Neurological Surgery',  // PROOF OF CONCEPT: Hard-coded to Neurological Surgery
-          address: '456 Health Plaza',
-          city: params.city,
-          state: params.state,
-          zip: '90211',
-          phone: '(555) 234-5678',
-          email: 'mchen@familycare.com',
-          website: 'https://drchen.com',
-          rating: 4.6,
-          yearsExperience: 12,
-          boardCertified: true,
-          acceptingPatients: true,
-          languages: ['English', 'Mandarin'],
-          insurance: ['Blue Cross', 'Kaiser', 'UnitedHealth'],
-          education: {
-            medicalSchool: 'UC San Francisco School of Medicine',
-            residency: 'Cedars-Sinai Medical Center'
-          }
-        },
-        {
-          id: '3',
-          npi: '3456789012',
-          name: 'Dr. Emily Rodriguez',
-          specialty: 'Neurological Surgery',  // PROOF OF CONCEPT: Hard-coded to Neurological Surgery
-          address: '789 Wellness Way',
-          city: params.city,
-          state: params.state,
-          zip: '90212',
-          phone: '(555) 345-6789',
-          email: 'erodriguez@wellness.com',
-          website: 'https://drrodriguez.com',
-          rating: 4.9,
-          yearsExperience: 18,
-          boardCertified: true,
-          acceptingPatients: false,
-          languages: ['English', 'Spanish', 'Portuguese'],
-          insurance: ['Blue Cross', 'Aetna', 'Humana'],
-          education: {
-            medicalSchool: 'Harvard Medical School',
-            residency: 'Johns Hopkins Hospital'
-          }
-        },
-        {
-          id: '4',
-          npi: '4567890123',
-          name: 'Dr. David Kim',
-          specialty: 'Neurological Surgery',  // PROOF OF CONCEPT: Hard-coded to Neurological Surgery
-          address: '321 Care Circle',
-          city: params.city,
-          state: params.state,
-          zip: '90213',
-          phone: '(555) 456-7890',
-          email: 'dkim@carecircle.com',
-          website: 'https://drkim.com',
-          rating: 4.7,
-          yearsExperience: 10,
-          boardCertified: true,
-          acceptingPatients: true,
-          languages: ['English', 'Korean'],
-          insurance: ['Blue Cross', 'Cigna', 'Anthem'],
-          education: {
-            medicalSchool: 'UCLA David Geffen School of Medicine',
-            residency: 'UCLA Medical Center'
-          }
-        },
-        {
-          id: '5',
-          npi: '5678901234',
-          name: 'Dr. Lisa Thompson',
-          specialty: 'Neurological Surgery',  // PROOF OF CONCEPT: Hard-coded to Neurological Surgery
-          address: '654 Medical Blvd',
-          city: params.city,
-          state: params.state,
-          zip: '90214',
-          phone: '(555) 567-8901',
-          email: 'lthompson@medical.com',
-          website: 'https://drthompson.com',
-          rating: 4.5,
-          yearsExperience: 14,
-          boardCertified: true,
-          acceptingPatients: true,
-          languages: ['English'],
-          insurance: ['Blue Cross', 'Aetna', 'UnitedHealth'],
-          education: {
-            medicalSchool: 'UC Davis School of Medicine',
-            residency: 'UC Davis Medical Center'
-          }
-        }
-      ];
-      
-      setProviders(mockProviders);
-      setIsLoading(false);
-    }, 1000);
-  };
 
   const handleProviderClick = (provider: Provider) => {
     navigate(`/doctor/${provider.id}`, { state: { provider } });
@@ -1218,7 +1079,6 @@ const ResultsPage: React.FC = () => {
         diagnosis: searchParams?.diagnosis || '',
         symptoms: searchParams?.symptoms || '',
         uploadedFiles: [],
-        limit: 10000,  // Increase limit to get all available providers
         // Required: Pass pre-determined values from medical analysis
         determined_specialty: determinedSpecialty,
         predicted_icd10: searchParams?.predicted_icd10 || location.state?.aiRecommendations?.patient_profile?.predicted_icd10,

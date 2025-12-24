@@ -46,7 +46,6 @@ export interface NPIProvider {
   phone: string;
   boardCertified: boolean;
   yearsExperience?: number | null;
-  rating?: number;
   languages?: string[];
   insurance?: string[];
   acceptingPatients: boolean;
@@ -67,7 +66,6 @@ export interface NPISearchRequest {
   diagnosis: string;
   symptoms: string;
   uploadedFiles?: File[];
-  limit?: number;
   // Required pre-determined values from medical analysis (must be provided)
   determined_specialty: string;
   predicted_icd10?: string;
@@ -97,10 +95,6 @@ export const searchNPIProviders = async (request: NPISearchRequest): Promise<NPI
     formData.append('proximity', request.proximity);
     formData.append('diagnosis', request.diagnosis);
     formData.append('symptoms', request.symptoms);
-    
-    if (request.limit) {
-      formData.append('limit', request.limit.toString());
-    }
     
     // Add pre-determined values from medical analysis (optimization to avoid duplicate GPT calls)
     if (request.determined_specialty) {
