@@ -23,6 +23,18 @@ export default function ProviderReviews({ reviews: allReviews, patientDiagnosis 
   const matchingCount = relevantReviews.length;
   const totalCount = allReviews.length;
   
+  // Calculate average rating for relevant reviews
+  const avgRelevantRating = React.useMemo(() => {
+    const ratingsWithValues = relevantReviews
+      .map(review => review.review_rating)
+      .filter((rating): rating is number => rating != null && rating !== undefined && typeof rating === 'number');
+    
+    if (ratingsWithValues.length === 0) return null;
+    
+    const sum = ratingsWithValues.reduce((acc, rating) => acc + rating, 0);
+    return sum / ratingsWithValues.length;
+  }, [relevantReviews]);
+  
   // If no relevant reviews, automatically show all reviews
   const effectiveViewMode = matchingCount === 0 ? 'all' : viewMode;
   const filteredReviews = effectiveViewMode === 'all' ? allReviews : relevantReviews;
@@ -68,6 +80,16 @@ export default function ProviderReviews({ reviews: allReviews, patientDiagnosis 
           ) : effectiveViewMode === 'relevant' ? (
             <span className="text-sm text-gray-700">
               Showing {matchingCount} review{matchingCount !== 1 ? 's' : ''} relevant to: <span className="font-semibold text-gray-900">{patientDiagnosis || 'your condition'}</span>
+              {avgRelevantRating !== null && (
+                <>
+                  {' · '}
+                  <span className="flex items-center gap-1">
+                    <span className="text-yellow-500 text-sm">★</span>
+                    <span className="font-semibold text-gray-900">{avgRelevantRating.toFixed(1)}</span>
+                    <span className="text-gray-500">avg rating</span>
+                  </span>
+                </>
+              )}
             </span>
           ) : (
             <span className="text-sm text-gray-700">
