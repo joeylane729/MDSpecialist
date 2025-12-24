@@ -259,16 +259,16 @@ The search flow involves multiple components:
 24. **Service initialization**:
     - Creates `SpecialistRecommendationService` instance
 
-25. **Medical analysis** (reuses results from previous analysis - optimization):
+25. **Medical analysis** (reuses results from previous analysis - required, no fallback):
     - **Uses pre-generated medical analysis results** from step 11 to avoid duplicate GPT calls:
-      - Treatment options (reused)
-      - Predicted ICD-10 code (reused)
+      - Treatment options (reused - required)
+      - Predicted ICD-10 code (reused - required)
       - ICD-10 description (reused)
-      - Search query (reused)
+      - Search query (reused - required)
       - Determined specialty (reused)
       - CPT codes (reused)
     - **No GPT calls are made** - all values are passed through from the first medical analysis step
-    - If medical analysis results are not provided, falls back to calling `comprehensive_analysis()` (should not happen in normal flow)
+    - **Required fields validation**: If required medical analysis results (treatment_options, predicted_icd10, search_query) are missing, raises ValueError - no fallback to re-running analysis
 
 26. **Specialist information retrieval**:
     - Calls `specialist_information_retrieval_service.retrieve_specialist_information()`:
