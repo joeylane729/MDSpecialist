@@ -43,11 +43,11 @@ class SpecialistRecommendationService:
     async def get_specialist_recommendations(
         self,
         patient_input: str,
-        state: Optional[str] = None,
         cpt_codes: List[Dict[str, str]],
         treatment_options: List[Dict[str, Any]],
         predicted_icd10: str,
         search_query: str,
+        state: Optional[str] = None,
         icd10_description: Optional[str] = None,
         determined_specialty: Optional[str] = None
     ) -> RecommendationResponse:

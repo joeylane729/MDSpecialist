@@ -96,12 +96,12 @@ async def get_specialist_recommendations(
         specialist_service = SpecialistRecommendationService(db)
         recommendations = await specialist_service.get_specialist_recommendations(
             patient_input=patient_input,
-            state=state,
             cpt_codes=cpt_codes,
             treatment_options=treatment_options,
             predicted_icd10=predicted_icd10,
-            icd10_description=icd10_description,
             search_query=search_query,
+            state=state,
+            icd10_description=icd10_description,
             determined_specialty=determined_specialty
         )
         
