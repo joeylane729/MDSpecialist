@@ -203,53 +203,139 @@ async def search_providers_by_criteria(
             result = db.execute(text(sql))
             providers = result.fetchall()
         
+        # Batch fetch all education and exclusion data to avoid N+1 queries
+        npis = [str(p.npi).strip() for p in providers if p.npi]
+        valid_npis = [npi for npi in npis if npi and npi != '0000000000' and len(npi) == 10]
+        
+        # Batch fetch US News data
+        usnews_map = {}
+        if valid_npis:
+            try:
+                # Use parameterized IN clause with tuple unpacking (works with PostgreSQL)
+                placeholders = ','.join([':npi' + str(i) for i in range(len(valid_npis))])
+                usnews_sql = text(f"""
+                    SELECT npi, medical_school, residency, fellowship, certifications
+                    FROM usnews_data
+                    WHERE npi IN ({placeholders})
+                """)
+                params = {f'npi{i}': npi for i, npi in enumerate(valid_npis)}
+                usnews_rows = db.execute(usnews_sql, params).fetchall()
+                for row in usnews_rows:
+                    usnews_map[str(row.npi)] = {
+                        'medical_school': row.medical_school,
+                        'residency': row.residency,
+                        'fellowship': row.fellowship,
+                        'certifications': row.certifications
+                    }
+                logger.info(f"Batch fetched {len(usnews_map)} US News records for {len(valid_npis)} NPIs")
+            except Exception as e:
+                logger.error(f"Error batch fetching US News data: {e}")
+        
+        # Batch fetch Healthgrades data
+        healthgrades_map = {}
+        if valid_npis:
+            try:
+                placeholders = ','.join([':npi' + str(i) for i in range(len(valid_npis))])
+                hg_sql = text(f"""
+                    SELECT npi, medical_school, residency, fellowship, certifications
+                    FROM healthgrades_data
+                    WHERE npi IN ({placeholders})
+                """)
+                params = {f'npi{i}': npi for i, npi in enumerate(valid_npis)}
+                hg_rows = db.execute(hg_sql, params).fetchall()
+                for row in hg_rows:
+                    healthgrades_map[str(row.npi)] = {
+                        'medical_school': row.medical_school,
+                        'residency': row.residency,
+                        'fellowship': row.fellowship,
+                        'certifications': row.certifications
+                    }
+                logger.info(f"Batch fetched {len(healthgrades_map)} Healthgrades records for {len(valid_npis)} NPIs")
+            except Exception as e:
+                logger.error(f"Error batch fetching Healthgrades data: {e}")
+        
+        # Batch fetch exclusions by NPI
+        excluded_npis = set()
+        if valid_npis:
+            try:
+                placeholders = ','.join([':npi' + str(i) for i in range(len(valid_npis))])
+                excl_npi_sql = text(f"""
+                    SELECT DISTINCT npi FROM exclusions 
+                    WHERE npi IN ({placeholders})
+                      AND (reindate IS NULL OR reindate = '' OR reindate = '00000000')
+                """)
+                params = {f'npi{i}': npi for i, npi in enumerate(valid_npis)}
+                excl_npi_rows = db.execute(excl_npi_sql, params).fetchall()
+                excluded_npis = {str(row[0]) for row in excl_npi_rows if row[0]}
+                logger.info(f"Batch found {len(excluded_npis)} excluded NPIs")
+            except Exception as e:
+                logger.error(f"Error batch fetching exclusions by NPI: {e}")
+        
+        # Batch fetch exclusions by name (collect unique name combinations)
+        name_pairs = list(set([(p.provider_first_name.strip().upper(), p.provider_last_name.strip().upper()) 
+                      for p in providers 
+                      if p.provider_first_name and p.provider_last_name]))
+        excluded_names = set()
+        if name_pairs:
+            try:
+                # Build OR conditions for name matching
+                name_conditions = []
+                params = {}
+                for i, (first, last) in enumerate(name_pairs):
+                    name_conditions.append(f"(UPPER(TRIM(FIRSTNAME)) = :first{i} AND UPPER(TRIM(LASTNAME)) = :last{i})")
+                    params[f'first{i}'] = first
+                    params[f'last{i}'] = last
+                
+                if name_conditions:
+                    excl_name_sql = text(f"""
+                        SELECT DISTINCT UPPER(TRIM(FIRSTNAME)) as firstname, UPPER(TRIM(LASTNAME)) as lastname
+                        FROM exclusions 
+                        WHERE ({' OR '.join(name_conditions)})
+                          AND (reindate IS NULL OR reindate = '' OR reindate = '00000000')
+                    """)
+                    excl_name_rows = db.execute(excl_name_sql, params).fetchall()
+                    excluded_names = {(row.firstname, row.lastname) for row in excl_name_rows}
+                    logger.info(f"Batch found {len(excluded_names)} excluded name combinations")
+            except Exception as e:
+                logger.error(f"Error batch fetching exclusions by name: {e}")
+        
+        # Now process providers using in-memory lookups
         filtered_providers = []
         for provider in providers:
             # Get the primary specialty for display
             primary_specialty = get_specialty_description(provider.healthcare_provider_taxonomy_code_1)
             
-            # Fetch education from US News with Healthgrades fallback (per field)
+            # Fetch education from US News with Healthgrades fallback (per field) using batch data
+            provider_npi_str = str(provider.npi).strip() if provider.npi else ''
             edu_med_school = None
             edu_residency = None
             edu_fellowship = None
             edu_certifications = None
 
             try:
-                # US News first
-                usnews_sql = text("""
-                    SELECT medical_school, residency, fellowship, certifications
-                    FROM usnews_data
-                    WHERE npi = :npi
-                    LIMIT 1
-                """)
-                us_row = db.execute(usnews_sql, {"npi": provider.npi}).fetchone()
-                if us_row:
-                    edu_med_school = us_row.medical_school
-                    edu_residency = us_row.residency
-                    edu_fellowship = us_row.fellowship
-                    edu_certifications = us_row.certifications
+                # US News first (from batch data)
+                if provider_npi_str in usnews_map:
+                    us_data = usnews_map[provider_npi_str]
+                    edu_med_school = us_data['medical_school']
+                    edu_residency = us_data['residency']
+                    edu_fellowship = us_data['fellowship']
+                    edu_certifications = us_data['certifications']
 
-                # Healthgrades fallback per field
+                # Healthgrades fallback per field (from batch data)
                 if not (edu_med_school and str(edu_med_school).strip() and str(edu_med_school) != 'None') or \
                    not (edu_residency and str(edu_residency).strip() and str(edu_residency) != 'None') or \
                    not (edu_fellowship and str(edu_fellowship).strip() and str(edu_fellowship) != 'None') or \
                    not (edu_certifications and str(edu_certifications).strip() and str(edu_certifications) != 'None'):
-                    hg_sql = text("""
-                        SELECT medical_school, residency, fellowship, certifications
-                        FROM healthgrades_data
-                        WHERE npi = :npi
-                        LIMIT 1
-                    """)
-                    hg_row = db.execute(hg_sql, {"npi": provider.npi}).fetchone()
-                    if hg_row:
+                    if provider_npi_str in healthgrades_map:
+                        hg_data = healthgrades_map[provider_npi_str]
                         if not (edu_med_school and str(edu_med_school).strip() and str(edu_med_school) != 'None'):
-                            edu_med_school = hg_row.medical_school
+                            edu_med_school = hg_data['medical_school']
                         if not (edu_residency and str(edu_residency).strip() and str(edu_residency) != 'None'):
-                            edu_residency = hg_row.residency
+                            edu_residency = hg_data['residency']
                         if not (edu_fellowship and str(edu_fellowship).strip() and str(edu_fellowship) != 'None'):
-                            edu_fellowship = hg_row.fellowship
+                            edu_fellowship = hg_data['fellowship']
                         if not (edu_certifications and str(edu_certifications).strip() and str(edu_certifications) != 'None'):
-                            edu_certifications = hg_row.certifications
+                            edu_certifications = hg_data['certifications']
             except Exception as e:
                 logger.error(f"Error enriching education for NPI {provider.npi}: {e}")
 
@@ -260,35 +346,18 @@ async def search_providers_by_criteria(
                 if graduation_year <= current_year:
                     years_experience = max(0, current_year - graduation_year)
 
-            # Check if provider is in exclusions table (by NPI or name)
+            # Check if provider is in exclusions using batch data
             is_excluded = False
             try:
-                # First check by NPI (only if NPI is valid, not "0000000000" or empty)
-                provider_npi = str(provider.npi).strip() if provider.npi else ''
-                if provider_npi and provider_npi != '0000000000' and len(provider_npi) == 10:
-                    excl_npi_check = text("""
-                        SELECT COUNT(*) FROM exclusions 
-                        WHERE npi = :npi AND (reindate IS NULL OR reindate = '' OR reindate = '00000000')
-                    """)
-                    npi_result = db.execute(excl_npi_check, {"npi": provider_npi}).fetchone()
-                    
-                    if npi_result and npi_result[0] > 0:
-                        is_excluded = True
+                # Check by NPI first (from batch data)
+                if provider_npi_str in excluded_npis:
+                    is_excluded = True
                 
-                # If not found by NPI, check by first name + last name
+                # If not found by NPI, check by name (from batch data)
                 if not is_excluded and provider.provider_first_name and provider.provider_last_name:
-                    excl_name_check = text("""
-                        SELECT COUNT(*) FROM exclusions 
-                        WHERE UPPER(TRIM(FIRSTNAME)) = UPPER(TRIM(:firstname))
-                          AND UPPER(TRIM(LASTNAME)) = UPPER(TRIM(:lastname))
-                          AND (reindate IS NULL OR reindate = '' OR reindate = '00000000')
-                    """)
-                    name_result = db.execute(excl_name_check, {
-                        "firstname": provider.provider_first_name.strip(),
-                        "lastname": provider.provider_last_name.strip()
-                    }).fetchone()
-                    
-                    if name_result and name_result[0] > 0:
+                    first_upper = provider.provider_first_name.strip().upper()
+                    last_upper = provider.provider_last_name.strip().upper()
+                    if (first_upper, last_upper) in excluded_names:
                         is_excluded = True
             except Exception as e:
                 logger.error(f"Error checking exclusions for NPI {provider.npi}: {e}")
