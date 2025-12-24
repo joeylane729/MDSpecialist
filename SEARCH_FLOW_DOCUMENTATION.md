@@ -400,7 +400,7 @@ The search flow involves multiple components:
 42. **Load data from location.state**:
     - Sets providers state
     - Sets search parameters
-    - Sets AI recommendations
+    - Sets medical analysis data (from initial medical analysis API response)
     - Sets ranking data
     - Sets treatment rankings
 
@@ -411,7 +411,7 @@ The search flow involves multiple components:
 44. **Determine initial view**:
     - If `searchOptions.specialists` is true → 'specialists' view
     - If `searchOptions.diagnosis` is true → 'assessment' view
-    - Otherwise → 'ai-recommendations' view
+    - Otherwise → 'assessment' view (default)
 
 45. **Initialize treatment selection**:
     - If treatment rankings exist, selects first treatment by default
@@ -424,7 +424,6 @@ The search flow involves multiple components:
 46. **Provider filtering and pagination**:
     - Filters providers by:
       - Search term (name search)
-      - Selected treatment (if multiple treatments)
       - Category (if filtering by treatment category)
     - Paginates results (default: 20 per page)
 
@@ -455,7 +454,7 @@ The search flow involves multiple components:
     - Category filter (Surgery, Radiosurgery, Endovascular, Other)
     - Search bar for filtering providers by name
     - Pagination controls
-    - View switcher (Assessment, Specialists, AI Recommendations, Debug)
+    - View switcher (Medical Assessment, Specialists, Debug)
 
 ---
 
@@ -463,11 +462,10 @@ The search flow involves multiple components:
 
 50. **User can interact with results** (optional interactions that can happen at any time):
     - **Click provider card**: Opens detailed view (if implemented)
-    - **Filter by treatment**: Changes which treatment's ranking is displayed
     - **Filter by category**: Shows only providers for specific treatment category
     - **Search by name**: Filters providers by name
     - **Change page**: Navigates through paginated results
-    - **Switch views**: Toggle between Assessment, Specialists, AI Recommendations, Debug
+    - **Switch views**: Toggle between Medical Assessment, Specialists, Debug
 
 ---
 

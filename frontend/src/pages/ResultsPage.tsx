@@ -57,7 +57,7 @@ const getTreatmentOptions = (searchParams: any, aiRecommendations?: any): Treatm
     }));
   }
 
-  // Fallback to AI recommendations if searchParams doesn't have treatment options
+  // Fallback to location.state if searchParams doesn't have treatment options
   if (aiRecommendations?.patient_profile?.treatment_options && Array.isArray(aiRecommendations.patient_profile.treatment_options) && aiRecommendations.patient_profile.treatment_options.length > 0) {
     return aiRecommendations.patient_profile.treatment_options.map((option: any) => ({
       name: option.name || "Treatment Option",
@@ -135,10 +135,9 @@ const ResultsPage: React.FC = () => {
   const [providerLinks, setProviderLinks] = useState<{ [npi: string]: ProviderContent }>({});
   const [providerScores, setProviderScores] = useState<{ [npi: string]: any }>({});
   const [treatmentRankings, setTreatmentRankings] = useState<{ [treatmentId: string]: any }>({});
-  const [selectedTreatmentId, setSelectedTreatmentId] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<string>(''); // For specialists page filtering
   const [selectedDebugCategory, setSelectedDebugCategory] = useState<string>(''); // For debug page CMS results
-  const [activeView, setActiveView] = useState<'assessment' | 'specialists' | 'ai-recommendations' | 'debug'>('assessment');
+  const [activeView, setActiveView] = useState<'assessment' | 'specialists' | 'debug'>('assessment');
   const [specialistRecommendationData, setSpecialistRecommendationData] = useState<any>(null);
   const [cptCodes, setCptCodes] = useState<Array<{ code: string; description: string }> | null>(null);
   const [cptCodesByCategory, setCptCodesByCategory] = useState<{ [category: string]: Array<{ code: string; description: string }> }>({});
@@ -187,7 +186,7 @@ const ResultsPage: React.FC = () => {
       } else if (searchParams.searchOptions.diagnosis) {
         setActiveView('assessment');
       } else {
-        setActiveView('ai-recommendations');
+        setActiveView('assessment'); // Default to assessment view
       }
     }
   }, [searchParams?.searchOptions]);
@@ -656,11 +655,6 @@ const ResultsPage: React.FC = () => {
         console.log('🔍 Initializing with treatment rankings from location.state');
         setTreatmentRankings(location.state.treatmentRankings);
         
-        // Use the first treatment's ranking as default
-        const firstTreatmentId = Object.keys(location.state.treatmentRankings)[0];
-        const firstTreatment = location.state.treatmentRankings[firstTreatmentId];
-        setSelectedTreatmentId(firstTreatmentId);
-        
         // Initialize selected category to first available category
         const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
         const categories = getCategoriesFromTreatmentOptions(treatmentOptions);
@@ -670,18 +664,26 @@ const ResultsPage: React.FC = () => {
           console.log('🔍 Initializing selected category to:', firstCategory);
         }
         
-        // Get ranked providers for the first treatment
-        const rankedNPIs = firstTreatment.ranked_providers;
-        if (Array.isArray(rankedNPIs)) {
-          const rankedNPIProviders = rankedNPIs.map((npi: string) => 
-            location.state.providers.find((provider: Provider) => provider.npi === npi)
-          ).filter((provider: Provider | undefined): provider is NPIProvider => provider !== undefined);
-          setRankedProviders(rankedNPIProviders);
-          console.log('🔍 Initial ranked providers from treatment rankings:', rankedNPIProviders.length);
-        }
+        // Combine all providers and links from all treatments (same logic as category filter)
+        const allRankedNPIs = new Set<string>();
+        const allProviderLinks: { [npi: string]: ProviderContent } = {};
         
-        // Set provider links for the first treatment
-        setProviderLinks(firstTreatment.provider_links || {});
+        Object.values(location.state.treatmentRankings).forEach((treatment: any) => {
+          if (treatment.ranked_providers) {
+            treatment.ranked_providers.forEach((npi: string) => allRankedNPIs.add(npi));
+          }
+          if (treatment.provider_links) {
+            Object.assign(allProviderLinks, treatment.provider_links);
+          }
+        });
+        
+        const rankedNPIProviders = Array.from(allRankedNPIs).map((npi: string) => 
+          location.state.providers.find((provider: Provider) => provider.npi === npi)
+        ).filter((provider: Provider | undefined): provider is NPIProvider => provider !== undefined);
+        
+        setRankedProviders(rankedNPIProviders);
+        setProviderLinks(allProviderLinks);
+        console.log('🔍 Initial ranked providers from all treatments:', rankedNPIProviders.length);
       } else {
         // Fallback to all providers if no treatment rankings available
         setRankedProviders(location.state.providers);
@@ -1181,28 +1183,38 @@ const ResultsPage: React.FC = () => {
         // Store treatment rankings for filtering
         setTreatmentRankings(treatmentRankingsData);
         
-        // Use the first treatment's ranking as default
-        const firstTreatmentId = Object.keys(treatmentRankingsData)[0];
-        const firstTreatment = treatmentRankingsData[firstTreatmentId];
+        // Combine all providers and links from all treatments (same logic as category filter)
+        const allRankedNPIs = new Set<string>();
+        const allProviderLinks: { [npi: string]: ProviderContent } = {};
+        const allProviderScores: { [npi: string]: any } = {};
         
-        console.log('🔍 First treatment ID:', firstTreatmentId);
-        console.log('🔍 First treatment data:', firstTreatment);
+        Object.values(treatmentRankingsData).forEach((treatment: any) => {
+          if (treatment.ranked_providers) {
+            treatment.ranked_providers.forEach((npi: string) => allRankedNPIs.add(npi));
+          }
+          if (treatment.provider_links) {
+            Object.assign(allProviderLinks, treatment.provider_links);
+          }
+          if (treatment.provider_scores) {
+            Object.entries(treatment.provider_scores).forEach(([npi, scoreData]: [string, any]) => {
+              if (!allProviderScores[npi]) {
+                // Deep copy the score data so we can modify it without affecting the original
+                allProviderScores[npi] = JSON.parse(JSON.stringify(scoreData));
+              }
+            });
+          }
+        });
         
-        // Set the selected treatment
-        setSelectedTreatmentId(firstTreatmentId);
+        rankedNPIProviders = Array.from(allRankedNPIs).map((npi: string) => 
+          providerLookup.get(npi)
+        ).filter((provider: Provider | undefined): provider is NPIProvider => provider !== undefined);
         
-        const rankedNPIs = firstTreatment.ranked_providers;
-        if (Array.isArray(rankedNPIs)) {
-          rankedNPIProviders = rankedNPIs.map((npi: string) => 
-            providerLookup.get(npi)
-          ).filter((provider: Provider | undefined): provider is NPIProvider => provider !== undefined);
-          setRankedProviders(rankedNPIProviders);
-          console.log('🔍 Initial ranked providers:', rankedNPIProviders.length);
-        }
+        setRankedProviders(rankedNPIProviders);
+        console.log('🔍 Ranked providers from all treatments:', rankedNPIProviders.length);
         
         // Capture the provider links and scores
-        providerLinks = firstTreatment.provider_links || {};
-        const providerScores = firstTreatment.provider_scores || {};
+        providerLinks = allProviderLinks;
+        const providerScores = allProviderScores;
         
         console.log('🔍 [Frontend] Provider Scores Received:');
         console.log('  - Total providers with scores:', Object.keys(providerScores).length);
@@ -1464,44 +1476,9 @@ const ResultsPage: React.FC = () => {
     saveFilterState();
   };
 
-  const handleTreatmentFilterChange = (treatmentId: string) => {
-    console.log('🔍 Treatment filter changed to:', treatmentId);
-    console.log('🔍 Available treatment rankings:', treatmentRankings);
-    console.log('🔍 Available providers:', providers.length);
-    
-    setSelectedTreatmentId(treatmentId);
-    
-    // Update ranked providers based on selected treatment
-    if (treatmentRankings[treatmentId]) {
-      const treatment = treatmentRankings[treatmentId];
-      const rankedNPIs = treatment.ranked_providers;
-      
-      console.log('🔍 Treatment data:', treatment);
-      console.log('🔍 Ranked NPIs:', rankedNPIs);
-      
-      // Find the original NPI providers from the current providers state
-      const originalProviders = providers || [];
-      const rankedNPIProviders = rankedNPIs.map((npi: string) => 
-        originalProviders.find((provider: Provider) => provider.npi === npi)
-      ).filter((provider: Provider | undefined): provider is NPIProvider => provider !== undefined);
-      
-      console.log('🔍 Filtered providers:', rankedNPIProviders.length);
-      
-      setRankedProviders(rankedNPIProviders);
-      setProviderLinks(treatment.provider_links || {});
-      setProviderScores(treatment.provider_scores || {});
-    } else {
-      console.log('🔍 No treatment data found for ID:', treatmentId);
-    }
-    
-    setCurrentPage(1);
-    saveFilterState();
-  };
-
   const resetFilters = () => {
     setSearchTerm('');
     setSelectedTreatmentOptions([]);
-    setSelectedTreatmentId('');
     setCurrentPage(1);
     saveFilterState();
   };
@@ -1634,19 +1611,6 @@ const ResultsPage: React.FC = () => {
                 <span>Specialists</span>
               </button>
             )}
-            <button
-              onClick={() => setActiveView('ai-recommendations')}
-              className={`hidden flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeView === 'ai-recommendations'
-                  ? 'text-primary-600 bg-primary-50'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
-              <span>AI Recommendations</span>
-            </button>
             {(searchParams?.searchOptions?.specialists && specialistRecommendationData) && (
               <button
                 onClick={() => setActiveView('debug')}
@@ -2346,160 +2310,6 @@ const ResultsPage: React.FC = () => {
           <div className="mt-8 text-center text-gray-500">
             <p>Showing {indexOfFirstProvider + 1}-{Math.min(indexOfLastProvider, filteredProviders.length)} of {filteredProviders.length} providers</p>
           </div>
-        )}
-
-
-        {/* AI Recommendations Section */}
-        {activeView === 'ai-recommendations' && (
-          <>
-            {/* AI Recommendations Header */}
-            <div className="text-center mb-4">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-purple-800 to-pink-800 bg-clip-text text-transparent mb-3 leading-tight py-1">
-                AI-Powered Specialist Recommendations
-              </h1>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Based on your symptoms and diagnosis, our AI has analyzed medical content to recommend relevant specialists
-              </p>
-            </div>
-
-            {/* Debug Info */}
-            {!location.state?.aiRecommendations && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                <h3 className="text-red-800 font-semibold">Debug: No AI Recommendations Data</h3>
-                <p className="text-red-700">location.state: {JSON.stringify(location.state, null, 2)}</p>
-              </div>
-            )}
-
-            {location.state?.aiRecommendations && !location.state.aiRecommendations.recommendations && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                <h3 className="text-yellow-800 font-semibold">Debug: No Recommendations Array</h3>
-                <p className="text-yellow-700">aiRecommendations: {JSON.stringify(location.state.aiRecommendations, null, 2)}</p>
-              </div>
-            )}
-
-            {/* AI Recommendations Content */}
-            {location.state?.aiRecommendations ? (
-              <div className="space-y-6">
-                {/* Patient Profile Summary */}
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-200">
-                  <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                    <svg className="w-5 h-5 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    Patient Profile Analysis
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h4 className="font-medium text-gray-700 mb-2">Symptoms Identified:</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {location.state.aiRecommendations.patient_profile.symptoms.map((symptom: string, index: number) => (
-                          <span key={index} className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm">
-                            {symptom}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-gray-700 mb-2">Specialties Needed:</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {location.state.aiRecommendations.patient_profile.specialties_needed.map((specialty: string, index: number) => (
-                          <span key={index} className="bg-pink-100 text-pink-800 px-3 py-1 rounded-full text-sm">
-                            {specialty}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Summary Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <div className="bg-white rounded-xl p-4 border border-gray-200 text-center">
-                    <div className="text-2xl font-bold text-purple-600">{location.state.aiRecommendations.recommendations.length}</div>
-                    <div className="text-sm text-gray-600">Specialists Recommended</div>
-                  </div>
-                  <div className="bg-white rounded-xl p-4 border border-gray-200 text-center">
-                    <div className="text-2xl font-bold text-pink-600">{location.state.aiRecommendations.total_candidates_found}</div>
-                    <div className="text-sm text-gray-600">Medical Records Analyzed</div>
-                  </div>
-                  <div className="bg-white rounded-xl p-4 border border-gray-200 text-center">
-                    <div className="text-2xl font-bold text-indigo-600">{Math.round(location.state.aiRecommendations.processing_time_ms / 1000)}s</div>
-                    <div className="text-sm text-gray-600">Processing Time</div>
-                  </div>
-                </div>
-
-                {/* Specialist Recommendations */}
-                <div className="space-y-4">
-                  <h3 className="text-2xl font-semibold text-gray-800 mb-4">Recommended Specialists</h3>
-                  
-                  {location.state.aiRecommendations.recommendations && location.state.aiRecommendations.recommendations.length > 0 ? (
-                    location.state.aiRecommendations.recommendations.map((recommendation: any, index: number) => (
-                    <div key={index} className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex-1">
-                          <h4 className="text-xl font-semibold text-gray-800 mb-2">{recommendation.name}</h4>
-                          <p className="text-gray-600 mb-2">{recommendation.specialty}</p>
-                          <p className="text-sm text-gray-500 mb-3">{recommendation.reasoning}</p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-purple-600">
-                            {Math.round(recommendation.confidence_score * 100)}%
-                          </div>
-                          <div className="text-sm text-gray-500">Confidence</div>
-                        </div>
-                      </div>
-                      
-                      {/* Source Information */}
-                      {recommendation.metadata && (
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <h5 className="font-medium text-gray-700 mb-2">Source Information:</h5>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <div>
-                              <span className="font-medium">Content:</span> {recommendation.metadata.title}
-                            </div>
-                            <div>
-                              <span className="font-medium">Author:</span> {recommendation.metadata.author}
-                            </div>
-                            <div>
-                              <span className="font-medium">Date:</span> {recommendation.metadata.date}
-                            </div>
-                            <div>
-                              <span className="font-medium">Duration:</span> {recommendation.metadata.duration}
-                            </div>
-                          </div>
-                          {recommendation.metadata.link && (
-                            <div className="mt-3">
-                              <a 
-                                href={recommendation.metadata.link} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-purple-600 hover:text-purple-800 text-sm font-medium"
-                              >
-                                View Source Content →
-                              </a>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))
-                  ) : (
-                    <div className="text-center py-12">
-                      <div className="text-gray-400 text-6xl mb-4">📋</div>
-                      <h3 className="text-xl font-semibold text-gray-700 mb-2">No Specialist Recommendations Found</h3>
-                      <p className="text-gray-500">The AI analysis did not find specific specialist recommendations for your condition.</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <div className="text-gray-400 text-6xl mb-4">🤖</div>
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">No AI Recommendations Available</h3>
-                <p className="text-gray-500">AI recommendations were not generated for this search.</p>
-              </div>
-            )}
-          </>
         )}
 
         {/* Debug Section */}
@@ -3230,7 +3040,7 @@ const ResultsPage: React.FC = () => {
                 </h3>
                 <details className="bg-gray-900 rounded p-3">
                   <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold">
-                    View Full AI Recommendations Response
+                    View Full Specialist Recommendation Data
                   </summary>
                   <div className="mt-3 max-h-96 overflow-y-auto">
                     <pre className="text-xs text-gray-300 whitespace-pre-wrap">
