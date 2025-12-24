@@ -2,9 +2,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from typing import List
+from dotenv import load_dotenv
 from app.api.endpoints import match, doctors, npi, specialist_recommendation, npi_ranking, medical_analysis, preauth_letter, reviews
 import os
 import logging
+
+# Load environment variables from .env file (for local development only)
+# In production, environment variables are set by the deployment platform
+load_dotenv()
 
 # Configure logging
 logger = logging.getLogger(__name__)
