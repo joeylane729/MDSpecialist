@@ -3,7 +3,7 @@ import Layout from './components/Layout'
 import HomePage from './pages/HomePage'
 import ResultsPage from './pages/ResultsPage'
 
-import LangChainResultsPage from './pages/LangChainResultsPage'
+import SpecialistResultsPage from './pages/SpecialistResultsPage'
 
 function App() {
   return (
@@ -11,7 +11,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/results" element={<ResultsPage />} />
-        <Route path="/langchain-results" element={<LangChainResultsPage />} />
+        <Route path="/specialist-results" element={<SpecialistResultsPage />} />
 
       </Routes>
     </Layout>

@@ -48,10 +48,9 @@ class RecommendationResponseSchema(BaseModel):
     recommendations: List[SpecialistRecommendationSchema] = Field(..., description="Ranked specialist recommendations")
     total_candidates_found: int = Field(..., ge=0, description="Total candidates found during retrieval")
     processing_time_ms: int = Field(..., ge=0, description="Processing time in milliseconds")
-    retrieval_strategies_used: List[str] = Field(..., description="Retrieval strategies used")
     timestamp: datetime = Field(..., description="Response timestamp")
-    shared_specialist_information: Optional[Dict[str, Any]] = Field(None, description="Treatment-grouped Pinecone data for NPI ranking")
-    search_query: Optional[str] = Field(None, description="GPT-generated search query used for Pinecone")
+    shared_specialist_information: Optional[Dict[str, Any]] = Field(None, description="Treatment-grouped specialist data for NPI ranking")
+    search_query: Optional[str] = Field(None, description="GPT-generated search query")
     cms_data: Optional[Dict[str, Any]] = Field(None, description="CMS API results based on CPT codes")
 
 class SpecialistRecommendationRequestSchema(BaseModel):
@@ -77,7 +76,7 @@ class SpecialistSearchResponseSchema(BaseModel):
 
 class ServiceStatsSchema(BaseModel):
     """Schema for service statistics."""
-    pinecone_index_name: str = Field(..., description="Pinecone index name")
+    index_name: str = Field(..., description="Index name")
     total_vectors: int = Field(..., ge=0, description="Total vectors in index")
     index_dimension: int = Field(..., ge=0, description="Vector dimension")
     index_metric: str = Field(..., description="Distance metric used")

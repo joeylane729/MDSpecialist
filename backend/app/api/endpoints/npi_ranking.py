@@ -1,8 +1,8 @@
 """
 NPI Provider Ranking Endpoint
 
-This endpoint takes NPI providers and patient information, then uses LangChain
-to rank the providers based on Pinecone specialist data.
+This endpoint takes NPI providers and patient information, then uses LLM
+to rank the providers based on specialist data.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Body
@@ -31,7 +31,7 @@ async def rank_npi_providers(
     db: Session = Depends(get_db)
 ):
     """
-    Rank NPI providers based on Pinecone specialist information.
+    Rank NPI providers based on specialist information.
     
     Args:
         npi_providers: List of NPI provider dictionaries
@@ -45,7 +45,7 @@ async def rank_npi_providers(
     logger.info(f"📥 [NPI Ranking] Received {len(request.npi_providers)} NPI providers")
     
     try:
-        # Get shared Pinecone data if provided
+        # Get shared specialist data if provided
         shared_data = request.shared_specialist_information
         if shared_data:
             if isinstance(shared_data, dict):
@@ -111,7 +111,7 @@ async def rank_npi_providers(
             logger.warning(f"⚠️ [NPI Ranking] No search_query provided in request")
         
         # Rank the NPI providers using shared data if available
-        ranking_result = await specialist_service.rank_npi_providers_with_pinecone(
+        ranking_result = await specialist_service.rank_npi_providers_with_specialist_data(
             npi_providers=request.npi_providers,
             patient_input=request.patient_input,
             shared_specialist_information=shared_data,

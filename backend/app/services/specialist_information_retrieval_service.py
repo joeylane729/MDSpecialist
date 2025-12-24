@@ -1,5 +1,5 @@
 """
-LangChain Retrieval Strategies
+Specialist Information Retrieval Service
 """
 
 import logging
@@ -10,16 +10,12 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 from ..models.specialist_recommendation import PatientProfile
-from .pinecone_service import PineconeService
-
 logger = logging.getLogger(__name__)
 
-class LangChainRetrievalStrategies:
-    """LangChain-powered retrieval strategies."""
+class SpecialistInformationRetrievalService:
+    """Service for retrieving specialist information from medical content databases."""
     
-    def __init__(self, pinecone_service: Optional[PineconeService] = None, db: Optional[Session] = None):
-        # pinecone_service is now optional - no longer used for Vumedi or PubMed (migrated to Postgres)
-        self.pinecone_service = pinecone_service
+    def __init__(self, db: Optional[Session] = None):
         self.db = db
         if not db:
             # Create database connection if not provided
@@ -34,7 +30,7 @@ class LangChainRetrievalStrategies:
         
         # Note: Query generation is now handled by MedicalAnalysisService
         # This service only uses pre-generated search queries
-        logger.info("LangChainRetrievalStrategies initialized successfully")
+        logger.info("SpecialistInformationRetrievalService initialized successfully")
     
     def _query_vumedi_from_postgres(self, query: str, top_k: int = 100) -> List[Dict[str, Any]]:
         """
@@ -46,7 +42,7 @@ class LangChainRetrievalStrategies:
             top_k: Maximum number of results to return
             
         Returns:
-            List of video records in Pinecone-compatible format
+            List of video records
         """
         try:
             # Parse query terms (same logic as PubMed)
@@ -120,7 +116,7 @@ class LangChainRetrievalStrategies:
                 logger.error(f"❌ Error iterating Vumedi results: {str(iter_error)}")
                 return []
             
-            # Convert to Pinecone-compatible format
+            # Convert to expected format
             hits = []
             for row in rows:
                 hit_fields = {
@@ -158,7 +154,7 @@ class LangChainRetrievalStrategies:
             top_k: Maximum number of results to return
             
         Returns:
-            List of dictionaries matching the format expected from Pinecone hits
+            List of dictionaries matching the expected format
         """
         if not self.engine and not self.db:
             logger.error("❌ No database connection available for PubMed query")
@@ -316,7 +312,7 @@ class LangChainRetrievalStrategies:
                     logger.error(f"❌ Error iterating results: {str(iter_error)}")
                     return []
             
-            # Convert results to format matching Pinecone hits
+            # Convert results to expected format
             hits = []
             for row in rows:
                 # Get authors_jsonb (may not exist if query is old)
@@ -385,7 +381,7 @@ class LangChainRetrievalStrategies:
         Verify if a result contains any of the query variations.
         
         Args:
-            result: Pinecone result with fields
+            result: Result with fields
             query_variations: List of query variations to match against
             source: Explicit source type ("vumedi" or "pubmed")
             
@@ -466,9 +462,10 @@ class LangChainRetrievalStrategies:
         medical_analysis_results: Dict[str, Any],
         top_k: int = 200  # Not used for distribution, kept for backward compatibility
     ) -> Dict[str, Any]:
-        """Retrieve specialist information from Pinecone using LangChain-generated queries based on medical analysis results.
+        """Retrieve specialist information using pre-generated queries based on medical analysis results.
         
-        Uses fixed limits: 100 for Vumedi, 1000 for PubMed per query.
+        Uses fixed limits: 100 for Vumedi, 10000 for PubMed per query.
+        Queries are executed against Postgres database.
         """
         try:
             # Use pre-generated search query from medical analysis
@@ -497,14 +494,14 @@ class LangChainRetrievalStrategies:
             treatment_name = medical_analysis_results.get("icd10_description", "Primary Diagnosis")
             
             try:
-                logger.info(f"🔍 Executing Pinecone search for '{treatment_name}': '{query[:80]}{'...' if len(query) > 80 else ''}'")
+                logger.info(f"🔍 Executing search for '{treatment_name}': '{query[:80]}{'...' if len(query) > 80 else ''}'")
                 
                 # Use separate limits for Vumedi and PubMed
                 vumedi_top_k = 100  # Max 100 total for Vumedi
                 pubmed_top_k = 10000  # Max 10000 total for PubMed
                 logger.debug(f"   📊 Using top_k={vumedi_top_k} for Vumedi, {pubmed_top_k} for PubMed")
                 
-                # Query Vumedi from Postgres database (migrated from Pinecone)
+                # Query Vumedi from Postgres database
                 vumedi_hits = self._query_vumedi_from_postgres(query, vumedi_top_k)
                 
                 # Query PubMed from Postgres database
@@ -593,7 +590,7 @@ class LangChainRetrievalStrategies:
             logger.info(f"   📋 Total stored: {total_results} results ({vumedi_total} Vumedi, {pubmed_total} PubMed)")
             logger.info(f"   ✅ Verified: {verified_total} results")
             logger.info(f"   ❌ Unverified: {total_results - verified_total} results")
-            logger.info(f"✅ LangChain retrieval completed using single diagnosis-based query")
+            logger.info(f"✅ Retrieval completed using single diagnosis-based query")
             logger.info(f"🔍 All results stored with verification status for debug display")
             logger.debug(f"🔍 Returning results grouped under treatment_id: {treatment_id}")
             
@@ -604,7 +601,7 @@ class LangChainRetrievalStrategies:
             }
             
         except Exception as e:
-            logger.error(f"❌ Error in LangChain retrieval: {str(e)}")
+            logger.error(f"❌ Error in retrieval: {str(e)}")
             raise
     
 

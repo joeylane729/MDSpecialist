@@ -9,7 +9,7 @@ The search flow involves multiple components:
 - **Backend API (FastAPI)**: Request processing and business logic
 - **AI Services**: Medical analysis, specialist recommendations, and ranking
 - **Database (PostgreSQL)**: Provider data storage and retrieval
-- **External Services**: Pinecone (vector database), CMS data, PubMed, VuMedi
+- **External Services**: CMS data, PubMed, VuMedi
 
 ---
 
@@ -78,7 +78,7 @@ The search flow involves multiple components:
     - Generates treatment options
     - Predicts ICD-10 codes
     - **Determines specialty** for provider search (optimization - avoids duplicate GPT calls later)
-    - Creates search query for Pinecone
+    - Creates search query for specialist information retrieval
     - Returns patient profile with all analysis results including `determined_specialty`
 
     **Note**: CPT codes are NOT generated in this step - they are generated separately later via a separate API call.
@@ -155,7 +155,7 @@ The search flow involves multiple components:
       - `outcomes`: Expected results and success rates
       - `complications`: Potential risks and complications
       - `category`: One of "Surgery", "Radiosurgery", "Endovascular", or "Other"
-    - **search_query**: Optimized search string for Pinecone vector database queries (used later for finding relevant medical content)
+    - **search_query**: Optimized search string for specialist information retrieval queries (used later for finding relevant medical content)
     - **diagnoses_prompt_text**: The actual GPT prompt that was used to generate the diagnoses (useful for debugging/regeneration)
     - **cpt_codes**: Empty array initially - CPT codes are generated separately via `/api/v1/medical-analysis/cpt-codes` endpoint
 
@@ -264,15 +264,15 @@ The search flow involves multiple components:
       - Treatment options (reused)
       - Predicted ICD-10 code (reused)
       - ICD-10 description (reused)
-      - Search query for Pinecone (reused)
+      - Search query (reused)
       - Determined specialty (reused)
       - CPT codes (reused)
     - **No GPT calls are made** - all values are passed through from the first medical analysis step
     - If medical analysis results are not provided, falls back to calling `comprehensive_analysis()` (should not happen in normal flow)
 
 26. **Specialist information retrieval**:
-    - Calls `retrieval_strategies.retrieve_specialist_information()`:
-      - Uses Pinecone vector database
+    - Calls `specialist_information_retrieval_service.retrieve_specialist_information()`:
+      - Uses Postgres database
       - Searches for relevant medical content (VuMedi videos, PubMed articles)
       - Uses the generated search query from medical analysis
       - Retrieves top 200 results
@@ -286,10 +286,10 @@ The search flow involves multiple components:
     - Converts specialist information to recommendations
     - Includes:
       - `patient_profile`: Treatment options, CPT codes, search query, etc.
-      - `recommendations`: Specialist recommendations from Pinecone
+      - `recommendations`: Specialist recommendations
       - `shared_specialist_information`: Treatment-grouped specialist data
       - `cms_data`: CMS provider data (if available)
-      - `search_query`: Pre-generated query for PubMed/Pinecone
+      - `search_query`: Pre-generated query for specialist information retrieval
 
 ---
 
@@ -319,25 +319,25 @@ The search flow involves multiple components:
     - Creates `SpecialistRecommendationService` instance
 
 34. **Call ranking method**:
-    - `langchain_service.rank_npi_providers_with_pinecone()`:
+    - `specialist_service.rank_npi_providers_with_specialist_data()`:
       - Takes NPI providers, patient input, shared specialist info
-      - Uses treatment-specific Pinecone data
+      - Uses treatment-specific specialist data
       - Ranks providers per treatment option
 
-35. **Ranking process** (in `langchain_ranking_service.py`):
+35. **Ranking process** (in `ranking_service.py`):
     - **For each treatment option**:
-      a. **Extract treatment-specific Pinecone data**
-      b. **Match provider names** with Pinecone content:
+      a. **Extract treatment-specific specialist data**
+      b. **Match provider names** with specialist content:
          - VuMedi videos (doctor names in "featuring" field)
          - PubMed articles (author names)
       c. **Calculate scores** for each provider:
-         - **Content match score**: Based on Pinecone matches
+         - **Content match score**: Based on specialist data matches
          - **Medical school score**: Based on US News rankings
          - **Certification score**: Based on board certifications
          - **Clinical volume score**: Based on CMS Tot_Srvcs (percentage-based)
          - **Combined score**: Weighted combination of all factors
       d. **Use GPT-5-mini** to rank providers:
-         - Provides provider list and Pinecone matches
+         - Provides provider list and specialist matches
          - GPT returns ranked list with explanations
       e. **Combine GPT ranking with calculated scores**
       f. **Sort by final score** (descending)
@@ -568,7 +568,7 @@ The search flow involves multiple components:
 
 ## External Services
 
-1. **Pinecone**: Vector database for medical content (VuMedi videos, PubMed articles)
+1. **PostgreSQL**: Database for medical content (VuMedi videos, PubMed articles)
 2. **OpenAI GPT-5-mini**: AI model for:
    - Specialty determination
    - Diagnosis prediction
@@ -590,7 +590,7 @@ The search flow involves multiple components:
 ## Performance Considerations
 
 - **NPI search**: Fetches all matching providers (no limit)
-- **Pinecone retrieval**: Top 200 results per treatment
+- **Specialist information retrieval**: Top 200 results per treatment
 - **Pagination**: 20 providers per page on results
 - **Caching**: Results stored in localStorage for persistence
 - **Parallel processing**: Some API calls can be made in parallel (if not dependent)

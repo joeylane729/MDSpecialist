@@ -36,7 +36,7 @@ async def get_specialist_recommendations(
     Get AI-powered specialist recommendations.
     
     This endpoint processes patient information and returns intelligent
-    specialist recommendations based on Pinecone data analysis.
+    specialist recommendations based on specialist data analysis.
     
     Args:
         cpt_codes_json: Optional JSON string of CPT codes to reuse from previous medical analysis.
@@ -86,7 +86,7 @@ async def get_specialist_recommendations(
         # Initialize the specialist recommendation service with database session
         specialist_service = SpecialistRecommendationService(db)
         
-        # Build patient input using shared utility (still needed for retrieval strategies)
+        # Build patient input using shared utility (still needed for specialist information retrieval service)
         patient_input = await build_patient_input(
             symptoms=symptoms,
             diagnosis=diagnosis,

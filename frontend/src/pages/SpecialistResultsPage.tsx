@@ -7,7 +7,7 @@ import {
   getSpecialistRecommendations 
 } from '../services/api';
 
-const LangChainResultsPage: React.FC = () => {
+const SpecialistResultsPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [recommendations, setRecommendations] = useState<SpecialistRecommendationResponse | null>(null);
@@ -28,7 +28,7 @@ const LangChainResultsPage: React.FC = () => {
       return;
     }
 
-    // Call LangChain API
+    // Call specialist recommendations API
     fetchRecommendations(searchParams);
   }, [location.state]);
 
@@ -148,10 +148,6 @@ const LangChainResultsPage: React.FC = () => {
               <div className="text-2xl font-bold text-purple-600">{recommendations.processing_time_ms}ms</div>
               <div className="text-sm text-gray-600">Processing Time</div>
             </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600">{recommendations.retrieval_strategies_used.length}</div>
-              <div className="text-sm text-gray-600">Search Strategies</div>
-            </div>
           </div>
         </div>
 
@@ -261,11 +257,10 @@ const LangChainResultsPage: React.FC = () => {
         {/* Footer */}
         <div className="mt-8 text-center text-gray-500 text-sm">
           <p>Generated on {new Date(recommendations.timestamp).toLocaleString()}</p>
-          <p>Using {recommendations.retrieval_strategies_used.join(', ')}</p>
         </div>
       </div>
     </div>
   );
 };
 
-export default LangChainResultsPage;
+export default SpecialistResultsPage;

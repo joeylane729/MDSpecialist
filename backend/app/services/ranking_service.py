@@ -1,8 +1,8 @@
 """
-LangChain-powered ranking service for combining NPI providers with Pinecone data.
+Ranking service for combining NPI providers with specialist data.
 
-This service takes a list of NPI providers and Pinecone specialist information,
-then uses LangChain to rank the NPI providers based on relevance to the Pinecone data.
+This service takes a list of NPI providers and specialist information,
+then uses LLM to rank the NPI providers based on relevance to the specialist data.
 """
 
 import logging
@@ -16,25 +16,25 @@ from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
 
-class LangChainRankingService:
-    """Service for ranking NPI providers based on Pinecone specialist information."""
+class RankingService:
+    """Service for ranking NPI providers based on specialist information."""
     
     def __init__(self, db: Session = None):
         self.llm = ChatOpenAI(model="gpt-5-mini", temperature=0.1, request_timeout=300)
         self.db = db
         
-        # Prompt for ranking NPI providers based on Pinecone data
+        # Prompt for ranking NPI providers based on specialist data
         self.ranking_prompt = PromptTemplate(
-            input_variables=["npi_providers", "pinecone_data", "patient_profile"],
+            input_variables=["npi_providers", "specialist_data", "patient_profile"],
             template="""
-            You are a medical specialist ranking expert. Your task is to return doctor names with their corresponding Vumedi links/titles and PubMed articles based on the information from Pinecone.
-            The Pinecone data contains two types of content:
+            You are a medical specialist ranking expert. Your task is to return doctor names with their corresponding Vumedi links/titles and PubMed articles based on the specialist information.
+            The specialist data contains two types of content:
             1. VUMEDI: Medical education videos with doctor names in "featuring" field, links, and titles
             2. PUBMED: Research articles with author names, PMIDs, and titles
             
             STRICT RULES:
             1. The list you return must only include names from the npi_providers list.
-            2. Do not add any names that do not appear in the Pinecone data.
+            2. Do not add any names that do not appear in the specialist data.
             3. For each doctor, include:
                - Vumedi content: link and title from Vumedi records where they appear
                - PubMed content: PMID and title from PubMed records where they appear as authors
@@ -43,8 +43,8 @@ class LangChainRankingService:
             NPI Providers (NPI: Name):
             {npi_providers}
             
-            Specialist Information from Pinecone:
-            {pinecone_data}
+            Specialist Information:
+            {specialist_data}
             
             Return a JSON object with the fields below and do not include any other text in your response:
             1. "providers": An array of objects, each containing:
@@ -489,17 +489,17 @@ class LangChainRankingService:
     async def rank_npi_providers(
         self, 
         npi_providers: List[Dict[str, Any]], 
-        pinecone_data: List[Dict[str, Any]], 
+        specialist_data: List[Dict[str, Any]], 
         patient_profile: Dict[str, Any],
         max_providers: int = 10000,
         cms_tot_srvcs: Optional[Dict[str, int]] = None
     ) -> Dict[str, Any]:
         """
-        Rank NPI providers based on simple exact name matching with Pinecone data.
+        Rank NPI providers based on simple exact name matching with specialist data.
         
         Args:
             npi_providers: List of NPI provider dictionaries
-            pinecone_data: List of specialist information from Pinecone (Vumedi/PubMed)
+            specialist_data: List of specialist information (Vumedi/PubMed)
             patient_profile: Patient profile with symptoms, diagnosis, etc. (not used, kept for compatibility)
             max_providers: Maximum number of providers to rank (default: 10000)
             cms_tot_srvcs: Optional dict mapping NPI (string) to Tot_Srvcs (int) for clinical volume scoring
@@ -511,7 +511,7 @@ class LangChainRankingService:
             logger.info(f"🎯 === SIMPLE NAME MATCHING RANKING STARTED ===")
             logger.info(f"📊 Total providers received: {len(npi_providers)}")
             logger.info(f"📊 Max providers to rank: {max_providers}")
-            logger.info(f"📊 Pinecone records: {len(pinecone_data)}")
+            logger.info(f"📊 Specialist records: {len(specialist_data)}")
             
             # Take only the first max_providers for ranking
             providers_to_rank = npi_providers[:max_providers]
@@ -569,8 +569,8 @@ class LangChainRankingService:
             # Track matches: npi -> {vumedi_content: [], pubmed_articles: []}
             provider_matches = {}
             
-            # Process Pinecone data for matches
-            for record in pinecone_data:
+            # Process specialist data for matches
+            for record in specialist_data:
                 source = record.get('_source', 'unknown')
                 
                 if source == 'vumedi':
@@ -1124,13 +1124,13 @@ class LangChainRankingService:
             formatted.append(f"{npi}: {name}")
         return "\n".join(formatted)
     
-    def _format_pinecone_data(self, pinecone_data: List[Dict[str, Any]]) -> str:
-        """Format Pinecone data for LLM input - handles both Vumedi and PubMed data."""
+    def _format_specialist_data(self, specialist_data: List[Dict[str, Any]]) -> str:
+        """Format specialist data for LLM input - handles both Vumedi and PubMed data."""
         formatted = []
         vumedi_count = 0
         pubmed_count = 0
         
-        for i, record in enumerate(pinecone_data, 1):
+        for i, record in enumerate(specialist_data, 1):
             source = record.get('_source', 'unknown')
             
             if source == 'vumedi':
@@ -1163,7 +1163,7 @@ class LangChainRankingService:
                 title = record.get('title', 'No title available')
                 formatted.append(f"{i}. [VUMEDI] Author: {author}, Featuring: {featuring}, Link: {link}, Title: {title}")
         
-        logger.info(f"📊 Formatted Pinecone data: {vumedi_count} Vumedi records, {pubmed_count} PubMed records")
+        logger.info(f"📊 Formatted specialist data: {vumedi_count} Vumedi records, {pubmed_count} PubMed records")
         return "\n".join(formatted)
     
     def _format_patient_profile(self, patient_profile: Dict[str, Any]) -> str:
@@ -1384,7 +1384,7 @@ class LangChainRankingService:
     async def rank_npi_providers_by_treatment(
         self,
         npi_providers: List[Dict[str, Any]],
-        treatment_pinecone_data: Dict[str, Any],
+        treatment_specialist_data: Dict[str, Any],
         patient_profile: Dict[str, Any],
         max_providers: int = 10000,
         cms_tot_srvcs: Optional[Dict[str, int]] = None
@@ -1394,7 +1394,7 @@ class LangChainRankingService:
         
         Args:
             npi_providers: List of NPI provider dictionaries
-            treatment_pinecone_data: Dictionary with treatment-specific Pinecone data
+            treatment_specialist_data: Dictionary with treatment-specific specialist data
             patient_profile: Patient profile with symptoms, diagnosis, etc.
             max_providers: Maximum number of providers to rank per treatment (default: 10000)
             cms_tot_srvcs: Optional dict mapping NPI (string) to Tot_Srvcs (int) for clinical volume scoring
@@ -1405,25 +1405,25 @@ class LangChainRankingService:
         try:
             logger.info(f"🎯 === TREATMENT-SPECIFIC RANKING STARTED (SCORE-BASED) ===")
             logger.info(f"📊 Total providers received: {len(npi_providers)}")
-            logger.info(f"📋 Treatments to rank: {len(treatment_pinecone_data)}")
+            logger.info(f"📋 Treatments to rank: {len(treatment_specialist_data)}")
             
             treatment_rankings = {}
             
             # Rank providers for each treatment option
-            for treatment_id, treatment_data in treatment_pinecone_data.items():
+            for treatment_id, treatment_data in treatment_specialist_data.items():
                 treatment_name = treatment_data.get("name", f"Treatment {treatment_id}")
-                all_pinecone_data = treatment_data.get("results", [])
+                all_specialist_data = treatment_data.get("results", [])
                 
                 # Filter to only verified results for ranking
-                pinecone_data = [result for result in all_pinecone_data if result.get("_verified") == True]
+                specialist_data = [result for result in all_specialist_data if result.get("_verified") == True]
                 
                 logger.info(f"🔍 Ranking providers for treatment: {treatment_name}")
-                logger.info(f"📊 Total Pinecone data for {treatment_name}: {len(all_pinecone_data)} records")
-                logger.info(f"✅ Using verified results for ranking: {len(pinecone_data)} records")
+                logger.info(f"📊 Total specialist data for {treatment_name}: {len(all_specialist_data)} records")
+                logger.info(f"✅ Using verified results for ranking: {len(specialist_data)} records")
                 
-                if not pinecone_data:
-                    # No Pinecone data - return all providers with zero scores
-                    logger.warning(f"⚠️  No Pinecone data for treatment {treatment_name}, returning all providers with zero scores")
+                if not specialist_data:
+                    # No specialist data - return all providers with zero scores
+                    logger.warning(f"⚠️  No specialist data for treatment {treatment_name}, returning all providers with zero scores")
                     ranked_npis = [p.get('npi', '') for p in npi_providers if p.get('npi')]
                     treatment_rankings[treatment_id] = {
                         "name": treatment_name,
@@ -1434,10 +1434,10 @@ class LangChainRankingService:
                     }
                     continue
                 
-                # Use GPT to rank providers with Pinecone matches
+                # Use GPT to rank providers with specialist matches
                 ranking_result = await self.rank_npi_providers(
                     npi_providers=npi_providers,
-                    pinecone_data=pinecone_data,
+                    specialist_data=specialist_data,
                     patient_profile=patient_profile,
                     max_providers=max_providers,
                     cms_tot_srvcs=cms_tot_srvcs

@@ -6,10 +6,9 @@ import logging
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
-from ..services.pinecone_service import PineconeService
-from ..services.langchain_retrieval_strategies import LangChainRetrievalStrategies
+from ..services.specialist_information_retrieval_service import SpecialistInformationRetrievalService
 from ..services.medical_analysis_service import MedicalAnalysisService
-from ..services.langchain_ranking_service import LangChainRankingService
+from ..services.ranking_service import RankingService
 
 from ..models.specialist_recommendation import PatientProfile, SpecialistRecommendation, RecommendationResponse
 
@@ -19,35 +18,27 @@ class SpecialistRecommendationService:
     """Specialist recommendation service."""
     
     def __init__(self, db=None):
-        self._pinecone_service = None
-        self._retrieval_strategies = None
-        self._db = db  # Store db session for retrieval strategies
+        self._specialist_information_retrieval_service = None
+        self._db = db  # Store db session for specialist information retrieval service
         self.medical_analysis = MedicalAnalysisService(db)
-        self.ranking_service = LangChainRankingService(db)
+        self.ranking_service = RankingService(db)
 
         logger.info("SpecialistRecommendationService initialized successfully")
     
     @property
-    def pinecone_service(self):
-        """Lazy initialization of PineconeService to avoid startup failures."""
-        if self._pinecone_service is None:
-            self._pinecone_service = PineconeService()
-        return self._pinecone_service
-    
-    @property
-    def retrieval_strategies(self):
-        """Lazy initialization of LangChainRetrievalStrategies."""
-        if self._retrieval_strategies is None:
-            # Pass database session to retrieval strategies for Postgres queries (no Pinecone needed)
-            self._retrieval_strategies = LangChainRetrievalStrategies(pinecone_service=None, db=self._db)
-        return self._retrieval_strategies
+    def specialist_information_retrieval_service(self):
+        """Lazy initialization of SpecialistInformationRetrievalService."""
+        if self._specialist_information_retrieval_service is None:
+            # Pass database session to specialist information retrieval service for Postgres queries
+            self._specialist_information_retrieval_service = SpecialistInformationRetrievalService(db=self._db)
+        return self._specialist_information_retrieval_service
     
     def set_db(self, db):
         """Set database session for services that need it."""
         self._db = db
         self.medical_analysis.set_db(db)
-        # Reset retrieval strategies to use new db session
-        self._retrieval_strategies = None
+        # Reset specialist information retrieval service to use new db session
+        self._specialist_information_retrieval_service = None
     
     async def get_specialist_recommendations(
         self,
@@ -63,7 +54,7 @@ class SpecialistRecommendationService:
         """Get specialist recommendations.
         
         Args:
-            patient_input: Patient input string (still needed for retrieval strategies)
+            patient_input: Patient input string (still needed for specialist information retrieval service)
             state: Optional state filter for CMS API
             cpt_codes: Optional pre-generated CPT codes to reuse (avoids duplicate GPT calls)
             treatment_options: Optional pre-generated treatment options to reuse (avoids duplicate GPT calls)
@@ -159,13 +150,13 @@ class SpecialistRecommendationService:
                     "error": "No CPT codes provided"
                 }
             
-            # Step 2: LLM-powered retrieval of specialist information
+            # Step 2: Retrieval of specialist information
             logger.info("🔍 Step 2: Retrieving specialist information...")
-            logger.debug(f"🔍 Retrieval strategies type: {type(self.retrieval_strategies)}")
+            logger.debug(f"🔍 Specialist information retrieval service type: {type(self.specialist_information_retrieval_service)}")
             logger.debug(f"🔍 Medical analysis results type: {type(medical_analysis_results)}")
             logger.debug(f"🔍 Medical analysis results keys: {list(medical_analysis_results.keys()) if isinstance(medical_analysis_results, dict) else 'Not a dict'}")
             
-            retrieval_result = await self.retrieval_strategies.retrieve_specialist_information(
+            retrieval_result = await self.specialist_information_retrieval_service.retrieve_specialist_information(
                 medical_analysis_results=medical_analysis_results,
                 top_k=200  # Use same value as NPI ranking
             )
@@ -236,7 +227,6 @@ class SpecialistRecommendationService:
                 recommendations=recommendations,
                 total_candidates_found=total_candidates,
                 processing_time_ms=int(processing_time),
-                retrieval_strategies_used=["langchain_vector_search"],
                 timestamp=datetime.now(),
                 shared_specialist_information=treatment_specialist_information,
                 search_query=search_query,
@@ -252,14 +242,14 @@ class SpecialistRecommendationService:
             else:
                 logger.warning("⚠️  No treatment_options in response patient_profile")
             
-            logger.info(f"✅ Generated {len(recommendations)} recommendations in {processing_time:.2f}ms using LangChain")
+            logger.info(f"✅ Generated {len(recommendations)} recommendations in {processing_time:.2f}ms")
             return response
             
         except Exception as e:
-            logger.error(f"Error generating LangChain recommendations: {str(e)}")
+            logger.error(f"Error generating recommendations: {str(e)}")
             raise
     
-    async def rank_npi_providers_with_pinecone(
+    async def rank_npi_providers_with_specialist_data(
         self,
         npi_providers: List[Dict[str, Any]],
         patient_input: str,
@@ -268,7 +258,7 @@ class SpecialistRecommendationService:
         search_query: Optional[str] = None  # Pre-generated search query from first medical analysis
     ) -> List[str]:
         """
-        Rank NPI providers based on Pinecone specialist information.
+        Rank NPI providers based on specialist information.
         
         Args:
             npi_providers: List of NPI provider dictionaries
@@ -306,23 +296,23 @@ class SpecialistRecommendationService:
                 'diagnosis': diagnosis
             }
             
-            # Step 2: Use shared Pinecone specialist information (required)
+            # Step 2: Use shared specialist information (required)
             if not shared_specialist_information:
-                raise ValueError("shared_specialist_information is required for NPI ranking. No fallback Pinecone calls allowed.")
+                raise ValueError("shared_specialist_information is required for NPI ranking. No fallback calls allowed.")
             
             logger.info(f"🔍 Step 2: Using shared specialist records")
             logger.info(f"📋 Treatment groups: {list(shared_specialist_information.keys()) if isinstance(shared_specialist_information, dict) else 'Not grouped'}")
             
             # Step 3: Use treatment-specific ranking service to rank NPI providers
             # Use cms_tot_srvcs if provided (extracted from CMS data in the endpoint)
-            logger.info("🔍 Step 3: Ranking NPI providers based on treatment-specific Pinecone data...")
+            logger.info("🔍 Step 3: Ranking NPI providers based on treatment-specific specialist data...")
             if cms_tot_srvcs:
                 logger.info(f"🏥 Using Tot_Srvcs data for {len(cms_tot_srvcs)} CMS providers for clinical volume scoring")
                 max_tot_srvcs = max(cms_tot_srvcs.values()) if cms_tot_srvcs.values() else 0
                 logger.info(f"🏥 Max Tot_Srvcs in CMS data: {max_tot_srvcs}")
             ranking_result = await self.ranking_service.rank_npi_providers_by_treatment(
                 npi_providers=npi_providers,
-                treatment_pinecone_data=shared_specialist_information,
+                treatment_specialist_data=shared_specialist_information,
                 patient_profile=medical_analysis_results,
                 cms_tot_srvcs=cms_tot_srvcs
             )

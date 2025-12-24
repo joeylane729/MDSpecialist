@@ -31,7 +31,7 @@ interface SearchParams {
   }>;
   cpt_prompt_text?: string;  // GPT prompt text used to generate CPT codes
   diagnoses_prompt_text?: string;  // GPT prompt text used to generate diagnoses/treatment options
-  search_query?: string;  // Pre-generated search query for Pinecone
+  search_query?: string;  // Pre-generated search query
   searchOptions?: {
     diagnosis: boolean;
     specialists: boolean;
@@ -2568,19 +2568,19 @@ const ResultsPage: React.FC = () => {
                       specialistRecommendationData?.shared_specialist_information ||
                       location.state?.aiRecommendations?.shared_specialist_information;
                     
-                    let pineconeResults: any[] = [];
+                    let specialistResults: any[] = [];
                     if (sharedInfo && typeof sharedInfo === 'object') {
                       const treatmentKeys = Object.keys(sharedInfo);
                       if (treatmentKeys.length > 0) {
                         const firstTreatment = sharedInfo[treatmentKeys[0]];
-                        pineconeResults = firstTreatment?.results || [];
+                        specialistResults = firstTreatment?.results || [];
                       }
                     } else if (Array.isArray(sharedInfo)) {
-                      pineconeResults = sharedInfo;
+                      specialistResults = sharedInfo;
                     }
                     
-                    if (pineconeResults && Array.isArray(pineconeResults)) {
-                      const pubmedArticles = pineconeResults.filter((item: any) => item._source === 'pubmed');
+                    if (specialistResults && Array.isArray(specialistResults)) {
+                      const pubmedArticles = specialistResults.filter((item: any) => item._source === 'pubmed');
                       
                       if (pubmedArticles.length > 0) {
                         return (
@@ -2642,7 +2642,7 @@ const ResultsPage: React.FC = () => {
                     }
                     
                     return (
-                      <p className="text-yellow-400">No PubMed articles found in Pinecone results</p>
+                      <p className="text-yellow-400">No PubMed articles found in specialist results</p>
                     );
                   })()}
                 </div>
@@ -2663,19 +2663,19 @@ const ResultsPage: React.FC = () => {
                       specialistRecommendationData?.shared_specialist_information ||
                       location.state?.aiRecommendations?.shared_specialist_information;
                     
-                    let pineconeResults: any[] = [];
+                    let specialistResults: any[] = [];
                     if (sharedInfo && typeof sharedInfo === 'object') {
                       const treatmentKeys = Object.keys(sharedInfo);
                       if (treatmentKeys.length > 0) {
                         const firstTreatment = sharedInfo[treatmentKeys[0]];
-                        pineconeResults = firstTreatment?.results || [];
+                        specialistResults = firstTreatment?.results || [];
                       }
                     } else if (Array.isArray(sharedInfo)) {
-                      pineconeResults = sharedInfo;
+                      specialistResults = sharedInfo;
                     }
                     
-                    if (pineconeResults && Array.isArray(pineconeResults)) {
-                      const vumediVideos = pineconeResults.filter((item: any) => item._source === 'vumedi');
+                    if (specialistResults && Array.isArray(specialistResults)) {
+                      const vumediVideos = specialistResults.filter((item: any) => item._source === 'vumedi');
                       
                       if (vumediVideos.length > 0) {
                         return (
@@ -2737,7 +2737,7 @@ const ResultsPage: React.FC = () => {
                     }
                     
                     return (
-                      <p className="text-yellow-400">No Vumedi videos found in Pinecone results</p>
+                      <p className="text-yellow-400">No Vumedi videos found in specialist results</p>
                     );
                   })()}
                 </div>
@@ -2753,7 +2753,7 @@ const ResultsPage: React.FC = () => {
                 </h3>
                 <div className="space-y-3">
                   <div className="bg-gray-900 rounded p-3">
-                    <p className="text-gray-400 mb-2">Pinecone Search Query:</p>
+                    <p className="text-gray-400 mb-2">Search Query:</p>
                     <p className="text-white font-mono bg-gray-800 p-2 rounded text-sm whitespace-pre-wrap">
                       {(() => {
                         // Try to find the search query from various sources
@@ -2785,13 +2785,13 @@ const ResultsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Pinecone Summary Section */}
+              {/* Specialist Results Summary Section */}
               <div className="bg-gray-800 rounded-lg p-4">
                 <h3 className="text-lg font-semibold text-green-400 mb-3 flex items-center gap-2">
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
-                  5. Pinecone Search Results Summary
+                  5. Specialist Search Results Summary
                 </h3>
                 <div className="space-y-3">
                   {(() => {
@@ -2799,20 +2799,20 @@ const ResultsPage: React.FC = () => {
                       specialistRecommendationData?.shared_specialist_information ||
                       location.state?.aiRecommendations?.shared_specialist_information;
                     
-                    let pineconeResults: any[] = [];
+                    let specialistResults: any[] = [];
                     if (sharedInfo && typeof sharedInfo === 'object') {
                       const treatmentKeys = Object.keys(sharedInfo);
                       if (treatmentKeys.length > 0) {
                         const firstTreatment = sharedInfo[treatmentKeys[0]];
-                        pineconeResults = firstTreatment?.results || [];
+                        specialistResults = firstTreatment?.results || [];
                       }
                     } else if (Array.isArray(sharedInfo)) {
-                      pineconeResults = sharedInfo;
+                      specialistResults = sharedInfo;
                     }
                     
-                    if (pineconeResults && Array.isArray(pineconeResults) && pineconeResults.length > 0) {
-                      const verifiedResults = pineconeResults.filter((item: any) => item._verified === true);
-                      const unverifiedResults = pineconeResults.filter((item: any) => item._verified !== true);
+                    if (specialistResults && Array.isArray(specialistResults) && specialistResults.length > 0) {
+                      const verifiedResults = specialistResults.filter((item: any) => item._verified === true);
+                      const unverifiedResults = specialistResults.filter((item: any) => item._verified !== true);
                       
                       return (
                         <>
@@ -2820,19 +2820,19 @@ const ResultsPage: React.FC = () => {
                             <div>
                               <span className="text-gray-400">Total Results:</span>
                               <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
-                                {pineconeResults.length}
+                                {specialistResults.length}
                               </p>
                             </div>
                             <div>
                               <span className="text-gray-400">Vumedi Results:</span>
                               <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
-                                {pineconeResults.filter((item: any) => item._source === 'vumedi').length}
+                                {specialistResults.filter((item: any) => item._source === 'vumedi').length}
                               </p>
                             </div>
                             <div>
                               <span className="text-gray-400">PubMed Results:</span>
                               <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
-                                {pineconeResults.filter((item: any) => item._source === 'pubmed').length}
+                                {specialistResults.filter((item: any) => item._source === 'pubmed').length}
                               </p>
                             </div>
                             <div>
@@ -2849,10 +2849,10 @@ const ResultsPage: React.FC = () => {
                           </div>
                           <details className="bg-gray-900 rounded p-3">
                             <summary className="cursor-pointer text-blue-300 hover:text-blue-200 font-semibold">
-                              View All Pinecone Results ({pineconeResults.length} items)
+                              View All Specialist Results ({specialistResults.length} items)
                             </summary>
                             <div className="mt-3 max-h-96 overflow-y-auto space-y-2">
-                              {pineconeResults.map((result: any, index: number) => (
+                              {specialistResults.map((result: any, index: number) => (
                                 <div key={index} className={`p-3 rounded border-l-4 ${
                                   result._verified === true 
                                     ? 'bg-green-900/20 border-green-500' 
@@ -2882,7 +2882,7 @@ const ResultsPage: React.FC = () => {
                     }
                     
                     return (
-                      <p className="text-yellow-400">No Pinecone search results available</p>
+                      <p className="text-yellow-400">No specialist search results available</p>
                     );
                   })()}
                 </div>

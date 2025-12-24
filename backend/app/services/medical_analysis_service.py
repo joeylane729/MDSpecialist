@@ -176,10 +176,10 @@ class MedicalAnalysisService:
                 if "diagnoses" in medical_analysis:
                     logger.debug(f"🔍 Diagnoses keys: {list(medical_analysis['diagnoses'].keys())}")
             
-            # Generate search query for Pinecone using the same prompt as LangChainRetrievalStrategies
+            # Generate search query using the same prompt as SpecialistInformationRetrievalService
             search_query = ""
             if medical_analysis.get("icd10_description") and diagnosis:
-                logger.info(f"🔍 Generating search query for Pinecone...")
+                logger.info(f"🔍 Generating search query...")
                 search_query = await self.generate_search_query(
                     medical_analysis.get("icd10_description", ""),
                     diagnosis
@@ -251,7 +251,7 @@ class MedicalAnalysisService:
                 "cpt_codes": cpt_codes,  # Relevant CPT codes for the diagnosis
                 "cpt_prompt_text": cpt_prompt_text,  # Actual GPT prompt used to generate CPT codes
                 "diagnoses_prompt_text": diagnoses_prompt_text,  # Actual GPT prompt used to generate diagnoses/treatment options
-                "search_query": search_query,  # Pre-generated search query for Pinecone
+                "search_query": search_query,  # Pre-generated search query
                 
                 # Keep original nested structure for backward compatibility
                 "diagnoses": medical_analysis["diagnoses"]
@@ -474,7 +474,7 @@ class MedicalAnalysisService:
         user_diagnosis: str
     ) -> str:
         """
-        Generate a search query for Pinecone using the exact same prompt as LangChainRetrievalStrategies.
+        Generate a search query using the exact same prompt as SpecialistInformationRetrievalService.
         
         Args:
             icd10_description: Medical analysis diagnosis description
