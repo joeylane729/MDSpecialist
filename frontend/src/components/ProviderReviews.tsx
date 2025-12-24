@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageSquare, ChevronDown, ChevronUp, Search, Target } from 'lucide-react';
+import { MessageSquare, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { HealthgradesReview } from '../services/api';
 
 interface ProviderReviewsProps {
@@ -91,12 +91,9 @@ export default function ProviderReviews({ reviews: allReviews, patientDiagnosis 
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
         <div className="flex items-center gap-2">
           {viewMode === 'relevant' && matchingCount > 0 && (
-            <>
-              <Target className="w-4 h-4 text-blue-600" />
-              <span className="text-sm text-gray-700">
-                Showing {matchingCount} review{matchingCount !== 1 ? 's' : ''} relevant to: <span className="font-semibold text-gray-900">{patientDiagnosis || 'your condition'}</span>
-              </span>
-            </>
+            <span className="text-sm text-gray-700">
+              Showing {matchingCount} review{matchingCount !== 1 ? 's' : ''} relevant to: <span className="font-semibold text-gray-900">{patientDiagnosis || 'your condition'}</span>
+            </span>
           )}
           {viewMode === 'all' && (
             <span className="text-sm text-gray-700">
