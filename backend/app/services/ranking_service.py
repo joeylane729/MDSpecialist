@@ -762,10 +762,9 @@ class RankingService:
                     }
                     logger.debug(f"📊 CLINICAL_VOLUME_DEBUG: Stored raw_component_scores[{npi}] with clinical_volume_raw={clinical_volume_raw}")
                     
-                    # Calculate legacy scores for backward compatibility (will be replaced with weighted)
-                    content_score = (vumedi_count * 4) + pubmed_weighted_points
-                    # Note: clinical_volume_points removed - clinical volume now uses percentage-based scoring
-                    total_score = content_score + med_school_score + residency_score + experience_points + certification_points
+                    # Note: Legacy total_score calculation removed - now using weighted scoring
+                    # total_score will be replaced with weighted score below
+                    total_score = 0  # Placeholder, will be replaced with weighted score
                     
                     # Extract certification details
                     is_certified = cert_info.get('is_certified', False) if isinstance(cert_info, dict) else False
@@ -786,15 +785,15 @@ class RankingService:
                         logger.debug(f"🔍 DEBUG: NPI {npi_str} not found in residency_scores (available keys: {list(residency_scores.keys())[:5]})")
                     
                     logger.debug(
-                        f"🔍 DEBUG: NPI {npi} - Content score: {content_score}, Med school: {med_school_score}, "
+                        f"🔍 DEBUG: NPI {npi} - Med school: {med_school_score}, "
                         f"Residency: {residency_score}, Experience: {experience_points} (from {years_experience} years), "
                         f"Certification: {certification_points} (ABNS: {abns_points}, AOA: {aoa_points}), "
-                        f"Clinical Volume: {raw_component_scores[npi].get('clinical_volume_raw', 0) if npi in raw_component_scores else 0}, Total: {total_score}"
+                        f"Clinical Volume: {raw_component_scores[npi].get('clinical_volume_raw', 0) if npi in raw_component_scores else 0}, "
+                        f"Vumedi: {vumedi_count}, PubMed: {pubmed_count} (weighted: {pubmed_weighted_points}), Total: {total_score}"
                     )
                     
                     provider_scores[npi] = {
                         'score': total_score,  # Will be replaced with weighted score
-                        'content_score': content_score,
                         'med_school_score': med_school_score,
                         'residency_score': residency_score,
                         'experience_points': experience_points,
@@ -906,7 +905,6 @@ class RankingService:
                         total_score = med_school_score + residency_score + experience_points + certification_points
                         provider_scores[npi] = {  # Keep original npi format for key consistency
                             'score': total_score,
-                            'content_score': 0,
                             'med_school_score': med_school_score,
                             'residency_score': residency_score,
                             'experience_points': experience_points,
@@ -1178,7 +1176,6 @@ class RankingService:
                         provider_scores[npi] = {
                             'npi': npi,
                             'score': total_score,
-                            'content_score': 0,
                             'vumedi_count': 0,
                             'pubmed_count': 0,
                             'pubmed_first_author_count': 0,

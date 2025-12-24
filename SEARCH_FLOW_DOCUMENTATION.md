@@ -355,7 +355,8 @@ The search flow involves multiple components:
         - VuMedi videos (doctor names in "featuring" field)
         - PubMed articles (author names)
       - **Calculate scores** for each provider:
-        - **Content match score**: Based on specialist data matches
+        - **PubMed score**: Based on PubMed article matches (weighted by author position and journal quartile)
+        - **VuMedi score**: Based on VuMedi video matches
         - **Medical school score**: Based on US News rankings
         - **Certification score**: Based on board certifications
         - **Clinical volume score**: Based on CMS Tot_Srvcs (percentage-based)
@@ -443,7 +444,8 @@ The search flow involves multiple components:
 48. **Score calculation** (for display):
     - Retrieves score data from `providerScores` state
     - Breakdown includes:
-      - Content match points
+      - PubMed points (weighted by author position and journal quartile)
+      - VuMedi points
       - Medical school points
       - Certification points
       - Clinical volume points
@@ -511,7 +513,8 @@ The search flow involves multiple components:
       provider_scores: {
         [npi: string]: {
           score: number,
-          content_match_points: number,
+          pubmed_points: number,
+          vumedi_points: number,
           medical_school_points: number,
           certification_points: number,
           clinical_volume_points: number,

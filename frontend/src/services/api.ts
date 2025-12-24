@@ -438,7 +438,6 @@ export interface ProviderContent {
 
 export interface ProviderScore {
   score: number;
-  content_score: number;
   vumedi_count: number;
   pubmed_count: number;
   pubmed_first_author_count?: number;
