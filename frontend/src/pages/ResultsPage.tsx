@@ -623,7 +623,8 @@ const ResultsPage: React.FC = () => {
     window.scrollTo(0, 0);
     
     // Try to get data from location.state first (direct navigation)
-    if (location.state?.searchParams && location.state.providers) {
+    // Note: providers can be an empty array initially (providers are fetched later on ResultsPage)
+    if (location.state?.searchParams && location.state.providers !== undefined) {
       console.log('🔍 DEBUG: ResultsPage - location.state.searchParams:', location.state.searchParams);
       console.log('🔍 DEBUG: ResultsPage - search_query in searchParams:', location.state.searchParams.search_query);
       setSearchParams(location.state.searchParams);
