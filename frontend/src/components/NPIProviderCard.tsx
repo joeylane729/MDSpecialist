@@ -54,8 +54,6 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
   const [isQuestionsModalOpen, setIsQuestionsModalOpen] = useState(false);
   const [isPreAuthModalOpen, setIsPreAuthModalOpen] = useState(false);
   const [isInsuranceModalOpen, setIsInsuranceModalOpen] = useState(false);
-  const [showAllVumedi, setShowAllVumedi] = useState(false);
-  const [showAllPubMed, setShowAllPubMed] = useState(false);
   const [isScoreBreakdownModalOpen, setIsScoreBreakdownModalOpen] = useState(false);
   const [redFlagModalOpen, setRedFlagModalOpen] = useState(false);
   const [selectedRedFlagType, setSelectedRedFlagType] = useState<RedFlagType | null>(null);
@@ -72,8 +70,6 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
   const [showLectures, setShowLectures] = useState(false);
   const [showPublications, setShowPublications] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
-  
-  const MAX_ITEMS_TO_SHOW = 3; // Reduced from 5 to 3 for more compact display
 
   const yearsExperienceValue = provider.yearsExperience;
   const yearsExperienceLabel = typeof yearsExperienceValue === 'number' && !Number.isNaN(yearsExperienceValue)
@@ -417,9 +413,9 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                   <span>Lectures ({providerContent.vumedi_content.length})</span>
                 </button>
                 {showLectures && (
-                  <div className="mt-3 ml-6">
-                    <div className="space-y-1.5">
-                      {(showAllVumedi ? providerContent.vumedi_content : providerContent.vumedi_content.slice(0, MAX_ITEMS_TO_SHOW)).map((content, index) => (
+                  <div className="mt-3 ml-6 max-h-96 overflow-y-auto">
+                    <div className="space-y-1.5 pr-2">
+                      {providerContent.vumedi_content.map((content, index) => (
                         <a
                           key={index}
                           href={content.link}
@@ -435,19 +431,6 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                         </a>
                       ))}
                     </div>
-                    {providerContent.vumedi_content.length > MAX_ITEMS_TO_SHOW && (
-                      <div className="mt-2 text-right">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowAllVumedi(!showAllVumedi);
-                          }}
-                          className="text-xs text-purple-600 hover:text-purple-800 font-medium hover:underline"
-                        >
-                          {showAllVumedi ? 'Show less' : `Show all ${providerContent.vumedi_content.length}`}
-                        </button>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -468,9 +451,9 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                   <span>Publications ({providerContent.pubmed_articles.length})</span>
                 </button>
                 {showPublications && (
-                  <div className="mt-3 ml-6">
-                    <div className="space-y-1.5">
-                      {(showAllPubMed ? providerContent.pubmed_articles : providerContent.pubmed_articles.slice(0, MAX_ITEMS_TO_SHOW)).map((article, index) => (
+                  <div className="mt-3 ml-6 max-h-96 overflow-y-auto">
+                    <div className="space-y-1.5 pr-2">
+                      {providerContent.pubmed_articles.map((article, index) => (
                         <a
                           key={index}
                           href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}/`}
@@ -486,19 +469,6 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                         </a>
                       ))}
                     </div>
-                    {providerContent.pubmed_articles.length > MAX_ITEMS_TO_SHOW && (
-                      <div className="mt-2 text-right">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowAllPubMed(!showAllPubMed);
-                          }}
-                          className="text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline"
-                        >
-                          {showAllPubMed ? 'Show less' : `Show all ${providerContent.pubmed_articles.length}`}
-                        </button>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
