@@ -68,6 +68,10 @@ export interface NPISearchRequest {
   symptoms: string;
   uploadedFiles?: File[];
   limit?: number;
+  // Required pre-determined values from medical analysis (must be provided)
+  determined_specialty: string;
+  predicted_icd10?: string;
+  icd10_description?: string;
 }
 
 export interface NPISearchResponse {
@@ -96,6 +100,17 @@ export const searchNPIProviders = async (request: NPISearchRequest): Promise<NPI
     
     if (request.limit) {
       formData.append('limit', request.limit.toString());
+    }
+    
+    // Add pre-determined values from medical analysis (optimization to avoid duplicate GPT calls)
+    if (request.determined_specialty) {
+      formData.append('determined_specialty', request.determined_specialty);
+    }
+    if (request.predicted_icd10) {
+      formData.append('predicted_icd10', request.predicted_icd10);
+    }
+    if (request.icd10_description) {
+      formData.append('icd10_description', request.icd10_description);
     }
     
     // Add uploaded files

@@ -188,6 +188,25 @@ class MedicalAnalysisService:
             else:
                 logger.warning("⚠️  Cannot generate search query - missing ICD-10 description or user diagnosis")
             
+            # Determine specialty for provider filtering (used by NPI search step)
+            determined_specialty = None
+            combined_input = f"Symptoms: {symptoms}\n\nDiagnosis: {diagnosis}"
+            if medical_history:
+                combined_input += f"\n\nMedical History: {medical_history}"
+            if medications:
+                combined_input += f"\n\nCurrent Medications: {medications}"
+            if surgical_history:
+                combined_input += f"\n\nSurgical History: {surgical_history}"
+            if pdf_content:
+                combined_input += f"\n\nAdditional Information from Files: {pdf_content}"
+            
+            logger.info(f"🔍 Determining specialty for provider search...")
+            determined_specialty = await self.determine_specialty(combined_input)
+            if not determined_specialty:
+                logger.warning("⚠️  Failed to determine specialty, will use fallback in provider search")
+            else:
+                logger.info(f"✅ Determined specialty: {determined_specialty}")
+            
             # CPT codes are NOT generated in this step - they must be generated separately
             # This is part of the step-by-step flow where diagnosis/treatment options come first
             cpt_codes = []
@@ -227,6 +246,7 @@ class MedicalAnalysisService:
                 # Medical analysis data (flattened for frontend compatibility)
                 "predicted_icd10": primary_icd10,
                 "icd10_description": primary_description,
+                "determined_specialty": determined_specialty,  # Specialty determined for provider search
                 "treatment_options": treatment_options,
                 "cpt_codes": cpt_codes,  # Relevant CPT codes for the diagnosis
                 "cpt_prompt_text": cpt_prompt_text,  # Actual GPT prompt used to generate CPT codes

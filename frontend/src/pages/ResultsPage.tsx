@@ -1202,6 +1202,14 @@ const ResultsPage: React.FC = () => {
       setSpecialistRecommendationData(specialistResponse);
       
       // Step 2: Search for NPI providers
+      // Must pass pre-determined values from medical analysis (required - no fallback)
+      const determinedSpecialty = searchParams?.determined_specialty || location.state?.aiRecommendations?.patient_profile?.determined_specialty;
+      if (!determinedSpecialty) {
+        alert('Error: Missing specialty information from medical analysis. Please start a new search.');
+        setIsGeneratingSpecialists(false);
+        return;
+      }
+      
       const npiSearchRequest: NPISearchRequest = {
         state: searchParams?.state || '',
         city: searchParams?.city || '',
@@ -1210,7 +1218,11 @@ const ResultsPage: React.FC = () => {
         diagnosis: searchParams?.diagnosis || '',
         symptoms: searchParams?.symptoms || '',
         uploadedFiles: [],
-        limit: 10000  // Increase limit to get all available providers
+        limit: 10000,  // Increase limit to get all available providers
+        // Required: Pass pre-determined values from medical analysis
+        determined_specialty: determinedSpecialty,
+        predicted_icd10: searchParams?.predicted_icd10 || location.state?.aiRecommendations?.patient_profile?.predicted_icd10,
+        icd10_description: searchParams?.icd10_description || location.state?.aiRecommendations?.patient_profile?.icd10_description
       };
 
       const npiData = await searchNPIProviders(npiSearchRequest);

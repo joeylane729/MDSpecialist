@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import List, Optional
 from ...database import get_db
-from ...services.medical_analysis_service import MedicalAnalysisService
 import PyPDF2
 import io
 import math
@@ -60,9 +59,6 @@ def extract_latest_year_from_residency(residency_text: Optional[str]) -> Optiona
     if not valid_years:
         return None
     return max(valid_years)
-
-# Initialize GPT service
-gpt_service = MedicalAnalysisService()
 
 @router.get("/test")
 async def test_database_connection(db: Session = Depends(get_db)):
@@ -120,104 +116,47 @@ async def search_providers_by_criteria(
     diagnosis: str = Form(...),
     symptoms: str = Form(...),
     search_query: Optional[str] = Form(None),  # Pre-generated search query from medical analysis
+    determined_specialty: str = Form(...),  # Required: Pre-determined specialty from medical analysis
+    predicted_icd10: Optional[str] = Form(None),  # Pre-determined ICD-10 code from medical analysis
+    icd10_description: Optional[str] = Form(None),  # Pre-determined ICD-10 description from medical analysis
     limit: int = Form(10000),
     files: List[UploadFile] = File([]),
     db: Session = Depends(get_db)
 ):
-    """Search for providers by city, state, and diagnosis/specialty with file analysis."""
+    """Search for providers by city, state, and diagnosis/specialty with file analysis.
+    
+    Note: This endpoint requires values from the medical analysis step (determined_specialty, predicted_icd10, icd10_description).
+    These values should always be provided to avoid duplicate GPT API calls.
+    """
     try:
-        # Set the database session for the GPT service
-        gpt_service.set_db(db)
+        # Use pre-determined values from medical analysis (no fallback - always required)
+        logger.info(f"✅ Using pre-determined specialty from medical analysis: '{determined_specialty}'")
+        specialty_to_use = determined_specialty
         
-        # Process uploaded files to extract text
-        file_contents = []
-        print(f"Processing {len(files)} uploaded files")
-        for file in files:
-            print(f"Processing file: {file.filename}, content_type: {file.content_type}")
-            if file.content_type == "application/pdf":
-                try:
-                    # Read PDF content
-                    pdf_content = await file.read()
-                    print(f"PDF file size: {len(pdf_content)} bytes")
-                    
-                    pdf_reader = PyPDF2.PdfReader(io.BytesIO(pdf_content))
-                    print(f"PDF has {len(pdf_reader.pages)} pages")
-                    
-                    # Extract text from all pages
-                    text_content = ""
-                    for i, page in enumerate(pdf_reader.pages):
-                        page_text = page.extract_text()
-                        print(f"Page {i+1} extracted {len(page_text)} characters: '{page_text[:100]}...'")
-                        text_content += page_text + " "
-                    
-                    file_contents.append(f"File {file.filename}: {text_content.strip()}")
-                    print(f"Successfully processed PDF file: {file.filename}, total text: {len(text_content)} characters")
-                except Exception as e:
-                    print(f"Error processing PDF file {file.filename}: {e}")
-                    import traceback
-                    traceback.print_exc()
-            else:
-                print(f"Skipping non-PDF file: {file.filename}")
+        # Use pre-determined diagnosis information from medical analysis
+        predicted_icd10_to_use = predicted_icd10
+        icd10_description_to_use = icd10_description
         
-        print(f"Final file_contents: {file_contents}")
-        
-        # Combine symptoms, diagnosis text, and file contents for GPT analysis
-        print(f"Original symptoms: '{symptoms}'")
-        print(f"Original diagnosis text: '{diagnosis}'")
-        combined_input = f"Symptoms: {symptoms}\n\nDiagnosis: {diagnosis}"
-        if file_contents:
-            combined_input += "\n\nAdditional information from uploaded files:\n" + "\n".join(file_contents)
-            print(f"Combined input for GPT: {len(combined_input)} characters")
-            print(f"Combined input preview: '{combined_input[:300]}...'")
+        if predicted_icd10_to_use and icd10_description_to_use:
+            logger.info(f"✅ Using pre-determined diagnosis from medical analysis: {predicted_icd10_to_use} - {icd10_description_to_use}")
         else:
-            print("No file contents to combine")
-        
-        # Use GPT to determine the specialty from the combined input
-        print(f"Using GPT to determine specialty for combined input: '{combined_input[:200]}...'")
-        determined_specialty = await gpt_service.determine_specialty(combined_input)
-        
-        if not determined_specialty:
-            print("GPT failed to determine specialty, using fallback")
-            determined_specialty = "Unknown"  
-        
-        print(f"GPT determined specialty: '{determined_specialty}'")
-        
-        # Use GPT to predict primary diagnosis from the combined input
-        print(f"Using GPT to predict diagnosis for combined input: '{combined_input[:200]}...'")
-        predicted_diagnoses = await gpt_service.predict_diagnoses(symptoms, diagnosis)
-        
-        predicted_icd10 = None
-        icd10_description = None
-        
-        if predicted_diagnoses:
-            print(f"GPT predicted diagnoses: {predicted_diagnoses}")
-            
-            # Extract primary diagnosis
-            if 'primary' in predicted_diagnoses and 'code' in predicted_diagnoses['primary']:
-                predicted_icd10 = predicted_diagnoses['primary']['code']
-                icd10_description = predicted_diagnoses['primary'].get('description', 'Description not available')
-                print(f"Primary diagnosis: {predicted_icd10} - {icd10_description}")
-        else:
-            print("GPT failed to predict diagnoses, falling back to single code prediction")
-            # Fallback to the old method
-            predicted_icd10 = await gpt_service.predict_icd10_code(combined_input)
-            if predicted_icd10:
-                icd10_description = gpt_service.lookup_icd10_description(predicted_icd10)
+            logger.warning(f"⚠️  Missing diagnosis information: predicted_icd10={predicted_icd10_to_use}, icd10_description={icd10_description_to_use}")
+            # Continue anyway since specialty is the main filtering criteria
         
 
         
         # Get taxonomy codes for the determined specialty
-        taxonomy_codes = get_taxonomy_codes_for_specialty(determined_specialty)
+        taxonomy_codes = get_taxonomy_codes_for_specialty(specialty_to_use)
         
         if not taxonomy_codes:
-            print(f"No taxonomy codes found for specialty: '{determined_specialty}'")
+            logger.error(f"No taxonomy codes found for specialty: '{specialty_to_use}'")
             return {
-                "error": f"No taxonomy codes found for specialty: {determined_specialty}",
+                "error": f"No taxonomy codes found for specialty: {specialty_to_use}",
                 "total_providers": 0,
                 "providers": []
             }
         
-        print(f"Filtering providers by determined specialty: '{determined_specialty}' using taxonomy codes: {taxonomy_codes}")
+        logger.info(f"Filtering providers by determined specialty: '{specialty_to_use}' using taxonomy codes: {taxonomy_codes}")
         
         # Build database-level filtering query
         taxonomy_conditions = []
@@ -407,7 +346,7 @@ async def search_providers_by_criteria(
         if limit and len(filtered_providers) > limit:
             filtered_providers = filtered_providers[:limit]
         
-        print(f"Database filtering results: {len(filtered_providers)} providers found for specialty '{determined_specialty}'")
+        logger.info(f"Database filtering results: {len(filtered_providers)} providers found for specialty '{specialty_to_use}'")
         
         return {
             "total_providers": len(filtered_providers),
@@ -418,9 +357,9 @@ async def search_providers_by_criteria(
                 "zipCode": zipCode,
                 "proximity": proximity,
                 "diagnosis": diagnosis,
-                "determined_specialty": determined_specialty,
-                "predicted_icd10": predicted_icd10,
-                "icd10_description": icd10_description
+                "determined_specialty": specialty_to_use,
+                "predicted_icd10": predicted_icd10_to_use,
+                "icd10_description": icd10_description_to_use
             }
         }
         
