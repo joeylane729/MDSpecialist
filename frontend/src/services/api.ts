@@ -529,7 +529,9 @@ export interface PreAuthLetterRequest {
     clinical_volume?: {
       raw?: number;
       tot_srvcs?: number;
+      percentile?: number;
     };
+    pubmed_percentile?: number;
     education?: {
       medicalSchool?: string;
       residency?: string;

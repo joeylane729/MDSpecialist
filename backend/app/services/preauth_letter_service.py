@@ -64,13 +64,18 @@ class PreAuthLetterService:
             
             # Build publications bullet point
             publications = provider_info.get('publications', [])
+            pubmed_percentile = provider_info.get('pubmed_percentile')
             logger.info(f"📚 [PreAuth] Processing publications: {len(publications)} found")
+            logger.info(f"📚 [PreAuth] PubMed percentile: {pubmed_percentile}")
             publications_bullet = ""
             publications_list = ""  # For detailed list of articles with URLs
             if publications and len(publications) > 0:
                 pub_count = len(publications)
                 logger.info(f"📚 [PreAuth] Building publications bullet for {pub_count} articles")
-                publications_bullet = f"- Authored/co-authored {pub_count} peer-reviewed articles on {patient_diagnosis}"
+                if pubmed_percentile is not None:
+                    publications_bullet = f"- Authored/co-authored {pub_count} peer-reviewed articles on {patient_diagnosis}, ranking in the {pubmed_percentile:.1f}th percentile among providers"
+                else:
+                    publications_bullet = f"- Authored/co-authored {pub_count} peer-reviewed articles on {patient_diagnosis}"
                 
                 # Extract up to 5 publications with titles and URLs
                 top_publications = publications[:5]
@@ -99,9 +104,14 @@ class PreAuthLetterService:
             clinical_volume_bullet = ""
             if clinical_volume:
                 tot_srvcs = clinical_volume.get('raw', 0) or clinical_volume.get('tot_srvcs', 0)
+                percentile = clinical_volume.get('percentile')
                 logger.info(f"🏥 [PreAuth] Total services (Tot_Srvcs): {tot_srvcs}")
+                logger.info(f"🏥 [PreAuth] Clinical volume percentile: {percentile}")
                 if tot_srvcs and tot_srvcs > 0:
-                    clinical_volume_bullet = f"- Performed {int(tot_srvcs):,} relevant procedures (CMS data)"
+                    if percentile is not None:
+                        clinical_volume_bullet = f"- Performed {int(tot_srvcs):,} relevant procedures (CMS data), ranking in the {percentile:.1f}th percentile among providers"
+                    else:
+                        clinical_volume_bullet = f"- Performed {int(tot_srvcs):,} relevant procedures (CMS data)"
                     logger.info(f"🏥 [PreAuth] Built clinical volume bullet with {int(tot_srvcs):,} procedures")
             
             # Build education bullet points

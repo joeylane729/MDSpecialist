@@ -69,7 +69,8 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
   const [promptText, setPromptText] = useState<string | null>(null);
   const [editablePromptText, setEditablePromptText] = useState<string>('');
   const [showEducation, setShowEducation] = useState(false);
-  const [showContent, setShowContent] = useState(false);
+  const [showLectures, setShowLectures] = useState(false);
+  const [showPublications, setShowPublications] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
   
   const MAX_ITEMS_TO_SHOW = 3; // Reduced from 5 to 3 for more compact display
@@ -171,7 +172,14 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
         providerInfo.clinical_volume = {
           raw: clinicalVolumeData.raw || 0,
           tot_srvcs: clinicalVolumeData.raw || 0,
+          percentile: clinicalVolumeData.percentile,
         };
+      }
+
+      // Add PubMed percentile from scoreData
+      if (scoreData?.weighted_breakdown?.breakdown_details?.pubmed) {
+        const pubmedData = scoreData.weighted_breakdown.breakdown_details.pubmed;
+        providerInfo.pubmed_percentile = pubmedData.percentile;
       }
 
       // Prepare specificity/relevance data
@@ -394,104 +402,101 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
               </div>
             )}
 
-            {/* Provider Content - Vumedi and PubMed - Collapsible */}
-            {providerContent && (providerContent.vumedi_content?.length > 0 || providerContent.pubmed_articles?.length > 0) && (
+            {/* Lectures - Collapsible */}
+            {providerContent && providerContent.vumedi_content && providerContent.vumedi_content.length > 0 && (
               <div className="mb-3">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowContent(!showContent);
+                    setShowLectures(!showLectures);
                   }}
                   className="flex items-center gap-2 text-sm font-semibold text-gray-800 hover:text-gray-900 transition-colors"
                 >
-                  {showContent ? <ChevronUp className="h-4 w-4 text-gray-600" /> : <ChevronDown className="h-4 w-4 text-gray-600" />}
+                  {showLectures ? <ChevronUp className="h-4 w-4 text-gray-600" /> : <ChevronDown className="h-4 w-4 text-gray-600" />}
                   <Video className="h-4 w-4 text-gray-700" />
-                  <span>
-                    Content ({[
-                      providerContent.vumedi_content?.length || 0,
-                      providerContent.pubmed_articles?.length || 0
-                    ].filter(Boolean).join(' + ')} items)
-                  </span>
+                  <span>Lectures ({providerContent.vumedi_content.length})</span>
                 </button>
-                {showContent && (
-                  <div className="mt-3 ml-6 space-y-4">
-                    {/* Vumedi Content */}
-                    {providerContent.vumedi_content && providerContent.vumedi_content.length > 0 && (
-                      <div>
-                        <h4 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
-                          <Video className="w-3.5 h-3.5 text-purple-600" />
-                          Videos ({providerContent.vumedi_content.length})
-                        </h4>
-                        <div className="space-y-1.5">
-                          {(showAllVumedi ? providerContent.vumedi_content : providerContent.vumedi_content.slice(0, MAX_ITEMS_TO_SHOW)).map((content, index) => (
-                            <a
-                              key={index}
-                              href={content.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="flex items-start gap-2 p-2 bg-purple-50 hover:bg-purple-100 rounded-md transition-colors group"
-                            >
-                              <span className="text-purple-600 mt-0.5 text-xs">▶</span>
-                              <div className="font-medium text-purple-800 text-sm break-words line-clamp-2 flex-1 group-hover:text-purple-900">
-                                {content.title}
-                              </div>
-                            </a>
-                          ))}
-                        </div>
-                        {providerContent.vumedi_content.length > MAX_ITEMS_TO_SHOW && (
-                          <div className="mt-2 text-right">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setShowAllVumedi(!showAllVumedi);
-                              }}
-                              className="text-xs text-purple-600 hover:text-purple-800 font-medium hover:underline"
-                            >
-                              {showAllVumedi ? 'Show less' : `Show all ${providerContent.vumedi_content.length}`}
-                            </button>
+                {showLectures && (
+                  <div className="mt-3 ml-6">
+                    <div className="space-y-1.5">
+                      {(showAllVumedi ? providerContent.vumedi_content : providerContent.vumedi_content.slice(0, MAX_ITEMS_TO_SHOW)).map((content, index) => (
+                        <a
+                          key={index}
+                          href={content.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex items-start gap-2 p-2 bg-purple-50 hover:bg-purple-100 rounded-md transition-colors group"
+                        >
+                          <span className="text-purple-600 mt-0.5 text-xs">▶</span>
+                          <div className="font-medium text-purple-800 text-sm break-words line-clamp-2 flex-1 group-hover:text-purple-900">
+                            {content.title}
                           </div>
-                        )}
+                        </a>
+                      ))}
+                    </div>
+                    {providerContent.vumedi_content.length > MAX_ITEMS_TO_SHOW && (
+                      <div className="mt-2 text-right">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowAllVumedi(!showAllVumedi);
+                          }}
+                          className="text-xs text-purple-600 hover:text-purple-800 font-medium hover:underline"
+                        >
+                          {showAllVumedi ? 'Show less' : `Show all ${providerContent.vumedi_content.length}`}
+                        </button>
                       </div>
                     )}
+                  </div>
+                )}
+              </div>
+            )}
 
-                    {/* PubMed Articles */}
-                    {providerContent.pubmed_articles && providerContent.pubmed_articles.length > 0 && (
-                      <div>
-                        <h4 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
-                          <BookOpen className="w-3.5 h-3.5 text-blue-600" />
-                          Articles ({providerContent.pubmed_articles.length})
-                        </h4>
-                        <div className="space-y-1.5">
-                          {(showAllPubMed ? providerContent.pubmed_articles : providerContent.pubmed_articles.slice(0, MAX_ITEMS_TO_SHOW)).map((article, index) => (
-                            <a
-                              key={index}
-                              href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}/`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="block p-2 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors group"
-                            >
-                              <div className="font-medium text-blue-800 text-sm break-words line-clamp-2 group-hover:text-blue-900">
-                                {article.title}
-                              </div>
-                              <div className="text-blue-500 text-xs mt-1">PMID: {article.pmid}</div>
-                            </a>
-                          ))}
-                        </div>
-                        {providerContent.pubmed_articles.length > MAX_ITEMS_TO_SHOW && (
-                          <div className="mt-2 text-right">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setShowAllPubMed(!showAllPubMed);
-                              }}
-                              className="text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline"
-                            >
-                              {showAllPubMed ? 'Show less' : `Show all ${providerContent.pubmed_articles.length}`}
-                            </button>
+            {/* Publications - Collapsible */}
+            {providerContent && providerContent.pubmed_articles && providerContent.pubmed_articles.length > 0 && (
+              <div className="mb-3">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowPublications(!showPublications);
+                  }}
+                  className="flex items-center gap-2 text-sm font-semibold text-gray-800 hover:text-gray-900 transition-colors"
+                >
+                  {showPublications ? <ChevronUp className="h-4 w-4 text-gray-600" /> : <ChevronDown className="h-4 w-4 text-gray-600" />}
+                  <BookOpen className="h-4 w-4 text-gray-700" />
+                  <span>Publications ({providerContent.pubmed_articles.length})</span>
+                </button>
+                {showPublications && (
+                  <div className="mt-3 ml-6">
+                    <div className="space-y-1.5">
+                      {(showAllPubMed ? providerContent.pubmed_articles : providerContent.pubmed_articles.slice(0, MAX_ITEMS_TO_SHOW)).map((article, index) => (
+                        <a
+                          key={index}
+                          href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}/`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="block p-2 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors group"
+                        >
+                          <div className="font-medium text-blue-800 text-sm break-words line-clamp-2 group-hover:text-blue-900">
+                            {article.title}
                           </div>
-                        )}
+                          <div className="text-blue-500 text-xs mt-1">PMID: {article.pmid}</div>
+                        </a>
+                      ))}
+                    </div>
+                    {providerContent.pubmed_articles.length > MAX_ITEMS_TO_SHOW && (
+                      <div className="mt-2 text-right">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowAllPubMed(!showAllPubMed);
+                          }}
+                          className="text-xs text-blue-600 hover:text-blue-800 font-medium hover:underline"
+                        >
+                          {showAllPubMed ? 'Show less' : `Show all ${providerContent.pubmed_articles.length}`}
+                        </button>
                       </div>
                     )}
                   </div>
@@ -510,7 +515,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                   className="flex items-center gap-2 text-sm font-semibold text-gray-800 hover:text-gray-900 transition-colors"
                 >
                   {showReviews ? <ChevronUp className="h-4 w-4 text-gray-600" /> : <ChevronDown className="h-4 w-4 text-gray-600" />}
-                  <Star className="h-4 w-4 text-gray-700 fill-yellow-400 text-yellow-400" />
+                  <Star className="h-4 w-4 text-gray-700" />
                   <span>Reviews ({providerContent.reviews.length})</span>
                 </button>
                 {showReviews && (
