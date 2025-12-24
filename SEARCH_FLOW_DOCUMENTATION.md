@@ -221,7 +221,7 @@ The search flow involves multiple components:
       - Taxonomy codes (matches any of 15 possible taxonomy code fields)
       - State (if proximity is "statewide")
     - Orders by last name, first name
-    - No LIMIT clause - fetches all matching providers for filtering
+    - No LIMIT clause - fetches all matching providers
 
 21. **Provider enrichment**:
     For each provider found:
@@ -237,12 +237,7 @@ The search flow involves multiple components:
       - If not found, checks by first name + last name
       - Sets `isExcluded` flag if found
 
-22. **Proximity filtering**:
-    - Filters providers based on proximity setting:
-      - "statewide": Only providers in the same state
-      - "US-wide": All providers (no state filter)
-
-23. **Response formatting**:
+22. **Response formatting**:
     - Returns JSON with:
       - `total_providers`: Count of filtered providers
       - `providers`: Array of provider objects with all details
@@ -252,12 +247,12 @@ The search flow involves multiple components:
 
 ### **PHASE 8: Backend Specialist Recommendations (specialist_recommendation.py endpoint)**
 
-26. **Endpoint receives request** at `/api/v1/specialist-recommendations`
+23. **Endpoint receives request** at `/api/v1/specialist-recommendations`
 
-27. **Service initialization**:
+24. **Service initialization**:
     - Creates `LangChainSpecialistRecommendationService` instance
 
-28. **Medical analysis** (reuses CPT codes from previous analysis):
+25. **Medical analysis** (reuses CPT codes from previous analysis):
     - Calls `medical_analysis_service.analyze_patient()` with:
       - Symptoms, Diagnosis
       - Medical history, Medications, Surgical history
@@ -269,7 +264,7 @@ The search flow involves multiple components:
       - Search query (for Pinecone)
       - Specialties needed
 
-29. **Specialist information retrieval**:
+26. **Specialist information retrieval**:
     - Calls `retrieval_strategies.retrieve_specialist_information()`:
       - Uses Pinecone vector database
       - Searches for relevant medical content (VuMedi videos, PubMed articles)
@@ -277,11 +272,11 @@ The search flow involves multiple components:
       - Retrieves top 200 results
     - Returns treatment-specific specialist information
 
-30. **CMS data retrieval** (if applicable):
+27. **CMS data retrieval** (if applicable):
     - May query CMS provider data for clinical volume information
     - Extracts Tot_Srvcs (total services) for providers
 
-31. **Response construction**:
+28. **Response construction**:
     - Converts specialist information to recommendations
     - Includes:
       - `patient_profile`: Treatment options, CPT codes, search query, etc.
@@ -294,9 +289,9 @@ The search flow involves multiple components:
 
 ### **PHASE 9: Frontend Ranking (ResultsPage.tsx)**
 
-32. **After both specialist recommendations and NPI data are received**:
+29. **After both specialist recommendations and NPI data are received**:
 
-33. **Call `rankNPIProviders()` API** (`/api/v1/npi/rank-npi-providers`):
+30. **Call `rankNPIProviders()` API** (`/api/v1/npi/rank-npi-providers`):
     - **Request payload**:
       - `npi_providers`: Array of provider objects from NPI search
       - `patient_input`: Combined symptoms and diagnosis
@@ -308,22 +303,22 @@ The search flow involves multiple components:
 
 ### **PHASE 10: Backend NPI Ranking (npi_ranking.py endpoint)**
 
-34. **Endpoint receives request** at `/api/v1/npi/rank-npi-providers`
+31. **Endpoint receives request** at `/api/v1/npi/rank-npi-providers`
 
-35. **Extract CMS Tot_Srvcs data**:
+32. **Extract CMS Tot_Srvcs data**:
     - Extracts NPI → Tot_Srvcs mapping from CMS data
     - Used for clinical volume scoring
 
-36. **Initialize LangChain service**:
+33. **Initialize LangChain service**:
     - Creates `LangChainSpecialistRecommendationService` instance
 
-37. **Call ranking method**:
+34. **Call ranking method**:
     - `langchain_service.rank_npi_providers_with_pinecone()`:
       - Takes NPI providers, patient input, shared specialist info
       - Uses treatment-specific Pinecone data
       - Ranks providers per treatment option
 
-38. **Ranking process** (in `langchain_ranking_service.py`):
+35. **Ranking process** (in `langchain_ranking_service.py`):
     - **For each treatment option**:
       a. **Extract treatment-specific Pinecone data**
       b. **Match provider names** with Pinecone content:
@@ -341,7 +336,7 @@ The search flow involves multiple components:
       e. **Combine GPT ranking with calculated scores**
       f. **Sort by final score** (descending)
 
-39. **Response formatting**:
+36. **Response formatting**:
     - Returns:
       - `treatment_rankings`: Object keyed by treatment ID
         - Each treatment contains:
@@ -355,12 +350,12 @@ The search flow involves multiple components:
 
 ### **PHASE 11: Frontend Result Processing (ResultsPage.tsx)**
 
-40. **Process ranking response**:
+37. **Process ranking response**:
     - Extracts first treatment's ranking (can be filtered later)
     - Maps ranked NPI numbers back to full provider objects
     - Captures ranking explanation and provider links
 
-41. **Update state with ranked providers**:
+38. **Update state with ranked providers**:
     - Saves complete search state:
       - Search parameters (state, city, symptoms, diagnosis, etc.)
       - Ranked providers
@@ -368,7 +363,7 @@ The search flow involves multiple components:
       - Ranking explanation
       - Treatment rankings
 
-42. **Switch to specialists view**:
+39. **Switch to specialists view**:
     - Updates `searchParams` to mark specialists as enabled
     - Sets `activeView` to 'specialists'
     - Displays ranked providers
@@ -377,25 +372,25 @@ The search flow involves multiple components:
 
 ### **PHASE 12: Results Page Initialization (ResultsPage.tsx)**
 
-43. **Component mounts** and receives location.state
+40. **Component mounts** and receives location.state
 
-44. **Load data from location.state**:
+41. **Load data from location.state**:
     - Sets providers state
     - Sets search parameters
     - Sets AI recommendations
     - Sets ranking data
     - Sets treatment rankings
 
-45. **Fallback to localStorage** (if location.state is missing):
+42. **Fallback to localStorage** (if location.state is missing):
     - Attempts to load from `mdspecialist_search_results` in localStorage
     - Useful for page refresh scenarios
 
-46. **Determine initial view**:
+43. **Determine initial view**:
     - If `searchOptions.specialists` is true → 'specialists' view
     - If `searchOptions.diagnosis` is true → 'assessment' view
     - Otherwise → 'ai-recommendations' view
 
-47. **Initialize treatment selection**:
+44. **Initialize treatment selection**:
     - If treatment rankings exist, selects first treatment by default
     - Sets `selectedTreatmentId`
 
@@ -403,14 +398,14 @@ The search flow involves multiple components:
 
 ### **PHASE 13: Results Display (ResultsPage.tsx)**
 
-48. **Provider filtering and pagination**:
+45. **Provider filtering and pagination**:
     - Filters providers by:
       - Search term (name search)
       - Selected treatment (if multiple treatments)
       - Category (if filtering by treatment category)
     - Paginates results (default: 20 per page)
 
-49. **Provider card rendering**:
+46. **Provider card rendering**:
     - For each provider in current page:
       - Calculates display score and breakdown
       - Determines if provider is "top result" (rank 1)
@@ -423,7 +418,7 @@ The search flow involves multiple components:
         - Red flags (if any)
         - Patient diagnosis and symptoms (for context)
 
-50. **Score calculation** (for display):
+47. **Score calculation** (for display):
     - Retrieves score data from `providerScores` state
     - Breakdown includes:
       - Content match points
@@ -432,7 +427,7 @@ The search flow involves multiple components:
       - Clinical volume points
       - Total score
 
-51. **Additional UI elements**:
+48. **Additional UI elements**:
     - Treatment option selector (if multiple treatments)
     - Category filter (Surgery, Radiosurgery, Endovascular, Other)
     - Search bar for filtering providers by name
@@ -443,7 +438,7 @@ The search flow involves multiple components:
 
 ### **PHASE 14: User Interaction (ResultsPage.tsx)**
 
-52. **User can interact with results**:
+49. **User can interact with results**:
     - **Click provider card**: Opens detailed view (if implemented)
     - **Filter by treatment**: Changes which treatment's ranking is displayed
     - **Filter by category**: Shows only providers for specific treatment category
@@ -451,12 +446,12 @@ The search flow involves multiple components:
     - **Change page**: Navigates through paginated results
     - **Switch views**: Toggle between Assessment, Specialists, AI Recommendations, Debug
 
-53. **Optional: Generate CPT codes**:
+50. **Optional: Generate CPT codes**:
     - User can click "Generate CPT Codes" button
     - Calls `/api/v1/cpt-codes/generate` endpoint
     - Updates CPT codes in state
 
-54. **Optional: Show specialists** (if not already shown):
+51. **Optional: Show specialists** (if not already shown):
     - User can click "Show me specialists" button
     - Triggers same flow as initial search but from results page
     - Reuses existing CPT codes to avoid duplicate generation
@@ -477,7 +472,6 @@ The search flow involves multiple components:
   state: string,
   zip: string,
   phone: string,
-  rating: number,          // Default 5.0
   yearsExperience: number,
   boardCertified: boolean | null,
   acceptingPatients: boolean,
