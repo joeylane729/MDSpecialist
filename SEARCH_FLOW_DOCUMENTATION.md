@@ -177,12 +177,19 @@ The search flow involves multiple components:
 
 15. **Frontend calls `getSpecialistRecommendations()` API** (`/api/v1/specialist-recommendations`):
     - **Request payload**:
-      - Symptoms, Diagnosis
+      - Symptoms, Diagnosis (still needed for patient_input string)
       - Medical history, Medications, Surgical history
       - State
+      - **Medical analysis results (reused from step 11 to avoid duplicate GPT calls)**:
+        - Treatment options
+        - Predicted ICD-10 code
+        - ICD-10 description
+        - Search query
+        - Determined specialty
       - CPT codes (reused from medical analysis to avoid duplicate generation)
       - Files: empty array
     - **This is a POST request with FormData**
+    - **Optimization**: All medical analysis results are passed through, avoiding expensive duplicate GPT API calls
 
 16. **Frontend calls `searchNPIProviders()` API** (`/api/v1/npi/search-providers`):
     - **Request payload**:
@@ -252,17 +259,16 @@ The search flow involves multiple components:
 24. **Service initialization**:
     - Creates `SpecialistRecommendationService` instance
 
-25. **Medical analysis** (reuses CPT codes from previous analysis):
-    - Calls `medical_analysis_service.analyze_patient()` with:
-      - Symptoms, Diagnosis
-      - Medical history, Medications, Surgical history
-      - Files (if provided)
-    - Returns patient profile including:
-      - Treatment options
-      - CPT codes
-      - Predicted ICD-10
-      - Search query (for Pinecone)
-      - Specialties needed
+25. **Medical analysis** (reuses results from previous analysis - optimization):
+    - **Uses pre-generated medical analysis results** from step 11 to avoid duplicate GPT calls:
+      - Treatment options (reused)
+      - Predicted ICD-10 code (reused)
+      - ICD-10 description (reused)
+      - Search query for Pinecone (reused)
+      - Determined specialty (reused)
+      - CPT codes (reused)
+    - **No GPT calls are made** - all values are passed through from the first medical analysis step
+    - If medical analysis results are not provided, falls back to calling `comprehensive_analysis()` (should not happen in normal flow)
 
 26. **Specialist information retrieval**:
     - Calls `retrieval_strategies.retrieve_specialist_information()`:

@@ -53,26 +53,90 @@ class SpecialistRecommendationService:
         self,
         patient_input: str,
         state: Optional[str] = None,
-        cpt_codes: Optional[List[Dict[str, str]]] = None
+        cpt_codes: Optional[List[Dict[str, str]]] = None,
+        treatment_options: Optional[List[Dict[str, Any]]] = None,
+        predicted_icd10: Optional[str] = None,
+        icd10_description: Optional[str] = None,
+        search_query: Optional[str] = None,
+        determined_specialty: Optional[str] = None
     ) -> RecommendationResponse:
         """Get specialist recommendations.
         
         Args:
-            patient_input: Patient input string
+            patient_input: Patient input string (still needed for retrieval strategies)
             state: Optional state filter for CMS API
             cpt_codes: Optional pre-generated CPT codes to reuse (avoids duplicate GPT calls)
+            treatment_options: Optional pre-generated treatment options to reuse (avoids duplicate GPT calls)
+            predicted_icd10: Optional pre-determined ICD-10 code to reuse (avoids duplicate GPT calls)
+            icd10_description: Optional pre-determined ICD-10 description to reuse (avoids duplicate GPT calls)
+            search_query: Optional pre-generated search query to reuse (avoids duplicate GPT calls)
+            determined_specialty: Optional pre-determined specialty to reuse (avoids duplicate GPT calls)
         """
         start_time = datetime.now()
         
         try:
-            # Step 1: Comprehensive medical analysis and patient processing
-            logger.info("🔍 Step 1: Performing comprehensive medical analysis...")
-            medical_analysis_results = await self.medical_analysis.comprehensive_analysis(patient_input)
-            
-            # Add provided CPT codes to medical analysis results if available
-            if cpt_codes and len(cpt_codes) > 0:
-                medical_analysis_results["cpt_codes"] = cpt_codes
-                logger.info(f"✅ Added {len(cpt_codes)} provided CPT codes to medical analysis results")
+            # Step 1: Use provided medical analysis results or perform analysis if not provided
+            if treatment_options and predicted_icd10 and search_query:
+                # Use provided medical analysis results (optimization - avoids duplicate GPT calls)
+                logger.info("♻️  Step 1: Using pre-generated medical analysis results (avoiding duplicate GPT calls)")
+                medical_analysis_results = {
+                    # Patient profile fields (minimal - not needed for retrieval but included for response structure)
+                    "symptoms": [],
+                    "conditions": [],
+                    "specialties_needed": [determined_specialty] if determined_specialty else [],
+                    "location_preference": None,
+                    "additional_notes": "",
+                    
+                    # Medical analysis fields (reused from first analysis)
+                    "treatment_options": treatment_options,
+                    "predicted_icd10": predicted_icd10,
+                    "icd10_description": icd10_description or "",
+                    "search_query": search_query,
+                    "determined_specialty": determined_specialty,
+                    
+                    # Nested diagnoses structure for backward compatibility
+                    "diagnoses": {
+                        "primary": {
+                            "code": predicted_icd10,
+                            "description": icd10_description or ""
+                        },
+                        "treatment_options": treatment_options
+                    }
+                }
+                
+                # Add provided CPT codes to medical analysis results if available
+                if cpt_codes and len(cpt_codes) > 0:
+                    medical_analysis_results["cpt_codes"] = cpt_codes
+                    logger.info(f"✅ Added {len(cpt_codes)} provided CPT codes to medical analysis results")
+                else:
+                    medical_analysis_results["cpt_codes"] = []
+            else:
+                # Fallback: Perform comprehensive medical analysis if results not provided
+                logger.warning("⚠️  Step 1: Medical analysis results not fully provided, performing comprehensive analysis...")
+                logger.info("🔍 Step 1: Performing comprehensive medical analysis...")
+                medical_analysis_results = await self.medical_analysis.comprehensive_analysis(patient_input)
+                
+                # Override with provided values if available
+                if treatment_options:
+                    medical_analysis_results["treatment_options"] = treatment_options
+                    logger.info("♻️  Using provided treatment options")
+                if predicted_icd10:
+                    medical_analysis_results["predicted_icd10"] = predicted_icd10
+                    logger.info("♻️  Using provided predicted_icd10")
+                if icd10_description:
+                    medical_analysis_results["icd10_description"] = icd10_description
+                    logger.info("♻️  Using provided icd10_description")
+                if search_query:
+                    medical_analysis_results["search_query"] = search_query
+                    logger.info("♻️  Using provided search_query")
+                if determined_specialty:
+                    medical_analysis_results["determined_specialty"] = determined_specialty
+                    logger.info("♻️  Using provided determined_specialty")
+                
+                # Add provided CPT codes to medical analysis results if available
+                if cpt_codes and len(cpt_codes) > 0:
+                    medical_analysis_results["cpt_codes"] = cpt_codes
+                    logger.info(f"✅ Added {len(cpt_codes)} provided CPT codes to medical analysis results")
             
             # Step 1.5: Query CMS API with CPT codes (use provided codes or none)
             logger.info("🔍 Step 1.5: Querying CMS API with CPT codes...")

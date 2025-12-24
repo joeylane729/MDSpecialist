@@ -1041,7 +1041,8 @@ const ResultsPage: React.FC = () => {
       setIsGeneratingSpecialists(true);
       
       // Step 1: Get specialist recommendations
-      // Reuse CPT codes from state or medical analysis to avoid duplicate generation
+      // Reuse medical analysis results from first step to avoid duplicate GPT calls
+      const patientProfile = location.state?.aiRecommendations?.patient_profile;
       const specialistRequest: SpecialistRecommendationRequest = {
         symptoms: searchParams?.symptoms || '',
         diagnosis: searchParams?.diagnosis || '',
@@ -1050,11 +1051,26 @@ const ResultsPage: React.FC = () => {
         surgical_history: location.state?.surgicalHistory || '',
         state: searchParams?.state || location.state?.state || '',
         files: [],
-        cpt_codes: existingCptCodes  // Pass existing CPT codes to reuse them
+        cpt_codes: existingCptCodes,  // Pass existing CPT codes to reuse them
+        // Pass medical analysis results to reuse (avoids duplicate GPT calls)
+        treatment_options: patientProfile?.treatment_options,
+        predicted_icd10: patientProfile?.predicted_icd10 || patientProfile?.diagnoses?.primary?.code,
+        icd10_description: patientProfile?.icd10_description || patientProfile?.diagnoses?.primary?.description,
+        search_query: patientProfile?.search_query,
+        determined_specialty: searchParams?.determined_specialty || patientProfile?.specialties_needed?.[0]
       };
 
       if (existingCptCodes && existingCptCodes.length > 0) {
         console.log('♻️ [Frontend] Reusing', existingCptCodes.length, 'CPT codes for specialist recommendations');
+      }
+      if (specialistRequest.treatment_options && specialistRequest.treatment_options.length > 0) {
+        console.log('♻️ [Frontend] Reusing', specialistRequest.treatment_options.length, 'treatment options from medical analysis');
+      }
+      if (specialistRequest.search_query) {
+        console.log('♻️ [Frontend] Reusing search_query from medical analysis');
+      }
+      if (specialistRequest.determined_specialty) {
+        console.log('♻️ [Frontend] Reusing determined_specialty from medical analysis:', specialistRequest.determined_specialty);
       }
 
       const specialistResponse = await getSpecialistRecommendations(specialistRequest);

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from dataclasses import asdict
 from ...database import get_db
-from ...services.langchain_specialist_recommendation_service import SpecialistRecommendationService
+from ...services.specialist_recommendation_service import SpecialistRecommendationService
 from ...schemas.specialist_recommendation import SpecialistRecommendationRequestSchema, RecommendationResponseSchema
 from ..utils.patient_input_processor import build_patient_input, log_endpoint_call, log_response_info
 import logging
@@ -24,6 +24,11 @@ async def get_specialist_recommendations(
     surgical_history: Optional[str] = Form(None),
     state: Optional[str] = Form(None),
     cpt_codes_json: Optional[str] = Form(None),  # Optional JSON string of CPT codes to reuse
+    treatment_options_json: Optional[str] = Form(None),  # Optional JSON string of treatment options to reuse
+    predicted_icd10: Optional[str] = Form(None),  # Optional pre-determined ICD-10 code to reuse
+    icd10_description: Optional[str] = Form(None),  # Optional pre-determined ICD-10 description to reuse
+    search_query: Optional[str] = Form(None),  # Optional pre-generated search query to reuse
+    determined_specialty: Optional[str] = Form(None),  # Optional pre-determined specialty to reuse
     files: List[UploadFile] = File([]),
     db: Session = Depends(get_db)
 ):
@@ -37,6 +42,12 @@ async def get_specialist_recommendations(
         cpt_codes_json: Optional JSON string of CPT codes to reuse from previous medical analysis.
                        This avoids duplicate GPT calls for CPT code prediction.
                        Format: [{"code": "12345", "description": "..."}, ...]
+        treatment_options_json: Optional JSON string of treatment options to reuse from previous medical analysis.
+                                Format: [{"name": "...", "outcomes": "...", "complications": "...", "category": "..."}, ...]
+        predicted_icd10: Optional pre-determined ICD-10 code from previous medical analysis.
+        icd10_description: Optional pre-determined ICD-10 description from previous medical analysis.
+        search_query: Optional pre-generated search query from previous medical analysis.
+        determined_specialty: Optional pre-determined specialty from previous medical analysis.
     """
     try:
         # Log endpoint call
@@ -53,10 +64,29 @@ async def get_specialist_recommendations(
             except json.JSONDecodeError as e:
                 logger.warning(f"⚠️  [Backend] Failed to parse CPT codes JSON: {e}. Will generate new CPT codes.")
         
+        # Parse optional treatment options if provided
+        treatment_options = None
+        if treatment_options_json:
+            try:
+                treatment_options = json.loads(treatment_options_json)
+                logger.info(f"♻️  [Backend] Received {len(treatment_options)} pre-generated treatment options to reuse")
+            except json.JSONDecodeError as e:
+                logger.warning(f"⚠️  [Backend] Failed to parse treatment options JSON: {e}.")
+        
+        # Log medical analysis results being reused
+        if predicted_icd10:
+            logger.info(f"♻️  [Backend] Received pre-generated predicted_icd10: {predicted_icd10}")
+        if icd10_description:
+            logger.info(f"♻️  [Backend] Received pre-generated icd10_description")
+        if search_query:
+            logger.info(f"♻️  [Backend] Received pre-generated search_query")
+        if determined_specialty:
+            logger.info(f"♻️  [Backend] Received pre-generated determined_specialty: {determined_specialty}")
+        
         # Initialize the specialist recommendation service with database session
         specialist_service = SpecialistRecommendationService(db)
         
-        # Build patient input using shared utility
+        # Build patient input using shared utility (still needed for retrieval strategies)
         patient_input = await build_patient_input(
             symptoms=symptoms,
             diagnosis=diagnosis,
@@ -66,11 +96,16 @@ async def get_specialist_recommendations(
             files=files
         )
         
-        # Get recommendations
+        # Get recommendations - pass medical analysis results to avoid re-running analysis
         recommendations = await specialist_service.get_specialist_recommendations(
             patient_input=patient_input,
             state=state,
-            cpt_codes=cpt_codes
+            cpt_codes=cpt_codes,
+            treatment_options=treatment_options,
+            predicted_icd10=predicted_icd10,
+            icd10_description=icd10_description,
+            search_query=search_query,
+            determined_specialty=determined_specialty
         )
         
         # Log response information

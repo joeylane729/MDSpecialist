@@ -183,6 +183,12 @@ export interface SpecialistRecommendationRequest {
   state?: string;
   files?: File[];
   cpt_codes?: Array<{ code: string; description: string }>;  // Optional CPT codes to reuse (avoids duplicate generation)
+  // Medical analysis results to reuse (avoids duplicate GPT calls)
+  treatment_options?: Array<{ name: string; outcomes: string; complications: string; category?: string }>;
+  predicted_icd10?: string;
+  icd10_description?: string;
+  search_query?: string;
+  determined_specialty?: string;
 }
 
 export const getSpecialistRecommendations = async (
@@ -211,6 +217,28 @@ export const getSpecialistRecommendations = async (
     if (request.cpt_codes && request.cpt_codes.length > 0) {
       formData.append('cpt_codes_json', JSON.stringify(request.cpt_codes));
       console.log('♻️ [Frontend] Passing', request.cpt_codes.length, 'pre-generated CPT codes to reuse');
+    }
+    
+    // Add medical analysis results if provided (to reuse from previous medical analysis - avoids duplicate GPT calls)
+    if (request.treatment_options && request.treatment_options.length > 0) {
+      formData.append('treatment_options_json', JSON.stringify(request.treatment_options));
+      console.log('♻️ [Frontend] Passing', request.treatment_options.length, 'pre-generated treatment options to reuse');
+    }
+    if (request.predicted_icd10) {
+      formData.append('predicted_icd10', request.predicted_icd10);
+      console.log('♻️ [Frontend] Passing pre-generated predicted_icd10:', request.predicted_icd10);
+    }
+    if (request.icd10_description) {
+      formData.append('icd10_description', request.icd10_description);
+      console.log('♻️ [Frontend] Passing pre-generated icd10_description');
+    }
+    if (request.search_query) {
+      formData.append('search_query', request.search_query);
+      console.log('♻️ [Frontend] Passing pre-generated search_query');
+    }
+    if (request.determined_specialty) {
+      formData.append('determined_specialty', request.determined_specialty);
+      console.log('♻️ [Frontend] Passing pre-generated determined_specialty:', request.determined_specialty);
     }
 
     
