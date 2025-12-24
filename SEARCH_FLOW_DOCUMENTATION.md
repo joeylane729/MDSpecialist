@@ -275,11 +275,11 @@ The search flow involves multiple components:
       - Uses Postgres database
       - Searches for relevant medical content (VuMedi videos, PubMed articles)
       - Uses the generated search query from medical analysis
-      - Retrieves top 200 results
+      - Retrieves all matching results (no limit)
     - Returns treatment-specific specialist information
 
-27. **CMS data retrieval** (if applicable):
-    - May query CMS provider data for clinical volume information
+27. **CMS data retrieval**:
+    - Queries CMS provider data for clinical volume information using CPT codes from medical analysis
     - Extracts Tot_Srvcs (total services) for providers
 
 28. **Response construction**:
@@ -288,7 +288,7 @@ The search flow involves multiple components:
       - `patient_profile`: Treatment options, CPT codes, search query, etc.
       - `recommendations`: Specialist recommendations
       - `shared_specialist_information`: Treatment-grouped specialist data
-      - `cms_data`: CMS provider data (if available)
+      - `cms_data`: CMS provider data
       - `search_query`: Pre-generated query for specialist information retrieval
 
 ---
@@ -326,21 +326,21 @@ The search flow involves multiple components:
 
 35. **Ranking process** (in `ranking_service.py`):
     - **For each treatment option**:
-      a. **Extract treatment-specific specialist data**
-      b. **Match provider names** with specialist content:
-         - VuMedi videos (doctor names in "featuring" field)
-         - PubMed articles (author names)
-      c. **Calculate scores** for each provider:
-         - **Content match score**: Based on specialist data matches
-         - **Medical school score**: Based on US News rankings
-         - **Certification score**: Based on board certifications
-         - **Clinical volume score**: Based on CMS Tot_Srvcs (percentage-based)
-         - **Combined score**: Weighted combination of all factors
-      d. **Use GPT-5-mini** to rank providers:
-         - Provides provider list and specialist matches
-         - GPT returns ranked list with explanations
-      e. **Combine GPT ranking with calculated scores**
-      f. **Sort by final score** (descending)
+      - **Extract treatment-specific specialist data**
+      - **Match provider names** with specialist content:
+        - VuMedi videos (doctor names in "featuring" field)
+        - PubMed articles (author names)
+      - **Calculate scores** for each provider:
+        - **Content match score**: Based on specialist data matches
+        - **Medical school score**: Based on US News rankings
+        - **Certification score**: Based on board certifications
+        - **Clinical volume score**: Based on CMS Tot_Srvcs (percentage-based)
+        - **Combined score**: Weighted combination of all factors
+      - **Use GPT-5-mini** to rank providers:
+        - Provides provider list and specialist matches
+        - GPT returns ranked list with explanations
+      - **Combine GPT ranking with calculated scores**
+      - **Sort by final score** (descending)
 
 36. **Response formatting**:
     - Returns:
@@ -590,7 +590,7 @@ The search flow involves multiple components:
 ## Performance Considerations
 
 - **NPI search**: Fetches all matching providers (no limit)
-- **Specialist information retrieval**: Top 200 results per treatment
+- **Specialist information retrieval**: All matching results per treatment (no limit)
 - **Pagination**: 20 providers per page on results
 - **Caching**: Results stored in localStorage for persistence
 - **Parallel processing**: Some API calls can be made in parallel (if not dependent)

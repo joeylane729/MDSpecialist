@@ -80,24 +80,24 @@ class SpecialistRecommendationService:
                 logger.error(f"❌ {error_msg}")
                 raise ValueError(error_msg)
             
-            # Use provided medical analysis results (required - no fallback)
+            # Build patient_profile dict for retrieval service and response (only include what's actually used/needed)
             logger.info("♻️  Step 1: Using pre-generated medical analysis results (required - no fallback)")
             medical_analysis_results = {
-                # Patient profile fields (minimal - not needed for retrieval but included for response structure)
-                "symptoms": [],
-                "conditions": [],
-                "specialties_needed": [determined_specialty] if determined_specialty else [],
-                "location_preference": None,
-                "additional_notes": "",
+                # Fields used by retrieval service
+                "search_query": search_query,
+                "icd10_description": icd10_description or "",
                 
-                # Medical analysis fields (reused from first analysis)
+                # Fields used by ranking service
+                "symptoms": [],  # Used for formatting, can be empty
+                
+                # Fields returned to frontend
                 "treatment_options": treatment_options,
                 "predicted_icd10": predicted_icd10,
-                "icd10_description": icd10_description or "",
-                "search_query": search_query,
                 "determined_specialty": determined_specialty,
+                "specialties_needed": [determined_specialty] if determined_specialty else [],
+                "cpt_codes": cpt_codes if cpt_codes else [],
                 
-                # Nested diagnoses structure for backward compatibility
+                # Nested structure for backward compatibility (frontend uses as fallback)
                 "diagnoses": {
                     "primary": {
                         "code": predicted_icd10,
@@ -107,12 +107,8 @@ class SpecialistRecommendationService:
                 }
             }
             
-            # Add provided CPT codes to medical analysis results if available
             if cpt_codes and len(cpt_codes) > 0:
-                medical_analysis_results["cpt_codes"] = cpt_codes
                 logger.info(f"✅ Added {len(cpt_codes)} provided CPT codes to medical analysis results")
-            else:
-                medical_analysis_results["cpt_codes"] = []
             
             # Step 1.5: Query CMS API with CPT codes (use provided codes or none)
             logger.info("🔍 Step 1.5: Querying CMS API with CPT codes...")
@@ -142,8 +138,7 @@ class SpecialistRecommendationService:
             logger.debug(f"🔍 Medical analysis results keys: {list(medical_analysis_results.keys()) if isinstance(medical_analysis_results, dict) else 'Not a dict'}")
             
             retrieval_result = await self.specialist_information_retrieval_service.retrieve_specialist_information(
-                medical_analysis_results=medical_analysis_results,
-                top_k=200  # Use same value as NPI ranking
+                medical_analysis_results=medical_analysis_results
             )
             
             # Extract treatment results and search query from the retrieval result

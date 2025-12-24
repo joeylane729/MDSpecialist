@@ -32,14 +32,13 @@ class SpecialistInformationRetrievalService:
         # This service only uses pre-generated search queries
         logger.info("SpecialistInformationRetrievalService initialized successfully")
     
-    def _query_vumedi_from_postgres(self, query: str, top_k: int = 100) -> List[Dict[str, Any]]:
+    def _query_vumedi_from_postgres(self, query: str) -> List[Dict[str, Any]]:
         """
         Query Vumedi videos from Postgres database using text search.
         Similar to _query_pubmed_from_postgres but for vumedi_content_consolidated table.
         
         Args:
             query: Search query with OR-separated terms
-            top_k: Maximum number of results to return
             
         Returns:
             List of video records
@@ -62,7 +61,7 @@ class SpecialistInformationRetrievalService:
             where_clause = " OR ".join(like_conditions)
             
             # Build query parameters
-            query_params = {"limit": top_k}
+            query_params = {}
             for i, term in enumerate(query_terms):
                 query_params[f"term_{i}"] = f"%{term}%"
             
@@ -87,10 +86,9 @@ class SpecialistInformationRetrievalService:
                         WHEN LOWER(featuring) LIKE :term_0 THEN 2
                         ELSE 3
                     END
-                LIMIT :limit
             """)
             
-            logger.info(f"🚀 Executing Postgres Vumedi query with limit={top_k}")
+            logger.info(f"🚀 Executing Postgres Vumedi query (no limit)")
             
             # Execute query
             if self.db:
@@ -145,13 +143,12 @@ class SpecialistInformationRetrievalService:
             logger.error(f"❌ Full traceback:\n{traceback.format_exc()}")
             return []
     
-    def _query_pubmed_from_postgres(self, query: str, top_k: int = 10000) -> List[Dict[str, Any]]:
+    def _query_pubmed_from_postgres(self, query: str) -> List[Dict[str, Any]]:
         """
         Query PubMed articles from Postgres using full-text search.
         
         Args:
             query: Search query string (can contain " OR " separated variations)
-            top_k: Maximum number of results to return
             
         Returns:
             List of dictionaries matching the expected format
@@ -194,7 +191,7 @@ class SpecialistInformationRetrievalService:
             
             sql_query = text(f"""
                 WITH filtered_articles AS (
-                    -- First, filter and limit pubmed_articles to reduce JOIN size
+                    -- First, filter pubmed_articles to reduce JOIN size
                     SELECT 
                         pmid,
                         title,
@@ -216,7 +213,6 @@ class SpecialistInformationRetrievalService:
                     FROM pubmed_articles
                     WHERE {where_clause}
                     ORDER BY pmid DESC
-                    LIMIT :limit
                 ), filtered as materialized (
                     SELECT * FROM filtered_articles
                 )
@@ -262,10 +258,10 @@ class SpecialistInformationRetrievalService:
                     f.normalized_issn = j.normalized_issn
             """)
             
-            logger.info(f"🚀 Executing Postgres query with limit={top_k}")
+            logger.info(f"🚀 Executing Postgres query (no limit)")
             
             # Log the exact SQL query being executed
-            query_params = {"limit": top_k}
+            query_params = {}
             query_sql = str(sql_query.compile(compile_kwargs={"literal_binds": False}))
             logger.info(f"📋 SQL Query:\n{query_sql}")
             logger.info(f"📋 Query Parameters: {query_params}")
@@ -280,7 +276,7 @@ class SpecialistInformationRetrievalService:
             except Exception as render_error:
                 logger.debug(f"Could not render query: {render_error}")
             
-            # Execute query with limit parameter
+            # Execute query
             if self.db:
                 logger.info("📊 Using database session from context")
                 result = self.db.execute(sql_query, query_params)
@@ -459,13 +455,11 @@ class SpecialistInformationRetrievalService:
     
     async def retrieve_specialist_information(
         self,
-        medical_analysis_results: Dict[str, Any],
-        top_k: int = 200  # Not used for distribution, kept for backward compatibility
+        medical_analysis_results: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Retrieve specialist information using pre-generated queries based on medical analysis results.
         
-        Uses fixed limits: 100 for Vumedi, 10000 for PubMed per query.
-        Queries are executed against Postgres database.
+        Queries are executed against Postgres database with no limits on result count.
         """
         try:
             # Use pre-generated search query from medical analysis
@@ -476,7 +470,6 @@ class SpecialistInformationRetrievalService:
                 raise ValueError("No pre-generated search query available - search query must be generated during medical analysis")
             
             logger.info(f"🔍 Using pre-generated search query from medical analysis:")
-            logger.info(f"📊 Query limits: 50 Vumedi + 200 PubMed = 250 max results total")
             logger.info(f"   Query: {query}")
             
             # Parse query variations for verification
@@ -496,16 +489,11 @@ class SpecialistInformationRetrievalService:
             try:
                 logger.info(f"🔍 Executing search for '{treatment_name}': '{query[:80]}{'...' if len(query) > 80 else ''}'")
                 
-                # Use separate limits for Vumedi and PubMed
-                vumedi_top_k = 100  # Max 100 total for Vumedi
-                pubmed_top_k = 10000  # Max 10000 total for PubMed
-                logger.debug(f"   📊 Using top_k={vumedi_top_k} for Vumedi, {pubmed_top_k} for PubMed")
+                # Query Vumedi from Postgres database (no limit)
+                vumedi_hits = self._query_vumedi_from_postgres(query)
                 
-                # Query Vumedi from Postgres database
-                vumedi_hits = self._query_vumedi_from_postgres(query, vumedi_top_k)
-                
-                # Query PubMed from Postgres database
-                pubmed_hits = self._query_pubmed_from_postgres(query, pubmed_top_k)
+                # Query PubMed from Postgres database (no limit)
+                pubmed_hits = self._query_pubmed_from_postgres(query)
                 
                 # Initialize treatment results
                 treatment_results[treatment_id] = {
