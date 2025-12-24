@@ -8,7 +8,7 @@ The UI enforces a specific sequence that users must follow:
 
 1. **Medical Analysis** (Phase 1-5): User enters information and gets medical analysis results
 2. **Generate CPT Codes** (Phase 6): User must generate CPT codes before specialist search
-3. **Show Specialists** (Phase 7): User can then search for specialists (button only appears after CPT codes are generated)
+3. **Show Specialists** (Phase 7-14): User can then search for specialists (button only appears after CPT codes are generated)
 
 ---
 
