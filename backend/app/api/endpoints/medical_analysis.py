@@ -52,7 +52,12 @@ async def get_medical_analysis(
             custom_diagnoses_prompt=custom_diagnoses_prompt
         )
         
-        return analysis_results
+        # Wrap response in expected structure for frontend
+        return {
+            "status": "success",
+            "patient_profile": analysis_results,
+            "message": "Medical analysis completed successfully"
+        }
         
     except HTTPException:
         # Re-raise HTTP exceptions (they're already properly formatted)
