@@ -32,10 +32,6 @@ interface SearchParams {
   cpt_prompt_text?: string;  // GPT prompt text used to generate CPT codes
   diagnoses_prompt_text?: string;  // GPT prompt text used to generate diagnoses/treatment options
   search_query?: string;  // Pre-generated search query
-  searchOptions?: {
-    diagnosis: boolean;
-    specialists: boolean;
-  };
 }
 
 interface TreatmentOption {
@@ -178,18 +174,7 @@ const ResultsPage: React.FC = () => {
     return getExistingCptCodes() !== null;
   }, [getExistingCptCodes]);
   
-  // Set initial view based on search options
-  useEffect(() => {
-    if (searchParams?.searchOptions) {
-      if (searchParams.searchOptions.specialists) {
-        setActiveView('specialists');
-      } else if (searchParams.searchOptions.diagnosis) {
-        setActiveView('assessment');
-      } else {
-        setActiveView('assessment'); // Default to assessment view
-      }
-    }
-  }, [searchParams?.searchOptions]);
+  // Initial view is always 'assessment' (default state)
   
   // Debug logging
   useEffect(() => {
@@ -1038,7 +1023,7 @@ const ResultsPage: React.FC = () => {
 
   const handleShowSpecialists = async () => {
     // If specialists are already available, just switch to the view
-    if (searchParams?.searchOptions?.specialists && filteredProviders.length > 0) {
+    if (filteredProviders.length > 0) {
       setActiveView('specialists');
       return;
     }
@@ -1260,15 +1245,8 @@ const ResultsPage: React.FC = () => {
       setRankedProviders(rankedNPIProviders);
       setProviderLinks(providerLinks);
       
-      // Update the search params to include specialists
-      // This will trigger the useEffect to switch to specialists view
-      setSearchParams(prev => ({
-        ...prev!,
-        searchOptions: {
-          ...prev!.searchOptions!,
-          specialists: true
-        }
-      }));
+      // Switch to specialists view after loading providers
+      setActiveView('specialists');
       
     } catch (error) {
       console.error('Error fetching specialist recommendations:', error);
@@ -1583,7 +1561,7 @@ const ResultsPage: React.FC = () => {
           
           {/* View Toggle */}
           <div className="flex space-x-8">
-            {searchParams?.searchOptions?.diagnosis && (
+            {(searchParams?.icd10_description || location.state?.aiRecommendations?.patient_profile?.icd10_description) && (
               <button
                 onClick={() => setActiveView('assessment')}
                 className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -1598,7 +1576,7 @@ const ResultsPage: React.FC = () => {
                 <span>Medical Assessment</span>
               </button>
             )}
-            {searchParams?.searchOptions?.specialists && (
+            {filteredProviders.length > 0 && (
               <button
                 onClick={() => setActiveView('specialists')}
                 className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -1611,7 +1589,7 @@ const ResultsPage: React.FC = () => {
                 <span>Specialists</span>
               </button>
             )}
-            {(searchParams?.searchOptions?.specialists && specialistRecommendationData) && (
+            {filteredProviders.length > 0 && specialistRecommendationData && (
               <button
                 onClick={() => setActiveView('debug')}
                 className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -1632,7 +1610,7 @@ const ResultsPage: React.FC = () => {
 
 
                 {/* Medical Assessment */}
-        {activeView === 'assessment' && searchParams?.searchOptions?.diagnosis && (searchParams?.icd10_description || location.state?.aiRecommendations?.patient_profile?.icd10_description) && (
+        {activeView === 'assessment' && (searchParams?.icd10_description || location.state?.aiRecommendations?.patient_profile?.icd10_description) && (
           <>
             {/* Medical Assessment Header */}
             <div className="text-center mb-4">
@@ -2058,7 +2036,7 @@ const ResultsPage: React.FC = () => {
         )}
 
         {/* Specialists Section */}
-        {activeView === 'specialists' && searchParams?.searchOptions?.specialists && (
+        {activeView === 'specialists' && (
           <>
             {/* Specialists Header */}
             <div className="text-center mb-4">

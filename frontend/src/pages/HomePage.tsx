@@ -547,13 +547,6 @@ const HomePage: React.FC = () => {
         }
       }
       
-      // Search options for ResultsPage compatibility
-      // Note: specialists search happens later on ResultsPage when user clicks "Show me suggested specialists"
-      const searchOptions = {
-        diagnosis: true,
-        specialists: false
-      };
-      
       // Save search results to localStorage for persistence
       localStorage.setItem('mdspecialist_search_results', JSON.stringify({
         searchParams: {
@@ -574,8 +567,7 @@ const HomePage: React.FC = () => {
           cpt_codes: aiRecommendations?.patient_profile?.cpt_codes,
           cpt_prompt_text: aiRecommendations?.patient_profile?.cpt_prompt_text,
           diagnoses_prompt_text: aiRecommendations?.patient_profile?.diagnoses_prompt_text,
-          search_query: aiRecommendations?.patient_profile?.search_query,
-          searchOptions: searchOptions
+          search_query: aiRecommendations?.patient_profile?.search_query
         },
         providers: [], // Providers will be fetched later on ResultsPage
         totalProviders: 0,
@@ -618,8 +610,7 @@ const HomePage: React.FC = () => {
             cpt_codes: aiRecommendations?.patient_profile?.cpt_codes,
             cpt_prompt_text: aiRecommendations?.patient_profile?.cpt_prompt_text,
             diagnoses_prompt_text: aiRecommendations?.patient_profile?.diagnoses_prompt_text,
-            search_query: aiRecommendations?.patient_profile?.search_query,
-            searchOptions: searchOptions
+            search_query: aiRecommendations?.patient_profile?.search_query
           },
           providers: [], // Providers will be fetched later on ResultsPage
           totalProviders: 0,
