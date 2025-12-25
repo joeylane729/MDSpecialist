@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from typing import List
 from dotenv import load_dotenv
-from app.api.endpoints import match, doctors, npi, specialist_recommendation, npi_ranking, medical_analysis, preauth_letter, reviews
+from app.api.endpoints import npi, specialist_recommendation, npi_ranking, medical_analysis, preauth_letter, reviews
 import os
 import logging
 
@@ -66,8 +66,6 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(match.router, prefix="/api/v1", tags=["match"])
-app.include_router(doctors.router, prefix="/api/v1", tags=["doctors"])
 app.include_router(npi.router, prefix="/api/v1/npi", tags=["npi"])
 app.include_router(specialist_recommendation.router, prefix="/api/v1", tags=["specialist-recommendations"])
 app.include_router(npi_ranking.router, prefix="/api/v1", tags=["npi-ranking"])
