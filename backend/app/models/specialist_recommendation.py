@@ -12,13 +12,9 @@ from datetime import datetime
 @dataclass
 class PatientProfile:
     """Structured patient profile for specialist matching."""
-    symptoms: List[str]
-    conditions: List[str]
-    specialties_needed: List[str]
-
-    location_preference: Optional[str] = None
-
-    additional_notes: Optional[str] = None
+    # Fields that may be present in API responses
+    symptoms: Optional[List[str]] = None  # May be empty array
+    specialties_needed: Optional[List[str]] = None  # Contains determined_specialty
 
 @dataclass
 class SpecialistRecommendation:

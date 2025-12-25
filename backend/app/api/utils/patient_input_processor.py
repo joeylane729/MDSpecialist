@@ -10,6 +10,43 @@ from fastapi import UploadFile
 
 logger = logging.getLogger(__name__)
 
+async def extract_pdf_content(files: List[UploadFile]) -> str:
+    """
+    Extract text content from uploaded PDF files.
+    
+    Args:
+        files: List of uploaded files
+        
+    Returns:
+        Combined text content from all PDF files
+    """
+    pdf_content = ""
+    if files:
+        for file in files:
+            if file.content_type == "application/pdf":
+                try:
+                    import PyPDF2
+                    import io
+                    
+                    # Read PDF content
+                    file_content = await file.read()
+                    
+                    pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_content))
+                    
+                    # Extract text from all pages
+                    text_content = ""
+                    for page in pdf_reader.pages:
+                        page_text = page.extract_text()
+                        text_content += page_text + " "
+                    
+                    if pdf_content:
+                        pdf_content += "\n\n"
+                    pdf_content += text_content.strip()
+                except Exception as e:
+                    logger.warning(f"Could not process PDF file {file.filename}: {e}")
+    
+    return pdf_content
+
 async def build_patient_input(
     symptoms: str,
     diagnosis: str,

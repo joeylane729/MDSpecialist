@@ -11,13 +11,17 @@ from datetime import datetime
 
 class PatientProfileSchema(BaseModel):
     """Schema for patient profile."""
-    symptoms: List[str] = Field(..., description="List of patient symptoms")
-    conditions: List[str] = Field(..., description="List of medical conditions")
-    specialties_needed: List[str] = Field(..., description="Required medical specialties")
-
-    location_preference: Optional[str] = Field(None, description="Preferred location")
-
-    additional_notes: Optional[str] = Field(None, description="Additional patient notes")
+    # Fields that may be present in API responses
+    symptoms: Optional[List[str]] = Field(None, description="List of patient symptoms (may be empty)")
+    specialties_needed: Optional[List[str]] = Field(None, description="Required medical specialties (contains determined_specialty)")
+    
+    # Active fields
+    treatment_options: Optional[List[Dict[str, Any]]] = Field(None, description="Treatment options")
+    search_query: Optional[str] = Field(None, description="Pre-generated search query")
+    predicted_icd10: Optional[str] = Field(None, description="Predicted ICD-10 code")
+    icd10_description: Optional[str] = Field(None, description="ICD-10 description")
+    determined_specialty: Optional[str] = Field(None, description="Specialty determined for provider search")
+    user_diagnosis: Optional[str] = Field(None, description="User-entered diagnosis text")
 
 class SpecialistRecommendationSchema(BaseModel):
     """Schema for individual specialist recommendation."""

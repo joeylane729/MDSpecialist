@@ -140,11 +140,11 @@ export interface SpecialistRecommendation {
 }
 
 export interface PatientProfile {
-  symptoms: string[];
-  conditions: string[];
-  specialties_needed: string[];
-  location_preference?: string;
-  additional_notes?: string;
+  // Fields that may be present in API responses
+  symptoms?: string[];  // May be empty array in specialist recommendation responses
+  specialties_needed?: string[];  // Contains determined_specialty in specialist recommendation responses
+  
+  // Active fields
   treatment_options?: Array<{
     name: string;
     outcomes: string;
@@ -154,6 +154,8 @@ export interface PatientProfile {
   predicted_icd10?: string;  // Predicted ICD-10 code
   icd10_description?: string;  // ICD-10 description
   diagnoses_prompt_text?: string;  // GPT prompt text used to generate diagnoses/treatment options
+  determined_specialty?: string;  // Specialty determined for provider search
+  user_diagnosis?: string;  // User-entered diagnosis text
 }
 
 export interface SpecialistRecommendationResponse {

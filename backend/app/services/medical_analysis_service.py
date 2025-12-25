@@ -1,20 +1,14 @@
-import os
 import json
 import logging
 import asyncio
 import httpx
 from typing import List, Optional, Tuple, Dict, Any
-from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
-from ..models.specialist_recommendation import PatientProfile
 
 logger = logging.getLogger(__name__)
-
-# Load environment variables
-load_dotenv()
 
 class MedicalAnalysisService:
     """Service for comprehensive medical analysis including specialty determination, ICD-10 coding, and diagnosis prediction."""
@@ -22,121 +16,34 @@ class MedicalAnalysisService:
     def __init__(self, db: Session = None):
         self.llm = ChatOpenAI(model="gpt-5.1", temperature=0.1)
         self.db = db
-        
-        # Patient processing prompt
-        # No longer need complex patient processing - just pass through the input
-        
-        # Available subspecialties for GPT to choose from
-        self.available_specialties = [
-            "Family Medicine",
-            "Internal Medicine", 
-            "Cardiology",
-            "Pulmonology",
-            "Neurological Surgery",
-            "Nuclear Medicine",
-            "Obstetrics & Gynecology",
-            "Ophthalmology",
-            "Orthopaedic Surgery",
-            "Otolaryngology",
-            "Pediatric Otolaryngology",
-            "Pediatrics",
-            "Allergy & Immunology",
-            "Anesthesiology",
-            "Anatomic Pathology",
-            "Clinical Pathology",
-            "Emergency Medicine",
-            "Colon & Rectal Surgery",
-            "General Practice",
-            "Thoracic Surgery",
-            "Hospitalist",
-            "Clinical Pharmacology",
-            "Pain Medicine",
-            "Interventional Pain Medicine"
-        ]
     
     def set_db(self, db: Session):
         """Set the database session for ICD-10 lookups."""
         self.db = db
     
-    def _parse_patient_input(self, patient_input: str) -> Tuple[str, str, str, str, str, str]:
-        """
-        Parse the combined patient input string to extract individual fields.
-        
-        Args:
-            patient_input: Combined patient input string
-            
-        Returns:
-            Tuple of (symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content)
-        """
-        # Initialize with empty strings
-        symptoms = ""
-        diagnosis = ""
-        medical_history = ""
-        medications = ""
-        surgical_history = ""
-        pdf_content = ""
-        
-        # Split by sections
-        sections = patient_input.split('\n\n')
-        
-        for section in sections:
-            section = section.strip()
-            if section.startswith('Symptoms:'):
-                symptoms = section.replace('Symptoms:', '').strip()
-            elif section.startswith('Diagnosis:'):
-                diagnosis = section.replace('Diagnosis:', '').strip()
-            elif section.startswith('Medical History:'):
-                medical_history = section.replace('Medical History:', '').strip()
-            elif section.startswith('Current Medications:'):
-                medications = section.replace('Current Medications:', '').strip()
-            elif section.startswith('Surgical History:'):
-                surgical_history = section.replace('Surgical History:', '').strip()
-            elif section.startswith('Additional Information from Files:'):
-                # Extract PDF content from the files section
-                pdf_content = section.replace('Additional Information from Files:', '').strip()
-                # Remove the "(PDF uploaded)" notes and keep only actual content
-                pdf_content = pdf_content.replace('(PDF uploaded)', '').strip()
-        
-        return symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content
-    
-    async def process_patient_input(
+    async def comprehensive_analysis(
         self,
-        patient_input: str
-    ) -> PatientProfile:
-        """Process patient input - just pass through the original input."""
-        try:
-            # Simply pass through the patient input without any processing
-            profile = PatientProfile(
-                symptoms=[],  # No longer extracting symptoms
-                conditions=[],
-                specialties_needed=[],  # No longer extracting specialties
-
-                location_preference=None,
-                additional_notes=patient_input  # Pass through the original input directly
-            )
-            
-            logger.info(f"Passed through patient input: {len(patient_input)} characters")
-            return profile
-            
-        except Exception as e:
-            logger.error(f"Error processing patient input: {str(e)}")
-            raise
-    
-    async def comprehensive_analysis(self, patient_input: str, custom_diagnoses_prompt: Optional[str] = None) -> Dict[str, Any]:
+        symptoms: str,
+        diagnosis: str,
+        medical_history: str = "",
+        medications: str = "",
+        surgical_history: str = "",
+        pdf_content: str = "",
+        custom_diagnoses_prompt: Optional[str] = None
+    ) -> Dict[str, Any]:
         """Perform comprehensive medical analysis including patient processing and medical analysis.
         CPT codes are NOT generated in this step - they must be generated separately via generate_cpt_codes_from_analysis().
         
         Args:
-            patient_input: Patient input string containing symptoms, diagnosis, etc.
+            symptoms: Patient symptoms
+            diagnosis: Patient diagnosis
+            medical_history: Medical history (optional)
+            medications: Current medications (optional)
+            surgical_history: Surgical history (optional)
+            pdf_content: Extracted content from uploaded PDF files (optional)
             custom_diagnoses_prompt: Optional custom prompt to override default for diagnosis/treatment generation
         """
         try:
-            # Parse patient input to extract individual fields
-            symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content = self._parse_patient_input(patient_input)
-            
-            # Get patient profile
-            patient_profile = await self.process_patient_input(patient_input)
-            
             # Perform medical analysis with individual fields including PDF content
             diagnoses_result, diagnoses_prompt_text = await self.predict_diagnoses(
                 symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content,
@@ -150,73 +57,39 @@ class MedicalAnalysisService:
             
             # Ensure diagnoses is not None
             if medical_analysis["diagnoses"] is None:
-                logger.warning("⚠️  predict_diagnoses returned None, setting to empty dict")
+                logger.warning("predict_diagnoses returned None, setting to empty dict")
                 medical_analysis["diagnoses"] = {}
             
             # Add ICD-10 description if we have the code
             if medical_analysis["predicted_icd10"] and self.db:
-                logger.info(f"🔍 Looking up ICD-10 description for: {medical_analysis['predicted_icd10']}")
                 icd10_description = self.lookup_icd10_description(medical_analysis["predicted_icd10"])
                 if icd10_description:
                     medical_analysis["icd10_description"] = icd10_description
-                    logger.info(f"✅ Added ICD-10 description: {icd10_description[:50]}...")
                 else:
-                    logger.warning(f"⚠️  Could not find ICD-10 description for: {medical_analysis['predicted_icd10']}")
+                    logger.warning(f"Could not find ICD-10 description for: {medical_analysis['predicted_icd10']}")
             
             # Extract treatment options from diagnoses if available (needed for CPT code prediction)
             treatment_options = []
             if medical_analysis["diagnoses"] and "treatment_options" in medical_analysis["diagnoses"]:
                 treatment_options = medical_analysis["diagnoses"]["treatment_options"]
-                logger.info(f"📋 Found {len(treatment_options)} treatment options:")
-                for i, option in enumerate(treatment_options):
-                    logger.info(f"   {i+1}. {option.get('name', 'Unnamed')}")
             else:
-                logger.warning("⚠️  No treatment options found in medical analysis")
-                logger.debug(f"🔍 Available keys: {list(medical_analysis.keys())}")
-                if "diagnoses" in medical_analysis:
-                    logger.debug(f"🔍 Diagnoses keys: {list(medical_analysis['diagnoses'].keys())}")
+                logger.warning("No treatment options found in medical analysis")
             
             # Generate search query using the same prompt as SpecialistInformationRetrievalService
             search_query = ""
             if medical_analysis.get("icd10_description") and diagnosis:
-                logger.info(f"🔍 Generating search query...")
                 search_query = await self.generate_search_query(
                     medical_analysis.get("icd10_description", ""),
                     diagnosis
                 )
-                logger.info(f"✅ Generated search query: {search_query[:100]}{'...' if len(search_query) > 100 else ''}")
             else:
-                logger.warning("⚠️  Cannot generate search query - missing ICD-10 description or user diagnosis")
+                logger.warning("Cannot generate search query - missing ICD-10 description or user diagnosis")
             
             # Determine specialty for provider filtering (used by NPI search step)
-            determined_specialty = None
-            combined_input = f"Symptoms: {symptoms}\n\nDiagnosis: {diagnosis}"
-            if medical_history:
-                combined_input += f"\n\nMedical History: {medical_history}"
-            if medications:
-                combined_input += f"\n\nCurrent Medications: {medications}"
-            if surgical_history:
-                combined_input += f"\n\nSurgical History: {surgical_history}"
-            if pdf_content:
-                combined_input += f"\n\nAdditional Information from Files: {pdf_content}"
-            
-            logger.info(f"🔍 Determining specialty for provider search...")
-            determined_specialty = await self.determine_specialty(combined_input)
+            # Note: determine_specialty currently returns a constant, but we keep the call for future use
+            determined_specialty = await self.determine_specialty("")  # Parameter not currently used
             if not determined_specialty:
-                logger.warning("⚠️  Failed to determine specialty, will use fallback in provider search")
-            else:
-                logger.info(f"✅ Determined specialty: {determined_specialty}")
-            
-            # CPT codes are NOT generated in this step - they must be generated separately
-            # This is part of the step-by-step flow where diagnosis/treatment options come first
-            cpt_codes = []
-            cpt_prompt_text = ""
-            logger.info("⏭️  Skipping CPT code generation (step-by-step flow - generate separately)")
-            
-            # Log diagnosis structure for debugging
-            logger.debug(f"🔍 Diagnosis structure type: {type(medical_analysis['diagnoses'])}")
-            if medical_analysis.get("diagnoses"):
-                logger.debug(f"🔍 Diagnosis content: {medical_analysis['diagnoses']}")
+                logger.warning("Failed to determine specialty, will use fallback in provider search")
             
             # Extract diagnosis data for frontend compatibility
             
@@ -227,19 +100,10 @@ class MedicalAnalysisService:
             if medical_analysis["diagnoses"] and "primary" in medical_analysis["diagnoses"]:
                 primary_icd10 = medical_analysis["diagnoses"]["primary"].get("code", primary_icd10)
                 primary_description = medical_analysis["diagnoses"]["primary"].get("description", primary_description)
-                logger.info(f"🔍 DEBUG: Using primary diagnosis from diagnoses structure: {primary_icd10} - {primary_description}")
-            else:
-                logger.warning(f"🔍 DEBUG: No primary diagnosis in diagnoses structure. Using fallback: {primary_icd10} - {primary_description}")
             
             # Combine patient profile and medical analysis into unified result
+            # Note: CPT codes are NOT generated in this step - they must be generated separately via /medical-analysis/cpt-codes
             comprehensive_result = {
-                # Patient profile data
-                "symptoms": patient_profile.symptoms,
-                "conditions": patient_profile.conditions,
-                "specialties_needed": patient_profile.specialties_needed,
-                "location_preference": patient_profile.location_preference,
-                "additional_notes": patient_profile.additional_notes,
-                
                 # User input fields
                 "user_diagnosis": diagnosis,  # User-entered diagnosis text
                 
@@ -248,8 +112,6 @@ class MedicalAnalysisService:
                 "icd10_description": primary_description,
                 "determined_specialty": determined_specialty,  # Specialty determined for provider search
                 "treatment_options": treatment_options,
-                "cpt_codes": cpt_codes,  # Relevant CPT codes for the diagnosis
-                "cpt_prompt_text": cpt_prompt_text,  # Actual GPT prompt used to generate CPT codes
                 "diagnoses_prompt_text": diagnoses_prompt_text,  # Actual GPT prompt used to generate diagnoses/treatment options
                 "search_query": search_query,  # Pre-generated search query
                 
@@ -257,14 +119,11 @@ class MedicalAnalysisService:
                 "diagnoses": medical_analysis["diagnoses"]
             }
             
-            logger.info(f"✅ Comprehensive analysis completed: ICD-10={comprehensive_result['predicted_icd10']}")
-            logger.info(f"📋 Analysis includes {len(treatment_options)} treatment options")
-            logger.debug(f"🔍 Analysis result keys: {list(comprehensive_result.keys())}")
-            logger.debug(f"🔍 Primary description: {comprehensive_result.get('icd10_description', 'None')}")
+            logger.info(f"Comprehensive analysis completed: ICD-10={comprehensive_result['predicted_icd10']}, {len(treatment_options)} treatment options")
             return comprehensive_result
             
         except Exception as e:
-            logger.error(f"Error in comprehensive analysis: {str(e)}")
+            logger.error(f"Error in comprehensive analysis: {e}", exc_info=True)
             raise
     
     def lookup_icd10_description(self, code: str) -> Optional[str]:
@@ -278,54 +137,34 @@ class MedicalAnalysisService:
             The description for the code, or None if not found
         """
         if not self.db:
-            logger.warning("⚠️  No database session available for ICD-10 lookup")
             return None
             
         try:
-            logger.debug(f"🔍 Looking up ICD-10 code: {code}")
-            
             # Try the original code first
             query = text("SELECT description FROM icd10_codes WHERE code = :code")
-            query_params = {"code": code}
-            
-            # Log the exact SQL query being executed
-            query_sql = str(query.compile(compile_kwargs={"literal_binds": False}))
-            logger.info(f"📋 ICD-10 Query SQL:\n{query_sql}")
-            logger.info(f"📋 Query Parameters: {query_params}")
-            
-            result = self.db.execute(query, query_params)
+            result = self.db.execute(query, {"code": code})
             row = result.fetchone()
             if row:
-                logger.debug(f"✅ Found description for {code}: {row[0][:50]}...")
                 return row[0]
             
             # If not found, try without the dot (GPT often returns codes with dots like "C71.9")
             code_without_dot = code.replace('.', '')
             if code_without_dot != code:
-                logger.debug(f"🔄 Trying normalized code: {code_without_dot}")
                 query = text("SELECT description FROM icd10_codes WHERE code = :code")
-                query_params = {"code": code_without_dot}
-                
-                # Log the exact SQL query being executed
-                query_sql = str(query.compile(compile_kwargs={"literal_binds": False}))
-                logger.info(f"📋 ICD-10 Query SQL (normalized):\n{query_sql}")
-                logger.info(f"📋 Query Parameters: {query_params}")
-                
-                result = self.db.execute(query, query_params)
+                result = self.db.execute(query, {"code": code_without_dot})
                 row = result.fetchone()
                 if row:
-                    logger.info(f"✅ Found description for normalized code '{code_without_dot}' (original: '{code}')")
                     return row[0]
             
-            logger.warning(f"❌ No description found for ICD-10 code: {code}")
+            logger.warning(f"No description found for ICD-10 code: {code}")
             return None
         except Exception as e:
-            logger.error(f"❌ Error looking up ICD-10 description for {code}: {e}")
+            logger.error(f"Error looking up ICD-10 description for {code}: {e}", exc_info=True)
             return None
 
     async def determine_specialty(self, diagnosis_text: str) -> Optional[str]:
         """
-        Determine specialty by first getting ICD-10 code, then looking up specialty from ICD-10.
+        Determine specialty for provider search.
         
         PROOF OF CONCEPT: Hard-coded to return "Neurological Surgery" for all cases
         to confine the proof of concept to only consider neurosurgeons.
@@ -334,67 +173,9 @@ class MedicalAnalysisService:
             diagnosis_text: The patient's diagnosis description
             
         Returns:
-            The most relevant medical specialty as a string, or None if failed
+            The most relevant medical specialty as a string
         """
-        # PROOF OF CONCEPT: Hard-coded to return Neurological Surgery
-        # This confines the proof of concept to only consider neurosurgeons
         return "Neurological Surgery"
-        
-        # COMMENTED OUT: Original dynamic specialty determination logic
-        # try:
-        #     # First get the ICD-10 code
-        #     icd10_code = await self.predict_icd10_code(diagnosis_text)
-        #     if not icd10_code:
-        #         return None
-        #     
-        #     # Then determine specialty based on ICD-10 code
-        #     specialty = self._get_specialty_from_icd10(icd10_code)
-        #     return specialty
-        #             
-        # except Exception as e:
-        #     print(f"Error determining specialty: {e}")
-        #     return None
-
-    def _get_specialty_from_icd10(self, icd10_code: str) -> str:
-        """
-        Map ICD-10 codes to appropriate medical specialties.
-        
-        Args:
-            icd10_code: The ICD-10 code
-            
-        Returns:
-            The appropriate medical specialty
-        """
-        # Normalize the ICD-10 code (remove dots)
-        normalized_code = icd10_code.replace('.', '')
-        
-        # Map ICD-10 code ranges to specialties
-        if normalized_code.startswith(('G')):
-            return "Neurological Surgery"  # Neurological conditions
-        elif normalized_code.startswith(('I')):
-            return "Cardiology"  # Cardiovascular conditions
-        elif normalized_code.startswith(('J')):
-            return "Pulmonology"  # Respiratory conditions
-        elif normalized_code.startswith(('K')):
-            return "Internal Medicine"  # Digestive conditions
-        elif normalized_code.startswith(('M')):
-            return "Orthopaedic Surgery"  # Musculoskeletal conditions
-        elif normalized_code.startswith(('N')):
-            return "Internal Medicine"  # Genitourinary conditions
-        elif normalized_code.startswith(('O')):
-            return "Obstetrics & Gynecology"  # Pregnancy/gynecological
-        elif normalized_code.startswith(('P')):
-            return "Pediatrics"  # Perinatal conditions
-        elif normalized_code.startswith(('Q')):
-            return "Pediatrics"  # Congenital conditions
-        elif normalized_code.startswith(('R')):
-            return "Internal Medicine"  # General symptoms
-        elif normalized_code.startswith(('S', 'T')):
-            return "Emergency Medicine"  # Injuries/poisoning
-        elif normalized_code.startswith(('Z')):
-            return "Family Medicine"  # Health status factors
-        else:
-            return "Family Medicine"  # Default fallback
 
     async def predict_icd10_code(
         self, 
@@ -461,7 +242,7 @@ class MedicalAnalysisService:
             if len(icd_code) >= 3 and icd_code[0].isalpha() and any(c.isdigit() for c in icd_code):
                 return icd_code
             else:
-                logger.warning(f"GPT returned '{icd_code}' which doesn't look like a valid ICD-10 code")
+                logger.warning(f"GPT returned invalid ICD-10 code: {icd_code}")
                 return None
                 
         except Exception as e:
@@ -514,7 +295,6 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
             elif query.startswith('```'):
                 query = query.replace('```', '').strip()
             
-            logger.info(f"🔍 Generated search query: {query}")
             return query
             
         except Exception as e:
@@ -575,7 +355,7 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
                         )
                     except KeyError as e:
                         # If formatting fails, log and use as-is
-                        logger.warning(f"⚠️  Could not format custom prompt with variables: {e}")
+                        logger.warning(f"Could not format custom prompt with variables: {e}")
                         rendered_prompt = custom_prompt
                 else:
                     # If custom prompt doesn't have these variables, use it as-is
@@ -674,8 +454,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 # First attempt: parse as-is
                 cpt_codes = json.loads(response_text)
             except json.JSONDecodeError as json_error:
-                logger.warning(f"⚠️  Initial JSON parse failed: {json_error}. Attempting to fix...")
-                logger.debug(f"Response length: {len(response_text)} chars")
+                logger.warning(f"Initial JSON parse failed, attempting to fix: {json_error}")
                 
                 # Strategy 1: Try to find the last complete JSON object and extract valid portion
                 # Look for complete objects by finding closing braces followed by commas or closing brackets
@@ -707,7 +486,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 
                 if best_valid:
                     cpt_codes = best_valid
-                    logger.info(f"✅ Extracted {len(cpt_codes)} valid CPT codes from partial JSON (response was {len(response_text)} chars)")
+                    logger.info(f"Extracted {len(cpt_codes)} valid CPT codes from partial JSON")
                 else:
                     # Strategy 2: Try to extract individual valid JSON objects using regex
                     # This is a fallback if binary search fails
@@ -728,20 +507,20 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                         
                         if valid_objects:
                             cpt_codes = valid_objects
-                            logger.info(f"✅ Extracted {len(cpt_codes)} valid CPT codes using regex pattern matching")
+                            logger.info(f"Extracted {len(cpt_codes)} valid CPT codes using regex pattern matching")
                         else:
-                            logger.error(f"❌ Could not extract any valid CPT codes. Error: {json_error}")
-                            logger.error(f"Problematic JSON (first 1000 chars): {response_text[:1000]}")
+                            logger.error(f"Could not extract any valid CPT codes. JSON error: {json_error}")
+                            logger.debug(f"Problematic JSON (first 1000 chars): {response_text[:1000]}")
                             return []
                     else:
-                        logger.error(f"❌ Could not extract valid CPT codes. Error: {json_error}")
-                        logger.error(f"Problematic JSON (first 1000 chars): {response_text[:1000]}")
+                        logger.error(f"Could not extract valid CPT codes. JSON error: {json_error}")
+                        logger.debug(f"Problematic JSON (first 1000 chars): {response_text[:1000]}")
                         return []
             
-            logger.info(f"✅ Predicted {len(cpt_codes)} CPT codes for {len(search_query_terms)} diagnosis terms")
+            logger.info(f"Predicted {len(cpt_codes)} CPT codes for {len(search_query_terms)} diagnosis terms")
             return cpt_codes, rendered_prompt
         except Exception as e:
-            logger.error(f"Error predicting CPT codes: {e}")
+            logger.error(f"Error predicting CPT codes: {e}", exc_info=True)
             return [], ""
     
     async def generate_cpt_codes_from_analysis(
@@ -762,15 +541,11 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             Tuple of (List of dictionaries containing CPT code and description, rendered prompt text)
         """
         if not search_query:
-            logger.warning("⚠️  Cannot generate CPT codes - no search query provided")
+            logger.warning("Cannot generate CPT codes - no search query provided")
             return [], ""
         
         # Parse search query to extract individual terms (split by " OR ")
         search_terms = [term.strip() for term in search_query.split(" OR ") if term.strip()]
-        logger.info(f"🔍 Generating CPT codes for {len(search_terms)} diagnosis terms: {', '.join(search_terms[:3])}{'...' if len(search_terms) > 3 else ''}")
-        
-        if custom_prompt:
-            logger.info("📝 Using custom prompt for CPT code generation")
         
         return await self.predict_cpt_codes(search_terms, treatment_options, custom_prompt=custom_prompt)
 
@@ -795,7 +570,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             Dictionary with 'url', 'urls', 'results' (grouped by provider), and metadata
         """
         if not cpt_codes or len(cpt_codes) == 0:
-            logger.warning("⚠️  No CPT codes provided for CMS API query")
+            logger.warning("No CPT codes provided for CMS API query")
             return {
                 "url": None,
                 "urls": [],
@@ -810,7 +585,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             # Extract just the CPT code values
             cpt_code_values = [cpt['code'] for cpt in cpt_codes if 'code' in cpt]
             
-            logger.info(f"🔍 Querying CMS API with {len(cpt_code_values)} CPT codes across 5 years (2023-2019)")
+            logger.info(f"Querying CMS API with {len(cpt_code_values)} CPT codes across 5 years")
             
             # CMS dataset UUIDs for each year (most recent 5 years)
             year_uuids = {
@@ -830,7 +605,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             
             # Calculate total API calls: 5 years × number of chunks
             total_calls = len(year_uuids) * len(cpt_chunks)
-            logger.info(f"📦 Making {total_calls} API calls ({len(year_uuids)} years × {len(cpt_chunks)} chunk(s) per year)")
             
             # Make API calls for all years and chunks
             all_results = []
@@ -861,7 +635,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                         # Create async task for this API call
                         async def make_api_call(url: str, year: int, chunk_idx: int, total_chunks: int, chunk_size: int):
                             try:
-                                logger.info(f"🌐 CMS API call for {year} (chunk {chunk_idx + 1}/{total_chunks}): {chunk_size} CPT codes")
                                 response = await client.get(url)
                                 response.raise_for_status()
                                 
@@ -872,10 +645,9 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                                 for result in chunk_results:
                                     result['_year'] = year
                                 
-                                logger.info(f"✅ {year} chunk {chunk_idx + 1} returned {len(chunk_results)} results")
                                 return chunk_results
                             except Exception as e:
-                                logger.error(f"❌ Error in API call for {year} chunk {chunk_idx + 1}: {e}")
+                                logger.error(f"Error in CMS API call for {year} chunk {chunk_idx + 1}: {e}", exc_info=True)
                                 return []
                         
                         tasks.append(make_api_call(full_url, year, chunk_idx, len(cpt_chunks), len(cpt_chunk)))
@@ -893,9 +665,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 year = result.get('_year', 'unknown')
                 year_counts[year] = year_counts.get(year, 0) + 1
             
-            logger.info(f"📊 Total raw results collected: {len(all_results)}")
-            for year in sorted(year_counts.keys(), reverse=True):
-                logger.info(f"   📅 {year}: {year_counts[year]} results")
+            logger.info(f"Total raw CMS results collected: {len(all_results)}")
             
             # Group results by provider (Rndrng_NPI) and sum Total Services
             provider_totals: Dict[str, Dict[str, Any]] = {}
@@ -951,7 +721,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             state_abbrev = None
             filtered_count = None
             if state:
-                logger.info(f"🔍 Filtering CMS results by state: {state}")
                 # Convert state to 2-letter abbreviation if needed
                 state_abbrev = state.upper().strip()
                 if len(state_abbrev) > 2:
@@ -978,7 +747,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                     p for p in grouped_results 
                     if (p.get('Rndrng_Prvdr_State_Abrvtn') or '').upper().strip() == state_abbrev
                 ]
-                logger.info(f"🔍 Filtered {len(filtered_by_state)} providers in state {state_abbrev} (from {len(grouped_results)} total)")
                 final_providers = filtered_by_state
                 filtered_count = len(filtered_by_state)
             else:
@@ -999,10 +767,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 # Remove internal tracking dict
                 provider.pop('HCPCS_Code_Descriptions', None)
             
-            if state and filtered_count is not None and state_abbrev:
-                logger.info(f"✅ Grouped into {len(provider_totals)} total providers, filtered to {filtered_count} in state {state_abbrev}, returning all {len(final_providers)}")
-            else:
-                logger.info(f"✅ Grouped into {len(provider_totals)} providers, returning all {len(final_providers)}")
+            logger.info(f"CMS API query complete: {len(provider_totals)} providers, {len(final_providers)} returned")
             
             result = {
                 "url": urls_used[0] if urls_used else None,  # Primary URL for display (first one)
@@ -1018,7 +783,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             return result
                 
         except httpx.TimeoutException as e:
-            logger.error(f"❌ CMS API request timed out: {e}")
+            logger.error(f"CMS API request timed out: {e}", exc_info=True)
             return {
                 "url": None,
                 "urls": [],
@@ -1029,7 +794,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 "error": f"Request timed out: {str(e)}"
             }
         except httpx.HTTPStatusError as e:
-            logger.error(f"❌ CMS API HTTP error: {e.response.status_code} - {e}")
+            logger.error(f"CMS API HTTP error: {e.response.status_code} - {e}", exc_info=True)
             return {
                 "url": None,
                 "urls": [],
@@ -1040,7 +805,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 "error": f"HTTP {e.response.status_code}: {str(e)}"
             }
         except Exception as e:
-            logger.error(f"❌ Error querying CMS API: {e}")
+            logger.error(f"Error querying CMS API: {e}", exc_info=True)
             return {
                 "url": None,
                 "urls": [],
@@ -1198,9 +963,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             # Extract the JSON response - LCEL returns AIMessage object
             response_text = response.content.strip() if hasattr(response, 'content') else str(response).strip()
             
-            # Log raw response for debugging (first 500 chars to avoid log spam)
-            logger.debug(f"Raw GPT response (first 500 chars): {response_text[:500]}")
-            
             # Clean up the response (remove markdown formatting if present)
             if response_text.startswith('```json'):
                 response_text = response_text.replace('```json', '').replace('```', '').strip()
@@ -1219,8 +981,8 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 diagnoses = json.loads(response_text)
             except json.JSONDecodeError as json_err:
                 logger.error(f"JSON parsing error at position {json_err.pos}: {json_err.msg}")
-                logger.error(f"Response text around error (chars {max(0, json_err.pos-100)}-{min(len(response_text), json_err.pos+100)}): {response_text[max(0, json_err.pos-100):min(len(response_text), json_err.pos+100)]}")
-                logger.error(f"Full response text length: {len(response_text)} characters")
+                logger.debug(f"Response text around error: {response_text[max(0, json_err.pos-100):min(len(response_text), json_err.pos+100)]}")
+                logger.debug(f"Full response text length: {len(response_text)} characters")
                 raise
             
             # Validate the response structure
@@ -1239,5 +1001,5 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 return {"primary": {}, "treatment_options": []}, rendered_prompt
                 
         except Exception as e:
-            logger.error(f"Error in GPT diagnosis prediction: {e}")
+            logger.error(f"Error in GPT diagnosis prediction: {e}", exc_info=True)
             return {"primary": {}, "differential": [], "treatment_options": []}, rendered_prompt if 'rendered_prompt' in locals() else ""

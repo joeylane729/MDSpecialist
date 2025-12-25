@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from ...database import get_db
 from ...services.medical_analysis_service import MedicalAnalysisService
-from ..utils.patient_input_processor import build_patient_input
+from ..utils.patient_input_processor import extract_pdf_content
 import logging
 import json
 
@@ -35,20 +35,18 @@ async def get_medical_analysis(
     This endpoint provides comprehensive medical analysis without specialist retrieval.
     """
     try:
-        # Build patient input from form data and files
-        patient_input = await build_patient_input(
-            symptoms=symptoms,
-            diagnosis=diagnosis,
-            medical_history=medical_history,
-            medications=medications,
-            surgical_history=surgical_history,
-            files=files
-        )
+        # Extract PDF content from uploaded files
+        pdf_content = await extract_pdf_content(files)
         
         # Initialize service and perform analysis
         medical_analysis_service = MedicalAnalysisService(db)
         analysis_results = await medical_analysis_service.comprehensive_analysis(
-            patient_input, 
+            symptoms=symptoms,
+            diagnosis=diagnosis,
+            medical_history=medical_history or "",
+            medications=medications or "",
+            surgical_history=surgical_history or "",
+            pdf_content=pdf_content,
             custom_diagnoses_prompt=custom_diagnoses_prompt
         )
         

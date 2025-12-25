@@ -1057,7 +1057,7 @@ const ResultsPage: React.FC = () => {
         predicted_icd10: patientProfile?.predicted_icd10 || patientProfile?.diagnoses?.primary?.code,
         icd10_description: patientProfile?.icd10_description || patientProfile?.diagnoses?.primary?.description,
         search_query: patientProfile?.search_query,
-        determined_specialty: searchParams?.determined_specialty || patientProfile?.specialties_needed?.[0]
+        determined_specialty: searchParams?.determined_specialty || patientProfile?.determined_specialty
       };
 
       if (existingCptCodes && existingCptCodes.length > 0) {
