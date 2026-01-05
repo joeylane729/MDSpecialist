@@ -309,7 +309,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
               <span>•</span>
               <div className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                <span>{yearsExperienceValue || '--'}y</span>
+                <span>{yearsExperienceValue || '--'} yrs exp</span>
               </div>
               {isCertified && (
                 <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">
@@ -398,44 +398,6 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
               </div>
             )}
 
-            {/* Lectures - Collapsible */}
-            {providerContent && providerContent.vumedi_content && providerContent.vumedi_content.length > 0 && (
-              <div className="mb-3">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowLectures(!showLectures);
-                  }}
-                  className="flex items-center gap-2 text-sm font-semibold text-gray-800 hover:text-gray-900 transition-colors"
-                >
-                  {showLectures ? <ChevronUp className="h-4 w-4 text-gray-600" /> : <ChevronDown className="h-4 w-4 text-gray-600" />}
-                  <Video className="h-4 w-4 text-gray-700" />
-                  <span>Lectures ({providerContent.vumedi_content.length})</span>
-                </button>
-                {showLectures && (
-                  <div className="mt-3 ml-6 max-h-96 overflow-y-auto">
-                    <div className="space-y-1.5 pr-2">
-                      {providerContent.vumedi_content.map((content, index) => (
-                        <a
-                          key={index}
-                          href={content.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex items-start gap-2 p-2 bg-purple-50 hover:bg-purple-100 rounded-md transition-colors group"
-                        >
-                          <span className="text-purple-600 mt-0.5 text-xs">▶</span>
-                          <div className="font-medium text-purple-800 text-sm break-words line-clamp-2 flex-1 group-hover:text-purple-900">
-                            {content.title}
-                          </div>
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Publications - Collapsible */}
             {providerContent && providerContent.pubmed_articles && providerContent.pubmed_articles.length > 0 && (
               <div className="mb-3">
@@ -474,6 +436,44 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
               </div>
             )}
 
+            {/* Lectures - Collapsible */}
+            {providerContent && providerContent.vumedi_content && providerContent.vumedi_content.length > 0 && (
+              <div className="mb-3">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowLectures(!showLectures);
+                  }}
+                  className="flex items-center gap-2 text-sm font-semibold text-gray-800 hover:text-gray-900 transition-colors"
+                >
+                  {showLectures ? <ChevronUp className="h-4 w-4 text-gray-600" /> : <ChevronDown className="h-4 w-4 text-gray-600" />}
+                  <Video className="h-4 w-4 text-gray-700" />
+                  <span>Lectures ({providerContent.vumedi_content.length})</span>
+                </button>
+                {showLectures && (
+                  <div className="mt-3 ml-6 max-h-96 overflow-y-auto">
+                    <div className="space-y-1.5 pr-2">
+                      {providerContent.vumedi_content.map((content, index) => (
+                        <a
+                          key={index}
+                          href={content.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="flex items-start gap-2 p-2 bg-purple-50 hover:bg-purple-100 rounded-md transition-colors group"
+                        >
+                          <span className="text-purple-600 mt-0.5 text-xs">▶</span>
+                          <div className="font-medium text-purple-800 text-sm break-words line-clamp-2 flex-1 group-hover:text-purple-900">
+                            {content.title}
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Patient Reviews - Collapsible */}
             {providerContent?.reviews && providerContent.reviews.length > 0 && (
               <div className="mb-3">
@@ -486,7 +486,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                 >
                   {showReviews ? <ChevronUp className="h-4 w-4 text-gray-600" /> : <ChevronDown className="h-4 w-4 text-gray-600" />}
                   <Star className="h-4 w-4 text-gray-700" />
-                  <span>Reviews ({providerContent.reviews.length})</span>
+                  <span>Reviews ({providerContent.reviews.filter(review => review.is_relevant === true).length})</span>
                 </button>
                 {showReviews && (
                   <div className="mt-3">

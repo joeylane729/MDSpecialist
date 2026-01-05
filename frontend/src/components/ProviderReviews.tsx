@@ -35,8 +35,8 @@ export default function ProviderReviews({ reviews: allReviews, patientDiagnosis 
     return sum / ratingsWithValues.length;
   }, [relevantReviews]);
   
-  // If no relevant reviews, automatically show all reviews
-  const effectiveViewMode = matchingCount === 0 ? 'all' : viewMode;
+  // Don't automatically switch to 'all' mode - stay in 'relevant' mode and show message
+  const effectiveViewMode = viewMode;
   const filteredReviews = effectiveViewMode === 'all' ? allReviews : relevantReviews;
 
   const toggleReviewExpansion = (reviewId: number) => {
@@ -73,11 +73,11 @@ export default function ProviderReviews({ reviews: allReviews, patientDiagnosis 
       {/* Clean Header */}
       <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-200">
         <div className="flex items-center gap-2">
-          {matchingCount === 0 ? (
+          {matchingCount === 0 && effectiveViewMode === 'relevant' ? (
             <span className="text-sm text-gray-700">
-              No reviews relevant to: <span className="font-semibold text-gray-900">{patientDiagnosis || 'your condition'}</span>. Showing all {totalCount} review{totalCount !== 1 ? 's' : ''} instead.
+              No reviews relevant to: <span className="font-semibold text-gray-900">{patientDiagnosis || 'your condition'}</span>
             </span>
-          ) : effectiveViewMode === 'relevant' ? (
+          ) : matchingCount > 0 && effectiveViewMode === 'relevant' ? (
             <span className="text-sm text-gray-700">
               Showing {matchingCount} review{matchingCount !== 1 ? 's' : ''} relevant to: <span className="font-semibold text-gray-900">{patientDiagnosis || 'your condition'}</span>
               {avgRelevantRating !== null && (
@@ -97,26 +97,44 @@ export default function ProviderReviews({ reviews: allReviews, patientDiagnosis 
             </span>
           )}
         </div>
-        {matchingCount > 0 && effectiveViewMode === 'relevant' && matchingCount < totalCount && (
+        {matchingCount === 0 && effectiveViewMode === 'relevant' ? (
           <button
             onClick={() => setViewMode('all')}
             className="text-sm text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center gap-1"
           >
             View all {totalCount} →
           </button>
-        )}
-        {matchingCount > 0 && effectiveViewMode === 'all' && (
+        ) : matchingCount > 0 && effectiveViewMode === 'relevant' && matchingCount < totalCount ? (
+          <button
+            onClick={() => setViewMode('all')}
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center gap-1"
+          >
+            View all {totalCount} →
+          </button>
+        ) : matchingCount > 0 && effectiveViewMode === 'all' ? (
           <button
             onClick={() => setViewMode('relevant')}
             className="text-sm text-blue-600 hover:text-blue-800 font-medium hover:underline flex items-center gap-1"
           >
             Relevant only ({matchingCount}) →
           </button>
-        )}
+        ) : null}
       </div>
 
       {/* Feed-Style Reviews - Contained Scrollable */}
-      {filteredReviews.length === 0 ? (
+      {matchingCount === 0 && effectiveViewMode === 'relevant' ? (
+        <div className="text-center py-6">
+          <p className="text-sm text-gray-600 mb-3">
+            There are no reviews relevant to <span className="font-semibold text-gray-900">{patientDiagnosis || 'your condition'}</span>.
+          </p>
+          <button
+            onClick={() => setViewMode('all')}
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium hover:underline"
+          >
+            Click to view all {totalCount} review{totalCount !== 1 ? 's' : ''}
+          </button>
+        </div>
+      ) : filteredReviews.length === 0 ? (
         <p className="text-sm text-gray-600 text-center py-4">
           No reviews available
         </p>
