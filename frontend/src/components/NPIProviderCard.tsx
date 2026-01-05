@@ -309,7 +309,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
               <span>•</span>
               <div className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                <span>{yearsExperienceValue || '--'} yrs exp</span>
+                <span>{yearsExperienceValue || '--'} years of experience</span>
               </div>
               {isCertified && (
                 <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">
