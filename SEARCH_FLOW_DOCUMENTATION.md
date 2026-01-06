@@ -78,6 +78,7 @@ The UI enforces a specific sequence that users must follow:
     - Predicts ICD-10 codes
     - **Determines specialty** for provider search (optimization - avoids duplicate GPT calls later)
     - Creates search query for specialist information retrieval
+    - Returns search query and `search_query_prompt_text` in patient profile
     - Returns patient profile with all analysis results including `determined_specialty`
 
     **Note**: CPT codes are NOT generated in this step - they are generated separately later via a separate API call (Phase 6). CPT code generation is **required** before specialist search can proceed.
@@ -127,6 +128,7 @@ The UI enforces a specific sequence that users must follow:
         "cpt_prompt_text": "",  // Empty initially
         "diagnoses_prompt_text": "Patient Information:\nSymptoms: Severe headaches...",  // Actual GPT prompt used
         "search_query": "cluster headache trigeminal neuralgia microvascular decompression gamma knife radiosurgery treatment outcomes complications",
+        "search_query_prompt_text": "Generate a concise search query to find PubMed articles...",  // Actual GPT prompt used
         
         // Nested structure for backward compatibility
         "diagnoses": {
@@ -155,8 +157,9 @@ The UI enforces a specific sequence that users must follow:
       - `complications`: Potential risks and complications
       - `category`: One of "Surgery", "Radiosurgery", "Endovascular", or "Other"
     - **search_query**: Optimized search string for specialist information retrieval queries (used later for finding relevant medical content)
+    - **search_query_prompt_text**: The actual GPT prompt that was used to generate the search query (useful for debugging/regeneration)
     - **diagnoses_prompt_text**: The actual GPT prompt that was used to generate the diagnoses (useful for debugging/regeneration)
-    - **cpt_codes**: Empty array initially - CPT codes are generated separately via `/api/v1/cpt-codes/generate` endpoint (required before specialist search)
+    - **cpt_codes**: Empty array initially - CPT codes are generated separately via `/api/v1/medical-analysis/cpt-codes` endpoint (required before specialist search)
 
 ---
 
@@ -167,6 +170,7 @@ The UI enforces a specific sequence that users must follow:
     - Predicted diagnoses
     - Other medical insights
     - **Note**: CPT codes are not shown yet - they must be generated in the next step
+    - **Note**: Users can view and edit the search query generation prompt (similar to diagnoses and CPT code prompts) to regenerate the search query if needed
 
 ---
 
@@ -530,6 +534,7 @@ The UI enforces a specific sequence that users must follow:
     predicted_icd10: string,
     icd10_description: string,
     search_query: string,
+    search_query_prompt_text?: string,  // GPT prompt text used to generate search query
     specialties_needed: string[]
   },
   recommendations: SpecialistRecommendation[],
