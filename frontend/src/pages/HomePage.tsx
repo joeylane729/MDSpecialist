@@ -791,7 +791,7 @@ const HomePage: React.FC = () => {
                       id="zipCode"
                       value={zipCode}
                       onChange={(e) => setZipCode(e.target.value)}
-                      placeholder="Enter zip code (optional)"
+                      placeholder="Enter zip code"
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300"
                       maxLength={10}
                     />
