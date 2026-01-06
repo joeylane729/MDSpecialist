@@ -1815,25 +1815,6 @@ const ResultsPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Patient Age Category */}
-                  {searchParams?.patient_age_category && (
-                    <div className="border-l-4 border-teal-500 pl-4">
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Patient Age Category</h3>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                          searchParams.patient_age_category === 'adult' 
-                            ? 'bg-blue-100 text-blue-800' 
-                            : 'bg-orange-100 text-orange-800'
-                        }`}>
-                          {searchParams.patient_age_category === 'adult' ? 'Adult' : 'Child'}
-                        </span>
-                        <span className="text-sm text-gray-600">
-                          ({searchParams.patient_age_category === 'adult' ? '≥18 years' : '<18 years'})
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
                   {/* Search Query Generation Prompt (collapsed by default) */}
                   {(searchQueryPromptText || searchParams?.search_query_prompt_text) && (
                     <div className="border-l-4 border-indigo-500 pl-4">
@@ -1887,6 +1868,25 @@ const ResultsPage: React.FC = () => {
                     <div className="border-l-4 border-purple-500 pl-4">
                       <h3 className="text-lg font-medium text-gray-900 mb-2">Recommended Specialty</h3>
                       <p className="text-gray-700">{searchParams.determined_specialty}</p>
+                    </div>
+                  )}
+
+                  {/* Patient Age Category */}
+                  {searchParams?.patient_age_category && (
+                    <div className="border-l-4 border-teal-500 pl-4">
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Patient Age Category</h3>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                          searchParams.patient_age_category === 'adult' 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-orange-100 text-orange-800'
+                        }`}>
+                          {searchParams.patient_age_category === 'adult' ? 'Adult' : 'Child'}
+                        </span>
+                        <span className="text-sm text-gray-600">
+                          ({searchParams.patient_age_category === 'adult' ? '≥18 years' : '<18 years'})
+                        </span>
+                      </div>
                     </div>
                   )}
                 </div>
