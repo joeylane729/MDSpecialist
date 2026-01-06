@@ -34,6 +34,8 @@ interface SearchParams {
   diagnoses_prompt_text?: string;  // GPT prompt text used to generate diagnoses/treatment options
   search_query?: string;  // Pre-generated search query
   search_query_prompt_text?: string;  // GPT prompt text used to generate search query
+  patientAge?: { month: string; year: string };  // Patient age (month and year of birth)
+  patient_age_category?: 'adult' | 'child';  // Patient age category
 }
 
 interface TreatmentOption {
@@ -81,6 +83,29 @@ const getCptCodeToCategoryMap = (cptCodesByCategory: { [category: string]: Array
 };
 
 // Helper function to get categories from treatment options
+// Helper function to calculate patient age category from birth month and year
+const calculateAgeCategory = (month: string, year: string): 'adult' | 'child' | null => {
+  if (!month || !year) return null;
+  
+  const birthMonth = parseInt(month, 10);
+  const birthYear = parseInt(year, 10);
+  
+  if (isNaN(birthMonth) || isNaN(birthYear)) return null;
+  
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth() + 1; // getMonth() returns 0-11
+  
+  let age = currentYear - birthYear;
+  
+  // Adjust age if birthday hasn't occurred this year
+  if (currentMonth < birthMonth || (currentMonth === birthMonth && today.getDate() < 1)) {
+    age--;
+  }
+  
+  return age >= 18 ? 'adult' : 'child';
+};
+
 const getCategoriesFromTreatmentOptions = (treatmentOptions: TreatmentOption[] | null): string[] => {
   if (!treatmentOptions || treatmentOptions.length === 0) return [];
   const categories = new Set<string>();
@@ -648,7 +673,20 @@ const ResultsPage: React.FC = () => {
     if (location.state?.searchParams && location.state.providers !== undefined) {
       console.log('🔍 DEBUG: ResultsPage - location.state.searchParams:', location.state.searchParams);
       console.log('🔍 DEBUG: ResultsPage - search_query in searchParams:', location.state.searchParams.search_query);
-      setSearchParams(location.state.searchParams);
+      
+      // Calculate age category if patientAge is available
+      const patientAge = location.state.searchParams.patientAge || location.state.patientAge;
+      let ageCategory: 'adult' | 'child' | undefined = undefined;
+      if (patientAge && patientAge.month && patientAge.year) {
+        ageCategory = calculateAgeCategory(patientAge.month, patientAge.year) || undefined;
+      }
+      
+      const searchParamsWithAge = {
+        ...location.state.searchParams,
+        patientAge: patientAge,
+        patient_age_category: ageCategory
+      };
+      setSearchParams(searchParamsWithAge);
       setProviders(location.state.providers);
       
       // Check if we have treatment rankings data to use for initial display
@@ -719,7 +757,18 @@ const ResultsPage: React.FC = () => {
         console.log('🔍 DEBUG: Loading from localStorage - searchParams:', parsed.searchParams);
         console.log('🔍 DEBUG: Loading from localStorage - treatment_options:', parsed.searchParams?.treatment_options);
         if (parsed.searchParams && parsed.providers && parsed.providers.length > 0) {
-          setSearchParams(parsed.searchParams);
+          // Calculate age category if patientAge is available
+          const patientAge = parsed.searchParams.patientAge;
+          let ageCategory: 'adult' | 'child' | undefined = undefined;
+          if (patientAge && patientAge.month && patientAge.year) {
+            ageCategory = calculateAgeCategory(patientAge.month, patientAge.year) || undefined;
+          }
+          
+          const searchParamsWithAge = {
+            ...parsed.searchParams,
+            patient_age_category: ageCategory
+          };
+          setSearchParams(searchParamsWithAge);
           setProviders(parsed.providers);
           
           // Restore filter state if available
@@ -742,7 +791,19 @@ const ResultsPage: React.FC = () => {
     
     // If no saved data, check if we have searchParams but need to regenerate providers
     if (location.state?.searchParams) {
-      setSearchParams(location.state.searchParams);
+      // Calculate age category if patientAge is available
+      const patientAge = location.state.searchParams.patientAge || location.state.patientAge;
+      let ageCategory: 'adult' | 'child' | undefined = undefined;
+      if (patientAge && patientAge.month && patientAge.year) {
+        ageCategory = calculateAgeCategory(patientAge.month, patientAge.year) || undefined;
+      }
+      
+      const searchParamsWithAge = {
+        ...location.state.searchParams,
+        patientAge: patientAge,
+        patient_age_category: ageCategory
+      };
+      setSearchParams(searchParamsWithAge);
       setCurrentPage(1);
     } else {
       // No location.state data - should not happen in normal flow
@@ -1750,6 +1811,25 @@ const ResultsPage: React.FC = () => {
                         <div className="text-sm text-gray-800 font-mono break-words">
                           {searchParams?.search_query}
                         </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Patient Age Category */}
+                  {searchParams?.patient_age_category && (
+                    <div className="border-l-4 border-teal-500 pl-4">
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">Patient Age Category</h3>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                          searchParams.patient_age_category === 'adult' 
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-orange-100 text-orange-800'
+                        }`}>
+                          {searchParams.patient_age_category === 'adult' ? 'Adult' : 'Child'}
+                        </span>
+                        <span className="text-sm text-gray-600">
+                          ({searchParams.patient_age_category === 'adult' ? '≥18 years' : '<18 years'})
+                        </span>
                       </div>
                     </div>
                   )}
