@@ -22,7 +22,7 @@ router = APIRouter()
 async def search_providers_by_criteria(
     state: str = Form(...),
     city: str = Form(...),
-    zipCode: str = Form(...),
+    zipCode: Optional[str] = Form(None),
     proximity: str = Form(...),
     diagnosis: str = Form(...),
     search_query: Optional[str] = Form(None),  # Pre-generated search query from medical analysis
