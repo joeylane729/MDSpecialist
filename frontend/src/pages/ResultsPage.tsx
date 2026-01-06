@@ -15,7 +15,6 @@ interface Provider extends NPIProvider {
 interface SearchParams {
   state: string;
   city: string;
-  symptoms: string;
   diagnosis: string;
   determined_specialty?: string;
   predicted_icd10?: string;
@@ -942,7 +941,6 @@ const ResultsPage: React.FC = () => {
       // Call medical analysis API with custom prompt
       // Get data from searchParams or fallback to location.state
       const response = await getMedicalAnalysis({
-        symptoms: searchParams.symptoms || location.state?.symptoms || '',
         diagnosis: searchParams.diagnosis || location.state?.diagnosis || '',
         medical_history: location.state?.medicalHistory || '',
         medications: location.state?.medications || '',
@@ -1194,7 +1192,6 @@ const ResultsPage: React.FC = () => {
       // Reuse medical analysis results from first step to avoid duplicate GPT calls
       const patientProfile = location.state?.aiRecommendations?.patient_profile;
       const specialistRequest: SpecialistRecommendationRequest = {
-        symptoms: searchParams?.symptoms || '',
         diagnosis: searchParams?.diagnosis || '',
         medical_history: location.state?.medicalHistory || '',
         medications: location.state?.medications || '',
@@ -1243,7 +1240,6 @@ const ResultsPage: React.FC = () => {
         zipCode: location.state?.zipCode || '',
         proximity: location.state?.proximity || 'statewide',
         diagnosis: searchParams?.diagnosis || '',
-        symptoms: searchParams?.symptoms || '',
         uploadedFiles: [],
         // Required: Pass pre-determined values from medical analysis
         determined_specialty: determinedSpecialty,
@@ -1296,7 +1292,7 @@ const ResultsPage: React.FC = () => {
       
       const rankingRequest: NPIRankingRequest = {
         npi_providers: npiData.providers,
-        patient_input: `Symptoms: ${searchParams?.symptoms}\nDiagnosis: ${searchParams?.diagnosis}`,
+        patient_input: `Diagnosis: ${searchParams?.diagnosis}`,
         shared_specialist_information: specialistResponse.shared_specialist_information || [],
         cms_data: specialistResponse.cms_data, // Pass CMS data for clinical volume bonus
         search_query: searchQuery // Pass search_query from first analysis (same as used for PubMed)
@@ -1875,18 +1871,9 @@ const ResultsPage: React.FC = () => {
                   {searchParams?.patient_age_category && (
                     <div className="border-l-4 border-teal-500 pl-4">
                       <h3 className="text-lg font-medium text-gray-900 mb-2">Patient Age Category</h3>
-                      <div className="flex items-center gap-2">
-                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                          searchParams.patient_age_category === 'adult' 
-                            ? 'bg-blue-100 text-blue-800' 
-                            : 'bg-orange-100 text-orange-800'
-                        }`}>
-                          {searchParams.patient_age_category === 'adult' ? 'Adult' : 'Child'}
-                        </span>
-                        <span className="text-sm text-gray-600">
-                          ({searchParams.patient_age_category === 'adult' ? '≥18 years' : '<18 years'})
-                        </span>
-                      </div>
+                      <p className="text-gray-700">
+                        {searchParams.patient_age_category === 'adult' ? 'Adult' : 'Child'} ({searchParams.patient_age_category === 'adult' ? '≥18 years' : '<18 years'})
+                      </p>
                     </div>
                   )}
                 </div>
@@ -2395,7 +2382,6 @@ const ResultsPage: React.FC = () => {
                     return contentData;
                   })()}
                   patientDiagnosis={searchParams?.diagnosis}
-                  patientSymptoms={searchParams?.symptoms}
                   searchQuery={searchParams?.search_query}
                 />
               </div>

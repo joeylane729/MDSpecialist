@@ -447,7 +447,7 @@ class RankingService:
         Args:
             npi_providers: List of NPI provider dictionaries
             specialist_data: List of specialist information (Vumedi/PubMed)
-            patient_profile: Patient profile with symptoms, diagnosis, etc. (not used, kept for compatibility)
+            patient_profile: Patient profile (not used, kept for compatibility)
             max_providers: Maximum number of providers to rank (default: 10000)
             cms_tot_srvcs: Optional dict mapping NPI (string) to Tot_Srvcs (int) for clinical volume scoring
             
@@ -1068,7 +1068,7 @@ class RankingService:
         Args:
             npi_providers: List of NPI provider dictionaries
             treatment_specialist_data: Dictionary with treatment-specific specialist data
-            patient_profile: Patient profile with symptoms, diagnosis, etc.
+            patient_profile: Patient profile
             max_providers: Maximum number of providers to rank per treatment (default: 10000)
             cms_tot_srvcs: Optional dict mapping NPI (string) to Tot_Srvcs (int) for clinical volume scoring
             

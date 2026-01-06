@@ -15,7 +15,6 @@ interface NPIProviderCardProps {
   isCertified?: boolean;
   providerContent?: ProviderContent;
   patientDiagnosis?: string;
-  patientSymptoms?: string;
   searchQuery?: string;  // Pre-generated search query from backend (same as PubMed)
 }
 
@@ -50,7 +49,7 @@ const RED_FLAG_DEFINITIONS: Record<RedFlagType, RedFlagInfo> = {
   }
 };
 
-export default function NPIProviderCard({ provider, onClick, isHighlighted = false, score, scoreBreakdown, scoreData, isCertified = false, providerContent, patientDiagnosis, patientSymptoms, searchQuery }: NPIProviderCardProps) {
+export default function NPIProviderCard({ provider, onClick, isHighlighted = false, score, scoreBreakdown, scoreData, isCertified = false, providerContent, patientDiagnosis, searchQuery }: NPIProviderCardProps) {
   const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
   const [isQuestionsModalOpen, setIsQuestionsModalOpen] = useState(false);
   const [isPreAuthModalOpen, setIsPreAuthModalOpen] = useState(false);
@@ -189,7 +188,6 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
       const response = await generatePreAuthLetter({
         provider_info: providerInfo,
         patient_diagnosis: patientDiagnosis,
-        patient_symptoms: patientSymptoms || undefined,
         specificity_relevance: specificityRelevance,
         user_first_name: userFirstName.trim(),
         user_last_name: userLastName.trim(),
@@ -610,7 +608,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                 <h4 className="font-semibold text-orange-900 mb-2">About Follow-up and Care</h4>
                 <ul className="text-orange-800 space-y-1 text-sm">
                   <li>• What follow-up care will I need?</li>
-                  <li>• What symptoms should I watch for?</li>
+                  <li>• What warning signs should I watch for?</li>
                   <li>• When should I contact you or seek emergency care?</li>
                   <li>• How will we monitor my progress?</li>
                 </ul>

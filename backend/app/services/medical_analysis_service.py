@@ -23,7 +23,6 @@ class MedicalAnalysisService:
     
     async def comprehensive_analysis(
         self,
-        symptoms: str,
         diagnosis: str,
         medical_history: str = "",
         medications: str = "",
@@ -36,7 +35,6 @@ class MedicalAnalysisService:
         CPT codes are NOT generated in this step - they must be generated separately via generate_cpt_codes_from_analysis().
         
         Args:
-            symptoms: Patient symptoms
             diagnosis: Patient diagnosis
             medical_history: Medical history (optional)
             medications: Current medications (optional)
@@ -48,12 +46,12 @@ class MedicalAnalysisService:
         try:
             # Perform medical analysis with individual fields including PDF content
             diagnoses_result, diagnoses_prompt_text = await self.predict_diagnoses(
-                symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content,
+                diagnosis, medical_history, medications, surgical_history, pdf_content,
                 custom_prompt=custom_diagnoses_prompt
             )
             
             medical_analysis = {
-                "predicted_icd10": await self.predict_icd10_code(symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content),
+                "predicted_icd10": await self.predict_icd10_code(diagnosis, medical_history, medications, surgical_history, pdf_content),
                 "diagnoses": diagnoses_result
             }
             
@@ -184,7 +182,6 @@ class MedicalAnalysisService:
 
     async def predict_icd10_code(
         self, 
-        symptoms: str, 
         diagnosis: str, 
         medical_history: str = "", 
         medications: str = "", 
@@ -195,7 +192,6 @@ class MedicalAnalysisService:
         Use GPT to predict the most accurate ICD-10 code based on patient information.
         
         Args:
-            symptoms: Patient symptoms
             diagnosis: Patient diagnosis
             medical_history: Medical history (optional)
             medications: Current medications (optional)
@@ -207,10 +203,9 @@ class MedicalAnalysisService:
         """
         try:
             prompt = PromptTemplate(
-                input_variables=["symptoms", "diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
+                input_variables=["diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
                 template="""
                 Patient Information:
-                Symptoms: {symptoms}
                 Diagnosis: {diagnosis}
                 Medical History: {medical_history}
                 Current Medications: {medications}
@@ -229,7 +224,6 @@ class MedicalAnalysisService:
             chain = prompt | self.llm
             
             response = await chain.ainvoke({
-                "symptoms": symptoms,
                 "diagnosis": diagnosis,
                 "medical_history": medical_history,
                 "medications": medications,
@@ -884,7 +878,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
 
     async def predict_diagnoses(
         self, 
-        symptoms: str, 
         diagnosis: str, 
         medical_history: str = "", 
         medications: str = "", 
@@ -896,7 +889,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         Use GPT to predict primary diagnosis and treatment options based on patient information.
         
         Args:
-            symptoms: Patient symptoms 
             diagnosis: Patient diagnosis
             medical_history: Medical history (optional)
             medications: Current medications (optional)
@@ -910,7 +902,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         try:
             default_template = """
                 Patient Information:
-                Symptoms: {symptoms}
                 Diagnosis: {diagnosis}
                 Medical History: {medical_history}
                 Current Medications: {medications}
@@ -920,7 +911,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 {pdf_content}
                 
                 Analyze the information above and provide:
-                1. Primary diagnosis (most likely ICD-10 code and description based on symptoms and diagnosis)
+                1. Primary diagnosis (most likely ICD-10 code and description based on diagnosis)
                 2. Treatment options performed specifically by a neurosurgeon
 
                 Provide all relevant treatment options based on the diagnosis. 
@@ -953,7 +944,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 # Escape all curly braces except for our template variables to prevent LangChain from parsing them
                 escaped_prompt = custom_prompt
                 # Temporarily replace our template variables with placeholders
-                escaped_prompt = escaped_prompt.replace("{symptoms}", "__SYMPTOMS__")
                 escaped_prompt = escaped_prompt.replace("{diagnosis}", "__DIAGNOSIS__")
                 escaped_prompt = escaped_prompt.replace("{medical_history}", "__MEDICAL_HISTORY__")
                 escaped_prompt = escaped_prompt.replace("{medications}", "__MEDICATIONS__")
@@ -962,7 +952,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 # Escape all remaining curly braces
                 escaped_prompt = escaped_prompt.replace("{", "{{").replace("}", "}}")
                 # Restore our template variables
-                escaped_prompt = escaped_prompt.replace("{{__SYMPTOMS__}}", "{symptoms}")
                 escaped_prompt = escaped_prompt.replace("{{__DIAGNOSIS__}}", "{diagnosis}")
                 escaped_prompt = escaped_prompt.replace("{{__MEDICAL_HISTORY__}}", "{medical_history}")
                 escaped_prompt = escaped_prompt.replace("{{__MEDICATIONS__}}", "{medications}")
@@ -971,14 +960,13 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 
                 prompt_template = escaped_prompt
                 # For custom prompts, format with the variables if they're present
-                if any(var in custom_prompt for var in ["{symptoms}", "{diagnosis}", "{medical_history}", "{medications}", "{surgical_history}", "{pdf_content}"]):
+                if any(var in custom_prompt for var in ["{diagnosis}", "{medical_history}", "{medications}", "{surgical_history}", "{pdf_content}"]):
                     # Variables are present, use LangChain PromptTemplate
                     prompt = PromptTemplate(
-                        input_variables=["symptoms", "diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
+                        input_variables=["diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
                         template=prompt_template
                     )
                     rendered_prompt = prompt.format(
-                        symptoms=symptoms,
                         diagnosis=diagnosis,
                         medical_history=medical_history,
                         medications=medications,
@@ -991,11 +979,10 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             else:
                 prompt_template = default_template
                 prompt = PromptTemplate(
-                    input_variables=["symptoms", "diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
+                    input_variables=["diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
                     template=prompt_template
                 )
                 rendered_prompt = prompt.format(
-                    symptoms=symptoms,
                     diagnosis=diagnosis,
                     medical_history=medical_history,
                     medications=medications,
@@ -1006,19 +993,18 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             # Create prompt template for LangChain (always use variables even if custom prompt doesn't have them)
             if custom_prompt:
                 prompt = PromptTemplate(
-                    input_variables=["symptoms", "diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
+                    input_variables=["diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
                     template=prompt_template
                 )
             else:
                 prompt = PromptTemplate(
-                    input_variables=["symptoms", "diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
+                    input_variables=["diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
                     template=prompt_template
                 )
             
             chain = prompt | self.llm
             
             response = await chain.ainvoke({
-                "symptoms": symptoms,
                 "diagnosis": diagnosis,
                 "medical_history": medical_history,
                 "medications": medications,

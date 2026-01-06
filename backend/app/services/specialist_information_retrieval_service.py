@@ -420,10 +420,9 @@ class SpecialistInformationRetrievalService:
             patient_input: Combined patient input string
             
         Returns:
-            Tuple of (symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content)
+            Tuple of (diagnosis, medical_history, medications, surgical_history, pdf_content)
         """
         # Initialize with empty strings
-        symptoms = ""
         diagnosis = ""
         medical_history = ""
         medications = ""
@@ -435,9 +434,7 @@ class SpecialistInformationRetrievalService:
         
         for section in sections:
             section = section.strip()
-            if section.startswith('Symptoms:'):
-                symptoms = section.replace('Symptoms:', '').strip()
-            elif section.startswith('Diagnosis:'):
+            if section.startswith('Diagnosis:'):
                 diagnosis = section.replace('Diagnosis:', '').strip()
             elif section.startswith('Medical History:'):
                 medical_history = section.replace('Medical History:', '').strip()
@@ -451,7 +448,7 @@ class SpecialistInformationRetrievalService:
                 # Remove the "(PDF uploaded)" notes and keep only actual content
                 pdf_content = pdf_content.replace('(PDF uploaded)', '').strip()
         
-        return symptoms, diagnosis, medical_history, medications, surgical_history, pdf_content
+        return diagnosis, medical_history, medications, surgical_history, pdf_content
     
     async def retrieve_specialist_information(
         self,

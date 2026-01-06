@@ -48,7 +48,6 @@ async def extract_pdf_content(files: List[UploadFile]) -> str:
     return pdf_content
 
 async def build_patient_input(
-    symptoms: str,
     diagnosis: str,
     medical_history: Optional[str] = None,
     medications: Optional[str] = None,
@@ -59,7 +58,6 @@ async def build_patient_input(
     Build a comprehensive patient input string from individual components and files.
     
     Args:
-        symptoms: Patient symptoms
         diagnosis: Patient diagnosis
         medical_history: Medical history (optional)
         medications: Current medications (optional)
@@ -69,8 +67,8 @@ async def build_patient_input(
     Returns:
         Combined patient input string
     """
-    # Start with symptoms and diagnosis
-    patient_input = f"Symptoms: {symptoms}\n\nDiagnosis: {diagnosis}"
+    # Start with diagnosis
+    patient_input = f"Diagnosis: {diagnosis}"
     
     # Add optional medical information
     if medical_history:
@@ -113,17 +111,15 @@ async def build_patient_input(
     
     return patient_input
 
-def log_endpoint_call(endpoint_name: str, symptoms: str, diagnosis: str):
+def log_endpoint_call(endpoint_name: str, diagnosis: str):
     """
     Log the start of an endpoint call with basic information.
     
     Args:
         endpoint_name: Name of the endpoint being called
-        symptoms: Patient symptoms
         diagnosis: Patient diagnosis
     """
     logger.info(f"🚀 {endpoint_name} endpoint called")
-    logger.info(f"📝 Symptoms: {symptoms}")
     logger.info(f"📝 Diagnosis: {diagnosis}")
 
 def log_response_info(endpoint_name: str, response_data, treatment_options_key: str = "treatment_options"):

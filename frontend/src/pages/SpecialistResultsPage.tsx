@@ -158,18 +158,6 @@ const SpecialistResultsPage: React.FC = () => {
             Patient Profile
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {recommendations.patient_profile.symptoms && recommendations.patient_profile.symptoms.length > 0 && (
-              <div>
-                <h3 className="font-medium text-gray-700 mb-2">Symptoms</h3>
-                <div className="flex flex-wrap gap-2">
-                  {recommendations.patient_profile.symptoms.map((symptom, index) => (
-                    <span key={index} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
-                      {symptom}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
             {recommendations.patient_profile.specialties_needed && recommendations.patient_profile.specialties_needed.length > 0 && (
               <div>
                 <h3 className="font-medium text-gray-700 mb-2">Specialties Needed</h3>

@@ -22,7 +22,6 @@ class PreAuthLetterService:
         self,
         provider_info: Dict[str, Any],
         patient_diagnosis: str,
-        patient_symptoms: Optional[str] = None,
         specificity_relevance: Optional[Dict[str, Any]] = None,
         user_first_name: str = "",
         user_last_name: str = "",
@@ -43,7 +42,6 @@ class PreAuthLetterService:
                 - education: Educational history (medical school, residency, fellowship)
                 - years_experience: Years of experience
             patient_diagnosis: Patient's diagnosis
-            patient_symptoms: Optional patient symptoms
             specificity_relevance: Optional specificity/relevance data from scoreData
             user_first_name: User's first name
             user_last_name: User's last name
@@ -149,9 +147,6 @@ class PreAuthLetterService:
                 score = specificity_relevance.get('score', 0)
                 logger.info(f"🎯 [PreAuth] Specificity score: {score} (not included in letter)")
             
-            # Build patient symptoms line (handle conditionally outside template)
-            patient_symptoms_line = f"- Symptoms: {patient_symptoms}" if patient_symptoms else ""
-            
             # Assemble all provider qualification bullets
             provider_qualifications_bullets = []
             if publications_bullet:
@@ -185,7 +180,6 @@ class PreAuthLetterService:
                 "provider_qualifications": provider_qualifications,
                 "publications_list": publications_list,
                 "patient_diagnosis": patient_diagnosis,
-                "patient_symptoms_line": patient_symptoms_line,
                 "user_first_name": user_first_name,
                 "user_last_name": user_last_name,
                 "insurance_company_name": insurance_company_name,
@@ -207,7 +201,6 @@ Provider Qualifications:
 
 Patient Information:
 - Diagnosis: {patient_diagnosis}
-{patient_symptoms_line}
 
 Sender Information:
 - Name: {user_first_name} {user_last_name}
@@ -252,7 +245,6 @@ Write a professional email (400-600 words) with:
                     "provider_qualifications",
                     "publications_list",
                     "patient_diagnosis",
-                    "patient_symptoms_line",
                     "user_first_name",
                     "user_last_name",
                     "insurance_company_name",

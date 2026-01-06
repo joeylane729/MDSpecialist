@@ -24,7 +24,6 @@ def parse_optional_json(json_str: Optional[str]) -> Optional[Any]:
 
 @router.post("/specialist-recommendations")
 async def get_specialist_recommendations(
-    symptoms: str = Form(...),
     diagnosis: str = Form(...),
     medical_history: Optional[str] = Form(None),
     medications: Optional[str] = Form(None),
@@ -84,7 +83,6 @@ async def get_specialist_recommendations(
         
         # Build patient input
         patient_input = await build_patient_input(
-            symptoms=symptoms,
             diagnosis=diagnosis,
             medical_history=medical_history,
             medications=medications,

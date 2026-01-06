@@ -64,7 +64,6 @@ export interface NPISearchRequest {
   zipCode: string;
   proximity: string;
   diagnosis: string;
-  symptoms: string;
   uploadedFiles?: File[];
   // Required pre-determined values from medical analysis (must be provided)
   determined_specialty: string;
@@ -94,7 +93,6 @@ export const searchNPIProviders = async (request: NPISearchRequest): Promise<NPI
     formData.append('zipCode', request.zipCode);
     formData.append('proximity', request.proximity);
     formData.append('diagnosis', request.diagnosis);
-    formData.append('symptoms', request.symptoms);
     
     // Add pre-determined values from medical analysis (optimization to avoid duplicate GPT calls)
     if (request.determined_specialty) {
@@ -141,7 +139,6 @@ export interface SpecialistRecommendation {
 
 export interface PatientProfile {
   // Fields that may be present in API responses
-  symptoms?: string[];  // May be empty array in specialist recommendation responses
   specialties_needed?: string[];  // Contains determined_specialty in specialist recommendation responses
   
   // Active fields
@@ -177,7 +174,6 @@ export interface SpecialistRecommendationResponse {
 }
 
 export interface SpecialistRecommendationRequest {
-  symptoms: string;
   diagnosis: string;
   medical_history?: string;
   medications?: string;
@@ -199,7 +195,6 @@ export const getSpecialistRecommendations = async (
   try {
     // Create FormData for the request
     const formData = new FormData();
-    formData.append('symptoms', request.symptoms);
     formData.append('diagnosis', request.diagnosis);
     
     if (request.medical_history) {
@@ -285,7 +280,6 @@ export const getSpecialistRecommendations = async (
 
 // Medical Analysis API (without specialist retrieval)
 export interface MedicalAnalysisRequest {
-  symptoms: string;
   diagnosis: string;
   medical_history?: string;
   medications?: string;
@@ -404,7 +398,6 @@ export const getMedicalAnalysis = async (
 ): Promise<MedicalAnalysisResponse> => {
   try {
     console.log('🔍 [Frontend] Starting medical analysis request:', {
-      symptoms: request.symptoms,
       diagnosis: request.diagnosis,
       apiBaseUrl: API_BASE_URL,
       fullUrl: `${API_BASE_URL}/api/v1/medical-analysis`
@@ -412,7 +405,6 @@ export const getMedicalAnalysis = async (
 
     // Create FormData for the request
     const formData = new FormData();
-    formData.append('symptoms', request.symptoms);
     formData.append('diagnosis', request.diagnosis);
     
     if (request.medical_history) {
@@ -629,7 +621,6 @@ export interface PreAuthLetterRequest {
     yearsExperience?: number;
   };
   patient_diagnosis: string;
-  patient_symptoms?: string;
   specificity_relevance?: {
     score?: number;
     [key: string]: any;

@@ -25,7 +25,6 @@ async def search_providers_by_criteria(
     zipCode: str = Form(...),
     proximity: str = Form(...),
     diagnosis: str = Form(...),
-    symptoms: str = Form(...),
     search_query: Optional[str] = Form(None),  # Pre-generated search query from medical analysis
     determined_specialty: str = Form(...),  # Required: Pre-determined specialty from medical analysis
     predicted_icd10: Optional[str] = Form(None),  # Pre-determined ICD-10 code from medical analysis

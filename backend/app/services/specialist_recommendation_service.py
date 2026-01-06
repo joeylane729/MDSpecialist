@@ -91,7 +91,6 @@ class SpecialistRecommendationService:
                 "icd10_description": icd10_description or "",
                 
                 # Fields used by ranking service
-                "symptoms": [],  # Used for formatting, can be empty
                 
                 # Fields returned to frontend
                 "treatment_options": treatment_options,
@@ -253,18 +252,14 @@ class SpecialistRecommendationService:
             # Create minimal patient_profile with just search_query (no need to re-run analysis)
             logger.info(f"🔍 [Ranking] Using search_query from first medical analysis (skipping redundant analysis)")
             logger.info(f"   Search query: {search_query[:100]}{'...' if len(search_query) > 100 else ''}")
-            # Parse patient_input to extract symptoms for patient_profile (simple parsing)
-            symptoms = []
+            # Parse patient_input to extract diagnosis for patient_profile (simple parsing)
             diagnosis = ""
             for line in patient_input.split('\n'):
                 line = line.strip()
-                if line.startswith('Symptoms:'):
-                    symptoms = [s.strip() for s in line.replace('Symptoms:', '').strip().split(',') if s.strip()]
-                elif line.startswith('Diagnosis:'):
+                if line.startswith('Diagnosis:'):
                     diagnosis = line.replace('Diagnosis:', '').strip()
             medical_analysis_results = {
                 'search_query': search_query,
-                'symptoms': symptoms,
                 'diagnosis': diagnosis
             }
             

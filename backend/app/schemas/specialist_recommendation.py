@@ -12,7 +12,6 @@ from datetime import datetime
 class PatientProfileSchema(BaseModel):
     """Schema for patient profile."""
     # Fields that may be present in API responses
-    symptoms: Optional[List[str]] = Field(None, description="List of patient symptoms (may be empty)")
     specialties_needed: Optional[List[str]] = Field(None, description="Required medical specialties (contains determined_specialty)")
     
     # Active fields
@@ -58,7 +57,7 @@ class RecommendationResponseSchema(BaseModel):
 
 class SpecialistRecommendationRequestSchema(BaseModel):
     """Schema for specialist recommendation request."""
-    patient_input: str = Field(..., min_length=1, description="Patient description, symptoms, conditions, etc.")
+    patient_input: str = Field(..., min_length=1, description="Patient description including diagnosis and context")
     location_preference: Optional[str] = Field(None, description="Preferred location for specialist")
 
 

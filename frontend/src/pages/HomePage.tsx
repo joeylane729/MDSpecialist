@@ -37,7 +37,6 @@ const HomePage: React.FC = () => {
   const [medications, setMedications] = useState<string>('');
   const [medicalHistory, setMedicalHistory] = useState<string>('');
   const [surgicalHistory, setSurgicalHistory] = useState<string>('');
-  const [symptoms, setSymptoms] = useState<string>('');
 
   // Debug logging
   useEffect(() => {
@@ -516,7 +515,7 @@ const HomePage: React.FC = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedState || !selectedCity || !zipCode.trim() || !symptoms.trim() || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity) {
+    if (!selectedState || !selectedCity || !zipCode.trim() || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity) {
       alert('Please fill in all required fields before searching');
       return;
     }
@@ -529,7 +528,6 @@ const HomePage: React.FC = () => {
     try {
       // Get medical analysis (diagnosis analysis only - providers are searched later on ResultsPage)
       const aiRecommendations = await getMedicalAnalysis({
-        symptoms: symptoms,
         diagnosis: diagnosis,
         medical_history: medicalHistory,
         medications: medications,
@@ -553,7 +551,6 @@ const HomePage: React.FC = () => {
           state: selectedState,
           city: selectedCity,
           zipCode: zipCode,
-          symptoms: symptoms,
           diagnosis: diagnosis,
           gender: gender,
           patientAge: patientAge,
@@ -582,7 +579,6 @@ const HomePage: React.FC = () => {
           state: selectedState,
           city: selectedCity,
           zipCode: zipCode,
-          symptoms: symptoms,
           diagnosis: diagnosis,
           gender: gender,
           patientAge: patientAge,
@@ -596,7 +592,6 @@ const HomePage: React.FC = () => {
             state: selectedState,
             city: selectedCity,
             zipCode: zipCode,
-            symptoms: symptoms,
             diagnosis: diagnosis,
             gender: gender,
             patientAge: patientAge,
@@ -828,19 +823,6 @@ const HomePage: React.FC = () => {
                   Current Condition
                 </h3>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Symptoms */}
-                  <div className="group">
-                    <label htmlFor="symptoms" className="block text-sm font-semibold text-gray-700 mb-3">Symptoms *</label>
-                    <textarea
-                      id="symptoms"
-                      value={symptoms}
-                      onChange={(e) => setSymptoms(e.target.value)}
-                      placeholder="Describe your current symptoms in detail, including when they started, severity, and any triggers..."
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300 resize-none"
-                      rows={5}
-                      required
-                    />
-                  </div>
 
                   {/* Presumed Diagnosis */}
                   <div className="group">
@@ -960,7 +942,7 @@ const HomePage: React.FC = () => {
               <div className="text-center">
                 <button
                   type="submit"
-                  disabled={isLoading || !selectedState || !selectedCity || !zipCode.trim() || !symptoms.trim() || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity}
+                  disabled={isLoading || !selectedState || !selectedCity || !zipCode.trim() || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity}
                   className="group relative inline-flex items-center justify-center w-full max-w-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
                 >
                   {isLoading ? (

@@ -20,7 +20,6 @@ router = APIRouter()
 
 @router.post("/medical-analysis")
 async def get_medical_analysis(
-    symptoms: str = Form(...),
     diagnosis: str = Form(...),
     medical_history: Optional[str] = Form(None),
     medications: Optional[str] = Form(None),
@@ -42,7 +41,6 @@ async def get_medical_analysis(
         # Initialize service and perform analysis
         medical_analysis_service = MedicalAnalysisService(db)
         analysis_results = await medical_analysis_service.comprehensive_analysis(
-            symptoms=symptoms,
             diagnosis=diagnosis,
             medical_history=medical_history or "",
             medications=medications or "",

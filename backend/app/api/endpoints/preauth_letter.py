@@ -21,7 +21,6 @@ class PreAuthLetterRequest(BaseModel):
     """Request model for pre-authorization letter generation."""
     provider_info: dict  # Provider information including name, npi, specialty, publications, etc.
     patient_diagnosis: str
-    patient_symptoms: Optional[str] = None
     specificity_relevance: Optional[dict] = None  # Specificity/relevance data from scoreData
     user_first_name: Optional[str] = ""
     user_last_name: Optional[str] = ""
@@ -39,7 +38,7 @@ async def generate_preauth_letter(
     
     Uses GPT to generate a professional pre-authorization letter that includes:
     - Provider qualifications (publications, clinical volume, education, experience)
-    - Patient diagnosis and symptoms
+    - Patient diagnosis
     - Specificity/relevance of the provider to the patient's condition
     """
     try:
@@ -47,7 +46,6 @@ async def generate_preauth_letter(
         letter, prompt_text = await preauth_service.generate_preauth_letter(
             provider_info=request.provider_info,
             patient_diagnosis=request.patient_diagnosis,
-            patient_symptoms=request.patient_symptoms,
             specificity_relevance=request.specificity_relevance,
             user_first_name=request.user_first_name,
             user_last_name=request.user_last_name,

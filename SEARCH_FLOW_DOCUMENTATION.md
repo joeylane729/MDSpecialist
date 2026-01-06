@@ -20,7 +20,6 @@ The UI enforces a specific sequence that users must follow:
    - State selection
    - City selection
    - ZIP code
-   - Symptoms (required)
    - Diagnosis (required)
    - Patient age (month and year)
    - Proximity preference (statewide/US-wide)
@@ -43,7 +42,7 @@ The UI enforces a specific sequence that users must follow:
 4. **Form validation**:
    - Checks that all required fields are filled:
      - State, City, ZIP code
-     - Symptoms, Diagnosis
+     - Diagnosis
      - Patient age (month and year)
      - Proximity
    - Shows alert if validation fails
@@ -60,7 +59,7 @@ The UI enforces a specific sequence that users must follow:
 
 7. **Call `getMedicalAnalysis()` API** (`/api/v1/medical-analysis`):
    - **Request payload**:
-     - Symptoms, Diagnosis
+     - Diagnosis
      - Medical history, Medications, Surgical history
      - Uploaded files (if any)
    - **This is a POST request with FormData** (multipart/form-data)
@@ -73,7 +72,7 @@ The UI enforces a specific sequence that users must follow:
 10. **Endpoint receives request** at `/api/v1/medical-analysis`
 
 11. **Medical analysis processing**:
-    - Analyzes patient information (symptoms, diagnosis, medical history, etc.)
+    - Analyzes patient information (diagnosis, medical history, etc.)
     - Generates treatment options
     - Predicts ICD-10 codes
     - **Determines specialty** for provider search (optimization - avoids duplicate GPT calls later)
@@ -92,7 +91,6 @@ The UI enforces a specific sequence that users must follow:
       "status": "success",
       "patient_profile": {
         // Patient profile data (from process_patient_input)
-        "symptoms": ["Severe headaches", "Visual disturbances", "Nausea"],
         "conditions": ["Cluster headaches", "Migraine variants"],
         "specialties_needed": ["Neurological Surgery", "Pain Medicine"],
         "location_preference": "New York, NY",
@@ -126,7 +124,7 @@ The UI enforces a specific sequence that users must follow:
         ],
         "cpt_codes": [],  // Empty initially - generated separately later
         "cpt_prompt_text": "",  // Empty initially
-        "diagnoses_prompt_text": "Patient Information:\nSymptoms: Severe headaches...",  // Actual GPT prompt used
+        "diagnoses_prompt_text": "Patient Information:\nDiagnosis: ...",  // Actual GPT prompt used
         "search_query": "cluster headache trigeminal neuralgia microvascular decompression gamma knife radiosurgery treatment outcomes complications",
         "search_query_prompt_text": "Generate a concise search query to find PubMed articles...",  // Actual GPT prompt used
         
@@ -146,7 +144,6 @@ The UI enforces a specific sequence that users must follow:
     ```
 
     **Key fields explained**:
-    - **symptoms**: Array of extracted/identified symptoms from patient input
     - **conditions**: Array of identified medical conditions
     - **specialties_needed**: Recommended medical specialties for treatment
     - **predicted_icd10**: Primary ICD-10 diagnosis code
@@ -194,7 +191,7 @@ The UI enforces a specific sequence that users must follow:
 
 16. **Frontend calls `getSpecialistRecommendations()` API** (`/api/v1/specialist-recommendations`):
     - **Request payload**:
-      - Symptoms, Diagnosis (still needed for patient_input string)
+      - Diagnosis (still needed for patient_input string)
       - Medical history, Medications, Surgical history
       - State
       - **Medical analysis results (reused from step 11 to avoid duplicate GPT calls)**:
@@ -211,7 +208,7 @@ The UI enforces a specific sequence that users must follow:
 17. **Frontend calls `searchNPIProviders()` API** (`/api/v1/npi/search-providers`):
     - **Request payload**:
       - State, City, ZIP code, Proximity
-      - Diagnosis, Symptoms
+      - Diagnosis
       - Uploaded files: empty array
       - **Required**: Must pass `determined_specialty` from medical analysis (no fallback)
       - **Optional**: Also passes `predicted_icd10` and `icd10_description` from medical analysis
@@ -317,7 +314,7 @@ The UI enforces a specific sequence that users must follow:
 31. **Call `rankNPIProviders()` API** (`/api/v1/npi/rank-npi-providers`):
     - **Request payload**:
       - `npi_providers`: Array of provider objects from NPI search
-      - `patient_input`: Combined symptoms and diagnosis
+      - `patient_input`: Diagnosis
       - `shared_specialist_information`: From specialist recommendations
       - `search_query`: From medical analysis (same as used for PubMed)
       - `cms_data`: CMS data (if available)
@@ -376,7 +373,7 @@ The UI enforces a specific sequence that users must follow:
 
 39. **Update state with ranked providers**:
     - Saves complete search state:
-      - Search parameters (state, city, symptoms, diagnosis, etc.)
+      - Search parameters (state, city, diagnosis, etc.)
       - Ranked providers
       - Treatment rankings
 
@@ -432,7 +429,7 @@ The UI enforces a specific sequence that users must follow:
         - Provider links (VuMedi videos, PubMed articles)
         - Certification status
         - Red flags (if any)
-        - Patient diagnosis and symptoms (for context)
+        - Patient diagnosis (for context)
 
 48. **Score calculation** (for display):
     - Retrieves score data from `providerScores` state
