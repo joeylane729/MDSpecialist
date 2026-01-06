@@ -17,6 +17,17 @@ logger = logging.getLogger(__name__)
 class RankingService:
     """Service for ranking NPI providers based on specialist information."""
     
+    # Scoring weights (must sum to 100)
+    WEIGHT_CLINICAL_VOLUME = 40.5  # Clinical Volume weight
+    WEIGHT_PUBMED = 40.5  # PubMed Articles weight
+    WEIGHT_TRAINING = 10.0  # Training (Med school + Residency + Certification) weight
+    WEIGHT_EXPERIENCE = 6.0  # Experience weight
+    WEIGHT_VUMEDI = 3.0  # Medical Lectures (Vumedi) weight
+    
+    # Validate weights sum to 100
+    _WEIGHT_TOTAL = WEIGHT_CLINICAL_VOLUME + WEIGHT_PUBMED + WEIGHT_TRAINING + WEIGHT_EXPERIENCE + WEIGHT_VUMEDI
+    assert abs(_WEIGHT_TOTAL - 100.0) < 0.01, f"Scoring weights must sum to 100, but sum to {_WEIGHT_TOTAL}"
+    
     def __init__(self, db: Session = None):
         self.db = db
     
@@ -359,12 +370,11 @@ class RankingService:
             experience_pct = min(scores.get('experience_raw', 0) / max_experience, 1.0)
             
             # Apply weights and calculate final score (0-100)
-            # Redistributed 5% from reviews: +2.5% to clinical_volume, +2.5% to pubmed
-            clinical_volume_weighted = clinical_volume_pct * 40.5  # 40.5% (was 38%, +2.5%)
-            pubmed_weighted = pubmed_pct * 40.5  # 40.5% (was 38%, +2.5%)
-            training_weighted = training_pct * 10.0  # 10%
-            experience_weighted = experience_pct * 6.0  # 6%
-            vumedi_weighted = vumedi_pct * 3.0  # 3%
+            clinical_volume_weighted = clinical_volume_pct * self.WEIGHT_CLINICAL_VOLUME
+            pubmed_weighted = pubmed_pct * self.WEIGHT_PUBMED
+            training_weighted = training_pct * self.WEIGHT_TRAINING
+            experience_weighted = experience_pct * self.WEIGHT_EXPERIENCE
+            vumedi_weighted = vumedi_pct * self.WEIGHT_VUMEDI
             
             final_score = clinical_volume_weighted + pubmed_weighted + training_weighted + experience_weighted + vumedi_weighted
             
@@ -390,7 +400,7 @@ class RankingService:
                         'max': max_values['clinical_volume'],
                         'percentage': clinical_volume_pct * 100,
                         'weighted_points': clinical_volume_weighted,
-                        'weight': 40.5,
+                        'weight': self.WEIGHT_CLINICAL_VOLUME,
                         'percentile': percentile_map.get(npi, 0.0)
                     },
                     'pubmed': {
@@ -398,7 +408,7 @@ class RankingService:
                         'max': max_values['pubmed'],
                         'percentage': pubmed_pct * 100,
                         'weighted_points': pubmed_weighted,
-                        'weight': 40.5,
+                        'weight': self.WEIGHT_CLINICAL_VOLUME,
                         'percentile': pubmed_percentile_map.get(npi, 0.0)
                     },
                     'training': {'raw': scores.get('training_raw', 0), 'max': max_values['training'], 'percentage': training_pct * 100, 'weighted_points': training_weighted, 'weight': 10},
@@ -841,27 +851,27 @@ class RankingService:
                             'clinical_volume': {
                                 'percentage': weighted_data['clinical_volume_pct'],
                                 'weighted_points': weighted_data['clinical_volume_weighted'],
-                                'weight': 38.0
+                                'weight': self.WEIGHT_CLINICAL_VOLUME
                             },
                             'pubmed': {
                                 'percentage': weighted_data['pubmed_pct'],
                                 'weighted_points': weighted_data['pubmed_weighted'],
-                                'weight': 38.0
+                                'weight': self.WEIGHT_PUBMED
                             },
                             'training': {
                                 'percentage': weighted_data['training_pct'],
                                 'weighted_points': weighted_data['training_weighted'],
-                                'weight': 10.0
+                                'weight': self.WEIGHT_TRAINING
                             },
                             'experience': {
                                 'percentage': weighted_data['experience_pct'],
                                 'weighted_points': weighted_data['experience_weighted'],
-                                'weight': 6.0
+                                'weight': self.WEIGHT_EXPERIENCE
                             },
                             'vumedi': {
                                 'percentage': weighted_data['vumedi_pct'],
                                 'weighted_points': weighted_data['vumedi_weighted'],
-                                'weight': 3.0
+                                'weight': self.WEIGHT_VUMEDI
                             },
                             'breakdown_details': weighted_data.get('breakdown_details', {})
                         }
@@ -949,31 +959,31 @@ class RankingService:
                             'raw': 0.0,
                             'percentage': 0.0,
                             'weighted_points': 0.0,
-                            'weight': 38.0
+                            'weight': self.WEIGHT_CLINICAL_VOLUME
                         },
                         'pubmed': {
                             'raw': 0.0,
                             'percentage': 0.0,
                             'weighted_points': 0.0,
-                            'weight': 38.0
+                            'weight': self.WEIGHT_PUBMED
                         },
                         'training': {
                             'raw': 0.0,
                             'percentage': 0.0,
                             'weighted_points': 0.0,
-                            'weight': 10.0
+                            'weight': self.WEIGHT_TRAINING
                         },
                         'experience': {
                             'raw': 0.0,
                             'percentage': 0.0,
                             'weighted_points': 0.0,
-                            'weight': 6.0
+                            'weight': self.WEIGHT_EXPERIENCE
                         },
                         'vumedi': {
                             'raw': 0.0,
                             'percentage': 0.0,
                             'weighted_points': 0.0,
-                            'weight': 3.0
+                            'weight': self.WEIGHT_VUMEDI
                         }
                     }
                     # Also ensure score is set (might be 0 for unmatched providers)
@@ -1230,27 +1240,27 @@ class RankingService:
                                 'clinical_volume': {
                                     'percentage': weighted_data['clinical_volume_pct'],
                                     'weighted_points': weighted_data['clinical_volume_weighted'],
-                                    'weight': 38.0
+                                    'weight': self.WEIGHT_CLINICAL_VOLUME
                                 },
                                 'pubmed': {
                                     'percentage': weighted_data['pubmed_pct'],
                                     'weighted_points': weighted_data['pubmed_weighted'],
-                                    'weight': 38.0
+                                    'weight': self.WEIGHT_PUBMED
                                 },
                                 'training': {
                                     'percentage': weighted_data['training_pct'],
                                     'weighted_points': weighted_data['training_weighted'],
-                                    'weight': 10.0
+                                    'weight': self.WEIGHT_TRAINING
                                 },
                                 'experience': {
                                     'percentage': weighted_data['experience_pct'],
                                     'weighted_points': weighted_data['experience_weighted'],
-                                    'weight': 6.0
+                                    'weight': self.WEIGHT_EXPERIENCE
                                 },
                                 'vumedi': {
                                     'percentage': weighted_data['vumedi_pct'],
                                     'weighted_points': weighted_data['vumedi_weighted'],
-                                    'weight': 3.0
+                                    'weight': self.WEIGHT_VUMEDI
                                 },
                                 'breakdown_details': weighted_data.get('breakdown_details', {})
                             }
@@ -1262,27 +1272,27 @@ class RankingService:
                                 'clinical_volume': {
                                     'percentage': weighted_data['clinical_volume_pct'],
                                     'weighted_points': weighted_data['clinical_volume_weighted'],
-                                    'weight': 38.0
+                                    'weight': self.WEIGHT_CLINICAL_VOLUME
                                 },
                                 'pubmed': {
                                     'percentage': weighted_data['pubmed_pct'],
                                     'weighted_points': weighted_data['pubmed_weighted'],
-                                    'weight': 38.0
+                                    'weight': self.WEIGHT_PUBMED
                                 },
                                 'training': {
                                     'percentage': weighted_data['training_pct'],
                                     'weighted_points': weighted_data['training_weighted'],
-                                    'weight': 10.0
+                                    'weight': self.WEIGHT_TRAINING
                                 },
                                 'experience': {
                                     'percentage': weighted_data['experience_pct'],
                                     'weighted_points': weighted_data['experience_weighted'],
-                                    'weight': 6.0
+                                    'weight': self.WEIGHT_EXPERIENCE
                                 },
                                 'vumedi': {
                                     'percentage': weighted_data['vumedi_pct'],
                                     'weighted_points': weighted_data['vumedi_weighted'],
-                                    'weight': 3.0
+                                    'weight': self.WEIGHT_VUMEDI
                                 },
                                 'breakdown_details': weighted_data.get('breakdown_details', {})
                             }
@@ -1296,31 +1306,31 @@ class RankingService:
                                             'raw': 0.0,
                                             'percentage': 0.0,
                                             'weighted_points': 0.0,
-                                            'weight': 40.5
+                                            'weight': self.WEIGHT_CLINICAL_VOLUME
                                         },
                                         'pubmed': {
                                             'raw': 0.0,
                                             'percentage': 0.0,
                                             'weighted_points': 0.0,
-                                            'weight': 40.5
+                                            'weight': self.WEIGHT_PUBMED
                                         },
                                         'training': {
                                             'raw': 0.0,
                                             'percentage': 0.0,
                                             'weighted_points': 0.0,
-                                            'weight': 10.0
+                                            'weight': self.WEIGHT_TRAINING
                                         },
                                         'experience': {
                                             'raw': 0.0,
                                             'percentage': 0.0,
                                             'weighted_points': 0.0,
-                                            'weight': 6.0
+                                            'weight': self.WEIGHT_EXPERIENCE
                                         },
                                         'vumedi': {
                                             'raw': 0.0,
                                             'percentage': 0.0,
                                             'weighted_points': 0.0,
-                                            'weight': 3.0
+                                            'weight': self.WEIGHT_VUMEDI
                                         }
                                     }
                                     # Also ensure score is set (might be 0 for unmatched providers)

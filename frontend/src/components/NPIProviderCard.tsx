@@ -3,6 +3,7 @@ import { MapPin, Phone, Star, Award, Calendar, Building, HelpCircle, Clock, File
 import { NPIProvider, ProviderContent, VumediContent, PubMedArticle, generatePreAuthLetter } from '../services/api';
 import SchedulingModal from './SchedulingModal';
 import ProviderReviews from './ProviderReviews';
+import { SCORING_WEIGHTS } from '../constants/scoringWeights';
 
 interface NPIProviderCardProps {
   provider: NPIProvider;
@@ -1418,23 +1419,23 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
               <h3 className="font-semibold text-gray-900 mb-2">Weight Distribution</h3>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
                 <div className="text-center">
-                  <div className="font-bold text-blue-600">40.5%</div>
+                  <div className="font-bold text-blue-600">{SCORING_WEIGHTS.CLINICAL_VOLUME}%</div>
                   <div className="text-gray-600 text-xs">Clinical Volume</div>
                 </div>
                 <div className="text-center">
-                  <div className="font-bold text-purple-600">40.5%</div>
+                  <div className="font-bold text-purple-600">{SCORING_WEIGHTS.PUBMED}%</div>
                   <div className="text-gray-600 text-xs">PubMed</div>
                 </div>
                 <div className="text-center">
-                  <div className="font-bold text-indigo-600">10%</div>
+                  <div className="font-bold text-indigo-600">{SCORING_WEIGHTS.TRAINING}%</div>
                   <div className="text-gray-600 text-xs">Training</div>
                 </div>
                 <div className="text-center">
-                  <div className="font-bold text-green-600">6%</div>
+                  <div className="font-bold text-green-600">{SCORING_WEIGHTS.EXPERIENCE}%</div>
                   <div className="text-gray-600 text-xs">Experience</div>
                 </div>
                 <div className="text-center">
-                  <div className="font-bold text-pink-600">3%</div>
+                  <div className="font-bold text-pink-600">{SCORING_WEIGHTS.VUMEDI}%</div>
                   <div className="text-gray-600 text-xs">Medical Lectures</div>
                 </div>
               </div>

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { NPIProvider, getSpecialistRecommendations, SpecialistRecommendationRequest, searchNPIProviders, rankNPIProviders, NPISearchRequest, NPIRankingRequest, ProviderContent, generateCPTCodes, getMedicalAnalysis } from '../services/api';
+import { NPIProvider, getSpecialistRecommendations, SpecialistRecommendationRequest, searchNPIProviders, rankNPIProviders, NPISearchRequest, NPIRankingRequest, ProviderContent, generateCPTCodes, generateSearchQuery, getMedicalAnalysis } from '../services/api';
 import NPIProviderCard from '../components/NPIProviderCard';
+import { SCORING_WEIGHTS } from '../constants/scoringWeights';
 
 interface Provider extends NPIProvider {
   email?: string;
@@ -32,6 +33,7 @@ interface SearchParams {
   cpt_prompt_text?: string;  // GPT prompt text used to generate CPT codes
   diagnoses_prompt_text?: string;  // GPT prompt text used to generate diagnoses/treatment options
   search_query?: string;  // Pre-generated search query
+  search_query_prompt_text?: string;  // GPT prompt text used to generate search query
 }
 
 interface TreatmentOption {
@@ -144,6 +146,9 @@ const ResultsPage: React.FC = () => {
   const [editablePromptText, setEditablePromptText] = useState<string | null>(null);
   const [diagnosesPromptText, setDiagnosesPromptText] = useState<string | null>(null);
   const [editableDiagnosesPromptText, setEditableDiagnosesPromptText] = useState<string | null>(null);
+  const [searchQueryPromptText, setSearchQueryPromptText] = useState<string | null>(null);
+  const [editableSearchQueryPromptText, setEditableSearchQueryPromptText] = useState<string | null>(null);
+  const [isRegeneratingSearchQuery, setIsRegeneratingSearchQuery] = useState(false);
   const [isGeneratingCPTCodes, setIsGeneratingCPTCodes] = useState(false);
   const [isGeneratingCPTCodesForCategory, setIsGeneratingCPTCodesForCategory] = useState<string | null>(null);
   const [isRegeneratingDiagnoses, setIsRegeneratingDiagnoses] = useState(false);
@@ -336,6 +341,17 @@ const ResultsPage: React.FC = () => {
     }
   }, [searchParams, diagnosesPromptText]);
   
+  // Initialize search query prompt text from searchParams or location.state if available
+  useEffect(() => {
+    if (searchParams?.search_query_prompt_text && !searchQueryPromptText) {
+      setSearchQueryPromptText(searchParams.search_query_prompt_text);
+      setEditableSearchQueryPromptText(searchParams.search_query_prompt_text);
+    } else if (location.state?.aiRecommendations?.patient_profile?.search_query_prompt_text && !searchQueryPromptText) {
+      setSearchQueryPromptText(location.state.aiRecommendations.patient_profile.search_query_prompt_text);
+      setEditableSearchQueryPromptText(location.state.aiRecommendations.patient_profile.search_query_prompt_text);
+    }
+  }, [searchParams, searchQueryPromptText, location.state]);
+  
   // Initialize selected treatment indices - all checked by default (only once)
   useEffect(() => {
     // Only initialize once, even if searchParams changes later
@@ -511,11 +527,11 @@ const ResultsPage: React.FC = () => {
       breakdownParts.push(`Total Weighted Score: ${score.toFixed(2)} / 100`);
       breakdownParts.push('');
       breakdownParts.push(`Weight Distribution:`);
-      breakdownParts.push(`  • Clinical Volume: 40%`);
-      breakdownParts.push(`  • PubMed: 40%`);
-      breakdownParts.push(`  • Training: 10%`);
-      breakdownParts.push(`  • Experience: 6%`);
-      breakdownParts.push(`  • Vumedi: 4%`);
+      breakdownParts.push(`  • Clinical Volume: ${SCORING_WEIGHTS.CLINICAL_VOLUME}%`);
+      breakdownParts.push(`  • PubMed: ${SCORING_WEIGHTS.PUBMED}%`);
+      breakdownParts.push(`  • Training: ${SCORING_WEIGHTS.TRAINING}%`);
+      breakdownParts.push(`  • Experience: ${SCORING_WEIGHTS.EXPERIENCE}%`);
+      breakdownParts.push(`  • Vumedi: ${SCORING_WEIGHTS.VUMEDI}%`);
       
       const breakdown = breakdownParts.join('\n');
       return { score, breakdown };
@@ -882,7 +898,8 @@ const ResultsPage: React.FC = () => {
           icd10_description: response.patient_profile.icd10_description,
           treatment_options: response.patient_profile.treatment_options,
           search_query: response.patient_profile.search_query,
-          diagnoses_prompt_text: response.patient_profile.diagnoses_prompt_text
+          diagnoses_prompt_text: response.patient_profile.diagnoses_prompt_text,
+          search_query_prompt_text: response.patient_profile.search_query_prompt_text
         };
         setSearchParams(newSearchParams);
         
@@ -892,6 +909,15 @@ const ResultsPage: React.FC = () => {
           // Only update editable prompt if we used the default (not custom), otherwise keep the edited version
           if (!useCustomPrompt) {
             setEditableDiagnosesPromptText(response.patient_profile.diagnoses_prompt_text);
+          }
+        }
+        
+        // Update search query prompt text state
+        if (response.patient_profile.search_query_prompt_text) {
+          setSearchQueryPromptText(response.patient_profile.search_query_prompt_text);
+          // Only update editable prompt if we used the default (not custom), otherwise keep the edited version
+          if (!useCustomPrompt) {
+            setEditableSearchQueryPromptText(response.patient_profile.search_query_prompt_text);
           }
         }
         
@@ -907,6 +933,69 @@ const ResultsPage: React.FC = () => {
       alert('Failed to regenerate diagnoses. Please try again.');
     } finally {
       setIsRegeneratingDiagnoses(false);
+    }
+  };
+
+  const handleRegenerateSearchQuery = async (useCustomPrompt: boolean = false) => {
+    try {
+      setIsRegeneratingSearchQuery(true);
+      
+      // Get required data from searchParams
+      if (!searchParams) {
+        alert('Unable to regenerate: Search parameters not found');
+        return;
+      }
+      
+      if (!searchParams.icd10_description || !searchParams.diagnosis) {
+        alert('ICD-10 description and diagnosis are required to regenerate search query');
+        return;
+      }
+      
+      // Show warning if CPT codes exist
+      const existingCptCodes = getExistingCptCodes();
+      if (existingCptCodes && existingCptCodes.length > 0) {
+        const confirmed = window.confirm(
+          'Warning: Regenerating the search query may affect CPT code generation. ' +
+          'You may need to regenerate CPT codes after this. Continue?'
+        );
+        if (!confirmed) {
+          return;
+        }
+      }
+      
+      // Use custom prompt if rerunning with edited prompt, otherwise use default (undefined)
+      const customPrompt = useCustomPrompt && editableSearchQueryPromptText ? editableSearchQueryPromptText : undefined;
+      
+      // Call search query generation API
+      const response = await generateSearchQuery({
+        icd10_description: searchParams.icd10_description,
+        user_diagnosis: searchParams.diagnosis,
+        custom_prompt: customPrompt
+      });
+      
+      // Update searchParams with new search query
+      const newSearchParams: SearchParams = {
+        ...searchParams,
+        search_query: response.search_query,
+        search_query_prompt_text: response.search_query_prompt_text
+      };
+      setSearchParams(newSearchParams);
+      
+      // Update prompt text state
+      if (response.search_query_prompt_text) {
+        setSearchQueryPromptText(response.search_query_prompt_text);
+        // Only update editable prompt if we used the default (not custom), otherwise keep the edited version
+        if (!useCustomPrompt) {
+          setEditableSearchQueryPromptText(response.search_query_prompt_text);
+        }
+      }
+      
+      console.log('✅ Regenerated search query');
+    } catch (error) {
+      console.error('Error regenerating search query:', error);
+      alert('Failed to regenerate search query. Please try again.');
+    } finally {
+      setIsRegeneratingSearchQuery(false);
     }
   };
 
@@ -1398,7 +1487,7 @@ const ResultsPage: React.FC = () => {
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.raw = categoryTotSrvcs;
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.max_raw = maxCategoryTotSrvcs;
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.percentage = categoryPct * 100;
-            scoreData.weighted_breakdown.breakdown_details.clinical_volume.weighted_points = categoryPct * 40;
+            scoreData.weighted_breakdown.breakdown_details.clinical_volume.weighted_points = categoryPct * SCORING_WEIGHTS.CLINICAL_VOLUME;
             scoreData.weighted_breakdown.breakdown_details.clinical_volume.percentile = Math.round(categoryPercentile * 100) / 100; // Round to 2 decimal places
             
             // Recalculate final score
@@ -1662,6 +1751,54 @@ const ResultsPage: React.FC = () => {
                           {searchParams?.search_query}
                         </div>
                       </div>
+                    </div>
+                  )}
+
+                  {/* Search Query Generation Prompt (collapsed by default) */}
+                  {(searchQueryPromptText || searchParams?.search_query_prompt_text) && (
+                    <div className="border-l-4 border-indigo-500 pl-4">
+                      <details className="bg-gray-50 rounded-lg border border-gray-200">
+                        <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-t-lg">
+                          <span className="flex items-center gap-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Search Query Generation Prompt (Click to view/edit and re-run)
+                          </span>
+                        </summary>
+                        <div className="p-4 border-t border-gray-200">
+                          <p className="text-xs text-gray-600 mb-2">The following prompt was sent to GPT to generate the search query:</p>
+                          <textarea
+                            className="w-full text-xs text-gray-800 bg-white p-3 rounded border border-gray-300 font-mono min-h-[200px] resize-y"
+                            value={editableSearchQueryPromptText || searchQueryPromptText || searchParams?.search_query_prompt_text || ''}
+                            onChange={(e) => setEditableSearchQueryPromptText(e.target.value)}
+                            placeholder="Prompt text..."
+                          />
+                          <div className="mt-3 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                await handleRegenerateSearchQuery(true);
+                              }}
+                              disabled={isRegeneratingSearchQuery || !editableSearchQueryPromptText}
+                              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                            >
+                              {isRegeneratingSearchQuery ? (
+                                <span className="flex items-center gap-2">
+                                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  Regenerating...
+                                </span>
+                              ) : (
+                                'Re-run Search Query Generation'
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </details>
                     </div>
                   )}
 

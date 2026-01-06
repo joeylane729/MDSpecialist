@@ -27,6 +27,7 @@ async def get_medical_analysis(
     surgical_history: Optional[str] = Form(None),
     files: List[UploadFile] = File([]),
     custom_diagnoses_prompt: Optional[str] = Form(None),  # Optional custom prompt for diagnosis/treatment generation
+    custom_search_query_prompt: Optional[str] = Form(None),  # Optional custom prompt for search query generation
     db: Session = Depends(get_db)
 ):
     """
@@ -47,7 +48,8 @@ async def get_medical_analysis(
             medications=medications or "",
             surgical_history=surgical_history or "",
             pdf_content=pdf_content,
-            custom_diagnoses_prompt=custom_diagnoses_prompt
+            custom_diagnoses_prompt=custom_diagnoses_prompt,
+            custom_search_query_prompt=custom_search_query_prompt
         )
         
         # Wrap response in expected structure for frontend
@@ -65,6 +67,43 @@ async def get_medical_analysis(
         raise HTTPException(
             status_code=500,
             detail=f"Medical analysis failed: {str(e)}"
+        )
+
+
+@router.post("/medical-analysis/search-query")
+async def generate_search_query(
+    icd10_description: str = Form(...),
+    user_diagnosis: str = Form(...),
+    custom_prompt: Optional[str] = Form(None),  # Optional custom prompt to override default
+    db: Session = Depends(get_db)
+):
+    """
+    Generate search query based on ICD-10 description and user diagnosis.
+    
+    This endpoint is called separately after the initial medical analysis to regenerate the search query.
+    It requires the icd10_description and user_diagnosis from the previous step.
+    """
+    try:
+        # Initialize service and generate search query
+        medical_analysis_service = MedicalAnalysisService(db)
+        search_query, search_query_prompt_text = await medical_analysis_service.generate_search_query(
+            icd10_description=icd10_description,
+            user_diagnosis=user_diagnosis,
+            custom_prompt=custom_prompt
+        )
+        
+        return {
+            "search_query": search_query,
+            "search_query_prompt_text": search_query_prompt_text,
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating search query: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating search query: {str(e)}"
         )
 
 

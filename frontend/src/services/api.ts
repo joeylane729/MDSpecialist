@@ -151,6 +151,7 @@ export interface PatientProfile {
     complications: string;
   }>;
   search_query?: string;  // Pre-generated search query
+  search_query_prompt_text?: string;  // GPT prompt text used to generate search query
   predicted_icd10?: string;  // Predicted ICD-10 code
   icd10_description?: string;  // ICD-10 description
   diagnoses_prompt_text?: string;  // GPT prompt text used to generate diagnoses/treatment options
@@ -291,12 +292,24 @@ export interface MedicalAnalysisRequest {
   surgical_history?: string;
   files?: File[];
   custom_diagnoses_prompt?: string;
+  custom_search_query_prompt?: string;  // Optional custom prompt for search query generation
 }
 
 export interface MedicalAnalysisResponse {
   status: string;
   patient_profile: PatientProfile;
   message: string;
+}
+
+export interface SearchQueryGenerationRequest {
+  icd10_description: string;
+  user_diagnosis: string;
+  custom_prompt?: string; // Optional custom prompt to override default
+}
+
+export interface SearchQueryGenerationResponse {
+  search_query: string;
+  search_query_prompt_text: string;
 }
 
 export interface CPTCodeGenerationRequest {
@@ -315,6 +328,41 @@ export interface CPTCodeGenerationResponse {
   cpt_prompt_text: string;
   message: string;
 }
+
+export const generateSearchQuery = async (
+  request: SearchQueryGenerationRequest
+): Promise<SearchQueryGenerationResponse> => {
+  try {
+    console.log('🔍 [Frontend] Generating search query:', {
+      icd10_description: request.icd10_description?.substring(0, 100),
+      user_diagnosis: request.user_diagnosis?.substring(0, 100)
+    });
+
+    const formData = new FormData();
+    formData.append('icd10_description', request.icd10_description);
+    formData.append('user_diagnosis', request.user_diagnosis);
+    if (request.custom_prompt) {
+      formData.append('custom_prompt', request.custom_prompt);
+    }
+    
+    console.log('🔍 [Frontend] Making API call to:', `${API_BASE_URL}/api/v1/medical-analysis/search-query`);
+    
+    const response = await api.post('/api/v1/medical-analysis/search-query', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    console.log('✅ [Frontend] Search query generation response received:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [Frontend] Search query generation error:', error);
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.detail || 'Failed to generate search query');
+    }
+    throw error;
+  }
+};
 
 export const generateCPTCodes = async (
   request: CPTCodeGenerationRequest
@@ -386,6 +434,10 @@ export const getMedicalAnalysis = async (
     
     if (request.custom_diagnoses_prompt) {
       formData.append('custom_diagnoses_prompt', request.custom_diagnoses_prompt);
+    }
+    
+    if (request.custom_search_query_prompt) {
+      formData.append('custom_search_query_prompt', request.custom_search_query_prompt);
     }
     
     console.log('🔍 [Frontend] Making API call to:', `${API_BASE_URL}/api/v1/medical-analysis`);

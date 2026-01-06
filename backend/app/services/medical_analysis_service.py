@@ -29,7 +29,8 @@ class MedicalAnalysisService:
         medications: str = "",
         surgical_history: str = "",
         pdf_content: str = "",
-        custom_diagnoses_prompt: Optional[str] = None
+        custom_diagnoses_prompt: Optional[str] = None,
+        custom_search_query_prompt: Optional[str] = None
     ) -> Dict[str, Any]:
         """Perform comprehensive medical analysis including patient processing and medical analysis.
         CPT codes are NOT generated in this step - they must be generated separately via generate_cpt_codes_from_analysis().
@@ -42,6 +43,7 @@ class MedicalAnalysisService:
             surgical_history: Surgical history (optional)
             pdf_content: Extracted content from uploaded PDF files (optional)
             custom_diagnoses_prompt: Optional custom prompt to override default for diagnosis/treatment generation
+            custom_search_query_prompt: Optional custom prompt to override default for search query generation
         """
         try:
             # Perform medical analysis with individual fields including PDF content
@@ -77,10 +79,12 @@ class MedicalAnalysisService:
             
             # Generate search query using the same prompt as SpecialistInformationRetrievalService
             search_query = ""
+            search_query_prompt_text = ""
             if medical_analysis.get("icd10_description") and diagnosis:
-                search_query = await self.generate_search_query(
+                search_query, search_query_prompt_text = await self.generate_search_query(
                     medical_analysis.get("icd10_description", ""),
-                    diagnosis
+                    diagnosis,
+                    custom_prompt=custom_search_query_prompt
                 )
             else:
                 logger.warning("Cannot generate search query - missing ICD-10 description or user diagnosis")
@@ -114,6 +118,7 @@ class MedicalAnalysisService:
                 "treatment_options": treatment_options,
                 "diagnoses_prompt_text": diagnoses_prompt_text,  # Actual GPT prompt used to generate diagnoses/treatment options
                 "search_query": search_query,  # Pre-generated search query
+                "search_query_prompt_text": search_query_prompt_text,  # Actual GPT prompt used to generate search query
                 
                 # Keep original nested structure for backward compatibility
                 "diagnoses": medical_analysis["diagnoses"]
@@ -252,39 +257,99 @@ class MedicalAnalysisService:
     async def generate_search_query(
         self,
         icd10_description: str,
-        user_diagnosis: str
-    ) -> str:
+        user_diagnosis: str,
+        custom_prompt: Optional[str] = None
+    ) -> Tuple[str, str]:
         """
         Generate a search query using the exact same prompt as SpecialistInformationRetrievalService.
         
         Args:
             icd10_description: Medical analysis diagnosis description
             user_diagnosis: User-entered diagnosis
+            custom_prompt: Optional custom prompt to override default
             
         Returns:
-            Search query string with OR-separated variations
+            Tuple of (search query string with OR-separated variations, rendered prompt text)
         """
         try:
-            prompt = PromptTemplate(
-                input_variables=["icd10_description", "user_diagnosis"],
-                template="""Generate a concise search query to find PubMed articles and medical lectures from our vector database using both the user-entered diagnosis and the medical analysis diagnosis:
+            # Use custom prompt if provided, otherwise use default
+            if custom_prompt:
+                # Escape all curly braces except for our template variables to prevent LangChain from parsing them
+                escaped_prompt = custom_prompt
+                # Temporarily replace our template variables with placeholders
+                escaped_prompt = escaped_prompt.replace("{icd10_description}", "__ICD10_DESCRIPTION__")
+                escaped_prompt = escaped_prompt.replace("{user_diagnosis}", "__USER_DIAGNOSIS__")
+                # Escape all remaining curly braces
+                escaped_prompt = escaped_prompt.replace("{", "{{").replace("}", "}}")
+                # Restore our template variables
+                escaped_prompt = escaped_prompt.replace("{{__ICD10_DESCRIPTION__}}", "{icd10_description}")
+                escaped_prompt = escaped_prompt.replace("{{__USER_DIAGNOSIS__}}", "{user_diagnosis}")
+                
+                prompt_template = escaped_prompt
+                # For custom prompts, format with the variables if they're present
+                if "{icd10_description}" in custom_prompt or "{user_diagnosis}" in custom_prompt:
+                    try:
+                        rendered_prompt = custom_prompt.format(
+                            icd10_description=icd10_description,
+                            user_diagnosis=user_diagnosis
+                        )
+                    except KeyError as e:
+                        # If formatting fails, log and use as-is
+                        logger.warning(f"Could not format custom prompt with variables: {e}")
+                        rendered_prompt = custom_prompt
+                else:
+                    # If custom prompt doesn't have these variables, use it as-is
+                    rendered_prompt = custom_prompt
+            else:
+                prompt_template = """Generate a concise search query to find PubMed articles and medical lectures from our database using both the user-entered diagnosis and the medical analysis diagnosis:
 
 Medical Analysis Diagnosis: {icd10_description}
 User-Entered Diagnosis: {user_diagnosis}
 
-The query should include the most important variations (maximum 5-7 terms) separated by the OR operator. Focus on the most common medical terms and synonyms.
+RULES:
+- The query should include all variations of this diagnosis separated by the OR operator
+- The terms should be specific to the diagnosis and not general terms like "brain tumor" or "brain surgery"
 
 Example: term1 OR term2 OR term3 OR term4 OR term5
 
-IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the search query string itself with NO explanations, NO markdown, NO code blocks, NO additional text. Just the query."""
-            )
+IMPORTANT: Return ONLY the search query string itself with NO explanations, NO markdown, NO code blocks, NO additional text. Just the query."""
+                
+                # Render the prompt with actual values to capture what was sent to GPT
+                rendered_prompt = prompt_template.format(
+                    icd10_description=icd10_description,
+                    user_diagnosis=user_diagnosis
+                )
+            
+            # Create prompt template with variables only if custom prompt uses them
+            if custom_prompt:
+                # Try to detect if the custom prompt uses the variables
+                if "{icd10_description}" in custom_prompt or "{user_diagnosis}" in custom_prompt:
+                    prompt = PromptTemplate(
+                        input_variables=["icd10_description", "user_diagnosis"],
+                        template=prompt_template
+                    )
+                else:
+                    # If no variables, use the prompt as-is without template
+                    prompt = PromptTemplate(
+                        input_variables=[],
+                        template=prompt_template
+                    )
+            else:
+                prompt = PromptTemplate(
+                    input_variables=["icd10_description", "user_diagnosis"],
+                    template=prompt_template
+                )
             
             chain = prompt | self.llm
             
-            response = await chain.ainvoke({
-                "icd10_description": icd10_description,
-                "user_diagnosis": user_diagnosis
-            })
+            # Invoke with variables if they exist in the template
+            if "{icd10_description}" in prompt_template or "{user_diagnosis}" in prompt_template:
+                response = await chain.ainvoke({
+                    "icd10_description": icd10_description,
+                    "user_diagnosis": user_diagnosis
+                })
+            else:
+                response = await chain.ainvoke({})
             
             # Extract the query response
             query = response.content.strip() if hasattr(response, 'content') else str(response).strip()
@@ -295,11 +360,12 @@ IMPORTANT: Keep the query concise to avoid payload size limits. Return ONLY the 
             elif query.startswith('```'):
                 query = query.replace('```', '').strip()
             
-            return query
+            logger.info(f"Generated search query: {query[:100]}...")
+            return query, rendered_prompt
             
         except Exception as e:
-            logger.error(f"Error generating search query: {e}")
-            return ""
+            logger.error(f"Error generating search query: {e}", exc_info=True)
+            return "", ""
 
     async def predict_cpt_codes(
         self,
