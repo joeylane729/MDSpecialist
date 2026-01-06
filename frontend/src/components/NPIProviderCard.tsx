@@ -276,11 +276,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
   return (
     <>
       <div 
-        className={`rounded-lg shadow-sm border p-4 hover:shadow-md transition-all ${
-          isHighlighted 
-            ? 'bg-white border-2 border-yellow-400 shadow-lg' 
-            : 'bg-white border border-gray-200'
-        }`}
+        className="rounded-lg shadow-sm border p-4 hover:shadow-md transition-all bg-white border border-gray-200"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
