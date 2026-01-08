@@ -1264,11 +1264,16 @@ class RankingService:
                                 },
                                 'breakdown_details': weighted_data.get('breakdown_details', {})
                             }
-                    # Also update matched providers if not already updated
+                    # Also update matched providers with recalculated percentages (based on all providers)
+                    # This ensures percentages are relative to the max across ALL providers (matched + unmatched)
                     for npi, weighted_data in weighted_scores.items():
-                        if npi in provider_scores and npi not in unmatched_raw_scores and 'weighted_breakdown' not in provider_scores[npi]:
+                        if npi in provider_scores and npi not in unmatched_raw_scores:
+                            # Update score and weighted_breakdown with recalculated values
                             provider_scores[npi]['score'] = weighted_data['final_score']
-                            provider_scores[npi]['weighted_breakdown'] = {
+                            # Update existing weighted_breakdown or create new one
+                            if 'weighted_breakdown' not in provider_scores[npi]:
+                                provider_scores[npi]['weighted_breakdown'] = {}
+                            provider_scores[npi]['weighted_breakdown'].update({
                                 'clinical_volume': {
                                     'percentage': weighted_data['clinical_volume_pct'],
                                     'weighted_points': weighted_data['clinical_volume_weighted'],
@@ -1295,7 +1300,7 @@ class RankingService:
                                     'weight': self.WEIGHT_VUMEDI
                                 },
                                 'breakdown_details': weighted_data.get('breakdown_details', {})
-                            }
+                            })
                             # Ensure ALL providers have weighted_breakdown (even if all zeros)
                             # This is needed for providers without matches or with zero scores
                             for npi in provider_scores:
