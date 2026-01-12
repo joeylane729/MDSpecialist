@@ -312,9 +312,6 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                   <span>Certified</span>
                 </div>
               )}
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                Accepting Patients
-              </span>
               {/* Red Flags - Show as clickable icons */}
               {activeRedFlags.map((flagType) => {
                 const flagInfo = RED_FLAG_DEFINITIONS[flagType];

@@ -4,11 +4,11 @@
  * Total must sum to 100.
  */
 export const SCORING_WEIGHTS = {
-  CLINICAL_VOLUME: 40.5,  // Clinical Volume weight
-  PUBMED: 40.5,            // PubMed Articles weight
+  CLINICAL_VOLUME: 10.0,  // Clinical Volume weight
+  PUBMED: 70.0,            // PubMed Articles weight
   TRAINING: 10.0,          // Training (Med school + Residency + Certification) weight
-  EXPERIENCE: 6.0,          // Experience weight
-  VUMEDI: 3.0,             // Medical Lectures (Vumedi) weight
+  EXPERIENCE: 5.0,          // Experience weight
+  VUMEDI: 5.0,             // Medical Lectures (Vumedi) weight
 } as const;
 
 // Validate weights sum to 100

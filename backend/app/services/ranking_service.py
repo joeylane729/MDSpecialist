@@ -18,11 +18,11 @@ class RankingService:
     """Service for ranking NPI providers based on specialist information."""
     
     # Scoring weights (must sum to 100)
-    WEIGHT_CLINICAL_VOLUME = 40.5  # Clinical Volume weight
-    WEIGHT_PUBMED = 40.5  # PubMed Articles weight
+    WEIGHT_CLINICAL_VOLUME = 10.0  # Clinical Volume weight
+    WEIGHT_PUBMED = 70.0  # PubMed Articles weight
     WEIGHT_TRAINING = 10.0  # Training (Med school + Residency + Certification) weight
-    WEIGHT_EXPERIENCE = 6.0  # Experience weight
-    WEIGHT_VUMEDI = 3.0  # Medical Lectures (Vumedi) weight
+    WEIGHT_EXPERIENCE = 5.0  # Experience weight
+    WEIGHT_VUMEDI = 5.0  # Medical Lectures (Vumedi) weight
     
     # Validate weights sum to 100
     _WEIGHT_TOTAL = WEIGHT_CLINICAL_VOLUME + WEIGHT_PUBMED + WEIGHT_TRAINING + WEIGHT_EXPERIENCE + WEIGHT_VUMEDI
