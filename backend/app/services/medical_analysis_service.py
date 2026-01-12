@@ -663,6 +663,29 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 for i in range(0, len(cpt_code_values), chunk_size)
             ]
             
+            # Convert state to 2-letter abbreviation early (for use in URL)
+            state_abbrev_for_url = None
+            if state:
+                state_abbrev_for_url = state.upper().strip()
+                if len(state_abbrev_for_url) > 2:
+                    # State name to abbreviation mapping
+                    state_map = {
+                        'ALABAMA': 'AL', 'ALASKA': 'AK', 'ARIZONA': 'AZ', 'ARKANSAS': 'AR',
+                        'CALIFORNIA': 'CA', 'COLORADO': 'CO', 'CONNECTICUT': 'CT', 'DELAWARE': 'DE',
+                        'FLORIDA': 'FL', 'GEORGIA': 'GA', 'HAWAII': 'HI', 'IDAHO': 'ID',
+                        'ILLINOIS': 'IL', 'INDIANA': 'IN', 'IOWA': 'IA', 'KANSAS': 'KS',
+                        'KENTUCKY': 'KY', 'LOUISIANA': 'LA', 'MAINE': 'ME', 'MARYLAND': 'MD',
+                        'MASSACHUSETTS': 'MA', 'MICHIGAN': 'MI', 'MINNESOTA': 'MN', 'MISSISSIPPI': 'MS',
+                        'MISSOURI': 'MO', 'MONTANA': 'MT', 'NEBRASKA': 'NE', 'NEVADA': 'NV',
+                        'NEW HAMPSHIRE': 'NH', 'NEW JERSEY': 'NJ', 'NEW MEXICO': 'NM', 'NEW YORK': 'NY',
+                        'NORTH CAROLINA': 'NC', 'NORTH DAKOTA': 'ND', 'OHIO': 'OH', 'OKLAHOMA': 'OK',
+                        'OREGON': 'OR', 'PENNSYLVANIA': 'PA', 'RHODE ISLAND': 'RI', 'SOUTH CAROLINA': 'SC',
+                        'SOUTH DAKOTA': 'SD', 'TENNESSEE': 'TN', 'TEXAS': 'TX', 'UTAH': 'UT',
+                        'VERMONT': 'VT', 'VIRGINIA': 'VA', 'WASHINGTON': 'WA', 'WEST VIRGINIA': 'WV',
+                        'WISCONSIN': 'WI', 'WYOMING': 'WY', 'DISTRICT OF COLUMBIA': 'DC'
+                    }
+                    state_abbrev_for_url = state_map.get(state_abbrev_for_url, state_abbrev_for_url)
+            
             # Calculate total API calls: 5 years × number of chunks
             total_calls = len(year_uuids) * len(cpt_chunks)
             
@@ -683,12 +706,23 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                             for code in cpt_chunk
                         ])
                         
-                        full_url = (
-                            f"{base_url}?"
+                        # Build URL components
+                        hcpcs_filter = (
                             f"filter[hcpcs][condition][path]=HCPCS_Cd&"
                             f"filter[hcpcs][condition][operator]=IN&"
                             f"{filter_params}"
                         )
+                        
+                        # Add state filter at the beginning if provided
+                        if state_abbrev_for_url:
+                            state_filter = (
+                                f"filter[state][condition][path]=Rndrng_Prvdr_State_Abrvtn&"
+                                f"filter[state][condition][operator]=EQ&"
+                                f"filter[state][condition][value]={state_abbrev_for_url}&"
+                            )
+                            full_url = f"{base_url}?{state_filter}{hcpcs_filter}"
+                        else:
+                            full_url = f"{base_url}?{hcpcs_filter}"
                         
                         urls_used.append(full_url)
                         
@@ -777,32 +811,15 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             grouped_results = list(provider_totals.values())
             grouped_results.sort(key=lambda x: x['Tot_Srvcs'], reverse=True)
             
-            # Filter by state if provided, but return ALL results (no top 25 limit)
-            state_abbrev = None
+            # Filter by state if provided (API already filters, but keep as safety check)
+            # Since we filter at the API level, this should be redundant but kept for safety
             filtered_count = None
             if state:
-                # Convert state to 2-letter abbreviation if needed
-                state_abbrev = state.upper().strip()
-                if len(state_abbrev) > 2:
-                    # State name to abbreviation mapping
-                    state_map = {
-                        'ALABAMA': 'AL', 'ALASKA': 'AK', 'ARIZONA': 'AZ', 'ARKANSAS': 'AR',
-                        'CALIFORNIA': 'CA', 'COLORADO': 'CO', 'CONNECTICUT': 'CT', 'DELAWARE': 'DE',
-                        'FLORIDA': 'FL', 'GEORGIA': 'GA', 'HAWAII': 'HI', 'IDAHO': 'ID',
-                        'ILLINOIS': 'IL', 'INDIANA': 'IN', 'IOWA': 'IA', 'KANSAS': 'KS',
-                        'KENTUCKY': 'KY', 'LOUISIANA': 'LA', 'MAINE': 'ME', 'MARYLAND': 'MD',
-                        'MASSACHUSETTS': 'MA', 'MICHIGAN': 'MI', 'MINNESOTA': 'MN', 'MISSISSIPPI': 'MS',
-                        'MISSOURI': 'MO', 'MONTANA': 'MT', 'NEBRASKA': 'NE', 'NEVADA': 'NV',
-                        'NEW HAMPSHIRE': 'NH', 'NEW JERSEY': 'NJ', 'NEW MEXICO': 'NM', 'NEW YORK': 'NY',
-                        'NORTH CAROLINA': 'NC', 'NORTH DAKOTA': 'ND', 'OHIO': 'OH', 'OKLAHOMA': 'OK',
-                        'OREGON': 'OR', 'PENNSYLVANIA': 'PA', 'RHODE ISLAND': 'RI', 'SOUTH CAROLINA': 'SC',
-                        'SOUTH DAKOTA': 'SD', 'TENNESSEE': 'TN', 'TEXAS': 'TX', 'UTAH': 'UT',
-                        'VERMONT': 'VT', 'VIRGINIA': 'VA', 'WASHINGTON': 'WA', 'WEST VIRGINIA': 'WV',
-                        'WISCONSIN': 'WI', 'WYOMING': 'WY', 'DISTRICT OF COLUMBIA': 'DC'
-                    }
-                    state_abbrev = state_map.get(state_abbrev, state_abbrev)
+                # Use the state abbreviation we already computed
+                state_abbrev = state_abbrev_for_url
                 
                 # Filter by state (return all, not just top 25)
+                # Note: This should be redundant since API already filters, but kept as safety check
                 filtered_by_state = [
                     p for p in grouped_results 
                     if (p.get('Rndrng_Prvdr_State_Abrvtn') or '').upper().strip() == state_abbrev
@@ -914,12 +931,12 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 1. Primary diagnosis (most likely ICD-10 code and description based on diagnosis)
                 2. Treatment options performed specifically by a neurosurgeon
 
-                Provide all relevant treatment options based on the diagnosis. 
-                For each treatment option, include the category of the treatment option out of the following options:
+                Provide the most common treatment options based on the diagnosis. 
+                For each treatment option, include the general category of the treatment option. For example:
                 - Surgery
                 - Radiosurgery
                 - Endovascular
-                - Other
+                - Medical
                                 
                 Return the response in this exact JSON format:
                 {{
