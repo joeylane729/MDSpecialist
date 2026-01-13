@@ -693,7 +693,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             all_results = []
             urls_used = []
             
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            async with httpx.AsyncClient(timeout=90.0) as client:
                 # Create all API call tasks
                 tasks = []
                 for year, uuid in sorted(year_uuids.items(), reverse=True):  # Start with most recent
