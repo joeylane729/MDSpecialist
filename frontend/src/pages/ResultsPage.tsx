@@ -1465,7 +1465,7 @@ const ResultsPage: React.FC = () => {
       
       // Get user's neurosurgeon NPIs to filter out entities/facilities
       const userProviderNPIs = new Set(
-        (location.state?.providers || []).map((p: Provider) => String(p.npi))
+        (providers || location.state?.providers || []).map((p: Provider) => String(p.npi))
       );
       
       const cmsProvidersByNpi: { [npi: string]: any } = {};
@@ -2994,7 +2994,7 @@ const ResultsPage: React.FC = () => {
                             
                             // Get user's neurosurgeon NPIs to filter out entities/facilities
                             const userProviderNPIs = new Set(
-                              (location.state?.providers || []).map((p: Provider) => String(p.npi))
+                              (providers || location.state?.providers || []).map((p: Provider) => String(p.npi))
                             );
                             
                             // Filter results by state AND by NPI (neurosurgeons only)
