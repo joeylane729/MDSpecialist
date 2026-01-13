@@ -610,13 +610,11 @@ class RankingService:
                                                     'sjr_quartile': record.get('sjr_quartile')  # Journal quartile for scoring
                                                 })
             
-            logger.info(f"✅ Found {len(provider_matches)} providers with matches")
+            logger.info(f"✅ Found {len(provider_matches)} providers with PubMed/Vumedi matches")
             
             # Batch fetch all medical school scores for all NPIs at once
             # Normalize all NPIs to strings for consistent lookup
             all_npis = set()
-            for npi in provider_matches.keys():
-                all_npis.add(str(npi))  # Ensure string format
             for provider in providers_to_rank:
                 npi = provider.get('npi', '')
                 if npi:
@@ -634,16 +632,21 @@ class RankingService:
             provider_scores = {}
             raw_component_scores = {}  # Store raw scores for weighted calculation
             
-            # First pass: Calculate raw scores for all providers
-            raw_scores = {}  # Store raw component scores before normalization
+            logger.info(f"🔍 Collecting raw data for ALL {len(providers_to_rank)} providers...")
             
-            logger.info(f"🔍 DEBUG: Processing {len(provider_matches)} providers with matches")
-            logger.info(f"🔍 DEBUG: Building provider_links and scores...")
-            
-            for idx, (npi, matches) in enumerate(provider_matches.items()):
+            # Process ALL providers (not just those with matches)
+            # Collect all raw data first, then calculate weighted scores once
+            for idx, provider in enumerate(providers_to_rank):
                 try:
-                    logger.debug(f"🔍 DEBUG: Processing provider {idx+1}/{len(provider_matches)}: NPI={npi}")
+                    npi = provider.get('npi', '')
+                    if not npi:
+                        continue
                     
+                    npi_str = str(npi)
+                    logger.debug(f"🔍 DEBUG: Processing provider {idx+1}/{len(providers_to_rank)}: NPI={npi_str}")
+                    
+                    # Check if this provider has PubMed/Vumedi matches
+                    matches = provider_matches.get(npi, {})
                     vumedi_count = len(matches.get('vumedi_content', []))
                     pubmed_articles = matches.get('pubmed_articles', [])
                     pubmed_count = len(pubmed_articles)
@@ -706,45 +709,27 @@ class RankingService:
                     logger.debug(f"🔍 DEBUG: NPI {npi} - Vumedi: {vumedi_count}, PubMed: {pubmed_count} (First: {first_author_count}, Middle: {middle_author_count}, Last: {last_author_count}, Weighted: {pubmed_weighted_points} points)")
             
                     # Get provider info for experience calculation
-                    provider = None
-                    try:
-                        for p in providers_to_rank:
-                            if str(p.get('npi')) == str(npi):
-                                provider = p
-                                break
-                    except Exception as e:
-                        logger.error(f"❌ DEBUG: Error finding provider info for NPI {npi}: {e}")
-                        provider = None
-                    
-                    years_experience_raw = None
-                    if provider:
-                        years_experience_raw = provider.get('yearsExperience', provider.get('years_experience'))
+                    years_experience_raw = provider.get('yearsExperience', provider.get('years_experience'))
                     years_experience, experience_points = self._calculate_experience_points(years_experience_raw)
                     
                     # Log matched PubMed articles for top providers
                     if pubmed_count > 0 and len(provider_links) < 20:
-                        provider_name = provider.get('name', '') if provider else npi
+                        provider_name = provider.get('name', '') or npi_str
                         try:
-                            pubmed_titles = [art.get('title', 'No title')[:80] for art in matches['pubmed_articles'][:3]]
-                            pmids = [art.get('pmid', '') for art in matches['pubmed_articles']]
-                            logger.info(f"📋 Provider {provider_name} (NPI {npi}) matched {pubmed_count} PubMed articles: PMIDs={pmids[:5]}")
+                            pubmed_titles = [art.get('title', 'No title')[:80] for art in pubmed_articles[:3]]
+                            pmids = [art.get('pmid', '') for art in pubmed_articles]
+                            logger.info(f"📋 Provider {provider_name} (NPI {npi_str}) matched {pubmed_count} PubMed articles: PMIDs={pmids[:5]}")
                         except Exception as e:
-                            logger.error(f"❌ DEBUG: Error extracting PMIDs for NPI {npi}: {e}")
+                            logger.error(f"❌ DEBUG: Error extracting PMIDs for NPI {npi_str}: {e}")
                             logger.error(f"❌ DEBUG: matches['pubmed_articles'] type: {type(matches.get('pubmed_articles'))}")
                     
-                    try:
-                        provider_links[npi] = {
-                            'vumedi_content': matches.get('vumedi_content', []),
-                            'pubmed_articles': matches.get('pubmed_articles', [])
-                        }
-                        logger.debug(f"🔍 DEBUG: Successfully added provider_links for NPI {npi}")
-                    except Exception as e:
-                        logger.error(f"❌ DEBUG: Error building provider_links for NPI {npi}: {e}")
-                        logger.error(f"❌ DEBUG: matches structure: {list(matches.keys())}")
-                        raise
-                        
-                    # Normalize NPI to string for consistent lookup
-                    npi_str = str(npi)
+                    # Build provider_links for all providers (empty lists if no matches)
+                    provider_links[npi_str] = {
+                        'vumedi_content': matches.get('vumedi_content', []),
+                        'pubmed_articles': matches.get('pubmed_articles', [])
+                    }
+                    
+                    # Get training and certification scores
                     med_school_score = med_school_scores.get(npi_str, 0)
                     residency_score = residency_scores.get(npi_str, 0)
                     cert_info = certification_scores.get(npi_str, {})
@@ -755,26 +740,22 @@ class RankingService:
                     if cms_tot_srvcs:
                         if npi_str in cms_tot_srvcs:
                             clinical_volume_raw = float(cms_tot_srvcs[npi_str])
-                            logger.info(f"📊 CLINICAL_VOLUME_DEBUG: NPI {npi_str} has Tot_Srvcs: {clinical_volume_raw} from CMS")
+                            logger.debug(f"📊 CLINICAL_VOLUME_DEBUG: NPI {npi_str} has Tot_Srvcs: {clinical_volume_raw} from CMS")
                         else:
-                            logger.warning(f"⚠️  CLINICAL_VOLUME_DEBUG: NPI {npi_str} NOT found in cms_tot_srvcs (has {len(cms_tot_srvcs)} entries)")
+                            logger.debug(f"📊 CLINICAL_VOLUME_DEBUG: NPI {npi_str} NOT found in cms_tot_srvcs (has {len(cms_tot_srvcs)} entries)")
                     else:
-                        logger.warning(f"⚠️  CLINICAL_VOLUME_DEBUG: cms_tot_srvcs is None/empty for NPI {npi_str}")
+                        logger.debug(f"📊 CLINICAL_VOLUME_DEBUG: cms_tot_srvcs is None/empty for NPI {npi_str}")
                     
                     # Calculate raw component scores for weighted system
-                    # Store raw scores for normalization pass
-                    raw_component_scores[npi] = {
-                        'vumedi_raw': vumedi_count * 4,  # Vumedi raw score
-                        'pubmed_raw': pubmed_weighted_points,  # PubMed raw score (already weighted by quartiles)
+                    # Store raw scores for normalization pass (for ALL providers)
+                    raw_component_scores[npi_str] = {
+                        'vumedi_raw': vumedi_count * 4,  # Vumedi raw score (0 if no matches)
+                        'pubmed_raw': pubmed_weighted_points,  # PubMed raw score (0 if no matches, already weighted by quartiles)
                         'training_raw': med_school_score + residency_score + certification_points,  # Training raw score
                         'experience_raw': experience_points,  # Experience raw score
-                        'clinical_volume_raw': clinical_volume_raw  # Tot_Srvcs from CMS (will be normalized to percentage)
+                        'clinical_volume_raw': clinical_volume_raw  # Tot_Srvcs from CMS (0 if not in CMS data, will be normalized to percentage)
                     }
-                    logger.debug(f"📊 CLINICAL_VOLUME_DEBUG: Stored raw_component_scores[{npi}] with clinical_volume_raw={clinical_volume_raw}")
-                    
-                    # Note: Legacy total_score calculation removed - now using weighted scoring
-                    # total_score will be replaced with weighted score below
-                    total_score = 0  # Placeholder, will be replaced with weighted score
+                    logger.debug(f"📊 CLINICAL_VOLUME_DEBUG: Stored raw_component_scores[{npi_str}] with clinical_volume_raw={clinical_volume_raw}")
                     
                     # Extract certification details
                     is_certified = cert_info.get('is_certified', False) if isinstance(cert_info, dict) else False
@@ -783,27 +764,17 @@ class RankingService:
                     abns_points = cert_info.get('abns_points', 0) if isinstance(cert_info, dict) else 0
                     aoa_points = cert_info.get('aoa_points', 0) if isinstance(cert_info, dict) else 0
                     
-                    # Log if medical school score is missing
-                    if med_school_score == 0 and npi_str in med_school_scores:
-                        logger.debug(f"🔍 DEBUG: NPI {npi_str} found in med_school_scores but score is 0")
-                    elif med_school_score == 0:
-                        logger.debug(f"🔍 DEBUG: NPI {npi_str} not found in med_school_scores (available keys: {list(med_school_scores.keys())[:5]})")
-                    
-                    if residency_score == 0 and npi_str in residency_scores:
-                        logger.debug(f"🔍 DEBUG: NPI {npi_str} found in residency_scores but score is 0")
-                    elif residency_score == 0:
-                        logger.debug(f"🔍 DEBUG: NPI {npi_str} not found in residency_scores (available keys: {list(residency_scores.keys())[:5]})")
-                    
                     logger.debug(
-                        f"🔍 DEBUG: NPI {npi} - Med school: {med_school_score}, "
+                        f"🔍 DEBUG: NPI {npi_str} - Med school: {med_school_score}, "
                         f"Residency: {residency_score}, Experience: {experience_points} (from {years_experience} years), "
                         f"Certification: {certification_points} (ABNS: {abns_points}, AOA: {aoa_points}), "
-                        f"Clinical Volume: {raw_component_scores[npi].get('clinical_volume_raw', 0) if npi in raw_component_scores else 0}, "
-                        f"Vumedi: {vumedi_count}, PubMed: {pubmed_count} (weighted: {pubmed_weighted_points}), Total: {total_score}"
+                        f"Clinical Volume: {clinical_volume_raw}, "
+                        f"Vumedi: {vumedi_count}, PubMed: {pubmed_count} (weighted: {pubmed_weighted_points})"
                     )
                     
-                    provider_scores[npi] = {
-                        'score': total_score,  # Will be replaced with weighted score
+                    # Build provider_scores for ALL providers (score will be calculated after collecting all raw data)
+                    provider_scores[npi_str] = {
+                        'score': 0,  # Will be replaced with weighted score after all data is collected
                         'med_school_score': med_school_score,
                         'residency_score': residency_score,
                         'experience_points': experience_points,
@@ -827,27 +798,28 @@ class RankingService:
                         'pubmed_quartile_q3_count': quartile_counts['Q3'],
                         'pubmed_quartile_q4_count': quartile_counts['Q4'],
                         'pubmed_quartile_no_data_count': quartile_counts['no_quartile'],
-                        'npi': npi
+                        'npi': npi_str
                     }
-                    
-                    logger.debug(f"🔍 DEBUG: Successfully built scores for NPI {npi}")
                         
                 except Exception as e:
-                    logger.error(f"❌ DEBUG: Error processing provider NPI {npi}: {e}")
+                    logger.error(f"❌ DEBUG: Error processing provider NPI {npi_str}: {e}")
                     import traceback
                     logger.error(f"❌ DEBUG: Traceback:\n{traceback.format_exc()}")
                     # Continue with next provider instead of crashing
                     continue
             
-            # Calculate weighted scores from raw component scores
+            logger.info(f"✅ Collected raw data for {len(raw_component_scores)} providers")
+            
+            # Calculate weighted scores from raw component scores for ALL providers at once
             if raw_component_scores:
+                logger.info(f"📊 Calculating weighted scores for all {len(raw_component_scores)} providers...")
                 weighted_scores = self._calculate_weighted_score(raw_component_scores, cms_tot_srvcs=cms_tot_srvcs)
-                # Update provider_scores with weighted values
-                for npi, weighted_data in weighted_scores.items():
-                    if npi in provider_scores:
-                        provider_scores[npi]['score'] = weighted_data['final_score']
+                # Update provider_scores with weighted values for ALL providers
+                for npi_str, weighted_data in weighted_scores.items():
+                    if npi_str in provider_scores:
+                        provider_scores[npi_str]['score'] = weighted_data['final_score']
                         # Store weighted breakdown for frontend display
-                        provider_scores[npi]['weighted_breakdown'] = {
+                        provider_scores[npi_str]['weighted_breakdown'] = {
                             'clinical_volume': {
                                 'percentage': weighted_data['clinical_volume_pct'],
                                 'weighted_points': weighted_data['clinical_volume_weighted'],
@@ -876,85 +848,11 @@ class RankingService:
                             'breakdown_details': weighted_data.get('breakdown_details', {})
                         }
             
-            # Sort providers by score (descending), then by name
-            providers_with_scores = []
-            for provider in providers_to_rank:
-                npi = provider.get('npi', '')
-                if npi in provider_scores:
-                    providers_with_scores.append((
-                        provider.get('name', ''),
-                        provider_scores[npi]
-                    ))
-            
-            # Sort by score descending, then name ascending
-            providers_with_scores.sort(key=lambda x: (-x[1]['score'], x[0]))
-            
-            # Extract ranked NPI list
-            ranked_npis = [score['npi'] for _, score in providers_with_scores]
-            
-            # Add unmatched providers with scores (will be updated with weighted scores)
-            unmatched_raw_scores = {}  # Store raw scores for unmatched providers
-            # Normalize matched_npis to strings for consistent comparison
-            matched_npis = set(str(npi) for npi in ranked_npis)
-            for provider in providers_to_rank:
-                npi = provider.get('npi', '')
-                if npi:
-                    npi_str = str(npi)  # Normalize to string
-                    if npi_str not in matched_npis:
-                        med_school_score = med_school_scores.get(npi_str, 0)
-                        residency_score = residency_scores.get(npi_str, 0)
-                        cert_info = certification_scores.get(npi_str, {})
-                        certification_points = cert_info.get('certification_points', 0) if isinstance(cert_info, dict) else 0
-                        is_certified = cert_info.get('is_certified', False) if isinstance(cert_info, dict) else False
-                        has_abns = cert_info.get('has_abns', False) if isinstance(cert_info, dict) else False
-                        has_aoa = cert_info.get('has_aoa', False) if isinstance(cert_info, dict) else False
-                        abns_points = cert_info.get('abns_points', 0) if isinstance(cert_info, dict) else 0
-                        aoa_points = cert_info.get('aoa_points', 0) if isinstance(cert_info, dict) else 0
-                        years_experience_raw = provider.get('yearsExperience', provider.get('years_experience'))
-                        years_experience, experience_points = self._calculate_experience_points(years_experience_raw)
-                        total_score = med_school_score + residency_score + experience_points + certification_points
-                        provider_scores[npi] = {  # Keep original npi format for key consistency
-                            'score': total_score,
-                            'med_school_score': med_school_score,
-                            'residency_score': residency_score,
-                            'experience_points': experience_points,
-                            'certification_points': certification_points,
-                            'is_certified': is_certified,
-                            'has_abns': has_abns,
-                            'has_aoa': has_aoa,
-                            'abns_points': abns_points,
-                            'aoa_points': aoa_points,
-                            'years_experience': years_experience,
-                            'vumedi_count': 0,
-                            'pubmed_count': 0,
-                            'pubmed_first_author_count': 0,
-                            'pubmed_middle_author_count': 0,
-                            'pubmed_last_author_count': 0,
-                            'pubmed_base_points': 0,
-                            'pubmed_weighted_points': 0,
-                            'pubmed_quartile_q1_count': 0,
-                            'pubmed_quartile_q2_count': 0,
-                            'pubmed_quartile_q3_count': 0,
-                            'pubmed_quartile_q4_count': 0,
-                            'pubmed_quartile_no_data_count': 0,
-                            'npi': npi
-                        }
-                        provider_links[npi] = {
-                            'vumedi_content': [],
-                            'pubmed_articles': []
-                        }
-                        ranked_npis.append(npi)
-            
-            logger.info(f"✅ === SIMPLE NAME MATCHING COMPLETED ===")
-            logger.info(f"✅ Matched {len(matched_npis)} providers, {len(ranked_npis) - len(matched_npis)} unmatched")
-            logger.info(f"🏆 Top 10 ranked NPIs: {ranked_npis[:10]}")
-            
             # Ensure ALL providers have weighted_breakdown (even if all zeros)
-            # This is needed for providers without matches or with zero scores
-            for npi in provider_scores:
-                if 'weighted_breakdown' not in provider_scores[npi]:
-                    # Create a zero-weighted breakdown for providers without one
-                    provider_scores[npi]['weighted_breakdown'] = {
+            # This is needed for providers without PubMed/Vumedi matches or with zero scores
+            for npi_str in provider_scores:
+                if 'weighted_breakdown' not in provider_scores[npi_str]:
+                    provider_scores[npi_str]['weighted_breakdown'] = {
                         'clinical_volume': {
                             'raw': 0.0,
                             'percentage': 0.0,
@@ -986,9 +884,29 @@ class RankingService:
                             'weight': self.WEIGHT_VUMEDI
                         }
                     }
-                    # Also ensure score is set (might be 0 for unmatched providers)
-                    if 'score' not in provider_scores[npi]:
-                        provider_scores[npi]['score'] = 0.0
+            
+            # Sort providers by score (descending), then by name
+            providers_with_scores = []
+            for provider in providers_to_rank:
+                npi = provider.get('npi', '')
+                if npi:
+                    npi_str = str(npi)
+                    if npi_str in provider_scores:
+                        providers_with_scores.append((
+                            provider.get('name', ''),
+                            provider_scores[npi_str]
+                        ))
+            
+            # Sort by score descending, then name ascending
+            providers_with_scores.sort(key=lambda x: (-x[1]['score'], x[0]))
+            
+            # Extract ranked NPI list
+            ranked_npis = [score['npi'] for _, score in providers_with_scores]
+            
+            providers_with_pubmed = len([npi for npi in ranked_npis if provider_scores.get(npi, {}).get('pubmed_count', 0) > 0])
+            logger.info(f"✅ === RANKING COMPLETED ===")
+            logger.info(f"✅ Processed {len(ranked_npis)} providers ({providers_with_pubmed} with PubMed/Vumedi matches)")
+            logger.info(f"🏆 Top 10 ranked NPIs: {ranked_npis[:10]}")
             
             # Batch fetch reviews for all ranked providers (same as PubMed)
             logger.info(f"📦 Batch fetching reviews for {len(ranked_npis)} providers")
@@ -1115,235 +1033,13 @@ class RankingService:
                     cms_tot_srvcs=cms_tot_srvcs
                 )
                 
-                # Get the ranked NPIs and scores from GPT (already calculated with new scoring system)
-                matched_npis = ranking_result.get("ranking", [])
+                # Get the ranked NPIs and scores (all providers are now included)
+                ranked_npis = ranking_result.get("ranking", [])
                 provider_links = ranking_result.get("provider_links", {})
-                provider_scores = ranking_result.get("provider_scores", {})  # Keyed by NPI from rank_npi_providers
+                provider_scores = ranking_result.get("provider_scores", {})  # Keyed by NPI (string) from rank_npi_providers
                 
-                # Note: provider_scores is keyed by NPI (string), not by name
-                # Sort matched providers by score (descending), then by NPI
-                matched_providers_with_scores = [
-                    (npi, scores) for npi, scores in provider_scores.items() if npi in matched_npis
-                ]
-                matched_providers_with_scores.sort(key=lambda x: (-x[1]['score'], x[0]))
-                
-                # Reorder matched NPIs by score
-                matched_npis_by_score = [npi for npi, _ in matched_providers_with_scores]
-                
-                # Find providers that were NOT matched
-                matched_npi_set = set(matched_npis_by_score)
-                unmatched_npis = [
-                    p.get('npi', '') 
-                    for p in npi_providers 
-                    if p.get('npi') and p.get('npi') not in matched_npi_set
-                ]
-                
-                # Add scores for unmatched doctors (only medical school score since no content)
-                # Key by NPI to keep consistency
-                # Get certification scores for unmatched providers
-                all_unmatched_npis = [str(npi) for npi in unmatched_npis if npi]
-                certification_scores_unmatched = self._batch_get_certification_scores(all_unmatched_npis) if all_unmatched_npis else {}
-                
-                # Initialize raw scores dictionary for unmatched providers (for weighted scoring)
-                unmatched_raw_scores = {}
-                
-                for npi in unmatched_npis:
-                    if npi and npi not in provider_scores:
-                        # Get medical school score even for unmatched doctors
-                        med_school_score = self._get_medical_school_score(npi)
-                        cert_info = certification_scores_unmatched.get(str(npi), {})
-                        certification_points = cert_info.get('certification_points', 0) if isinstance(cert_info, dict) else 0
-                        is_certified = cert_info.get('is_certified', False) if isinstance(cert_info, dict) else False
-                        has_abns = cert_info.get('has_abns', False) if isinstance(cert_info, dict) else False
-                        has_aoa = cert_info.get('has_aoa', False) if isinstance(cert_info, dict) else False
-                        abns_points = cert_info.get('abns_points', 0) if isinstance(cert_info, dict) else 0
-                        aoa_points = cert_info.get('aoa_points', 0) if isinstance(cert_info, dict) else 0
-                        provider_info = next((p for p in npi_providers if p.get('npi') == npi), None)
-                        years_experience_raw = None
-                        if provider_info:
-                            years_experience_raw = provider_info.get('yearsExperience', provider_info.get('years_experience'))
-                        years_experience, experience_points = self._calculate_experience_points(years_experience_raw)
-                        
-                        # Calculate clinical volume raw score (Tot_Srvcs from CMS)
-                        npi_str = str(npi)
-                        residency_score = 0  # Unmatched providers don't have residency score calculated
-                        clinical_volume_raw = 0.0
-                        if cms_tot_srvcs and npi_str in cms_tot_srvcs:
-                            clinical_volume_raw = float(cms_tot_srvcs[npi_str])
-                            logger.debug(f"🔍 DEBUG: Unmatched NPI {npi_str} has Tot_Srvcs: {clinical_volume_raw} from CMS")
-                        
-                        # Store raw scores for weighted calculation
-                        unmatched_raw_scores[npi] = {
-                            'vumedi_raw': 0,  # Unmatched providers have no content
-                            'pubmed_raw': 0,
-                            'training_raw': med_school_score + residency_score + certification_points,
-                            'experience_raw': experience_points,
-                            'clinical_volume_raw': clinical_volume_raw  # Tot_Srvcs from CMS (will be normalized to percentage)
-                        }
-                        
-                        # Note: clinical_volume_points removed - clinical volume now uses percentage-based scoring
-                        total_score = med_school_score + experience_points + certification_points
-                        provider_scores[npi] = {
-                            'npi': npi,
-                            'score': total_score,
-                            'vumedi_count': 0,
-                            'pubmed_count': 0,
-                            'pubmed_first_author_count': 0,
-                            'pubmed_middle_author_count': 0,
-                            'pubmed_last_author_count': 0,
-                            'pubmed_base_points': 0,
-                            'pubmed_weighted_points': 0,
-                            'clinical_volume_points': 0,  # Deprecated - now using percentage-based scoring via weighted_breakdown
-                            'pubmed_quartile_q1_count': 0,
-                            'pubmed_quartile_q2_count': 0,
-                            'pubmed_quartile_q3_count': 0,
-                            'pubmed_quartile_q4_count': 0,
-                            'pubmed_quartile_no_data_count': 0,
-                            'experience_points': experience_points,
-                            'years_experience': years_experience,
-                            'med_school_score': med_school_score,
-                            'certification_points': certification_points,
-                            'is_certified': is_certified,
-                            'has_abns': has_abns,
-                            'has_aoa': has_aoa,
-                            'abns_points': abns_points,
-                            'aoa_points': aoa_points
-                        }
-                
-                # Calculate weighted scores for unmatched providers
-                if unmatched_raw_scores:
-                    # Extract raw_component_scores from matched providers' weighted_breakdown
-                    matched_raw_scores = {}
-                    for npi, scores in provider_scores.items():
-                        if npi in matched_npis and 'weighted_breakdown' in scores and 'breakdown_details' in scores['weighted_breakdown']:
-                            details = scores['weighted_breakdown']['breakdown_details']
-                            clinical_volume_detail = details.get('clinical_volume', {})
-                            clinical_volume_raw_extracted = clinical_volume_detail.get('raw', 0) if isinstance(clinical_volume_detail, dict) else 0
-                            logger.info(f"📊 CLINICAL_VOLUME_DEBUG: Extracting from breakdown_details for NPI {npi}: clinical_volume_detail={clinical_volume_detail}, extracted_raw={clinical_volume_raw_extracted}")
-                            matched_raw_scores[npi] = {
-                                'vumedi_raw': details.get('vumedi', {}).get('raw', 0),
-                                'pubmed_raw': details.get('pubmed', {}).get('raw', 0),
-                                'training_raw': details.get('training', {}).get('raw', 0),
-                                'experience_raw': details.get('experience', {}).get('raw', 0),
-                                'clinical_volume_raw': clinical_volume_raw_extracted
-                            }
-                    # Combine matched and unmatched raw scores for normalization
-                    all_raw_scores = {**matched_raw_scores, **unmatched_raw_scores}
-                    weighted_scores = self._calculate_weighted_score(all_raw_scores, cms_tot_srvcs=cms_tot_srvcs)
-                    
-                    # Update unmatched provider scores with weighted values
-                    for npi, weighted_data in weighted_scores.items():
-                        if npi in provider_scores and npi in unmatched_raw_scores:
-                            provider_scores[npi]['score'] = weighted_data['final_score']
-                            # Store weighted breakdown for frontend display
-                            provider_scores[npi]['weighted_breakdown'] = {
-                                'clinical_volume': {
-                                    'percentage': weighted_data['clinical_volume_pct'],
-                                    'weighted_points': weighted_data['clinical_volume_weighted'],
-                                    'weight': self.WEIGHT_CLINICAL_VOLUME
-                                },
-                                'pubmed': {
-                                    'percentage': weighted_data['pubmed_pct'],
-                                    'weighted_points': weighted_data['pubmed_weighted'],
-                                    'weight': self.WEIGHT_PUBMED
-                                },
-                                'training': {
-                                    'percentage': weighted_data['training_pct'],
-                                    'weighted_points': weighted_data['training_weighted'],
-                                    'weight': self.WEIGHT_TRAINING
-                                },
-                                'experience': {
-                                    'percentage': weighted_data['experience_pct'],
-                                    'weighted_points': weighted_data['experience_weighted'],
-                                    'weight': self.WEIGHT_EXPERIENCE
-                                },
-                                'vumedi': {
-                                    'percentage': weighted_data['vumedi_pct'],
-                                    'weighted_points': weighted_data['vumedi_weighted'],
-                                    'weight': self.WEIGHT_VUMEDI
-                                },
-                                'breakdown_details': weighted_data.get('breakdown_details', {})
-                            }
-                    # Also update matched providers with recalculated percentages (based on all providers)
-                    # This ensures percentages are relative to the max across ALL providers (matched + unmatched)
-                    for npi, weighted_data in weighted_scores.items():
-                        if npi in provider_scores and npi not in unmatched_raw_scores:
-                            # Update score and weighted_breakdown with recalculated values
-                            provider_scores[npi]['score'] = weighted_data['final_score']
-                            # Update existing weighted_breakdown or create new one
-                            if 'weighted_breakdown' not in provider_scores[npi]:
-                                provider_scores[npi]['weighted_breakdown'] = {}
-                            provider_scores[npi]['weighted_breakdown'].update({
-                                'clinical_volume': {
-                                    'percentage': weighted_data['clinical_volume_pct'],
-                                    'weighted_points': weighted_data['clinical_volume_weighted'],
-                                    'weight': self.WEIGHT_CLINICAL_VOLUME
-                                },
-                                'pubmed': {
-                                    'percentage': weighted_data['pubmed_pct'],
-                                    'weighted_points': weighted_data['pubmed_weighted'],
-                                    'weight': self.WEIGHT_PUBMED
-                                },
-                                'training': {
-                                    'percentage': weighted_data['training_pct'],
-                                    'weighted_points': weighted_data['training_weighted'],
-                                    'weight': self.WEIGHT_TRAINING
-                                },
-                                'experience': {
-                                    'percentage': weighted_data['experience_pct'],
-                                    'weighted_points': weighted_data['experience_weighted'],
-                                    'weight': self.WEIGHT_EXPERIENCE
-                                },
-                                'vumedi': {
-                                    'percentage': weighted_data['vumedi_pct'],
-                                    'weighted_points': weighted_data['vumedi_weighted'],
-                                    'weight': self.WEIGHT_VUMEDI
-                                },
-                                'breakdown_details': weighted_data.get('breakdown_details', {})
-                            })
-                            # Ensure ALL providers have weighted_breakdown (even if all zeros)
-                            # This is needed for providers without matches or with zero scores
-                            for npi in provider_scores:
-                                if 'weighted_breakdown' not in provider_scores[npi]:
-                                    # Create a zero-weighted breakdown for providers without one
-                                    provider_scores[npi]['weighted_breakdown'] = {
-                                        'clinical_volume': {
-                                            'raw': 0.0,
-                                            'percentage': 0.0,
-                                            'weighted_points': 0.0,
-                                            'weight': self.WEIGHT_CLINICAL_VOLUME
-                                        },
-                                        'pubmed': {
-                                            'raw': 0.0,
-                                            'percentage': 0.0,
-                                            'weighted_points': 0.0,
-                                            'weight': self.WEIGHT_PUBMED
-                                        },
-                                        'training': {
-                                            'raw': 0.0,
-                                            'percentage': 0.0,
-                                            'weighted_points': 0.0,
-                                            'weight': self.WEIGHT_TRAINING
-                                        },
-                                        'experience': {
-                                            'raw': 0.0,
-                                            'percentage': 0.0,
-                                            'weighted_points': 0.0,
-                                            'weight': self.WEIGHT_EXPERIENCE
-                                        },
-                                        'vumedi': {
-                                            'raw': 0.0,
-                                            'percentage': 0.0,
-                                            'weighted_points': 0.0,
-                                            'weight': self.WEIGHT_VUMEDI
-                                        }
-                                    }
-                                    # Also ensure score is set (might be 0 for unmatched providers)
-                                    if 'score' not in provider_scores[npi]:
-                                        provider_scores[npi]['score'] = 0.0
-                
-                # Sort ALL providers (matched + unmatched) by their total scores
-                # provider_scores is keyed by NPI, so iterate correctly
+                # Sort ALL providers by their total scores
+                # provider_scores is keyed by NPI (string), so iterate correctly
                 all_providers_with_scores = [
                     (npi, scores) for npi, scores in provider_scores.items()
                 ]
@@ -1351,7 +1047,7 @@ class RankingService:
                 all_ranked_npis = [npi for npi, _ in all_providers_with_scores]
                 
                 # Store the results for this treatment
-                doctors_with_content = len(matched_providers_with_scores)
+                providers_with_pubmed = len([npi for npi in all_ranked_npis if provider_scores.get(npi, {}).get('pubmed_count', 0) > 0])
                 treatment_rankings[treatment_id] = {
                     "name": treatment_name,
                     "ranked_providers": all_ranked_npis,
@@ -1359,7 +1055,7 @@ class RankingService:
                     "provider_scores": provider_scores
                 }
                 
-                logger.info(f"✅ Completed ranking for {treatment_name}: {doctors_with_content} with content, {len(unmatched_npis)} with zero scores")
+                logger.info(f"✅ Completed ranking for {treatment_name}: {providers_with_pubmed} with PubMed/Vumedi matches, {len(all_ranked_npis)} total providers")
             
             logger.info(f"✅ === TREATMENT-SPECIFIC RANKING COMPLETED ===")
             logger.info(f"📊 Total treatments ranked: {len(treatment_rankings)}")
