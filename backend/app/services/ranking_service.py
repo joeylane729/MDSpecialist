@@ -335,7 +335,10 @@ class RankingService:
                 pubmed_percentile_map[npi] = 0.0
         
         # Find max values for normalization (including clinical volume which is now percentage-based)
-        max_clinical_volume = max((scores.get('clinical_volume_raw', 0) for scores in raw_scores.values()), default=1.0)
+        # Only calculate max from providers that actually have clinical volume data (non-zero)
+        # This ensures entities/facilities not in cms_tot_srvcs don't affect the max
+        clinical_volume_values = [scores.get('clinical_volume_raw', 0) for scores in raw_scores.values() if scores.get('clinical_volume_raw', 0) > 0]
+        max_clinical_volume = max(clinical_volume_values, default=1.0) if clinical_volume_values else 1.0
         max_pubmed = max((scores.get('pubmed_raw', 0) for scores in raw_scores.values()), default=1.0)
         max_vumedi = max((scores.get('vumedi_raw', 0) for scores in raw_scores.values()), default=1.0)
         max_training = max((scores.get('training_raw', 0) for scores in raw_scores.values()), default=1.0)

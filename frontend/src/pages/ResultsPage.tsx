@@ -1462,11 +1462,19 @@ const ResultsPage: React.FC = () => {
       
       // Get CMS data to filter clinical volume by category
       const cmsData = specialistRecommendationData?.cms_data || location.state?.aiRecommendations?.cms_data;
+      
+      // Get user's neurosurgeon NPIs to filter out entities/facilities
+      const userProviderNPIs = new Set(
+        (location.state?.providers || []).map((p: Provider) => String(p.npi))
+      );
+      
       const cmsProvidersByNpi: { [npi: string]: any } = {};
       if (cmsData?.results) {
         cmsData.results.forEach((provider: any) => {
-          const npi = provider.Rndrng_NPI;
-          if (npi) {
+          const npi = String(provider.Rndrng_NPI || '');
+          // ONLY include providers that are in the user's search (neurosurgeons)
+          // This prevents entities/facilities like "Yorkville Endoscopy, Llc" from being included
+          if (npi && userProviderNPIs.has(npi)) {
             if (!cmsProvidersByNpi[npi]) {
               cmsProvidersByNpi[npi] = [];
             }
@@ -1477,14 +1485,18 @@ const ResultsPage: React.FC = () => {
       
       // First, calculate the max Tot_Srvcs for this category across all providers
       // This ensures all providers are compared against the same max value
-      // Note: This includes all CMS providers (may include labs/facilities), but backend scoring
-      // is filtered to only neurosurgeons, so this is mainly for display purposes
+      // NOTE: Now filtered to only neurosurgeons from user's search (entities excluded)
       const providerCategoryTotSrvcs: { [npi: string]: number } = {};
       
       // Calculate Tot_Srvcs per provider for this category
       // CMS data has one row per provider-CPT code combination, so we need to sum Tot_Srvcs
       // for each provider where the CPT code matches the selected category
       Object.keys(cmsProvidersByNpi).forEach(providerNpi => {
+        // Double-check: only process neurosurgeons (should already be filtered above, but safety check)
+        if (!userProviderNPIs.has(providerNpi)) {
+          return; // Skip entities/facilities
+        }
+        
         const providerData = cmsProvidersByNpi[providerNpi];
         let providerCategoryTotal = 0;
         
@@ -1502,7 +1514,7 @@ const ResultsPage: React.FC = () => {
         }
       });
       
-      // Find the max Tot_Srvcs for this category
+      // Find the max Tot_Srvcs for this category (now only from neurosurgeons, not entities)
       const maxCategoryTotSrvcs = Object.values(providerCategoryTotSrvcs).length > 0 
         ? Math.max(...Object.values(providerCategoryTotSrvcs)) 
         : 1;
@@ -2980,18 +2992,35 @@ const ResultsPage: React.FC = () => {
                               sampleProviderStates: cmsData.results?.slice(0, 5).map((p: any) => p.Rndrng_Prvdr_State_Abrvtn) || []
                             });
                             
-                            // Filter results by state (backend should already filter, but keep as safety net)
+                            // Get user's neurosurgeon NPIs to filter out entities/facilities
+                            const userProviderNPIs = new Set(
+                              (location.state?.providers || []).map((p: Provider) => String(p.npi))
+                            );
+                            
+                            // Filter results by state AND by NPI (neurosurgeons only)
                             // Backend now filters by state before selecting top 25, so results should already be filtered
                             let filteredResults = userStateCode 
                               ? (cmsData.results || []).filter((provider: any) => {
                                   const providerState = (provider.Rndrng_Prvdr_State_Abrvtn || '').toUpperCase().trim();
-                                  const matches = providerState === userStateCode;
-                                  if (!matches && userStateCode) {
+                                  const providerNPI = String(provider.Rndrng_NPI || '');
+                                  const matchesState = providerState === userStateCode;
+                                  const isNeurosurgeon = userProviderNPIs.has(providerNPI);
+                                  if (!matchesState && userStateCode) {
                                     console.log(`❌ Provider ${provider.Rndrng_Prvdr_First_Name} ${provider.Rndrng_Prvdr_Last_Org_Name} state mismatch: "${providerState}" !== "${userStateCode}"`);
                                   }
-                                  return matches;
+                                  if (!isNeurosurgeon) {
+                                    console.log(`❌ Provider ${provider.Rndrng_Prvdr_First_Name} ${provider.Rndrng_Prvdr_Last_Org_Name} (NPI: ${providerNPI}) is not in user's search - excluding entity/facility`);
+                                  }
+                                  return matchesState && isNeurosurgeon;
                                 })
-                              : (cmsData.results || []);
+                              : (cmsData.results || []).filter((provider: any) => {
+                                  const providerNPI = String(provider.Rndrng_NPI || '');
+                                  const isNeurosurgeon = userProviderNPIs.has(providerNPI);
+                                  if (!isNeurosurgeon) {
+                                    console.log(`❌ Provider ${provider.Rndrng_Prvdr_First_Name} ${provider.Rndrng_Prvdr_Last_Org_Name} (NPI: ${providerNPI}) is not in user's search - excluding entity/facility`);
+                                  }
+                                  return isNeurosurgeon;
+                                });
                             
                             // If no results in selected state, show empty message (don't show all results)
                             const showAllResults = false; // Never show all results if filtering by state
