@@ -47,6 +47,10 @@ def extract_cms_tot_srvcs(
         # Filter to only include valid NPIs (neurosurgeons) if provided
         if valid_npis and npi_str not in valid_npis:
             filtered_count += 1
+            # Log if this is a known provider we're looking for (like Theodore Schwartz)
+            if npi_str in ['1811916455']:
+                logger.warning(f"⚠️  CMS FILTER: NPI {npi_str} (Theodore Schwartz) was EXCLUDED - not in valid_npis set")
+                logger.info(f"📊 valid_npis contains {len(valid_npis)} NPIs, sample: {list(valid_npis)[:10]}")
             continue
             
         try:

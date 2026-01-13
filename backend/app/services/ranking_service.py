@@ -743,11 +743,23 @@ class RankingService:
                     if cms_tot_srvcs:
                         if npi_str in cms_tot_srvcs:
                             clinical_volume_raw = float(cms_tot_srvcs[npi_str])
-                            logger.debug(f"📊 CLINICAL_VOLUME_DEBUG: NPI {npi_str} has Tot_Srvcs: {clinical_volume_raw} from CMS")
+                            # Log for top providers or specific NPIs (like Theodore Schwartz)
+                            if npi_str in ['1811916455'] or idx < 10:
+                                logger.info(f"📊 CLINICAL_VOLUME: NPI {npi_str} has Tot_Srvcs: {clinical_volume_raw} from CMS")
+                            else:
+                                logger.debug(f"📊 CLINICAL_VOLUME_DEBUG: NPI {npi_str} has Tot_Srvcs: {clinical_volume_raw} from CMS")
                         else:
-                            logger.debug(f"📊 CLINICAL_VOLUME_DEBUG: NPI {npi_str} NOT found in cms_tot_srvcs (has {len(cms_tot_srvcs)} entries)")
+                            # Log for top providers or specific NPIs (like Theodore Schwartz)
+                            if npi_str in ['1811916455'] or idx < 10:
+                                logger.warning(f"⚠️  CLINICAL_VOLUME: NPI {npi_str} NOT found in cms_tot_srvcs (has {len(cms_tot_srvcs)} entries)")
+                                logger.info(f"📊 Sample NPIs in cms_tot_srvcs: {list(cms_tot_srvcs.keys())[:10]}")
+                            else:
+                                logger.debug(f"📊 CLINICAL_VOLUME_DEBUG: NPI {npi_str} NOT found in cms_tot_srvcs (has {len(cms_tot_srvcs)} entries)")
                     else:
-                        logger.debug(f"📊 CLINICAL_VOLUME_DEBUG: cms_tot_srvcs is None/empty for NPI {npi_str}")
+                        if npi_str in ['1811916455'] or idx < 10:
+                            logger.warning(f"⚠️  CLINICAL_VOLUME: cms_tot_srvcs is None/empty for NPI {npi_str}")
+                        else:
+                            logger.debug(f"📊 CLINICAL_VOLUME_DEBUG: cms_tot_srvcs is None/empty for NPI {npi_str}")
                     
                     # Calculate raw component scores for weighted system
                     # Store raw scores for normalization pass (for ALL providers)

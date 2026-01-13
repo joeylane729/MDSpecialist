@@ -57,6 +57,13 @@ async def rank_npi_providers(
             if npi:
                 valid_npis.add(str(npi))
         
+        # Check if Theodore Schwartz is in the set
+        if '1811916455' in valid_npis:
+            logger.info(f"✅ Theodore Schwartz (1811916455) is in valid_npis set")
+        else:
+            logger.warning(f"⚠️  Theodore Schwartz (1811916455) is NOT in valid_npis set!")
+            logger.info(f"📊 Sample NPIs in valid_npis: {list(valid_npis)[:10]}")
+        
         if valid_npis:
             logger.info(f"Filtering CMS data to {len(valid_npis)} valid NPIs (neurosurgeons only)")
         
