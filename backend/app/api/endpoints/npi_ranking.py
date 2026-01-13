@@ -48,8 +48,20 @@ async def rank_npi_providers(
         Dictionary with treatment_rankings and total_treatments
     """
     try:
-        # Extract CMS clinical volume data for scoring
-        cms_tot_srvcs = extract_cms_tot_srvcs(request.cms_data)
+        # Extract valid NPIs from npi_providers (these are already filtered by specialty)
+        # This ensures we only include neurosurgeons in the maximum calculation,
+        # preventing labs/facilities from inflating the clinical volume scores
+        valid_npis = set()
+        for provider in request.npi_providers:
+            npi = provider.get('npi')
+            if npi:
+                valid_npis.add(str(npi))
+        
+        if valid_npis:
+            logger.info(f"Filtering CMS data to {len(valid_npis)} valid NPIs (neurosurgeons only)")
+        
+        # Extract CMS clinical volume data for scoring, filtered to only neurosurgeons
+        cms_tot_srvcs = extract_cms_tot_srvcs(request.cms_data, valid_npis=valid_npis if valid_npis else None)
         
         # Initialize service and rank providers
         specialist_service = SpecialistRecommendationService(db)

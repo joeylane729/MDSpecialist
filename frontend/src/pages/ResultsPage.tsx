@@ -52,7 +52,7 @@ const getTreatmentOptions = (searchParams: any, aiRecommendations?: any): Treatm
       name: option.name || "Treatment Option",
       outcomes: option.outcomes || "Outcomes not specified",
       complications: option.complications || "Complications not specified",
-      category: option.category || "Other"
+      category: option.category || "Medical"
     }));
   }
 
@@ -62,7 +62,7 @@ const getTreatmentOptions = (searchParams: any, aiRecommendations?: any): Treatm
       name: option.name || "Treatment Option",
       outcomes: option.outcomes || "Outcomes not specified",
       complications: option.complications || "Complications not specified",
-      category: option.category || "Other"
+      category: option.category || "Medical"
     }));
   }
 
@@ -115,7 +115,7 @@ const getCategoriesFromTreatmentOptions = (treatmentOptions: TreatmentOption[] |
   });
   
   // Define the preferred order for categories (case-insensitive matching)
-  const categoryOrder = ['surgery', 'radiosurgery', 'endovascular', 'other'];
+  const categoryOrder = ['surgery', 'radiosurgery', 'endovascular', 'medical'];
   
   // Sort categories: first by preferred order, then alphabetically for any others
   return Array.from(categories).sort((a, b) => {
@@ -292,7 +292,7 @@ const ResultsPage: React.FC = () => {
         // Group treatment options by category
         const optionsByCategory: { [category: string]: TreatmentOption[] } = {};
         treatmentOptions.forEach(option => {
-          const category = option.category || 'Other';
+          const category = option.category || 'Medical';
           if (!optionsByCategory[category]) {
             optionsByCategory[category] = [];
           }
@@ -332,7 +332,7 @@ const ResultsPage: React.FC = () => {
         // Group treatments by category for the filter change handler
         const treatmentsByCategory: { [category: string]: Array<{ id: string; treatment: any }> } = {};
         Object.entries(treatmentRankings).forEach(([treatmentId, treatment]) => {
-          const category = (treatment as any).category || 'Other';
+          const category = (treatment as any).category || 'Medical';
           if (!treatmentsByCategory[category]) {
             treatmentsByCategory[category] = [];
           }
@@ -411,7 +411,7 @@ const ResultsPage: React.FC = () => {
         // For now, we'll group by treatment option categories
         const reconstructed: { [category: string]: Array<{ code: string; description: string }> } = {};
         treatmentOptions.forEach(option => {
-          const category = option.category || 'Other';
+          const category = option.category || 'Medical';
           if (!reconstructed[category]) {
             reconstructed[category] = [];
           }
@@ -1077,7 +1077,7 @@ const ResultsPage: React.FC = () => {
       // Group selected treatment options by category
       const optionsByCategory: { [category: string]: TreatmentOption[] } = {};
       selectedTreatmentOptions.forEach(option => {
-        const category = option.category || 'Other';
+        const category = option.category || 'Medical';
         if (!optionsByCategory[category]) {
           optionsByCategory[category] = [];
         }
@@ -1477,6 +1477,8 @@ const ResultsPage: React.FC = () => {
       
       // First, calculate the max Tot_Srvcs for this category across all providers
       // This ensures all providers are compared against the same max value
+      // Note: This includes all CMS providers (may include labs/facilities), but backend scoring
+      // is filtered to only neurosurgeons, so this is mainly for display purposes
       const providerCategoryTotSrvcs: { [npi: string]: number } = {};
       
       // Calculate Tot_Srvcs per provider for this category
@@ -2298,7 +2300,7 @@ const ResultsPage: React.FC = () => {
                 // Group treatments by category
                 const treatmentsByCategory: { [category: string]: Array<{ id: string; treatment: any }> } = {};
                 Object.entries(treatmentRankings).forEach(([treatmentId, treatment]) => {
-                  const category = (treatment as any).category || 'Other';
+                  const category = (treatment as any).category || 'Medical';
                   if (!treatmentsByCategory[category]) {
                     treatmentsByCategory[category] = [];
                   }

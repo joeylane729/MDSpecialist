@@ -72,6 +72,12 @@ class MedicalAnalysisService:
             treatment_options = []
             if medical_analysis["diagnoses"] and "treatment_options" in medical_analysis["diagnoses"]:
                 treatment_options = medical_analysis["diagnoses"]["treatment_options"]
+                # Log treatment options with categories
+                logger.info(f"📋 Extracted {len(treatment_options)} treatment options from medical analysis:")
+                for i, option in enumerate(treatment_options, 1):
+                    category = option.get('category', 'Not specified')
+                    name = option.get('name', 'Unnamed')
+                    logger.info(f"   {i}. {name} (Category: {category})")
             else:
                 logger.warning("No treatment options found in medical analysis")
             
@@ -1063,6 +1069,16 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                         primary_desc = self.lookup_icd10_description(diagnoses['primary']['code'])
                         if primary_desc:
                             diagnoses['primary']['description'] = primary_desc
+                
+                # Log treatment options with details
+                if 'treatment_options' in diagnoses and isinstance(diagnoses['treatment_options'], list):
+                    logger.info(f"📋 GPT returned {len(diagnoses['treatment_options'])} treatment options:")
+                    for i, option in enumerate(diagnoses['treatment_options'], 1):
+                        category = option.get('category', 'Not specified')
+                        name = option.get('name', 'Unnamed')
+                        logger.info(f"   {i}. {name} (Category: {category})")
+                else:
+                    logger.warning("⚠️  No treatment_options found in GPT response or invalid format")
                 
                 return diagnoses, rendered_prompt
             else:
