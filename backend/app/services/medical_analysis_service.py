@@ -717,7 +717,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                         if state_abbrev_for_url:
                             state_filter = (
                                 f"filter[state][condition][path]=Rndrng_Prvdr_State_Abrvtn&"
-                                f"filter[state][condition][operator]=EQ&"
+                                f"filter[state][condition][operator]==&"
                                 f"filter[state][condition][value]={state_abbrev_for_url}&"
                             )
                             full_url = f"{base_url}?{state_filter}{hcpcs_filter}"
