@@ -1019,6 +1019,29 @@ interface ScoreBreakdownModalProps {
 function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreakdownModalProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   
+  // Log scoreData structure when modal opens, especially for Theodore
+  React.useEffect(() => {
+    if (provider.npi === '1811916455' || !(window as any).__modalScoreDataLogged) {
+      if (!(window as any).__modalScoreDataLogged) {
+        (window as any).__modalScoreDataLogged = new Set();
+      }
+      const loggedSet = (window as any).__modalScoreDataLogged as Set<string>;
+      if (provider.npi === '1811916455' || loggedSet.size < 3) {
+        console.log(`🔍 [ScoreBreakdownModal] Provider ${provider.npi} (${provider.name}) scoreData:`, {
+          scoreData_exists: !!scoreData,
+          has_weighted_breakdown: !!scoreData?.weighted_breakdown,
+          weighted_breakdown_structure: scoreData?.weighted_breakdown ? Object.keys(scoreData.weighted_breakdown) : null,
+          has_breakdown_details: !!scoreData?.weighted_breakdown?.breakdown_details,
+          breakdown_details_keys: scoreData?.weighted_breakdown?.breakdown_details ? Object.keys(scoreData.weighted_breakdown.breakdown_details) : null,
+          has_clinical_volume: !!scoreData?.weighted_breakdown?.breakdown_details?.clinical_volume,
+          clinical_volume_data: scoreData?.weighted_breakdown?.breakdown_details?.clinical_volume,
+          full_scoreData: scoreData
+        });
+        loggedSet.add(provider.npi);
+      }
+    }
+  }, [provider.npi, provider.name, scoreData]);
+  
   const toggleSection = (sectionKey: string) => {
     const newExpanded = new Set(expandedSections);
     if (newExpanded.has(sectionKey)) {
@@ -1109,6 +1132,21 @@ function ScoreBreakdownModal({ provider, score, scoreData, onClose }: ScoreBreak
   const clinicalVolumeMaxRaw = clinicalVolumeBreakdown?.max_raw ?? clinicalVolumeBreakdown?.max ?? 1;
   const clinicalVolumePercentageRecalc = clinicalVolumeMaxRaw > 0 ? (clinicalVolumeRaw / clinicalVolumeMaxRaw * 100) : 0;
   const clinicalVolumeWeightedPointsRecalc = (clinicalVolumePercentageRecalc / 100) * clinical_volume.weight;
+  
+  // Log clinical volume breakdown data for debugging
+  if (provider.npi === '1811916455') {
+    console.log(`🔍 [ScoreBreakdownModal] Theodore clinical volume breakdown:`, {
+      clinicalVolumeBreakdown_exists: !!clinicalVolumeBreakdown,
+      clinicalVolumeRaw,
+      clinicalVolumeMaxRaw,
+      clinicalVolumePercentageRecalc,
+      breakdownDetails_path: 'weighted_breakdown?.breakdown_details?.clinical_volume',
+      weighted_breakdown_exists: !!weighted_breakdown,
+      breakdown_details_exists: !!weighted_breakdown?.breakdown_details,
+      breakdown_details_structure: weighted_breakdown?.breakdown_details ? Object.keys(weighted_breakdown.breakdown_details) : null,
+      full_breakdown_details: weighted_breakdown?.breakdown_details
+    });
+  }
 
   const sections = [
     {
