@@ -1331,27 +1331,6 @@ const ResultsPage: React.FC = () => {
               if (!allProviderScores[npi]) {
                 // Deep copy the score data so we can modify it without affecting the original
                 allProviderScores[npi] = JSON.parse(JSON.stringify(scoreData));
-                
-                // Log clinical volume data for Theodore and first few providers
-                if (npi === '1811916455' || (typeof window !== 'undefined' && !(window as any).__providerScoreLogged)) {
-                  if (!(window as any).__providerScoreLogged) {
-                    (window as any).__providerScoreLogged = new Set();
-                  }
-                  const loggedSet = (window as any).__providerScoreLogged as Set<string>;
-                  if (npi === '1811916455' || loggedSet.size < 5) {
-                    console.log(`🔍 [Frontend] Provider ${npi} scoreData structure:`, {
-                      has_weighted_breakdown: !!scoreData?.weighted_breakdown,
-                      has_breakdown_details: !!scoreData?.weighted_breakdown?.breakdown_details,
-                      has_clinical_volume: !!scoreData?.weighted_breakdown?.breakdown_details?.clinical_volume,
-                      clinical_volume_raw: scoreData?.weighted_breakdown?.breakdown_details?.clinical_volume?.raw,
-                      clinical_volume_max: scoreData?.weighted_breakdown?.breakdown_details?.clinical_volume?.max,
-                      clinical_volume_max_raw: scoreData?.weighted_breakdown?.breakdown_details?.clinical_volume?.max_raw,
-                      full_weighted_breakdown: scoreData?.weighted_breakdown,
-                      full_scoreData: scoreData
-                    });
-                    loggedSet.add(npi);
-                  }
-                }
               }
             });
           }
@@ -2399,16 +2378,6 @@ const ResultsPage: React.FC = () => {
             const { score, breakdown } = getProviderScore(provider);
             const scoreData = providerScores[provider.npi];
             const isCertified = scoreData?.is_certified === true || scoreData?.certification_points > 0;
-            
-            // Log for Theodore when scoreData is accessed
-            if (provider.npi === '1811916455' && scoreData) {
-              console.log(`🔍 [Frontend] Theodore (${provider.npi}) scoreData when rendering card:`, {
-                has_weighted_breakdown: !!scoreData?.weighted_breakdown,
-                breakdown_details: scoreData?.weighted_breakdown?.breakdown_details,
-                clinical_volume: scoreData?.weighted_breakdown?.breakdown_details?.clinical_volume,
-                full_scoreData_keys: Object.keys(scoreData)
-              });
-            }
             
             return (
               <div key={provider.id} className="relative">
