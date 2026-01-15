@@ -6,6 +6,10 @@ import csv
 import sys
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv(Path(__file__).parent / '.env')
 
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent))

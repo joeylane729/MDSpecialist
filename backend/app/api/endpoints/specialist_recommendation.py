@@ -25,9 +25,6 @@ def parse_optional_json(json_str: Optional[str]) -> Optional[Any]:
 @router.post("/specialist-recommendations")
 async def get_specialist_recommendations(
     diagnosis: str = Form(...),
-    medical_history: Optional[str] = Form(None),
-    medications: Optional[str] = Form(None),
-    surgical_history: Optional[str] = Form(None),
     state: Optional[str] = Form(None),
     cpt_codes_json: str = Form(...),  # Required JSON string of CPT codes (must be generated first)
     treatment_options_json: str = Form(...),  # Required JSON string of treatment options from medical analysis
@@ -81,12 +78,9 @@ async def get_specialist_recommendations(
                 detail=f"Invalid treatment_options_json: {str(e)}"
             )
         
-        # Build patient input
+        # Build patient input (only diagnosis needed)
         patient_input = await build_patient_input(
             diagnosis=diagnosis,
-            medical_history=medical_history,
-            medications=medications,
-            surgical_history=surgical_history,
             files=files
         )
         

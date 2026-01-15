@@ -21,9 +21,6 @@ router = APIRouter()
 @router.post("/medical-analysis")
 async def get_medical_analysis(
     diagnosis: str = Form(...),
-    medical_history: Optional[str] = Form(None),
-    medications: Optional[str] = Form(None),
-    surgical_history: Optional[str] = Form(None),
     files: List[UploadFile] = File([]),
     custom_diagnoses_prompt: Optional[str] = Form(None),  # Optional custom prompt for diagnosis/treatment generation
     custom_search_query_prompt: Optional[str] = Form(None),  # Optional custom prompt for search query generation
@@ -42,9 +39,9 @@ async def get_medical_analysis(
         medical_analysis_service = MedicalAnalysisService(db)
         analysis_results = await medical_analysis_service.comprehensive_analysis(
             diagnosis=diagnosis,
-            medical_history=medical_history or "",
-            medications=medications or "",
-            surgical_history=surgical_history or "",
+            medical_history="",
+            medications="",
+            surgical_history="",
             pdf_content=pdf_content,
             custom_diagnoses_prompt=custom_diagnoses_prompt,
             custom_search_query_prompt=custom_search_query_prompt

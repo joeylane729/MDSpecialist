@@ -7,6 +7,15 @@ import csv
 import sys
 import subprocess
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Add parent directory to path to import from backend
+script_dir = Path(__file__).parent.resolve()
+project_root = script_dir.parent.parent
+sys.path.insert(0, str(project_root))
+
+# Load environment variables from .env file
+load_dotenv(project_root / 'backend' / '.env')
 
 # Import from backend directly
 from backend.app.database import get_db
@@ -221,9 +230,9 @@ def find_best_matching_file(doctor, matching_files, scraped_pages_dir):
     city_matches = []
     if city_terms:
         for filename in matching_files:
-            filepath = os.path.join(scraped_pages_dir, filename)
-            if os.path.exists(filepath):
-                matches = search_in_markdown(filepath, city_terms)
+            filepath = scraped_pages_dir / filename if isinstance(scraped_pages_dir, Path) else Path(scraped_pages_dir) / filename
+            if filepath.exists():
+                matches = search_in_markdown(str(filepath), city_terms)
                 if matches:
                     city_matches.append(filename)
     
@@ -233,10 +242,10 @@ def find_best_matching_file(doctor, matching_files, scraped_pages_dir):
     
     # Check if multiple city matches are duplicates
     if len(city_matches) == 2:
-        file1_path = os.path.join(scraped_pages_dir, city_matches[0])
-        file2_path = os.path.join(scraped_pages_dir, city_matches[1])
+        file1_path = scraped_pages_dir / city_matches[0] if isinstance(scraped_pages_dir, Path) else Path(scraped_pages_dir) / city_matches[0]
+        file2_path = scraped_pages_dir / city_matches[1] if isinstance(scraped_pages_dir, Path) else Path(scraped_pages_dir) / city_matches[1]
         
-        if files_are_identical(file1_path, file2_path):
+        if files_are_identical(str(file1_path), str(file2_path)):
             # Files are identical, return either one
             return city_matches[0], 'city_duplicate', 'Multiple city matches but files are identical - using first match'
     
@@ -244,9 +253,9 @@ def find_best_matching_file(doctor, matching_files, scraped_pages_dir):
     phone_matches = []
     if phone_terms and len(city_matches) != 1:
         for filename in matching_files:
-            filepath = os.path.join(scraped_pages_dir, filename)
-            if os.path.exists(filepath):
-                matches = search_in_markdown(filepath, phone_terms)
+            filepath = scraped_pages_dir / filename if isinstance(scraped_pages_dir, Path) else Path(scraped_pages_dir) / filename
+            if filepath.exists():
+                matches = search_in_markdown(str(filepath), phone_terms)
                 if matches:
                     phone_matches.append(filename)
     
@@ -256,10 +265,10 @@ def find_best_matching_file(doctor, matching_files, scraped_pages_dir):
     
     # Check if multiple phone matches are duplicates
     if len(phone_matches) == 2:
-        file1_path = os.path.join(scraped_pages_dir, phone_matches[0])
-        file2_path = os.path.join(scraped_pages_dir, phone_matches[1])
+        file1_path = scraped_pages_dir / phone_matches[0] if isinstance(scraped_pages_dir, Path) else Path(scraped_pages_dir) / phone_matches[0]
+        file2_path = scraped_pages_dir / phone_matches[1] if isinstance(scraped_pages_dir, Path) else Path(scraped_pages_dir) / phone_matches[1]
         
-        if files_are_identical(file1_path, file2_path):
+        if files_are_identical(str(file1_path), str(file2_path)):
             # Files are identical, return either one
             return phone_matches[0], 'phone_duplicate', 'Multiple phone matches but files are identical - using first match'
     
@@ -270,17 +279,22 @@ def is_neuro_specialist(specialties):
     """Check if the doctor is a neurosurgeon or neurologist"""
     specialties_lower = [s.lower() for s in specialties]
     
-    # Check for neurosurgery
-    has_neurosurgery = any('neurosurgery' in s for s in specialties_lower)
+    # Check for neurosurgery OR neurological (for cases like 'Neurological Spine Surgery')
+    has_neurosurgery = any('neurosurgery' in s or 'neurological' in s for s in specialties_lower)
     
-    # Check for neurology (but not neurosurgery)
+    # Check for neurology (but not neurosurgery or neurological)
     has_neurology = any('neurology' in s for s in specialties_lower)
-    has_neurosurgery_in_neurology = any('neurosurgery' in s for s in specialties_lower if 'neurology' in s)
+    # Exclude if it's neurological surgery (that's neurosurgery, not neurology)
+    has_neurosurgery_in_neurology = any(
+        ('neurosurgery' in s or 'neurological' in s) 
+        for s in specialties_lower 
+        if 'neurology' in s
+    )
     
-    # Is neurosurgeon if has neurosurgery
+    # Is neurosurgeon if has neurosurgery or neurological surgery
     is_neurosurgeon = has_neurosurgery
     
-    # Is neurologist if has neurology but not neurosurgery
+    # Is neurologist if has neurology but not neurosurgery/neurological
     is_neurologist = has_neurology and not has_neurosurgery_in_neurology
     
     return is_neurosurgeon or is_neurologist
@@ -338,10 +352,12 @@ def main():
             print(f"🔍 Processing {first_name} {last_name} (NPI: {npi})")
             
             # Look for matching markdown files
-            scraped_pages_dir = 'scraped_pages_healthgrades'
+            # Use absolute path based on script location
+            script_dir = Path(__file__).parent.resolve()
+            scraped_pages_dir = script_dir / 'scraped_pages_healthgrades'
             matching_files = []
             
-            if os.path.exists(scraped_pages_dir):
+            if scraped_pages_dir.exists():
                 for filename in os.listdir(scraped_pages_dir):
                     if filename.endswith('.md'):
                         # Check if this file matches the doctor
@@ -353,8 +369,8 @@ def main():
                 # Filter files to only include those with neuro specialties
                 neuro_files = []
                 for filename in matching_files:
-                    filepath = os.path.join(scraped_pages_dir, filename)
-                    specialties = extract_specialties_from_markdown(filepath)
+                    filepath = scraped_pages_dir / filename
+                    specialties = extract_specialties_from_markdown(str(filepath))
                     if is_neuro_specialist(specialties):
                         neuro_files.append(filename)
                 
@@ -368,11 +384,11 @@ def main():
                         neuro_specialists_count += 1
                         
                         # Extract data from the best matching file
-                        filepath = os.path.join(scraped_pages_dir, best_file)
-                        specialties = extract_specialties_from_markdown(filepath)
-                        education_items = extract_education_from_markdown(filepath)
+                        filepath = scraped_pages_dir / best_file
+                        specialties = extract_specialties_from_markdown(str(filepath))
+                        education_items = extract_education_from_markdown(str(filepath))
                         medical_schools, residencies, fellowships = parse_education_into_categories(education_items)
-                        certifications = extract_certifications_from_markdown(filepath)
+                        certifications = extract_certifications_from_markdown(str(filepath))
                         
                         # Update matching statistics
                         if match_method == 'single_file':
@@ -460,8 +476,9 @@ def main():
         print(f"✅ Processed {len(doctors)} doctors")
         print(f"🧠 Found {neuro_specialists_count} neurosurgeons/neurologists with Healthgrades profiles")
         
-        # Save results to CSV
-        csv_file = 'neuro_specialists_verification_results.csv'
+        # Save results to CSV (use script directory)
+        script_dir = Path(__file__).parent.resolve()
+        csv_file = script_dir / 'neuro_specialists_verification_results.csv'
         with open(csv_file, 'w', newline='', encoding='utf-8') as f:
             fieldnames = ['npi', 'first_name', 'last_name', 'filenames', 'specialties', 'medical_school', 'residency', 'fellowship', 'certifications', 'matching_method', 'matching_notes']
             writer = csv.DictWriter(f, fieldnames=fieldnames)

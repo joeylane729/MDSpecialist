@@ -942,9 +942,6 @@ const ResultsPage: React.FC = () => {
       // Get data from searchParams or fallback to location.state
       const response = await getMedicalAnalysis({
         diagnosis: searchParams.diagnosis || location.state?.diagnosis || '',
-        medical_history: location.state?.medicalHistory || '',
-        medications: location.state?.medications || '',
-        surgical_history: location.state?.surgicalHistory || '',
         files: [], // Files are not persisted, so we can't include them in rerun
         custom_diagnoses_prompt: customPrompt
       });
@@ -1193,9 +1190,6 @@ const ResultsPage: React.FC = () => {
       const patientProfile = location.state?.aiRecommendations?.patient_profile;
       const specialistRequest: SpecialistRecommendationRequest = {
         diagnosis: searchParams?.diagnosis || '',
-        medical_history: location.state?.medicalHistory || '',
-        medications: location.state?.medications || '',
-        surgical_history: location.state?.surgicalHistory || '',
         state: searchParams?.state || location.state?.state || '',
         files: [],
         cpt_codes: existingCptCodes,  // Pass existing CPT codes to reuse them

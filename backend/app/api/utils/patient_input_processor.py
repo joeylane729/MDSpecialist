@@ -49,19 +49,13 @@ async def extract_pdf_content(files: List[UploadFile]) -> str:
 
 async def build_patient_input(
     diagnosis: str,
-    medical_history: Optional[str] = None,
-    medications: Optional[str] = None,
-    surgical_history: Optional[str] = None,
     files: Optional[List[UploadFile]] = []
 ) -> str:
     """
-    Build a comprehensive patient input string from individual components and files.
+    Build a patient input string from diagnosis and files.
     
     Args:
         diagnosis: Patient diagnosis
-        medical_history: Medical history (optional)
-        medications: Current medications (optional)
-        surgical_history: Surgical history (optional)
         files: List of uploaded files (optional)
         
     Returns:
@@ -69,14 +63,6 @@ async def build_patient_input(
     """
     # Start with diagnosis
     patient_input = f"Diagnosis: {diagnosis}"
-    
-    # Add optional medical information
-    if medical_history:
-        patient_input += f"\n\nMedical History: {medical_history}"
-    if medications:
-        patient_input += f"\n\nCurrent Medications: {medications}"
-    if surgical_history:
-        patient_input += f"\n\nSurgical History: {surgical_history}"
     
     # Process uploaded files (if any)
     if files:

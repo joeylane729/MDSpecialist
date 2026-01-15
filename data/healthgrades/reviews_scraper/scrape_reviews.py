@@ -33,7 +33,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 # Configuration
 BASE_DIR = Path(__file__).parent.parent
-VERIFICATION_CSV = BASE_DIR / "neuro_specialists_verification_results.csv"
+# Use filtered CSV for new 38 doctors if it exists, otherwise use full CSV
+FILTERED_CSV = BASE_DIR / "neuro_specialists_verification_results_new_38.csv"
+VERIFICATION_CSV = FILTERED_CSV if FILTERED_CSV.exists() else BASE_DIR / "neuro_specialists_verification_results.csv"
 ALL_MATCHES_CSV = BASE_DIR / "healthgrades_neurosurgeon_all_matches.csv"
 SCRAPED_PAGES_DIR = BASE_DIR / "scraped_pages_healthgrades"
 REVIEWS_OUTPUT_DIR = BASE_DIR / "reviews_scraper" / "reviews_pages"
@@ -174,9 +176,9 @@ def setup_selenium_driver():
     chromedriver_path = "/opt/homebrew/bin/chromedriver"
     
     service = Service(chromedriver_path)
-        driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver = webdriver.Chrome(service=service, options=chrome_options)
     print(f"   ✅ ChromeDriver initialized successfully ({chromedriver_path})")
-        return driver
+    return driver
 
 def click_show_more_reviews(driver, max_clicks=1000):
     """Click 'Show more reviews' button until all reviews are loaded - optimized with CSS selectors"""
@@ -202,7 +204,7 @@ def click_show_more_reviews(driver, max_clicks=1000):
                     continue
                 
                 button = link
-                            break
+                break
                     
             if not button:
                 # No more buttons found
@@ -267,8 +269,8 @@ def click_more_details_buttons(driver):
     buttons = driver.find_elements(By.CSS_SELECTOR, "div.c-single-comment button, div.c-single-comment a")
     
     clicks = 0
-                for button in buttons:
-                    try:
+    for button in buttons:
+        try:
             # Check if button text contains "More details"
             button_text = (button.text or '').strip()
             if 'more details' not in button_text.lower():
@@ -276,10 +278,10 @@ def click_more_details_buttons(driver):
             
             if not button.is_displayed() or not button.is_enabled():
                 continue
-                            
+            
             # Click using JavaScript
-                            driver.execute_script("arguments[0].click();", button)
-                            clicks += 1
+            driver.execute_script("arguments[0].click();", button)
+            clicks += 1
             
             # Brief wait for content to update
             try:
@@ -290,7 +292,7 @@ def click_more_details_buttons(driver):
                 pass
             
         except Exception:
-                continue
+            continue
         
     total_duration = time.time() - start_time
     if clicks > 0:
@@ -466,9 +468,9 @@ def extract_reviews_from_page(driver):
                         best_count = count
                         # If we found a good match with the primary selector and it has reasonable count, use it
                         if 'l-single-comment-container' in selector and count >= 3:
-                    review_elements_selenium = elements
+                            review_elements_selenium = elements
                             print(f"      ✅ Using primary selector (found {count} elements)")
-                    break
+                            break
             except Exception as e:
                 print(f"      ⚠️  Error with selector {selector[:50]}...: {e}")
                 continue
@@ -841,40 +843,40 @@ def extract_reviews_from_page(driver):
             use_text_extraction = False
         
         if use_text_extraction:
-        review_blocks = re.split(r'Reply\s+Flag', page_text, flags=re.I)
-        
-        for block in review_blocks:
-            block = block.strip()
-            if len(block) < 30:
-                continue
+            review_blocks = re.split(r'Reply\s+Flag', page_text, flags=re.I)
             
-            # Find all dates in this block
-            date_matches = list(date_pattern.finditer(block))
-            
-            if not date_matches:
-                continue
-            
-            # Process each date in this block (there might be multiple reviews in one block)
-            for i, date_match in enumerate(date_matches):
-                date_str = date_match.group(1).strip()
+            for block in review_blocks:
+                block = block.strip()
+                if len(block) < 30:
+                    continue
                 
-                # Extract author if present in date string (format: "Author Name – Sep 10, 2025")
-                author = None
-                author_match = re.search(r'^([A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)?)\s+–\s+', date_str)
-                if author_match:
-                    author = author_match.group(1)
-                    # Extract just the date part
-                    date_str = re.sub(r'^[A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)?\s+–\s+', '', date_str)
+                # Find all dates in this block
+                date_matches = list(date_pattern.finditer(block))
                 
-                # Find the start of this review text (everything before this date, but after previous date if exists)
-                if i > 0:
-                    # Start from the end of previous date match
-                    start_pos = date_matches[i-1].end()
-                else:
-                    # For first date in block, start from beginning of block
-                    start_pos = 0
+                if not date_matches:
+                    continue
                 
-                # Extract review text between start_pos and date_match.start()
+                # Process each date in this block (there might be multiple reviews in one block)
+                for i, date_match in enumerate(date_matches):
+                    date_str = date_match.group(1).strip()
+                    
+                    # Extract author if present in date string (format: "Author Name – Sep 10, 2025")
+                    author = None
+                    author_match = re.search(r'^([A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)?)\s+–\s+', date_str)
+                    if author_match:
+                        author = author_match.group(1)
+                        # Extract just the date part
+                        date_str = re.sub(r'^[A-Z][a-z]+(?:\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)?\s+–\s+', '', date_str)
+                    
+                    # Find the start of this review text (everything before this date, but after previous date if exists)
+                    if i > 0:
+                        # Start from the end of previous date match
+                        start_pos = date_matches[i-1].end()
+                    else:
+                        # For first date in block, start from beginning of block
+                        start_pos = 0
+                    
+                    # Extract review text between start_pos and date_match.start()
                 review_text_raw = block[start_pos:date_match.start()].strip()
                 
                 # Clean up review text - remove UI elements
@@ -974,14 +976,14 @@ def extract_reviews_from_page(driver):
                                         rating = None
                                 except:
                                     pass
-                        
-                    reviews.append({
-                        'text': review_text,
-                        'date': date_str,
-                            'author': author,
-                            'rating': rating
-                    })
-                    seen_texts.add(review_text)
+                            
+                            reviews.append({
+                                'text': review_text,
+                                'date': date_str,
+                                'author': author,
+                                'rating': rating
+                            })
+                            seen_texts.add(review_text)
         
         # If still no reviews found, try alternative extraction from containers
         if not reviews and review_containers:
@@ -1340,10 +1342,10 @@ def scrape_doctor_reviews(driver, npi, first_name, last_name, url, skip_existing
                 # Wait for lazy loading to trigger
             try:
                 WebDriverWait(driver, 0.5).until(
-                        lambda d: d.execute_script('return document.readyState') == 'complete'
-                    )
-                except:
-                    pass  # Continue if timeout
+                    lambda d: d.execute_script('return document.readyState') == 'complete'
+                )
+            except:
+                pass  # Continue if timeout
             
             # Final scroll to bottom
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")

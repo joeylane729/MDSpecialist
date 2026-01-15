@@ -34,9 +34,6 @@ const HomePage: React.FC = () => {
   const [patientAge, setPatientAge] = useState<{ month: string; year: string }>({ month: '', year: '' });
   const [proximity, setProximity] = useState<string>('');
   const [gender, setGender] = useState<string>('');
-  const [medications, setMedications] = useState<string>('');
-  const [medicalHistory, setMedicalHistory] = useState<string>('');
-  const [surgicalHistory, setSurgicalHistory] = useState<string>('');
 
   // Debug logging
   useEffect(() => {
@@ -529,9 +526,6 @@ const HomePage: React.FC = () => {
       // Get medical analysis (diagnosis analysis only - providers are searched later on ResultsPage)
       const aiRecommendations = await getMedicalAnalysis({
         diagnosis: diagnosis,
-        medical_history: medicalHistory,
-        medications: medications,
-        surgical_history: surgicalHistory,
         files: uploadedFiles
       });
       
@@ -554,9 +548,6 @@ const HomePage: React.FC = () => {
           diagnosis: diagnosis,
           gender: gender,
           patientAge: patientAge,
-          medications: medications,
-          medicalHistory: medicalHistory,
-          surgicalHistory: surgicalHistory,
           determined_specialty: aiRecommendations?.patient_profile?.determined_specialty || aiRecommendations?.patient_profile?.specialties_needed?.[0],
           predicted_icd10: aiRecommendations?.patient_profile?.predicted_icd10,
           icd10_description: aiRecommendations?.patient_profile?.icd10_description,
@@ -582,9 +573,6 @@ const HomePage: React.FC = () => {
           diagnosis: diagnosis,
           gender: gender,
           patientAge: patientAge,
-          medications: medications,
-          medicalHistory: medicalHistory,
-          surgicalHistory: surgicalHistory,
           determined_specialty: aiRecommendations?.patient_profile?.determined_specialty || aiRecommendations?.patient_profile?.specialties_needed?.[0],
           predicted_icd10: aiRecommendations?.patient_profile?.predicted_icd10,
           icd10_description: aiRecommendations?.patient_profile?.icd10_description,
@@ -595,9 +583,6 @@ const HomePage: React.FC = () => {
             diagnosis: diagnosis,
             gender: gender,
             patientAge: patientAge,
-            medications: medications,
-            medicalHistory: medicalHistory,
-            surgicalHistory: surgicalHistory,
             determined_specialty: aiRecommendations?.patient_profile?.determined_specialty || aiRecommendations?.patient_profile?.specialties_needed?.[0],
             predicted_icd10: aiRecommendations?.patient_profile?.predicted_icd10,
             icd10_description: aiRecommendations?.patient_profile?.icd10_description,
@@ -839,55 +824,7 @@ const HomePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Section 3: Medical History */}
-              <div className="bg-gray-100/70 rounded-2xl p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                  <FileText className="w-5 h-5 mr-2 text-blue-600" />
-                  Medical History
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Current Medications */}
-                  <div className="group">
-                    <label htmlFor="medications" className="block text-sm font-semibold text-gray-700 mb-3">Current Medications</label>
-                    <textarea
-                      id="medications"
-                      value={medications}
-                      onChange={(e) => setMedications(e.target.value)}
-                      placeholder="List any current medications, dosages, and how long you've been taking them..."
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300 resize-none"
-                      rows={4}
-                    />
-                  </div>
-
-                  {/* Medical History */}
-                  <div className="group">
-                    <label htmlFor="medicalHistory" className="block text-sm font-semibold text-gray-700 mb-3">Medical History</label>
-                    <textarea
-                      id="medicalHistory"
-                      value={medicalHistory}
-                      onChange={(e) => setMedicalHistory(e.target.value)}
-                      placeholder="Include chronic conditions, previous diagnoses, family history, and any other relevant medical information..."
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300 resize-none"
-                      rows={4}
-                    />
-                  </div>
-
-                  {/* Surgical History */}
-                  <div className="group md:col-span-2">
-                    <label htmlFor="surgicalHistory" className="block text-sm font-semibold text-gray-700 mb-3">Surgical History</label>
-                    <textarea
-                      id="surgicalHistory"
-                      value={surgicalHistory}
-                      onChange={(e) => setSurgicalHistory(e.target.value)}
-                      placeholder="List any previous surgeries, procedures, or hospitalizations with dates if possible..."
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300 resize-none"
-                      rows={3}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Section 4: Medical Documents */}
+              {/* Section 3: Medical Documents */}
               <div className="bg-gray-100/70 rounded-2xl p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                   <Upload className="w-5 h-5 mr-2 text-blue-600" />

@@ -199,15 +199,6 @@ export const getSpecialistRecommendations = async (
     const formData = new FormData();
     formData.append('diagnosis', request.diagnosis);
     
-    if (request.medical_history) {
-      formData.append('medical_history', request.medical_history);
-    }
-    if (request.medications) {
-      formData.append('medications', request.medications);
-    }
-    if (request.surgical_history) {
-      formData.append('surgical_history', request.surgical_history);
-    }
     if (request.state) {
       formData.append('state', request.state);
     }
@@ -283,9 +274,6 @@ export const getSpecialistRecommendations = async (
 // Medical Analysis API (without specialist retrieval)
 export interface MedicalAnalysisRequest {
   diagnosis: string;
-  medical_history?: string;
-  medications?: string;
-  surgical_history?: string;
   files?: File[];
   custom_diagnoses_prompt?: string;
   custom_search_query_prompt?: string;  // Optional custom prompt for search query generation
@@ -408,16 +396,6 @@ export const getMedicalAnalysis = async (
     // Create FormData for the request
     const formData = new FormData();
     formData.append('diagnosis', request.diagnosis);
-    
-    if (request.medical_history) {
-      formData.append('medical_history', request.medical_history);
-    }
-    if (request.medications) {
-      formData.append('medications', request.medications);
-    }
-    if (request.surgical_history) {
-      formData.append('surgical_history', request.surgical_history);
-    }
     
     // Add files if provided
     if (request.files) {

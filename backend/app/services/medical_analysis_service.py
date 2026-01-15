@@ -36,22 +36,22 @@ class MedicalAnalysisService:
         
         Args:
             diagnosis: Patient diagnosis
-            medical_history: Medical history (optional)
-            medications: Current medications (optional)
-            surgical_history: Surgical history (optional)
+            medical_history: Medical history (deprecated - always empty)
+            medications: Current medications (deprecated - always empty)
+            surgical_history: Surgical history (deprecated - always empty)
             pdf_content: Extracted content from uploaded PDF files (optional)
             custom_diagnoses_prompt: Optional custom prompt to override default for diagnosis/treatment generation
             custom_search_query_prompt: Optional custom prompt to override default for search query generation
         """
         try:
-            # Perform medical analysis with individual fields including PDF content
+            # Perform medical analysis with diagnosis and PDF content only
             diagnoses_result, diagnoses_prompt_text = await self.predict_diagnoses(
-                diagnosis, medical_history, medications, surgical_history, pdf_content,
+                diagnosis, pdf_content,
                 custom_prompt=custom_diagnoses_prompt
             )
             
             medical_analysis = {
-                "predicted_icd10": await self.predict_icd10_code(diagnosis, medical_history, medications, surgical_history, pdf_content),
+                "predicted_icd10": await self.predict_icd10_code(diagnosis, pdf_content),
                 "diagnoses": diagnoses_result
             }
             
@@ -189,9 +189,6 @@ class MedicalAnalysisService:
     async def predict_icd10_code(
         self, 
         diagnosis: str, 
-        medical_history: str = "", 
-        medications: str = "", 
-        surgical_history: str = "",
         pdf_content: str = ""
     ) -> Optional[str]:
         """
@@ -199,9 +196,6 @@ class MedicalAnalysisService:
         
         Args:
             diagnosis: Patient diagnosis
-            medical_history: Medical history (optional)
-            medications: Current medications (optional)
-            surgical_history: Surgical history (optional)
             pdf_content: Extracted content from uploaded PDF files (optional)
             
         Returns:
@@ -209,13 +203,10 @@ class MedicalAnalysisService:
         """
         try:
             prompt = PromptTemplate(
-                input_variables=["diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
+                input_variables=["diagnosis", "pdf_content"],
                 template="""
                 Patient Information:
                 Diagnosis: {diagnosis}
-                Medical History: {medical_history}
-                Current Medications: {medications}
-                Surgical History: {surgical_history}
                 
                 Additional Information from Medical Records/PDFs:
                 {pdf_content}
@@ -231,9 +222,6 @@ class MedicalAnalysisService:
             
             response = await chain.ainvoke({
                 "diagnosis": diagnosis,
-                "medical_history": medical_history,
-                "medications": medications,
-                "surgical_history": surgical_history,
                 "pdf_content": pdf_content
             })
             
@@ -902,9 +890,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
     async def predict_diagnoses(
         self, 
         diagnosis: str, 
-        medical_history: str = "", 
-        medications: str = "", 
-        surgical_history: str = "",
         pdf_content: str = "",
         custom_prompt: Optional[str] = None
     ) -> Tuple[Dict[str, Any], str]:
@@ -913,9 +898,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         
         Args:
             diagnosis: Patient diagnosis
-            medical_history: Medical history (optional)
-            medications: Current medications (optional)
-            surgical_history: Surgical history (optional)
             pdf_content: Extracted content from uploaded PDF files (optional)
             custom_prompt: Optional custom prompt to override default
             
@@ -926,9 +908,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             default_template = """
                 Patient Information:
                 Diagnosis: {diagnosis}
-                Medical History: {medical_history}
-                Current Medications: {medications}
-                Surgical History: {surgical_history}
                 
                 Additional Information from Medical Records/PDFs:
                 {pdf_content}
@@ -968,32 +947,23 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 escaped_prompt = custom_prompt
                 # Temporarily replace our template variables with placeholders
                 escaped_prompt = escaped_prompt.replace("{diagnosis}", "__DIAGNOSIS__")
-                escaped_prompt = escaped_prompt.replace("{medical_history}", "__MEDICAL_HISTORY__")
-                escaped_prompt = escaped_prompt.replace("{medications}", "__MEDICATIONS__")
-                escaped_prompt = escaped_prompt.replace("{surgical_history}", "__SURGICAL_HISTORY__")
                 escaped_prompt = escaped_prompt.replace("{pdf_content}", "__PDF_CONTENT__")
                 # Escape all remaining curly braces
                 escaped_prompt = escaped_prompt.replace("{", "{{").replace("}", "}}")
                 # Restore our template variables
                 escaped_prompt = escaped_prompt.replace("{{__DIAGNOSIS__}}", "{diagnosis}")
-                escaped_prompt = escaped_prompt.replace("{{__MEDICAL_HISTORY__}}", "{medical_history}")
-                escaped_prompt = escaped_prompt.replace("{{__MEDICATIONS__}}", "{medications}")
-                escaped_prompt = escaped_prompt.replace("{{__SURGICAL_HISTORY__}}", "{surgical_history}")
                 escaped_prompt = escaped_prompt.replace("{{__PDF_CONTENT__}}", "{pdf_content}")
                 
                 prompt_template = escaped_prompt
                 # For custom prompts, format with the variables if they're present
-                if any(var in custom_prompt for var in ["{diagnosis}", "{medical_history}", "{medications}", "{surgical_history}", "{pdf_content}"]):
+                if any(var in custom_prompt for var in ["{diagnosis}", "{pdf_content}"]):
                     # Variables are present, use LangChain PromptTemplate
                     prompt = PromptTemplate(
-                        input_variables=["diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
+                        input_variables=["diagnosis", "pdf_content"],
                         template=prompt_template
                     )
                     rendered_prompt = prompt.format(
                         diagnosis=diagnosis,
-                        medical_history=medical_history,
-                        medications=medications,
-                        surgical_history=surgical_history,
                         pdf_content=pdf_content
                     )
                 else:
@@ -1002,26 +972,23 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             else:
                 prompt_template = default_template
                 prompt = PromptTemplate(
-                    input_variables=["diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
+                    input_variables=["diagnosis", "pdf_content"],
                     template=prompt_template
                 )
                 rendered_prompt = prompt.format(
                     diagnosis=diagnosis,
-                    medical_history=medical_history,
-                    medications=medications,
-                    surgical_history=surgical_history,
                     pdf_content=pdf_content
                 )
             
             # Create prompt template for LangChain (always use variables even if custom prompt doesn't have them)
             if custom_prompt:
                 prompt = PromptTemplate(
-                    input_variables=["diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
+                    input_variables=["diagnosis", "pdf_content"],
                     template=prompt_template
                 )
             else:
                 prompt = PromptTemplate(
-                    input_variables=["diagnosis", "medical_history", "medications", "surgical_history", "pdf_content"],
+                    input_variables=["diagnosis", "pdf_content"],
                     template=prompt_template
                 )
             
@@ -1029,9 +996,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             
             response = await chain.ainvoke({
                 "diagnosis": diagnosis,
-                "medical_history": medical_history,
-                "medications": medications,
-                "surgical_history": surgical_history,
                 "pdf_content": pdf_content
             })
             
