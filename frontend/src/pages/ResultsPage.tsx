@@ -2399,19 +2399,9 @@ const ResultsPage: React.FC = () => {
         {/* Search and Filter Controls */}
         <div className="py-2 mb-3">
           <div className="flex flex-col gap-4">
-            {/* Search Bar - Expandable */}
-            <div className="flex items-center justify-center">
-              {!isSearchExpanded ? (
-                <button
-                  onClick={() => setIsSearchExpanded(true)}
-                  className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 transition-colors rounded-lg"
-                  title="Search specialists"
-                >
-                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </button>
-              ) : (
+            {/* Search Bar - Expandable (shown when expanded) */}
+            {isSearchExpanded && (
+              <div className="flex items-center justify-center">
                 <div className="relative w-full max-w-xs">
                   <input
                     type="text"
@@ -2450,8 +2440,8 @@ const ResultsPage: React.FC = () => {
                     </button>
                   )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Category Tabs */}
             {(() => {
@@ -2470,13 +2460,7 @@ const ResultsPage: React.FC = () => {
                 });
                 
                 return (
-                  <div className="flex flex-wrap items-center justify-center gap-2">
-                    <div className="flex items-center gap-2 mr-2">
-                      <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                      </svg>
-                      <span className="text-sm font-medium text-gray-700">Category:</span>
-                    </div>
+                  <div className="flex items-center justify-center gap-2">
                     {categories.map((category) => {
                       const isSelected = (selectedCategory || categories[0]) === category;
                       return (
@@ -2486,16 +2470,27 @@ const ResultsPage: React.FC = () => {
                             setSelectedCategory(category);
                             handleCategoryFilterChange(category, treatmentsByCategory);
                           }}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                             isSelected
-                              ? 'bg-blue-500 text-white shadow-md'
-                              : 'bg-white/50 text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                              ? 'bg-blue-500 text-white shadow-sm'
+                              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                           }`}
                         >
                           {category}
                         </button>
                       );
                     })}
+                    {!isSearchExpanded && (
+                      <button
+                        onClick={() => setIsSearchExpanded(true)}
+                        className="ml-2 text-gray-600 hover:text-gray-800 transition-colors"
+                        title="Search specialists"
+                      >
+                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 );
               }
