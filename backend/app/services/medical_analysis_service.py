@@ -372,7 +372,6 @@ Anatomical Location: {anatomical_location}
 RULES:
 - The query should include all variations of this diagnosis separated by the OR operator
 - The terms should be specific to the diagnosis and not general terms like "brain tumor" or "brain surgery" or “back pain” or “back surgery” or “neck surgery” or “spine problem”.
-- If anatomical location is provided, ensure the search query includes location-specific terms
 
 Example: term1 OR term2 OR term3 OR term4 OR term5
 
