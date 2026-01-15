@@ -25,6 +25,7 @@ async def get_medical_analysis(
     files: List[UploadFile] = File([]),
     custom_diagnoses_prompt: Optional[str] = Form(None),  # Optional custom prompt for diagnosis/treatment generation
     custom_search_query_prompt: Optional[str] = Form(None),  # Optional custom prompt for search query generation
+    custom_icd10_prompt: Optional[str] = Form(None),  # Optional custom prompt for ICD-10 code generation
     db: Session = Depends(get_db)
 ):
     """
@@ -46,7 +47,8 @@ async def get_medical_analysis(
             surgical_history="",
             pdf_content=pdf_content,
             custom_diagnoses_prompt=custom_diagnoses_prompt,
-            custom_search_query_prompt=custom_search_query_prompt
+            custom_search_query_prompt=custom_search_query_prompt,
+            custom_icd10_prompt=custom_icd10_prompt
         )
         
         # Wrap response in expected structure for frontend
@@ -103,6 +105,50 @@ async def generate_search_query(
         raise HTTPException(
             status_code=500,
             detail=f"Error generating search query: {str(e)}"
+        )
+
+
+@router.post("/medical-analysis/icd10-code")
+async def regenerate_icd10_code(
+    diagnosis: str = Form(...),
+    anatomical_location: Optional[str] = Form(None),
+    pdf_content: Optional[str] = Form(None),
+    custom_prompt: Optional[str] = Form(None),  # Optional custom prompt to override default
+    db: Session = Depends(get_db)
+):
+    """
+    Regenerate ICD-10 code based on diagnosis and anatomical location.
+    
+    This endpoint is called separately to regenerate the ICD-10 code with a custom prompt.
+    """
+    try:
+        # Initialize service and generate ICD-10 code
+        medical_analysis_service = MedicalAnalysisService(db)
+        icd10_code, icd10_prompt_text = await medical_analysis_service.predict_icd10_code(
+            diagnosis=diagnosis,
+            anatomical_location=anatomical_location or "",
+            pdf_content=pdf_content or "",
+            custom_prompt=custom_prompt
+        )
+        
+        # Look up description if we have the code
+        icd10_description = None
+        if icd10_code and db:
+            icd10_description = medical_analysis_service.lookup_icd10_description(icd10_code)
+        
+        return {
+            "predicted_icd10": icd10_code,
+            "icd10_description": icd10_description,
+            "icd10_prompt_text": icd10_prompt_text,
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating ICD-10 code: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error generating ICD-10 code: {str(e)}"
         )
 
 

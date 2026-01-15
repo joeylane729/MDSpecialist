@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { NPIProvider, getSpecialistRecommendations, SpecialistRecommendationRequest, searchNPIProviders, rankNPIProviders, NPISearchRequest, NPIRankingRequest, ProviderContent, generateCPTCodes, generateSearchQuery, getMedicalAnalysis } from '../services/api';
+import { NPIProvider, getSpecialistRecommendations, SpecialistRecommendationRequest, searchNPIProviders, rankNPIProviders, NPISearchRequest, NPIRankingRequest, ProviderContent, generateCPTCodes, generateSearchQuery, getMedicalAnalysis, regenerateICD10Code } from '../services/api';
 import NPIProviderCard from '../components/NPIProviderCard';
 import { SCORING_WEIGHTS } from '../constants/scoringWeights';
 
@@ -32,6 +32,7 @@ interface SearchParams {
   }>;
   cpt_prompt_text?: string;  // GPT prompt text used to generate CPT codes
   diagnoses_prompt_text?: string;  // GPT prompt text used to generate diagnoses/treatment options
+  icd10_prompt_text?: string;  // GPT prompt text used to generate ICD-10 code
   search_query?: string;  // Pre-generated search query
   search_query_prompt_text?: string;  // GPT prompt text used to generate search query
   patientAge?: { month: string; year: string };  // Patient age (month and year of birth)
@@ -173,7 +174,10 @@ const ResultsPage: React.FC = () => {
   const [editableDiagnosesPromptText, setEditableDiagnosesPromptText] = useState<string | null>(null);
   const [searchQueryPromptText, setSearchQueryPromptText] = useState<string | null>(null);
   const [editableSearchQueryPromptText, setEditableSearchQueryPromptText] = useState<string | null>(null);
+  const [icd10PromptText, setIcd10PromptText] = useState<string | null>(null);
+  const [editableIcd10PromptText, setEditableIcd10PromptText] = useState<string | null>(null);
   const [isRegeneratingSearchQuery, setIsRegeneratingSearchQuery] = useState(false);
+  const [isRegeneratingICD10, setIsRegeneratingICD10] = useState(false);
   const [isGeneratingCPTCodes, setIsGeneratingCPTCodes] = useState(false);
   const [isGeneratingCPTCodesForCategory, setIsGeneratingCPTCodesForCategory] = useState<string | null>(null);
   const [isRegeneratingDiagnoses, setIsRegeneratingDiagnoses] = useState(false);
@@ -366,6 +370,17 @@ const ResultsPage: React.FC = () => {
     }
   }, [searchParams, diagnosesPromptText]);
   
+  // Initialize ICD-10 prompt text from searchParams or location.state if available
+  useEffect(() => {
+    if (searchParams?.icd10_prompt_text && !icd10PromptText) {
+      setIcd10PromptText(searchParams.icd10_prompt_text);
+      setEditableIcd10PromptText(searchParams.icd10_prompt_text);
+    } else if (location.state?.aiRecommendations?.patient_profile?.icd10_prompt_text && !icd10PromptText) {
+      setIcd10PromptText(location.state.aiRecommendations.patient_profile.icd10_prompt_text);
+      setEditableIcd10PromptText(location.state.aiRecommendations.patient_profile.icd10_prompt_text);
+    }
+  }, [searchParams, icd10PromptText, location.state]);
+
   // Initialize search query prompt text from searchParams or location.state if available
   useEffect(() => {
     if (searchParams?.search_query_prompt_text && !searchQueryPromptText) {
@@ -954,6 +969,7 @@ const ResultsPage: React.FC = () => {
           ...searchParams!,
           predicted_icd10: response.patient_profile.predicted_icd10,
           icd10_description: response.patient_profile.icd10_description,
+          icd10_prompt_text: response.patient_profile.icd10_prompt_text,
           treatment_options: response.patient_profile.treatment_options,
           search_query: response.patient_profile.search_query,
           diagnoses_prompt_text: response.patient_profile.diagnoses_prompt_text,
@@ -968,6 +984,12 @@ const ResultsPage: React.FC = () => {
           if (!useCustomPrompt) {
             setEditableDiagnosesPromptText(response.patient_profile.diagnoses_prompt_text);
           }
+        }
+        
+        // Update ICD-10 prompt text state
+        if (response.patient_profile.icd10_prompt_text) {
+          setIcd10PromptText(response.patient_profile.icd10_prompt_text);
+          setEditableIcd10PromptText(response.patient_profile.icd10_prompt_text);
         }
         
         // Update search query prompt text state
@@ -991,6 +1013,69 @@ const ResultsPage: React.FC = () => {
       alert('Failed to regenerate diagnoses. Please try again.');
     } finally {
       setIsRegeneratingDiagnoses(false);
+    }
+  };
+
+  const handleRegenerateICD10 = async (useCustomPrompt: boolean = false) => {
+    try {
+      setIsRegeneratingICD10(true);
+      
+      // Get required data from searchParams
+      if (!searchParams) {
+        alert('Unable to regenerate: Search parameters not found');
+        return;
+      }
+      
+      if (!searchParams.diagnosis) {
+        alert('Diagnosis is required to regenerate ICD-10 code');
+        return;
+      }
+      
+      // Show warning if search query or CPT codes exist
+      if (searchParams.search_query || (cptCodes && cptCodes.length > 0)) {
+        const confirmed = window.confirm(
+          'Warning: Regenerating the ICD-10 code may affect search query and CPT code generation. ' +
+          'You may need to regenerate those after this. Continue?'
+        );
+        if (!confirmed) {
+          return;
+        }
+      }
+      
+      // Use custom prompt if rerunning with edited prompt, otherwise use default (undefined)
+      const customPrompt = useCustomPrompt && editableIcd10PromptText ? editableIcd10PromptText : undefined;
+      
+      // Call ICD-10 code generation API
+      const response = await regenerateICD10Code({
+        diagnosis: searchParams.diagnosis,
+        anatomical_location: searchParams.anatomical_location,
+        custom_prompt: customPrompt
+      });
+      
+      // Update searchParams with new ICD-10 code
+      const newSearchParams: SearchParams = {
+        ...searchParams,
+        predicted_icd10: response.predicted_icd10 || undefined,
+        icd10_description: response.icd10_description || undefined,
+        icd10_prompt_text: response.icd10_prompt_text
+      };
+      setSearchParams(newSearchParams);
+      
+      // Update prompt text state
+      if (response.icd10_prompt_text) {
+        setIcd10PromptText(response.icd10_prompt_text);
+        // Only update editable prompt if we used the default (not custom), otherwise keep the edited version
+        if (!useCustomPrompt) {
+          setEditableIcd10PromptText(response.icd10_prompt_text);
+        }
+      }
+      
+      console.log('✅ Regenerated ICD-10 code');
+    } catch (error) {
+      console.error('Error regenerating ICD-10 code:', error);
+      alert('Failed to regenerate ICD-10 code. Please try again.');
+    } finally {
+      setIsRegeneratingICD10(false);
     }
   };
 
@@ -1197,8 +1282,8 @@ const ResultsPage: React.FC = () => {
         cpt_codes: existingCptCodes,  // Pass existing CPT codes to reuse them
         // Pass medical analysis results to reuse (avoids duplicate GPT calls)
         treatment_options: patientProfile?.treatment_options,
-        predicted_icd10: patientProfile?.predicted_icd10 || patientProfile?.diagnoses?.primary?.code,
-        icd10_description: patientProfile?.icd10_description || patientProfile?.diagnoses?.primary?.description,
+        predicted_icd10: patientProfile?.predicted_icd10,
+        icd10_description: patientProfile?.icd10_description,
         search_query: patientProfile?.search_query,
         determined_specialty: searchParams?.determined_specialty || patientProfile?.determined_specialty
       };
@@ -1803,6 +1888,54 @@ const ResultsPage: React.FC = () => {
                           <span className="text-gray-700">{searchParams.icd10_description}</span>
                         </div>
                       </div>
+                    </div>
+                  )}
+
+                  {/* ICD-10 Code Generation Prompt */}
+                  {(icd10PromptText || searchParams?.icd10_prompt_text) && (
+                    <div className="border-l-4 border-green-500 pl-4">
+                      <details className="bg-gray-50 rounded-lg border border-gray-200">
+                        <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-t-lg">
+                          <span className="flex items-center gap-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            ICD-10 Code Generation Prompt (Click to view/edit and re-run)
+                          </span>
+                        </summary>
+                        <div className="p-4 border-t border-gray-200">
+                          <p className="text-xs text-gray-600 mb-2">The following prompt was sent to GPT to generate the ICD-10 code:</p>
+                          <textarea
+                            className="w-full text-xs text-gray-800 bg-white p-3 rounded border border-gray-300 font-mono min-h-[200px] resize-y"
+                            value={editableIcd10PromptText || icd10PromptText || searchParams?.icd10_prompt_text || ''}
+                            onChange={(e) => setEditableIcd10PromptText(e.target.value)}
+                            placeholder="Prompt text..."
+                          />
+                          <div className="mt-3 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.preventDefault();
+                                await handleRegenerateICD10(true);
+                              }}
+                              disabled={isRegeneratingICD10 || !editableIcd10PromptText}
+                              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                            >
+                              {isRegeneratingICD10 ? (
+                                <span className="flex items-center gap-2">
+                                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                  Regenerating...
+                                </span>
+                              ) : (
+                                'Re-run ICD-10 Code Generation'
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      </details>
                     </div>
                   )}
 

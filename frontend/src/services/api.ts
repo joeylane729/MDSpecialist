@@ -153,6 +153,7 @@ export interface PatientProfile {
   search_query_prompt_text?: string;  // GPT prompt text used to generate search query
   predicted_icd10?: string;  // Predicted ICD-10 code
   icd10_description?: string;  // ICD-10 description
+  icd10_prompt_text?: string;  // GPT prompt text used to generate ICD-10 code
   diagnoses_prompt_text?: string;  // GPT prompt text used to generate diagnoses/treatment options
   determined_specialty?: string;  // Specialty determined for provider search
   user_diagnosis?: string;  // User-entered diagnosis text
@@ -297,6 +298,19 @@ export interface SearchQueryGenerationResponse {
   search_query_prompt_text: string;
 }
 
+export interface ICD10CodeGenerationRequest {
+  diagnosis: string;
+  anatomical_location?: string;
+  pdf_content?: string;
+  custom_prompt?: string; // Optional custom prompt to override default
+}
+
+export interface ICD10CodeGenerationResponse {
+  predicted_icd10: string | null;
+  icd10_description: string | null;
+  icd10_prompt_text: string;
+}
+
 export interface CPTCodeGenerationRequest {
   search_query: string;
   treatment_options: Array<{
@@ -344,6 +358,46 @@ export const generateSearchQuery = async (
     console.error('❌ [Frontend] Search query generation error:', error);
     if (axios.isAxiosError(error)) {
       throw new Error(error.response?.data?.detail || 'Failed to generate search query');
+    }
+    throw error;
+  }
+};
+
+export const regenerateICD10Code = async (
+  request: ICD10CodeGenerationRequest
+): Promise<ICD10CodeGenerationResponse> => {
+  try {
+    console.log('🔍 [Frontend] Regenerating ICD-10 code:', {
+      diagnosis: request.diagnosis?.substring(0, 100),
+      anatomical_location: request.anatomical_location
+    });
+
+    const formData = new FormData();
+    formData.append('diagnosis', request.diagnosis);
+    if (request.anatomical_location) {
+      formData.append('anatomical_location', request.anatomical_location);
+    }
+    if (request.pdf_content) {
+      formData.append('pdf_content', request.pdf_content);
+    }
+    if (request.custom_prompt) {
+      formData.append('custom_prompt', request.custom_prompt);
+    }
+    
+    console.log('🔍 [Frontend] Making API call to:', `${API_BASE_URL}/api/v1/medical-analysis/icd10-code`);
+    
+    const response = await api.post('/api/v1/medical-analysis/icd10-code', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    console.log('✅ [Frontend] ICD-10 code generation response received:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [Frontend] ICD-10 code generation error:', error);
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.detail || 'Failed to regenerate ICD-10 code');
     }
     throw error;
   }

@@ -30,7 +30,8 @@ class MedicalAnalysisService:
         surgical_history: str = "",
         pdf_content: str = "",
         custom_diagnoses_prompt: Optional[str] = None,
-        custom_search_query_prompt: Optional[str] = None
+        custom_search_query_prompt: Optional[str] = None,
+        custom_icd10_prompt: Optional[str] = None
     ) -> Dict[str, Any]:
         """Perform comprehensive medical analysis including patient processing and medical analysis.
         CPT codes are NOT generated in this step - they must be generated separately via generate_cpt_codes_from_analysis().
@@ -44,6 +45,7 @@ class MedicalAnalysisService:
             pdf_content: Extracted content from uploaded PDF files (optional)
             custom_diagnoses_prompt: Optional custom prompt to override default for diagnosis/treatment generation
             custom_search_query_prompt: Optional custom prompt to override default for search query generation
+            custom_icd10_prompt: Optional custom prompt to override default for ICD-10 code generation
         """
         try:
             # Perform medical analysis with diagnosis, anatomical location, and PDF content
@@ -52,8 +54,12 @@ class MedicalAnalysisService:
                 custom_prompt=custom_diagnoses_prompt
             )
             
+            predicted_icd10, icd10_prompt_text = await self.predict_icd10_code(
+                diagnosis, anatomical_location, pdf_content, custom_prompt=custom_icd10_prompt
+            )
+            
             medical_analysis = {
-                "predicted_icd10": await self.predict_icd10_code(diagnosis, anatomical_location, pdf_content),
+                "predicted_icd10": predicted_icd10,
                 "diagnoses": diagnoses_result
             }
             
@@ -104,14 +110,6 @@ class MedicalAnalysisService:
             
             # Extract diagnosis data for frontend compatibility
             
-            # Use primary diagnosis from the diagnoses structure if available
-            primary_icd10 = medical_analysis["predicted_icd10"]
-            primary_description = medical_analysis.get("icd10_description")
-            
-            if medical_analysis["diagnoses"] and "primary" in medical_analysis["diagnoses"]:
-                primary_icd10 = medical_analysis["diagnoses"]["primary"].get("code", primary_icd10)
-                primary_description = medical_analysis["diagnoses"]["primary"].get("description", primary_description)
-            
             # Combine patient profile and medical analysis into unified result
             # Note: CPT codes are NOT generated in this step - they must be generated separately via /medical-analysis/cpt-codes
             comprehensive_result = {
@@ -119,8 +117,9 @@ class MedicalAnalysisService:
                 "user_diagnosis": diagnosis,  # User-entered diagnosis text
                 
                 # Medical analysis data (flattened for frontend compatibility)
-                "predicted_icd10": primary_icd10,
-                "icd10_description": primary_description,
+                "predicted_icd10": medical_analysis["predicted_icd10"],
+                "icd10_description": medical_analysis.get("icd10_description"),
+                "icd10_prompt_text": icd10_prompt_text,  # Actual GPT prompt used to generate ICD-10 code
                 "determined_specialty": determined_specialty,  # Specialty determined for provider search
                 "treatment_options": treatment_options,
                 "diagnoses_prompt_text": diagnoses_prompt_text,  # Actual GPT prompt used to generate diagnoses/treatment options
@@ -193,8 +192,9 @@ class MedicalAnalysisService:
         self, 
         diagnosis: str, 
         anatomical_location: str = "",
-        pdf_content: str = ""
-    ) -> Optional[str]:
+        pdf_content: str = "",
+        custom_prompt: Optional[str] = None
+    ) -> Tuple[Optional[str], str]:
         """
         Use GPT to predict the most accurate ICD-10 code based on patient information.
         
@@ -202,14 +202,43 @@ class MedicalAnalysisService:
             diagnosis: Patient diagnosis
             anatomical_location: Anatomical location of the condition (e.g., "brain", "spine", "arm")
             pdf_content: Extracted content from uploaded PDF files (optional)
+            custom_prompt: Optional custom prompt to override default
             
         Returns:
-            The most relevant ICD-10 code as a string, or None if failed
+            Tuple of (ICD-10 code as string or None if failed, rendered prompt text)
         """
         try:
-            prompt = PromptTemplate(
-                input_variables=["diagnosis", "anatomical_location", "pdf_content"],
-                template="""
+            # Use custom prompt if provided, otherwise use default
+            if custom_prompt:
+                # Escape all curly braces except for our template variables to prevent LangChain from parsing them
+                escaped_prompt = custom_prompt
+                # Temporarily replace our template variables with placeholders
+                escaped_prompt = escaped_prompt.replace("{diagnosis}", "__DIAGNOSIS__")
+                escaped_prompt = escaped_prompt.replace("{anatomical_location}", "__ANATOMICAL_LOCATION__")
+                escaped_prompt = escaped_prompt.replace("{pdf_content}", "__PDF_CONTENT__")
+                # Escape all remaining curly braces
+                escaped_prompt = escaped_prompt.replace("{", "{{").replace("}", "}}")
+                # Restore our template variables
+                escaped_prompt = escaped_prompt.replace("{{__DIAGNOSIS__}}", "{diagnosis}")
+                escaped_prompt = escaped_prompt.replace("{{__ANATOMICAL_LOCATION__}}", "{anatomical_location}")
+                escaped_prompt = escaped_prompt.replace("{{__PDF_CONTENT__}}", "{pdf_content}")
+                
+                prompt_template = escaped_prompt
+                # For custom prompts, format with the variables if they're present
+                if any(var in custom_prompt for var in ["{diagnosis}", "{anatomical_location}", "{pdf_content}"]):
+                    try:
+                        rendered_prompt = custom_prompt.format(
+                            diagnosis=diagnosis,
+                            anatomical_location=anatomical_location or "",
+                            pdf_content=pdf_content
+                        )
+                    except KeyError as e:
+                        logger.warning(f"Could not format custom prompt with variables: {e}")
+                        rendered_prompt = custom_prompt
+                else:
+                    rendered_prompt = custom_prompt
+            else:
+                prompt_template = """
                 Patient Information:
                 Diagnosis: {diagnosis}
                 Anatomical Location: {anatomical_location}
@@ -222,11 +251,44 @@ class MedicalAnalysisService:
                 
                 No other text.
                 """
-            )
+                
+                # Render the prompt with actual values to capture what was sent to GPT
+                rendered_prompt = prompt_template.format(
+                    diagnosis=diagnosis,
+                    anatomical_location=anatomical_location or "",
+                    pdf_content=pdf_content
+                )
+            
+            # Create prompt template with variables only if custom prompt uses them
+            if custom_prompt:
+                input_vars = []
+                if "{diagnosis}" in prompt_template:
+                    input_vars.append("diagnosis")
+                if "{anatomical_location}" in prompt_template:
+                    input_vars.append("anatomical_location")
+                if "{pdf_content}" in prompt_template:
+                    input_vars.append("pdf_content")
+                prompt = PromptTemplate(
+                    input_variables=input_vars if input_vars else ["diagnosis", "anatomical_location", "pdf_content"],
+                    template=prompt_template
+                )
+            else:
+                prompt = PromptTemplate(
+                    input_variables=["diagnosis", "anatomical_location", "pdf_content"],
+                    template=prompt_template
+                )
             
             chain = prompt | self.llm
             
-            response = await chain.ainvoke({
+            invoke_dict = {}
+            if "{diagnosis}" in prompt_template:
+                invoke_dict["diagnosis"] = diagnosis
+            if "{anatomical_location}" in prompt_template:
+                invoke_dict["anatomical_location"] = anatomical_location or ""
+            if "{pdf_content}" in prompt_template:
+                invoke_dict["pdf_content"] = pdf_content
+            
+            response = await chain.ainvoke(invoke_dict if invoke_dict else {
                 "diagnosis": diagnosis,
                 "anatomical_location": anatomical_location or "",
                 "pdf_content": pdf_content
@@ -240,14 +302,14 @@ class MedicalAnalysisService:
             
             # Basic validation that it looks like an ICD-10 code (letter followed by numbers)
             if len(icd_code) >= 3 and icd_code[0].isalpha() and any(c.isdigit() for c in icd_code):
-                return icd_code
+                return icd_code, rendered_prompt
             else:
                 logger.warning(f"GPT returned invalid ICD-10 code: {icd_code}")
-                return None
+                return None, rendered_prompt
                 
         except Exception as e:
             logger.error(f"Error in GPT ICD-10 prediction: {e}")
-            return None
+            return None, rendered_prompt if 'rendered_prompt' in locals() else ""
 
     async def generate_search_query(
         self,
@@ -961,9 +1023,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 Additional Information from Medical Records/PDFs:
                 {pdf_content}
                 
-                Analyze the information above and provide:
-                1. Primary diagnosis (most likely ICD-10 code and description based on diagnosis and anatomical location)
-                2. Treatment options performed specifically by a neurosurgeon for this anatomical location
+                Analyze the information above and provide treatment options performed specifically by a neurosurgeon for this anatomical location.
 
                 Provide the most common treatment options based on the diagnosis and anatomical location. 
                 For each treatment option, include the general category of the treatment option. For example:
@@ -974,10 +1034,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                                 
                 Return the response in this exact JSON format:
                 {{
-                    "primary": {{
-                        "code": "ICD10_CODE",
-                        "description": "Medical description"
-                    }},
                     "treatment_options": [
                         {{
                             "name": "Treatment name",
@@ -1104,30 +1160,19 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 raise
             
             # Validate the response structure
-            if 'primary' in diagnoses:
-                # Look up descriptions for all codes from our database
-                if self.db:
-                    # Look up primary diagnosis description
-                    if 'code' in diagnoses['primary']:
-                        primary_desc = self.lookup_icd10_description(diagnoses['primary']['code'])
-                        if primary_desc:
-                            diagnoses['primary']['description'] = primary_desc
-                
+            if 'treatment_options' in diagnoses and isinstance(diagnoses['treatment_options'], list):
                 # Log treatment options with details
-                if 'treatment_options' in diagnoses and isinstance(diagnoses['treatment_options'], list):
-                    logger.info(f"📋 GPT returned {len(diagnoses['treatment_options'])} treatment options:")
-                    for i, option in enumerate(diagnoses['treatment_options'], 1):
-                        category = option.get('category', 'Not specified')
-                        name = option.get('name', 'Unnamed')
-                        logger.info(f"   {i}. {name} (Category: {category})")
-                else:
-                    logger.warning("⚠️  No treatment_options found in GPT response or invalid format")
+                logger.info(f"📋 GPT returned {len(diagnoses['treatment_options'])} treatment options:")
+                for i, option in enumerate(diagnoses['treatment_options'], 1):
+                    category = option.get('category', 'Not specified')
+                    name = option.get('name', 'Unnamed')
+                    logger.info(f"   {i}. {name} (Category: {category})")
                 
                 return diagnoses, rendered_prompt
             else:
                 logger.warning(f"GPT returned invalid response structure: {diagnoses}")
-                return {"primary": {}, "treatment_options": []}, rendered_prompt
+                return {"treatment_options": []}, rendered_prompt
                 
         except Exception as e:
             logger.error(f"Error in GPT diagnosis prediction: {e}", exc_info=True)
-            return {"primary": {}, "differential": [], "treatment_options": []}, rendered_prompt if 'rendered_prompt' in locals() else ""
+            return {"treatment_options": []}, rendered_prompt if 'rendered_prompt' in locals() else ""
