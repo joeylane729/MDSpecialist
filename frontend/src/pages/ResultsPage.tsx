@@ -152,6 +152,7 @@ const ResultsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [providersPerPage, setProvidersPerPage] = useState(20);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [selectedTreatmentOptions, setSelectedTreatmentOptions] = useState<string[]>([]);
   const [isBackNavigation, setIsBackNavigation] = useState(false);
   const [rankedProviders, setRankedProviders] = useState<Provider[]>([]);
@@ -2397,43 +2398,62 @@ const ResultsPage: React.FC = () => {
 
         {/* Search and Filter Controls */}
         <div className="py-2 mb-3">
-          <div className="flex items-center gap-3 justify-center">
-            {/* Search */}
-            <div className="flex-1 max-w-md">
-              <div className="relative">
-                <input
-                  type="text"
-                  id="search"
-                      placeholder="Search specialists..."
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1);
-                    saveFilterState();
-                  }}
-                  className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/50"
-                />
-                <svg className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </div>
+          <div className="flex flex-col gap-4">
+            {/* Search Bar - Expandable */}
+            <div className="flex items-center justify-center">
+              {!isSearchExpanded ? (
+                <button
+                  onClick={() => setIsSearchExpanded(true)}
+                  className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 transition-colors rounded-lg"
+                  title="Search specialists"
+                >
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </button>
+              ) : (
+                <div className="relative w-full max-w-xs">
+                  <input
+                    type="text"
+                    id="search"
+                    placeholder="Search specialists..."
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                      saveFilterState();
+                    }}
+                    onBlur={() => {
+                      if (!searchTerm) {
+                        setIsSearchExpanded(false);
+                      }
+                    }}
+                    autoFocus
+                    className="w-full pl-8 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white/50"
+                  />
+                  <svg className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  {searchTerm && (
+                    <button
+                      onClick={() => {
+                        setSearchTerm('');
+                        setIsSearchExpanded(false);
+                        setCurrentPage(1);
+                        saveFilterState();
+                      }}
+                      className="absolute right-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-gray-600"
+                    >
+                      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Compare Outcomes Button */}
-            <button
-              onClick={() => {
-                // TODO: Implement compare outcomes functionality
-                console.log('Compare outcomes clicked');
-              }}
-              className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 bg-white/50 border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-800 transition-colors"
-            >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              Compare Outcomes
-            </button>
-
-            {/* Category Dropdown */}
+            {/* Category Tabs */}
             {(() => {
               const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
               const categories = getCategoriesFromTreatmentOptions(treatmentOptions);
@@ -2450,50 +2470,37 @@ const ResultsPage: React.FC = () => {
                 });
                 
                 return (
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <div className="flex items-center gap-2 mr-2">
                       <svg className="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                       </svg>
                       <span className="text-sm font-medium text-gray-700">Category:</span>
                     </div>
-                    <select
-                      value={selectedCategory || categories[0] || ''}
-                      onChange={(e) => {
-                        const category = e.target.value;
-                        if (category) {
-                          setSelectedCategory(category);
-                          handleCategoryFilterChange(category, treatmentsByCategory);
-                        }
-                      }}
-                      className={`px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm bg-white/50 ${
-                        selectedCategory || categories[0]
-                          ? 'border-blue-500 bg-blue-50'
-                          : 'border-gray-300'
-                      }`}
-                    >
-                      {categories.map((category) => (
-                        <option key={category} value={category}>
+                    {categories.map((category) => {
+                      const isSelected = (selectedCategory || categories[0]) === category;
+                      return (
+                        <button
+                          key={category}
+                          onClick={() => {
+                            setSelectedCategory(category);
+                            handleCategoryFilterChange(category, treatmentsByCategory);
+                          }}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                            isSelected
+                              ? 'bg-blue-500 text-white shadow-md'
+                              : 'bg-white/50 text-gray-700 border border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                          }`}
+                        >
                           {category}
-                        </option>
-                      ))}
-                    </select>
+                        </button>
+                      );
+                    })}
                   </div>
                 );
               }
               return null;
             })()}
-
-            {/* Reset Button */}
-            <button
-              onClick={resetFilters}
-              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 transition-colors rounded-lg font-medium text-sm"
-            >
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Reset
-            </button>
           </div>
         </div>
           </>
