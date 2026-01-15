@@ -21,6 +21,7 @@ router = APIRouter()
 @router.post("/medical-analysis")
 async def get_medical_analysis(
     diagnosis: str = Form(...),
+    anatomical_location: Optional[str] = Form(None),
     files: List[UploadFile] = File([]),
     custom_diagnoses_prompt: Optional[str] = Form(None),  # Optional custom prompt for diagnosis/treatment generation
     custom_search_query_prompt: Optional[str] = Form(None),  # Optional custom prompt for search query generation
@@ -39,6 +40,7 @@ async def get_medical_analysis(
         medical_analysis_service = MedicalAnalysisService(db)
         analysis_results = await medical_analysis_service.comprehensive_analysis(
             diagnosis=diagnosis,
+            anatomical_location=anatomical_location or "",
             medical_history="",
             medications="",
             surgical_history="",
@@ -69,6 +71,7 @@ async def get_medical_analysis(
 async def generate_search_query(
     icd10_description: str = Form(...),
     user_diagnosis: str = Form(...),
+    anatomical_location: Optional[str] = Form(None),
     custom_prompt: Optional[str] = Form(None),  # Optional custom prompt to override default
     db: Session = Depends(get_db)
 ):
@@ -84,6 +87,7 @@ async def generate_search_query(
         search_query, search_query_prompt_text = await medical_analysis_service.generate_search_query(
             icd10_description=icd10_description,
             user_diagnosis=user_diagnosis,
+            anatomical_location=anatomical_location or "",
             custom_prompt=custom_prompt
         )
         
@@ -106,6 +110,7 @@ async def generate_search_query(
 async def generate_cpt_codes(
     search_query: str = Form(...),
     treatment_options_json: str = Form(...),  # JSON array of treatment options
+    anatomical_location: Optional[str] = Form(None),
     custom_prompt: Optional[str] = Form(None),  # Optional custom prompt to override default
     db: Session = Depends(get_db)
 ):
@@ -132,6 +137,7 @@ async def generate_cpt_codes(
         cpt_codes, cpt_prompt_text = await medical_analysis_service.generate_cpt_codes_from_analysis(
             search_query=search_query,
             treatment_options=treatment_options,
+            anatomical_location=anatomical_location or "",
             custom_prompt=custom_prompt
         )
         

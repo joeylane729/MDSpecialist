@@ -274,6 +274,7 @@ export const getSpecialistRecommendations = async (
 // Medical Analysis API (without specialist retrieval)
 export interface MedicalAnalysisRequest {
   diagnosis: string;
+  anatomical_location?: string;
   files?: File[];
   custom_diagnoses_prompt?: string;
   custom_search_query_prompt?: string;  // Optional custom prompt for search query generation
@@ -396,6 +397,10 @@ export const getMedicalAnalysis = async (
     // Create FormData for the request
     const formData = new FormData();
     formData.append('diagnosis', request.diagnosis);
+    
+    if (request.anatomical_location) {
+      formData.append('anatomical_location', request.anatomical_location);
+    }
     
     // Add files if provided
     if (request.files) {

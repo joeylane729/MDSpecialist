@@ -24,6 +24,7 @@ class MedicalAnalysisService:
     async def comprehensive_analysis(
         self,
         diagnosis: str,
+        anatomical_location: str = "",
         medical_history: str = "",
         medications: str = "",
         surgical_history: str = "",
@@ -36,6 +37,7 @@ class MedicalAnalysisService:
         
         Args:
             diagnosis: Patient diagnosis
+            anatomical_location: Anatomical location of the condition (e.g., "brain", "spine", "arm")
             medical_history: Medical history (deprecated - always empty)
             medications: Current medications (deprecated - always empty)
             surgical_history: Surgical history (deprecated - always empty)
@@ -44,14 +46,14 @@ class MedicalAnalysisService:
             custom_search_query_prompt: Optional custom prompt to override default for search query generation
         """
         try:
-            # Perform medical analysis with diagnosis and PDF content only
+            # Perform medical analysis with diagnosis, anatomical location, and PDF content
             diagnoses_result, diagnoses_prompt_text = await self.predict_diagnoses(
-                diagnosis, pdf_content,
+                diagnosis, anatomical_location, pdf_content,
                 custom_prompt=custom_diagnoses_prompt
             )
             
             medical_analysis = {
-                "predicted_icd10": await self.predict_icd10_code(diagnosis, pdf_content),
+                "predicted_icd10": await self.predict_icd10_code(diagnosis, anatomical_location, pdf_content),
                 "diagnoses": diagnoses_result
             }
             
@@ -86,8 +88,9 @@ class MedicalAnalysisService:
             search_query_prompt_text = ""
             if medical_analysis.get("icd10_description") and diagnosis:
                 search_query, search_query_prompt_text = await self.generate_search_query(
-                    medical_analysis.get("icd10_description", ""),
-                    diagnosis,
+                    icd10_description=medical_analysis.get("icd10_description", ""),
+                    user_diagnosis=diagnosis,
+                    anatomical_location=anatomical_location,
                     custom_prompt=custom_search_query_prompt
                 )
             else:
@@ -189,6 +192,7 @@ class MedicalAnalysisService:
     async def predict_icd10_code(
         self, 
         diagnosis: str, 
+        anatomical_location: str = "",
         pdf_content: str = ""
     ) -> Optional[str]:
         """
@@ -196,6 +200,7 @@ class MedicalAnalysisService:
         
         Args:
             diagnosis: Patient diagnosis
+            anatomical_location: Anatomical location of the condition (e.g., "brain", "spine", "arm")
             pdf_content: Extracted content from uploaded PDF files (optional)
             
         Returns:
@@ -203,10 +208,11 @@ class MedicalAnalysisService:
         """
         try:
             prompt = PromptTemplate(
-                input_variables=["diagnosis", "pdf_content"],
+                input_variables=["diagnosis", "anatomical_location", "pdf_content"],
                 template="""
                 Patient Information:
                 Diagnosis: {diagnosis}
+                Anatomical Location: {anatomical_location}
                 
                 Additional Information from Medical Records/PDFs:
                 {pdf_content}
@@ -222,6 +228,7 @@ class MedicalAnalysisService:
             
             response = await chain.ainvoke({
                 "diagnosis": diagnosis,
+                "anatomical_location": anatomical_location or "",
                 "pdf_content": pdf_content
             })
             
@@ -246,6 +253,7 @@ class MedicalAnalysisService:
         self,
         icd10_description: str,
         user_diagnosis: str,
+        anatomical_location: str = "",
         custom_prompt: Optional[str] = None
     ) -> Tuple[str, str]:
         """
@@ -254,6 +262,7 @@ class MedicalAnalysisService:
         Args:
             icd10_description: Medical analysis diagnosis description
             user_diagnosis: User-entered diagnosis
+            anatomical_location: Anatomical location of the condition (e.g., "brain", "spine", "arm")
             custom_prompt: Optional custom prompt to override default
             
         Returns:
@@ -267,19 +276,22 @@ class MedicalAnalysisService:
                 # Temporarily replace our template variables with placeholders
                 escaped_prompt = escaped_prompt.replace("{icd10_description}", "__ICD10_DESCRIPTION__")
                 escaped_prompt = escaped_prompt.replace("{user_diagnosis}", "__USER_DIAGNOSIS__")
+                escaped_prompt = escaped_prompt.replace("{anatomical_location}", "__ANATOMICAL_LOCATION__")
                 # Escape all remaining curly braces
                 escaped_prompt = escaped_prompt.replace("{", "{{").replace("}", "}}")
                 # Restore our template variables
                 escaped_prompt = escaped_prompt.replace("{{__ICD10_DESCRIPTION__}}", "{icd10_description}")
                 escaped_prompt = escaped_prompt.replace("{{__USER_DIAGNOSIS__}}", "{user_diagnosis}")
+                escaped_prompt = escaped_prompt.replace("{{__ANATOMICAL_LOCATION__}}", "{anatomical_location}")
                 
                 prompt_template = escaped_prompt
                 # For custom prompts, format with the variables if they're present
-                if "{icd10_description}" in custom_prompt or "{user_diagnosis}" in custom_prompt:
+                if "{icd10_description}" in custom_prompt or "{user_diagnosis}" in custom_prompt or "{anatomical_location}" in custom_prompt:
                     try:
                         rendered_prompt = custom_prompt.format(
                             icd10_description=icd10_description,
-                            user_diagnosis=user_diagnosis
+                            user_diagnosis=user_diagnosis,
+                            anatomical_location=anatomical_location or ""
                         )
                     except KeyError as e:
                         # If formatting fails, log and use as-is
@@ -293,10 +305,12 @@ class MedicalAnalysisService:
 
 Medical Analysis Diagnosis: {icd10_description}
 User-Entered Diagnosis: {user_diagnosis}
+Anatomical Location: {anatomical_location}
 
 RULES:
 - The query should include all variations of this diagnosis separated by the OR operator
 - The terms should be specific to the diagnosis and not general terms like "brain tumor" or "brain surgery"
+- If anatomical location is provided, ensure the search query includes location-specific terms
 
 Example: term1 OR term2 OR term3 OR term4 OR term5
 
@@ -305,15 +319,23 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
                 # Render the prompt with actual values to capture what was sent to GPT
                 rendered_prompt = prompt_template.format(
                     icd10_description=icd10_description,
-                    user_diagnosis=user_diagnosis
+                    user_diagnosis=user_diagnosis,
+                    anatomical_location=anatomical_location or ""
                 )
             
             # Create prompt template with variables only if custom prompt uses them
             if custom_prompt:
                 # Try to detect if the custom prompt uses the variables
-                if "{icd10_description}" in custom_prompt or "{user_diagnosis}" in custom_prompt:
+                if "{icd10_description}" in custom_prompt or "{user_diagnosis}" in custom_prompt or "{anatomical_location}" in custom_prompt:
+                    input_vars = []
+                    if "{icd10_description}" in custom_prompt:
+                        input_vars.append("icd10_description")
+                    if "{user_diagnosis}" in custom_prompt:
+                        input_vars.append("user_diagnosis")
+                    if "{anatomical_location}" in custom_prompt:
+                        input_vars.append("anatomical_location")
                     prompt = PromptTemplate(
-                        input_variables=["icd10_description", "user_diagnosis"],
+                        input_variables=input_vars,
                         template=prompt_template
                     )
                 else:
@@ -324,18 +346,22 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
                     )
             else:
                 prompt = PromptTemplate(
-                    input_variables=["icd10_description", "user_diagnosis"],
+                    input_variables=["icd10_description", "user_diagnosis", "anatomical_location"],
                     template=prompt_template
                 )
             
             chain = prompt | self.llm
             
             # Invoke with variables if they exist in the template
-            if "{icd10_description}" in prompt_template or "{user_diagnosis}" in prompt_template:
-                response = await chain.ainvoke({
-                    "icd10_description": icd10_description,
-                    "user_diagnosis": user_diagnosis
-                })
+            if "{icd10_description}" in prompt_template or "{user_diagnosis}" in prompt_template or "{anatomical_location}" in prompt_template:
+                invoke_dict = {}
+                if "{icd10_description}" in prompt_template:
+                    invoke_dict["icd10_description"] = icd10_description
+                if "{user_diagnosis}" in prompt_template:
+                    invoke_dict["user_diagnosis"] = user_diagnosis
+                if "{anatomical_location}" in prompt_template:
+                    invoke_dict["anatomical_location"] = anatomical_location or ""
+                response = await chain.ainvoke(invoke_dict)
             else:
                 response = await chain.ainvoke({})
             
@@ -359,6 +385,7 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
         self,
         search_query_terms: List[str],
         treatment_options: Optional[List[Dict[str, str]]] = None,
+        anatomical_location: str = "",
         custom_prompt: Optional[str] = None
     ) -> Tuple[List[Dict[str, str]], str]:
         """
@@ -367,6 +394,8 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
         Args:
             search_query_terms: List of diagnosis terms/descriptions from the search query (e.g., ["acoustic neuroma", "vestibular schwannoma", ...])
             treatment_options: Optional list of treatment options with name, outcomes, and complications
+            anatomical_location: Anatomical location of the condition (e.g., "brain", "spine", "arm")
+            custom_prompt: Optional custom prompt to override default
             
         Returns:
             Tuple of (List of dictionaries containing CPT code and description, rendered prompt text with actual values)
@@ -392,21 +421,27 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
                 escaped_prompt = custom_prompt
                 # Temporarily replace our template variables with placeholders
                 escaped_prompt = escaped_prompt.replace("{diagnosis_terms}", "__DIAGNOSIS_TERMS__")
+                escaped_prompt = escaped_prompt.replace("{anatomical_location}", "__ANATOMICAL_LOCATION__")
                 escaped_prompt = escaped_prompt.replace("{treatment_options}", "__TREATMENT_OPTIONS__")
                 # Escape all remaining curly braces
                 escaped_prompt = escaped_prompt.replace("{", "{{").replace("}", "}}")
                 # Restore our template variables
                 escaped_prompt = escaped_prompt.replace("{{__DIAGNOSIS_TERMS__}}", "{diagnosis_terms}")
+                escaped_prompt = escaped_prompt.replace("{{__ANATOMICAL_LOCATION__}}", "{anatomical_location}")
                 escaped_prompt = escaped_prompt.replace("{{__TREATMENT_OPTIONS__}}", "{treatment_options}")
                 
                 prompt_template = escaped_prompt
                 # For custom prompts, format with the variables if they're present
-                if "{diagnosis_terms}" in custom_prompt or "{treatment_options}" in custom_prompt:
+                if "{diagnosis_terms}" in custom_prompt or "{anatomical_location}" in custom_prompt or "{treatment_options}" in custom_prompt:
                     try:
-                        rendered_prompt = custom_prompt.format(
-                            diagnosis_terms=terms_text,
-                            treatment_options=treatment_options_text
-                        )
+                        invoke_dict = {}
+                        if "{diagnosis_terms}" in custom_prompt:
+                            invoke_dict["diagnosis_terms"] = terms_text
+                        if "{anatomical_location}" in custom_prompt:
+                            invoke_dict["anatomical_location"] = anatomical_location or ""
+                        if "{treatment_options}" in custom_prompt:
+                            invoke_dict["treatment_options"] = treatment_options_text
+                        rendered_prompt = custom_prompt.format(**invoke_dict)
                     except KeyError as e:
                         # If formatting fails, log and use as-is
                         logger.warning(f"Could not format custom prompt with variables: {e}")
@@ -418,10 +453,13 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
                 prompt_template = """Give an exhaustive list of primary CPT codes that could possibly be used by a neurosurgeon to treat patients with any of these diagnoses or a similar diagnosis in an adjacent location in a simple or complex treatment:
 {diagnosis_terms}
 
-Only consider CPT codes that could be used for the following treatment options: 
+Anatomical Location: {anatomical_location}
+
+Only consider CPT codes that could be used for the following treatment options and this anatomical location: 
 {treatment_options}
 
 IMPORTANT: 
+- Focus on CPT codes specific to the anatomical location provided (e.g., brain, spine, peripheral nerve)
 - Include all CPT codes for treatment of related diagnoses in an adjacent location in a simple or complex treatment
 - Do not include any add-on CPT codes
 - Do not include codes that start with 99XXX or 6178X
@@ -447,42 +485,48 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 # Render the prompt with actual values to capture what was sent to GPT
                 rendered_prompt = prompt_template.format(
                     diagnosis_terms=terms_text,
+                    anatomical_location=anatomical_location or "",
                     treatment_options=treatment_options_text
                 )
             
             # Create prompt template with variables only if custom prompt uses them
             if custom_prompt:
                 # Try to detect if the custom prompt uses the variables
-                if "{diagnosis_terms}" in custom_prompt or "{treatment_options}" in custom_prompt:
-                    prompt = PromptTemplate(
-                        input_variables=["diagnosis_terms", "treatment_options"],
-                        template=prompt_template
-                    )
-                else:
-                    # If no variables, create a simple template without variables
-                    prompt = PromptTemplate(
-                        input_variables=[],
-                        template=prompt_template
-                    )
+                input_vars = []
+                if "{diagnosis_terms}" in custom_prompt:
+                    input_vars.append("diagnosis_terms")
+                if "{anatomical_location}" in custom_prompt:
+                    input_vars.append("anatomical_location")
+                if "{treatment_options}" in custom_prompt:
+                    input_vars.append("treatment_options")
+                prompt = PromptTemplate(
+                    input_variables=input_vars if input_vars else ["diagnosis_terms", "anatomical_location", "treatment_options"],
+                    template=prompt_template
+                )
             else:
                 prompt = PromptTemplate(
-                    input_variables=["diagnosis_terms", "treatment_options"],
+                    input_variables=["diagnosis_terms", "anatomical_location", "treatment_options"],
                     template=prompt_template
                 )
             
             chain = prompt | self.llm
             
             # Invoke with variables only if they're expected
-            if custom_prompt and "{diagnosis_terms}" not in custom_prompt and "{treatment_options}" not in custom_prompt:
+            invoke_dict = {}
+            if "{diagnosis_terms}" in prompt_template:
+                invoke_dict["diagnosis_terms"] = terms_text
+            if "{anatomical_location}" in prompt_template:
+                invoke_dict["anatomical_location"] = anatomical_location or ""
+            if "{treatment_options}" in prompt_template:
+                invoke_dict["treatment_options"] = treatment_options_text
+            
+            if invoke_dict:
+                response = await chain.ainvoke(invoke_dict)
+            else:
                 response = await chain.ainvoke({})
                 # For custom prompts without variables, the rendered prompt is the prompt itself
                 if not rendered_prompt:
                     rendered_prompt = prompt_template
-            else:
-                response = await chain.ainvoke({
-                    "diagnosis_terms": terms_text,
-                    "treatment_options": treatment_options_text
-                })
             
             # Extract the JSON response
             response_text = response.content.strip() if hasattr(response, 'content') else str(response).strip()
@@ -581,6 +625,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         self,
         search_query: str,
         treatment_options: List[Dict[str, str]],
+        anatomical_location: str = "",
         custom_prompt: Optional[str] = None
     ) -> Tuple[List[Dict[str, str]], str]:
         """
@@ -590,6 +635,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         Args:
             search_query: Search query string (typically from generate_search_query)
             treatment_options: List of treatment options with name, outcomes, and complications
+            anatomical_location: Anatomical location of the condition (e.g., "brain", "spine", "arm")
             
         Returns:
             Tuple of (List of dictionaries containing CPT code and description, rendered prompt text)
@@ -601,7 +647,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         # Parse search query to extract individual terms (split by " OR ")
         search_terms = [term.strip() for term in search_query.split(" OR ") if term.strip()]
         
-        return await self.predict_cpt_codes(search_terms, treatment_options, custom_prompt=custom_prompt)
+        return await self.predict_cpt_codes(search_terms, treatment_options, anatomical_location, custom_prompt=custom_prompt)
 
     async def query_cms_api(
         self,
@@ -890,6 +936,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
     async def predict_diagnoses(
         self, 
         diagnosis: str, 
+        anatomical_location: str = "",
         pdf_content: str = "",
         custom_prompt: Optional[str] = None
     ) -> Tuple[Dict[str, Any], str]:
@@ -898,6 +945,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         
         Args:
             diagnosis: Patient diagnosis
+            anatomical_location: Anatomical location of the condition (e.g., "brain", "spine", "arm")
             pdf_content: Extracted content from uploaded PDF files (optional)
             custom_prompt: Optional custom prompt to override default
             
@@ -908,15 +956,16 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             default_template = """
                 Patient Information:
                 Diagnosis: {diagnosis}
+                Anatomical Location: {anatomical_location}
                 
                 Additional Information from Medical Records/PDFs:
                 {pdf_content}
                 
                 Analyze the information above and provide:
-                1. Primary diagnosis (most likely ICD-10 code and description based on diagnosis)
-                2. Treatment options performed specifically by a neurosurgeon
+                1. Primary diagnosis (most likely ICD-10 code and description based on diagnosis and anatomical location)
+                2. Treatment options performed specifically by a neurosurgeon for this anatomical location
 
-                Provide the most common treatment options based on the diagnosis. 
+                Provide the most common treatment options based on the diagnosis and anatomical location. 
                 For each treatment option, include the general category of the treatment option. For example:
                 - Surgery
                 - Radiosurgery
@@ -947,55 +996,85 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 escaped_prompt = custom_prompt
                 # Temporarily replace our template variables with placeholders
                 escaped_prompt = escaped_prompt.replace("{diagnosis}", "__DIAGNOSIS__")
+                escaped_prompt = escaped_prompt.replace("{anatomical_location}", "__ANATOMICAL_LOCATION__")
                 escaped_prompt = escaped_prompt.replace("{pdf_content}", "__PDF_CONTENT__")
                 # Escape all remaining curly braces
                 escaped_prompt = escaped_prompt.replace("{", "{{").replace("}", "}}")
                 # Restore our template variables
                 escaped_prompt = escaped_prompt.replace("{{__DIAGNOSIS__}}", "{diagnosis}")
+                escaped_prompt = escaped_prompt.replace("{{__ANATOMICAL_LOCATION__}}", "{anatomical_location}")
                 escaped_prompt = escaped_prompt.replace("{{__PDF_CONTENT__}}", "{pdf_content}")
                 
                 prompt_template = escaped_prompt
                 # For custom prompts, format with the variables if they're present
-                if any(var in custom_prompt for var in ["{diagnosis}", "{pdf_content}"]):
+                if any(var in custom_prompt for var in ["{diagnosis}", "{anatomical_location}", "{pdf_content}"]):
                     # Variables are present, use LangChain PromptTemplate
+                    input_vars = []
+                    if "{diagnosis}" in custom_prompt:
+                        input_vars.append("diagnosis")
+                    if "{anatomical_location}" in custom_prompt:
+                        input_vars.append("anatomical_location")
+                    if "{pdf_content}" in custom_prompt:
+                        input_vars.append("pdf_content")
                     prompt = PromptTemplate(
-                        input_variables=["diagnosis", "pdf_content"],
+                        input_variables=input_vars,
                         template=prompt_template
                     )
-                    rendered_prompt = prompt.format(
-                        diagnosis=diagnosis,
-                        pdf_content=pdf_content
-                    )
+                    invoke_dict = {}
+                    if "{diagnosis}" in custom_prompt:
+                        invoke_dict["diagnosis"] = diagnosis
+                    if "{anatomical_location}" in custom_prompt:
+                        invoke_dict["anatomical_location"] = anatomical_location or ""
+                    if "{pdf_content}" in custom_prompt:
+                        invoke_dict["pdf_content"] = pdf_content
+                    rendered_prompt = prompt.format(**invoke_dict)
                 else:
                     # No variables, use prompt as-is
                     rendered_prompt = custom_prompt
             else:
                 prompt_template = default_template
                 prompt = PromptTemplate(
-                    input_variables=["diagnosis", "pdf_content"],
+                    input_variables=["diagnosis", "anatomical_location", "pdf_content"],
                     template=prompt_template
                 )
                 rendered_prompt = prompt.format(
                     diagnosis=diagnosis,
+                    anatomical_location=anatomical_location or "",
                     pdf_content=pdf_content
                 )
             
             # Create prompt template for LangChain (always use variables even if custom prompt doesn't have them)
             if custom_prompt:
+                input_vars = []
+                if "{diagnosis}" in prompt_template:
+                    input_vars.append("diagnosis")
+                if "{anatomical_location}" in prompt_template:
+                    input_vars.append("anatomical_location")
+                if "{pdf_content}" in prompt_template:
+                    input_vars.append("pdf_content")
                 prompt = PromptTemplate(
-                    input_variables=["diagnosis", "pdf_content"],
+                    input_variables=input_vars if input_vars else ["diagnosis", "anatomical_location", "pdf_content"],
                     template=prompt_template
                 )
             else:
                 prompt = PromptTemplate(
-                    input_variables=["diagnosis", "pdf_content"],
+                    input_variables=["diagnosis", "anatomical_location", "pdf_content"],
                     template=prompt_template
                 )
             
             chain = prompt | self.llm
             
-            response = await chain.ainvoke({
+            invoke_dict = {}
+            if "{diagnosis}" in prompt_template:
+                invoke_dict["diagnosis"] = diagnosis
+            if "{anatomical_location}" in prompt_template:
+                invoke_dict["anatomical_location"] = anatomical_location or ""
+            if "{pdf_content}" in prompt_template:
+                invoke_dict["pdf_content"] = pdf_content
+            
+            response = await chain.ainvoke(invoke_dict if invoke_dict else {
                 "diagnosis": diagnosis,
+                "anatomical_location": anatomical_location or "",
                 "pdf_content": pdf_content
             })
             

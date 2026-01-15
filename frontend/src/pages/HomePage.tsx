@@ -27,6 +27,7 @@ const HomePage: React.FC = () => {
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [zipCode, setZipCode] = useState<string>('');
   const [diagnosis, setDiagnosis] = useState<string>('');
+  const [anatomicalLocation, setAnatomicalLocation] = useState<string>('');
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [states, setStates] = useState<State[]>([]);
   const [cities, setCities] = useState<City[]>([]);
@@ -34,6 +35,7 @@ const HomePage: React.FC = () => {
   const [patientAge, setPatientAge] = useState<{ month: string; year: string }>({ month: '', year: '' });
   const [proximity, setProximity] = useState<string>('');
   const [gender, setGender] = useState<string>('');
+  const [specialty, setSpecialty] = useState<string>('Neurosurgery');
 
   // Debug logging
   useEffect(() => {
@@ -526,6 +528,7 @@ const HomePage: React.FC = () => {
       // Get medical analysis (diagnosis analysis only - providers are searched later on ResultsPage)
       const aiRecommendations = await getMedicalAnalysis({
         diagnosis: diagnosis,
+        anatomical_location: anatomicalLocation,
         files: uploadedFiles
       });
       
@@ -546,6 +549,7 @@ const HomePage: React.FC = () => {
           city: selectedCity,
           zipCode: zipCode,
           diagnosis: diagnosis,
+          anatomical_location: anatomicalLocation,
           gender: gender,
           patientAge: patientAge,
           determined_specialty: aiRecommendations?.patient_profile?.determined_specialty || aiRecommendations?.patient_profile?.specialties_needed?.[0],
@@ -571,6 +575,7 @@ const HomePage: React.FC = () => {
           city: selectedCity,
           zipCode: zipCode,
           diagnosis: diagnosis,
+          anatomical_location: anatomicalLocation,
           gender: gender,
           patientAge: patientAge,
           determined_specialty: aiRecommendations?.patient_profile?.determined_specialty || aiRecommendations?.patient_profile?.specialties_needed?.[0],
@@ -581,6 +586,7 @@ const HomePage: React.FC = () => {
             city: selectedCity,
             zipCode: zipCode,
             diagnosis: diagnosis,
+            anatomical_location: anatomicalLocation,
             gender: gender,
             patientAge: patientAge,
             determined_specialty: aiRecommendations?.patient_profile?.determined_specialty || aiRecommendations?.patient_profile?.specialties_needed?.[0],
@@ -725,6 +731,35 @@ const HomePage: React.FC = () => {
                       <option value="prefer-not-to-say">Prefer not to say</option>
                     </select>
                   </div>
+
+                  {/* Specialty */}
+                  <div className="group min-w-[200px]">
+                    <label htmlFor="specialty" className="block text-sm font-semibold text-gray-700 mb-3">Specialty</label>
+                    <select
+                      id="specialty"
+                      value={specialty}
+                      onChange={(e) => setSpecialty(e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300"
+                    >
+                      <option value="Neurosurgery">Neurosurgery</option>
+                      <option value="Cardiology" disabled>Cardiology</option>
+                      <option value="Dermatology" disabled>Dermatology</option>
+                      <option value="Endocrinology" disabled>Endocrinology</option>
+                      <option value="Gastroenterology" disabled>Gastroenterology</option>
+                      <option value="Neurology" disabled>Neurology</option>
+                      <option value="Orthopedics" disabled>Orthopedics</option>
+                      <option value="Psychiatry" disabled>Psychiatry</option>
+                      <option value="Pulmonology" disabled>Pulmonology</option>
+                      <option value="Urology" disabled>Urology</option>
+                      <option value="Oncology" disabled>Oncology</option>
+                      <option value="Pediatrics" disabled>Pediatrics</option>
+                      <option value="Gynecology" disabled>Gynecology</option>
+                      <option value="Ophthalmology" disabled>Ophthalmology</option>
+                      <option value="Otolaryngology" disabled>Otolaryngology</option>
+                      <option value="Radiology" disabled>Radiology</option>
+                      <option value="Pathology" disabled>Pathology</option>
+                    </select>
+                  </div>
                 </div>
 
                 {/* Location and Search Radius - Second Row */}
@@ -819,6 +854,19 @@ const HomePage: React.FC = () => {
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300 resize-none"
                       rows={5}
                       required
+                    />
+                  </div>
+
+                  {/* Anatomical Location */}
+                  <div className="group">
+                    <label htmlFor="anatomicalLocation" className="block text-sm font-semibold text-gray-700 mb-3">Anatomical Location</label>
+                    <input
+                      type="text"
+                      id="anatomicalLocation"
+                      value={anatomicalLocation}
+                      onChange={(e) => setAnatomicalLocation(e.target.value)}
+                      placeholder="e.g., brain, arm, spine, leg..."
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300"
                     />
                   </div>
                 </div>

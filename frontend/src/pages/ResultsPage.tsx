@@ -16,6 +16,7 @@ interface SearchParams {
   state: string;
   city: string;
   diagnosis: string;
+  anatomical_location?: string;
   determined_specialty?: string;
   predicted_icd10?: string;
   icd10_description?: string;
@@ -942,6 +943,7 @@ const ResultsPage: React.FC = () => {
       // Get data from searchParams or fallback to location.state
       const response = await getMedicalAnalysis({
         diagnosis: searchParams.diagnosis || location.state?.diagnosis || '',
+        anatomical_location: searchParams?.anatomical_location || location.state?.anatomical_location || '',
         files: [], // Files are not persisted, so we can't include them in rerun
         custom_diagnoses_prompt: customPrompt
       });
