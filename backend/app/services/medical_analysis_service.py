@@ -1019,13 +1019,12 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 Patient Information:
                 Diagnosis: {diagnosis}
                 Anatomical Location: {anatomical_location}
+                Specialty: Neurosurgery
                 
                 Additional Information from Medical Records/PDFs:
                 {pdf_content}
                 
-                Analyze the information above and provide treatment options performed specifically by a neurosurgeon for this anatomical location.
-
-                Provide the most common treatment options based on the diagnosis and anatomical location. 
+                Analyze the information above and provide the most common treatment options based on the diagnosis, specialty, and anatomical location. 
                 For each treatment option, include the general category of the treatment option. For example:
                 - Surgery
                 - Radiosurgery
