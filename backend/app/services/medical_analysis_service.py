@@ -363,7 +363,7 @@ class MedicalAnalysisService:
                     # If custom prompt doesn't have these variables, use it as-is
                     rendered_prompt = custom_prompt
             else:
-                prompt_template = """Generate a concise search query to find PubMed articles and medical lectures from our database using both the user-entered diagnosis and the medical analysis diagnosis:
+                prompt_template = """Generate a concise search query to find PubMed articles and medical lectures from our database using the user-entered diagnosis, the anatomical location, and the medical analysis diagnosis:
 
 Medical Analysis Diagnosis: {icd10_description}
 User-Entered Diagnosis: {user_diagnosis}
