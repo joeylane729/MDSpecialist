@@ -318,6 +318,7 @@ export interface CPTCodeGenerationRequest {
     outcomes: string;
     complications: string;
   }>;
+  anatomical_location?: string; // Optional anatomical location
   custom_prompt?: string; // Optional custom prompt to override default
 }
 
@@ -415,6 +416,9 @@ export const generateCPTCodes = async (
     const formData = new FormData();
     formData.append('search_query', request.search_query);
     formData.append('treatment_options_json', JSON.stringify(request.treatment_options));
+    if (request.anatomical_location) {
+      formData.append('anatomical_location', request.anatomical_location);
+    }
     if (request.custom_prompt) {
       formData.append('custom_prompt', request.custom_prompt);
     }

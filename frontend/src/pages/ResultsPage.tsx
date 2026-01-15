@@ -1198,6 +1198,7 @@ const ResultsPage: React.FC = () => {
           const response = await generateCPTCodes({
             search_query: searchQuery,
             treatment_options: categoryOptions,
+            anatomical_location: searchParams?.anatomical_location,
             custom_prompt: customPrompt
           });
           

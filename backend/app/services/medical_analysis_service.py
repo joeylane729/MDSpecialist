@@ -512,18 +512,18 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
                     # If custom prompt doesn't have these variables, use it as-is
                     rendered_prompt = custom_prompt
             else:
-                prompt_template = """Give an exhaustive list of primary CPT codes that could possibly be used by a neurosurgeon to treat patients with any of these diagnoses or a similar diagnosis in an adjacent location in a simple or complex treatment:
+                prompt_template = """Give an exhaustive list of primary CPT codes that could possibly be used to treat patients with any of these diagnoses or a similar diagnosis in an adjacent location in a simple or complex treatment:
 {diagnosis_terms}
 
 Anatomical Location: {anatomical_location}
+Specialty: Neurosurgery
 
 Only consider CPT codes that could be used for the following treatment options and this anatomical location: 
 {treatment_options}
 
 IMPORTANT: 
-- Focus on CPT codes specific to the anatomical location provided (e.g., brain, spine, peripheral nerve)
 - Include all CPT codes for treatment of related diagnoses in an adjacent location in a simple or complex treatment
-- Do not include any add-on CPT codes
+- Do not include any add-on CPT codes (these generally start with a + sign)
 - Do not include codes that start with 99XXX or 6178X
 - Escape all quotes in descriptions (use \\" for quotes inside strings)
 - Keep descriptions concise (under 100 characters)
