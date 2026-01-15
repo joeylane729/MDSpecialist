@@ -318,13 +318,9 @@ const ResultsPage: React.FC = () => {
   // Initialize selected category when treatmentRankings are available
   useEffect(() => {
     if (Object.keys(treatmentRankings).length > 0 && !selectedCategory) {
-      const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
-      const categories = getCategoriesFromTreatmentOptions(treatmentOptions);
-      if (categories.length > 0) {
-        const firstCategory = categories[0];
-        setSelectedCategory(firstCategory);
-        console.log('🔍 Auto-selecting first category:', firstCategory);
-      }
+      // Default to "All" instead of first category
+      setSelectedCategory('All');
+      console.log('🔍 Auto-selecting "All" category');
     }
   }, [treatmentRankings, selectedCategory, searchParams, location.state?.aiRecommendations]);
 
@@ -334,7 +330,8 @@ const ResultsPage: React.FC = () => {
       const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
       const categories = getCategoriesFromTreatmentOptions(treatmentOptions);
       
-      if (categories.includes(selectedCategory)) {
+      // Handle both "All" and specific categories
+      if (selectedCategory === 'All' || categories.includes(selectedCategory)) {
         // Group treatments by category for the filter change handler
         const treatmentsByCategory: { [category: string]: Array<{ id: string; treatment: any }> } = {};
         Object.entries(treatmentRankings).forEach(([treatmentId, treatment]) => {
@@ -714,9 +711,9 @@ const ResultsPage: React.FC = () => {
         const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
         const categories = getCategoriesFromTreatmentOptions(treatmentOptions);
         if (categories.length > 0 && !selectedCategory) {
-          const firstCategory = categories[0];
-          setSelectedCategory(firstCategory);
-          console.log('🔍 Initializing selected category to:', firstCategory);
+          // Default to "All" instead of first category
+          setSelectedCategory('All');
+          console.log('🔍 Initializing selected category to: All');
         }
         
         // Combine all providers and links from all treatments (same logic as category filter)
@@ -1537,8 +1534,8 @@ const ResultsPage: React.FC = () => {
       }
     });
     
-    // Always require a category - modify ONLY clinical volume based on category-specific CPT codes
-    if (category) {
+    // Handle category filtering - modify ONLY clinical volume based on category-specific CPT codes
+    if (category && category !== 'All') {
       // Modify ONLY clinical volume based on category-specific CPT codes
       const categoryCptCodes = cptCodesByCategory[category] || [];
       const categoryCptCodeSet = new Set(categoryCptCodes.map(cpt => cpt.code));
@@ -1680,6 +1677,56 @@ const ResultsPage: React.FC = () => {
           }
         }
       });
+    } else if (category === 'All') {
+      // For "All", restore original max values and recalculate raw from all CPT codes
+      const cmsData = specialistRecommendationData?.cms_data || location.state?.aiRecommendations?.cms_data;
+      const userProviderNPIs = new Set(
+        (providers || location.state?.providers || []).map((p: Provider) => String(p.npi))
+      );
+      
+      // Calculate Tot_Srvcs per provider across ALL CPT codes (not filtered by category)
+      const providerAllTotSrvcs: { [npi: string]: number } = {};
+      if (cmsData?.results) {
+        cmsData.results.forEach((provider: any) => {
+          const npi = String(provider.Rndrng_NPI || '');
+          if (npi && userProviderNPIs.has(npi)) {
+            if (!providerAllTotSrvcs[npi]) {
+              providerAllTotSrvcs[npi] = 0;
+            }
+            providerAllTotSrvcs[npi] += provider.Tot_Srvcs || 0;
+          }
+        });
+      }
+      
+      // Restore original max and recalculate scores for each provider
+      Object.keys(filteredProviderScores).forEach((npi) => {
+        const scoreData = filteredProviderScores[npi];
+        if (scoreData.weighted_breakdown?.breakdown_details?.clinical_volume) {
+          const originalMax = scoreData.weighted_breakdown.breakdown_details.clinical_volume.max;
+          const allTotSrvcs = providerAllTotSrvcs[npi] || 0;
+          
+          // Restore original max (from all CPT codes) and use recalculated raw
+          if (originalMax) {
+            scoreData.weighted_breakdown.breakdown_details.clinical_volume.raw = allTotSrvcs;
+            scoreData.weighted_breakdown.breakdown_details.clinical_volume.max_raw = originalMax;
+            
+            // Recalculate percentage using original max
+            const originalPct = originalMax > 0 ? (allTotSrvcs / originalMax) : 0;
+            scoreData.weighted_breakdown.breakdown_details.clinical_volume.percentage = originalPct * 100;
+            scoreData.weighted_breakdown.breakdown_details.clinical_volume.weighted_points = originalPct * SCORING_WEIGHTS.CLINICAL_VOLUME;
+            
+            // Recalculate final score
+            const cv = scoreData.weighted_breakdown.breakdown_details.clinical_volume.weighted_points || 0;
+            const pubmed = scoreData.weighted_breakdown.breakdown_details.pubmed?.weighted_points || 0;
+            const training = scoreData.weighted_breakdown.breakdown_details.training?.weighted_points || 0;
+            const experience = scoreData.weighted_breakdown.breakdown_details.experience?.weighted_points || 0;
+            const vumedi = scoreData.weighted_breakdown.breakdown_details.vumedi?.weighted_points || 0;
+            scoreData.weighted_breakdown.final_score = cv + pubmed + training + experience + vumedi;
+            scoreData.score = scoreData.weighted_breakdown.final_score;
+          }
+        }
+      });
+      console.log('🔍 Showing all categories - using original max values from all CPT codes, recalculated raw values');
     }
     
     // Sort providers by their total score (descending) after updating scores
@@ -2461,8 +2508,22 @@ const ResultsPage: React.FC = () => {
                 
                 return (
                   <div className="flex items-center justify-center gap-2">
+                    {/* "All" button first */}
+                    <button
+                      onClick={() => {
+                        setSelectedCategory('All');
+                        handleCategoryFilterChange('All', treatmentsByCategory);
+                      }}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        (selectedCategory || 'All') === 'All'
+                          ? 'bg-blue-500 text-white shadow-sm'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      All
+                    </button>
                     {categories.map((category) => {
-                      const isSelected = (selectedCategory || categories[0]) === category;
+                      const isSelected = selectedCategory === category;
                       return (
                         <button
                           key={category}
