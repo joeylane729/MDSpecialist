@@ -3090,6 +3090,53 @@ const ResultsPage: React.FC = () => {
                             </div>
                           </div>
 
+                          {/* Raw CMS API Results */}
+                          <details className="bg-gray-900 rounded p-3 mt-4">
+                            <summary className="cursor-pointer text-cyan-300 hover:text-cyan-200 font-semibold text-sm">
+                              Raw CMS API Results ({cmsData.results?.length || 0} providers)
+                            </summary>
+                            <div className="mt-3 max-h-96 overflow-y-auto">
+                              <div className="mb-3 flex items-center justify-between">
+                                <p className="text-gray-400 text-xs">
+                                  Showing all raw provider data from CMS API (unfiltered, ungrouped)
+                                </p>
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(JSON.stringify(cmsData.results, null, 2));
+                                    alert('Raw CMS results copied to clipboard!');
+                                  }}
+                                  className="text-xs px-2 py-1 bg-cyan-600 hover:bg-cyan-700 text-white rounded transition-colors"
+                                >
+                                  Copy Raw Data
+                                </button>
+                              </div>
+                              <div className="space-y-2">
+                                {cmsData.results && cmsData.results.length > 0 ? (
+                                  cmsData.results.map((provider: any, index: number) => (
+                                    <details key={provider.Rndrng_NPI || index} className="bg-gray-800 rounded p-2 border-l-4 border-cyan-500">
+                                      <summary className="cursor-pointer text-white hover:text-cyan-200 font-medium text-sm">
+                                        {provider.Rndrng_Prvdr_First_Name || ''} {provider.Rndrng_Prvdr_Last_Org_Name || ''}
+                                        {provider.Rndrng_NPI && (
+                                          <span className="text-gray-400 ml-2">(NPI: {provider.Rndrng_NPI})</span>
+                                        )}
+                                        {provider.Tot_Srvcs && (
+                                          <span className="text-cyan-300 ml-2">- {provider.Tot_Srvcs.toLocaleString()} services</span>
+                                        )}
+                                      </summary>
+                                      <div className="mt-2">
+                                        <pre className="text-xs text-gray-300 whitespace-pre-wrap bg-gray-900 p-2 rounded overflow-x-auto">
+                                          {JSON.stringify(provider, null, 2)}
+                                        </pre>
+                                      </div>
+                                    </details>
+                                  ))
+                                ) : (
+                                  <p className="text-yellow-400 text-sm">No raw results available</p>
+                                )}
+                              </div>
+                            </div>
+                          </details>
+
                           {/* Error Display */}
                           {cmsData.error && (
                             <div className="bg-red-900/20 border border-red-500 rounded p-3">
