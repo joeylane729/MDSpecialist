@@ -375,6 +375,7 @@ RULES:
 
 Example: term1 OR term2 OR term3 OR term4 OR term5
 
+IMPORTANT: Do not include quotations around each term in the search query, just the terms themselves separated by the OR operator.
 IMPORTANT: Return ONLY the search query string itself with NO explanations, NO markdown, NO code blocks, NO additional text. Just the query."""
                 
                 # Render the prompt with actual values to capture what was sent to GPT
