@@ -50,6 +50,7 @@ export interface NPIProvider {
   insurance?: string[];
   acceptingPatients: boolean;
   isExcluded?: boolean;  // Flag for excluded providers
+  isPediatricNeurosurgeon?: boolean;  // Flag for pediatric neurosurgeons
   education?: {
     medicalSchool?: string | null;
     residency?: string | null;

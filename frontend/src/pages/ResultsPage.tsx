@@ -2590,6 +2590,7 @@ const ResultsPage: React.FC = () => {
                   })()}
                   patientDiagnosis={searchParams?.diagnosis}
                   searchQuery={searchParams?.search_query}
+                  patientAgeCategory={searchParams?.patient_age_category}
                 />
               </div>
             );

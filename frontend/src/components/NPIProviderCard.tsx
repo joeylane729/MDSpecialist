@@ -16,10 +16,14 @@ interface NPIProviderCardProps {
   providerContent?: ProviderContent;
   patientDiagnosis?: string;
   searchQuery?: string;  // Pre-generated search query from backend (same as PubMed)
+  patientAgeCategory?: 'adult' | 'child';  // Patient age category
 }
 
 // Red flag types and their descriptions
-type RedFlagType = 'not_certified' | 'excluded' | 'low_clinical_volume' | string;
+type RedFlagType = 'not_certified' | 'excluded' | 'low_clinical_volume' | 'pediatric_mismatch' | string;
+
+// Green flag types
+type GreenFlagType = 'pediatric_match' | string;
 
 interface RedFlagInfo {
   type: RedFlagType;
@@ -46,10 +50,32 @@ const RED_FLAG_DEFINITIONS: Record<RedFlagType, RedFlagInfo> = {
     title: 'Low Clinical Volume',
     description: 'This provider has low clinical volume (<25%) compared to other providers in the search results. This may indicate limited experience with the specific procedures or treatments relevant to your condition.',
     severity: 'error'
+  },
+  pediatric_mismatch: {
+    type: 'pediatric_mismatch',
+    title: 'Pediatric/Adult Mismatch',
+    description: patientAgeCategory === 'child' 
+      ? 'This provider is not a pediatric neurosurgeon. For patients under 18, it is recommended to see a pediatric neurosurgeon who specializes in treating children.'
+      : 'This provider is a pediatric neurosurgeon who specializes in treating children. For adult patients (18+), you may want to consider a general neurosurgeon.',
+    severity: 'warning'
   }
 };
 
-export default function NPIProviderCard({ provider, onClick, isHighlighted = false, score, scoreBreakdown, scoreData, isCertified = false, providerContent, patientDiagnosis, searchQuery }: NPIProviderCardProps) {
+interface GreenFlagInfo {
+  type: GreenFlagType;
+  title: string;
+  description: string;
+}
+
+const GREEN_FLAG_DEFINITIONS: Record<GreenFlagType, GreenFlagInfo> = {
+  pediatric_match: {
+    type: 'pediatric_match',
+    title: 'Pediatric Neurosurgeon',
+    description: 'This provider is a board-certified pediatric neurosurgeon, which is recommended for patients under 18 years old.'
+  }
+};
+
+export default function NPIProviderCard({ provider, onClick, isHighlighted = false, score, scoreBreakdown, scoreData, isCertified = false, providerContent, patientDiagnosis, searchQuery, patientAgeCategory }: NPIProviderCardProps) {
   const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
   const [isQuestionsModalOpen, setIsQuestionsModalOpen] = useState(false);
   const [isPreAuthModalOpen, setIsPreAuthModalOpen] = useState(false);
@@ -100,6 +126,41 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
       
       if (clinicalVolumePercentage < 25) {
         flags.push('low_clinical_volume');
+      }
+    }
+    
+    // Check pediatric/adult mismatch
+    if (patientAgeCategory) {
+      // Check if provider is pediatric neurosurgeon (from database or specialty name)
+      const isPediatric = provider.isPediatricNeurosurgeon === true || 
+                         (provider.specialty && provider.specialty.toLowerCase().includes('pediatric'));
+      
+      if (patientAgeCategory === 'child') {
+        // For children: red flag if NOT pediatric neurosurgeon
+        if (!isPediatric) {
+          flags.push('pediatric_mismatch');
+        }
+      } else {
+        // For adults: red flag if IS pediatric neurosurgeon
+        if (isPediatric) {
+          flags.push('pediatric_mismatch');
+        }
+      }
+    }
+    
+    return flags;
+  };
+
+  // Get all active green flags for this provider
+  const getActiveGreenFlags = (): GreenFlagType[] => {
+    const flags: GreenFlagType[] = [];
+    
+    // Check pediatric match (from database or specialty name)
+    if (patientAgeCategory === 'child') {
+      const isPediatric = provider.isPediatricNeurosurgeon === true || 
+                         (provider.specialty && provider.specialty.toLowerCase().includes('pediatric'));
+      if (isPediatric) {
+        flags.push('pediatric_match');
       }
     }
     
@@ -208,6 +269,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
   };
 
   const activeRedFlags = getActiveRedFlags();
+  const activeGreenFlags = getActiveGreenFlags();
 
   // Get score color based on score value (updated for 3x content scoring)
   const getScoreColor = (score: number): string => {
@@ -312,6 +374,24 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                   <span>Certified</span>
                 </div>
               )}
+              {/* Green Flags - Show as clickable icons */}
+              {activeGreenFlags.map((flagType) => {
+                const flagInfo = GREEN_FLAG_DEFINITIONS[flagType];
+                return (
+                  <button
+                    key={flagType}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedRedFlagType(flagType);
+                      setRedFlagModalOpen(true);
+                    }}
+                    className="p-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors cursor-pointer"
+                    title={`Click to learn more about this flag`}
+                  >
+                    <Flag className="h-3 w-3" />
+                  </button>
+                );
+              })}
               {/* Red Flags - Show as clickable icons */}
               {activeRedFlags.map((flagType) => {
                 const flagInfo = RED_FLAG_DEFINITIONS[flagType];
@@ -967,42 +1047,76 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
       )}
 
       {/* Red Flag Modal */}
-      {redFlagModalOpen && selectedRedFlagType && RED_FLAG_DEFINITIONS[selectedRedFlagType] && (
+      {redFlagModalOpen && selectedRedFlagType && (
+        (RED_FLAG_DEFINITIONS[selectedRedFlagType] || GREEN_FLAG_DEFINITIONS[selectedRedFlagType as GreenFlagType]) && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setRedFlagModalOpen(false)}>
           <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-full ${RED_FLAG_DEFINITIONS[selectedRedFlagType].severity === 'error' ? 'bg-red-100' : 'bg-amber-100'}`}>
-                  <Flag className={`h-6 w-6 ${RED_FLAG_DEFINITIONS[selectedRedFlagType].severity === 'error' ? 'text-red-600' : 'text-amber-600'}`} />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900">{RED_FLAG_DEFINITIONS[selectedRedFlagType].title}</h3>
-              </div>
-              <button
-                onClick={() => setRedFlagModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className={`p-4 rounded-lg mb-4 ${RED_FLAG_DEFINITIONS[selectedRedFlagType].severity === 'error' ? 'bg-red-50 border border-red-200' : 'bg-amber-50 border border-amber-200'}`}>
-              <p className="text-gray-700 leading-relaxed">{RED_FLAG_DEFINITIONS[selectedRedFlagType].description}</p>
-            </div>
-            <div className="flex justify-end">
-              <button
-                onClick={() => setRedFlagModalOpen(false)}
-                className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
-                  RED_FLAG_DEFINITIONS[selectedRedFlagType].severity === 'error'
-                    ? 'bg-red-600 text-white hover:bg-red-700'
-                    : 'bg-amber-600 text-white hover:bg-amber-700'
-                }`}
-              >
-                Close
-              </button>
-            </div>
+            {(() => {
+              const isGreenFlag = GREEN_FLAG_DEFINITIONS[selectedRedFlagType as GreenFlagType];
+              const flagInfo = isGreenFlag 
+                ? GREEN_FLAG_DEFINITIONS[selectedRedFlagType as GreenFlagType]
+                : RED_FLAG_DEFINITIONS[selectedRedFlagType];
+              const severity = isGreenFlag ? null : RED_FLAG_DEFINITIONS[selectedRedFlagType].severity;
+              
+              return (
+                <>
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full ${
+                        isGreenFlag 
+                          ? 'bg-green-100' 
+                          : severity === 'error' 
+                            ? 'bg-red-100' 
+                            : 'bg-amber-100'
+                      }`}>
+                        <Flag className={`h-6 w-6 ${
+                          isGreenFlag 
+                            ? 'text-green-600' 
+                            : severity === 'error' 
+                              ? 'text-red-600' 
+                              : 'text-amber-600'
+                        }`} />
+                      </div>
+                      <h3 className="text-xl font-semibold text-gray-900">{flagInfo.title}</h3>
+                    </div>
+                    <button
+                      onClick={() => setRedFlagModalOpen(false)}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className={`p-4 rounded-lg mb-4 ${
+                    isGreenFlag 
+                      ? 'bg-green-50 border border-green-200' 
+                      : severity === 'error' 
+                        ? 'bg-red-50 border border-red-200' 
+                        : 'bg-amber-50 border border-amber-200'
+                  }`}>
+                    <p className="text-gray-700 leading-relaxed">{flagInfo.description}</p>
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => setRedFlagModalOpen(false)}
+                      className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+                        isGreenFlag
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : severity === 'error'
+                            ? 'bg-red-600 text-white hover:bg-red-700'
+                            : 'bg-amber-600 text-white hover:bg-amber-700'
+                      }`}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
+        )
       )}
     </>
   );

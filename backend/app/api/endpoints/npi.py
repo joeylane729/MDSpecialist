@@ -222,6 +222,20 @@ async def search_providers_by_criteria(
             except Exception as e:
                 logger.error(f"Error batch fetching exclusions by name: {e}")
         
+        # Pre-load pediatric neurosurgeon NPIs for fast lookup
+        logger.info("Loading pediatric neurosurgeon certifications...")
+        pediatric_npis = set()
+        try:
+            pediatric_result = db.execute(text("""
+                SELECT DISTINCT npi 
+                FROM pediatric_neurosurgeon_certifications 
+                WHERE matched = true
+            """))
+            pediatric_npis = {row[0] for row in pediatric_result}
+            logger.info(f"Found {len(pediatric_npis)} pediatric neurosurgeons")
+        except Exception as e:
+            logger.warning(f"Error loading pediatric neurosurgeon certifications: {e}")
+        
         # Now process providers using in-memory lookups
         filtered_providers = []
         for provider in providers:
@@ -285,6 +299,9 @@ async def search_providers_by_criteria(
             except Exception as e:
                 logger.error(f"Error checking exclusions for NPI {provider.npi}: {e}")
 
+            # Check if provider is a pediatric neurosurgeon
+            is_pediatric_neurosurgeon = provider_npi_str in pediatric_npis
+            
             formatted_provider = {
                 "id": provider.npi,  # Use NPI as ID
                 "npi": provider.npi,
@@ -299,6 +316,7 @@ async def search_providers_by_criteria(
                 "boardCertified": None,  # No certification data available
                 "acceptingPatients": True,  # Default to accepting patients
                 "isExcluded": is_excluded,  # Flag for excluded providers
+                "isPediatricNeurosurgeon": is_pediatric_neurosurgeon,  # Flag for pediatric neurosurgeons
                 "languages": [],  # No language data available
                 "insurance": [],  # No insurance data available
                 "education": {
