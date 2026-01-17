@@ -54,9 +54,7 @@ const RED_FLAG_DEFINITIONS: Record<RedFlagType, RedFlagInfo> = {
   pediatric_mismatch: {
     type: 'pediatric_mismatch',
     title: 'Pediatric/Adult Mismatch',
-    description: patientAgeCategory === 'child' 
-      ? 'This provider is not a pediatric neurosurgeon. For patients under 18, it is recommended to see a pediatric neurosurgeon who specializes in treating children.'
-      : 'This provider is a pediatric neurosurgeon who specializes in treating children. For adult patients (18+), you may want to consider a general neurosurgeon.',
+    description: 'This provider does not match the recommended specialty for the patient\'s age category.',
     severity: 'warning'
   }
 };
@@ -1058,6 +1056,14 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                 : RED_FLAG_DEFINITIONS[selectedRedFlagType];
               const severity = isGreenFlag ? null : RED_FLAG_DEFINITIONS[selectedRedFlagType].severity;
               
+              // Get dynamic description for pediatric_mismatch
+              let description = flagInfo.description;
+              if (selectedRedFlagType === 'pediatric_mismatch') {
+                description = patientAgeCategory === 'child'
+                  ? 'This provider is not a pediatric neurosurgeon. For patients under 18, it is recommended to see a pediatric neurosurgeon who specializes in treating children.'
+                  : 'This provider is a pediatric neurosurgeon who specializes in treating children. For adult patients (18+), you may want to consider a general neurosurgeon.';
+              }
+              
               return (
                 <>
                   <div className="flex justify-between items-start mb-4">
@@ -1095,7 +1101,7 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                         ? 'bg-red-50 border border-red-200' 
                         : 'bg-amber-50 border border-amber-200'
                   }`}>
-                    <p className="text-gray-700 leading-relaxed">{flagInfo.description}</p>
+                    <p className="text-gray-700 leading-relaxed">{description}</p>
                   </div>
                   <div className="flex justify-end">
                     <button
