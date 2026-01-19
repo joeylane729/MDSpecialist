@@ -954,11 +954,11 @@ class RankingService:
                     logger.info(f"🔍 [Theodore Debug]   - reviews_counts[{npi}] = {relevant_count}")
                     logger.info(f"🔍 [Theodore Debug]   - reviews_counts keys: {list(reviews_counts.keys())[:5]}...")
                 
-                if npi in provider_links:
-                    provider_links[npi]['reviews'] = reviews_list
+                if npi_str in provider_links:
+                    provider_links[npi_str]['reviews'] = reviews_list
                 else:
                     # Provider has no PubMed/Vumedi but might have reviews
-                    provider_links[npi] = {
+                    provider_links[npi_str] = {
                         'vumedi_content': [],
                         'pubmed_articles': [],
                         'reviews': reviews_list

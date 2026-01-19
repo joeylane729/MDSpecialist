@@ -55,7 +55,7 @@ const RED_FLAG_DEFINITIONS: Record<RedFlagType, RedFlagInfo> = {
     type: 'pediatric_mismatch',
     title: 'Pediatric/Adult Mismatch',
     description: 'This provider does not match the recommended specialty for the patient\'s age category.',
-    severity: 'warning'
+    severity: 'error'
   }
 };
 
