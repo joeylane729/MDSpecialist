@@ -1,5 +1,4 @@
-from sqlalchemy import Column, String, Text, Boolean, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, String, Text, Boolean
 from .base import BaseModel
 
 class PediatricNeurosurgeonCertification(BaseModel):
@@ -22,8 +21,8 @@ class PediatricNeurosurgeonCertification(BaseModel):
     year_certified = Column(Text, nullable=True)  # Can contain multiple years/newlines
     certified_through = Column(Text, nullable=True)  # Can contain dates or status
     
-    # Relationship to NPI provider
-    npi_provider = relationship("NPIProvider", backref="pediatric_certifications")
+    # Removed relationship - no foreign key constraint exists between these tables
+    # The npi column is used for lookups but is not a foreign key
     
     def __repr__(self):
         return f"<PediatricNeurosurgeonCertification(npi={self.npi}, matched={self.matched})>"
