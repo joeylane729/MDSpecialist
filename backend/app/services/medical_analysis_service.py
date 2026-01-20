@@ -795,7 +795,10 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             all_results = []
             urls_used = []
             
-            async with httpx.AsyncClient(timeout=90.0) as client:
+            async with httpx.AsyncClient(
+                timeout=300.0,
+                limits=httpx.Limits(max_keepalive_connections=50, max_connections=100)
+            ) as client:
                 # Create all API call tasks
                 tasks = []
                 for year, uuid in sorted(year_uuids.items(), reverse=True):  # Start with most recent
@@ -833,34 +836,91 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                             try:
                                 all_chunk_results = []
                                 page_size = 5000
-                                offset = 0
+                                max_parallel_pages = 10  # Fetch up to 10 pages in parallel
                                 
-                                # Keep fetching pages until we get less than 5000 rows
-                                while True:
-                                    # Add pagination parameters to URL
-                                    pagination_params = f"&size={page_size}&offset={offset}"
-                                    paginated_url = url + pagination_params
-                                    
-                                    response = await client.get(paginated_url)
-                                    response.raise_for_status()
-                                    
-                                    cms_data = response.json()
-                                    chunk_results = cms_data if isinstance(cms_data, list) else [cms_data]
-                                    
-                                    # Add year metadata to each result for tracking
-                                    for result in chunk_results:
-                                        result['_year'] = year
-                                    
-                                    all_chunk_results.extend(chunk_results)
-                                    
-                                    # If we got less than page_size rows, we've reached the end
-                                    if len(chunk_results) < page_size:
-                                        break
-                                    
-                                    # Otherwise, fetch the next page
-                                    offset += page_size
+                                # First, fetch page 0 to see if there's data
+                                first_url = url + f"&size={page_size}&offset=0"
+                                response = await client.get(first_url)
+                                response.raise_for_status()
+                                cms_data = response.json()
+                                first_page = cms_data if isinstance(cms_data, list) else [cms_data]
                                 
-                                logger.info(f"CMS API call for {year} chunk {chunk_idx + 1}: fetched {len(all_chunk_results)} rows across {offset // page_size + 1} page(s)")
+                                if len(first_page) == 0:
+                                    logger.info(f"CMS API call for {year} chunk {chunk_idx + 1}: no results found")
+                                    return []
+                                
+                                # Add year metadata to first page
+                                for result in first_page:
+                                    result['_year'] = year
+                                all_chunk_results.extend(first_page)
+                                page_count = 1
+                                
+                                # If first page is full, there are likely more pages - fetch in parallel batches
+                                if len(first_page) >= page_size:
+                                    offset = page_size
+                                    
+                                    while True:
+                                        # Create batch of parallel page requests
+                                        page_tasks = []
+                                        for i in range(max_parallel_pages):
+                                            page_url = url + f"&size={page_size}&offset={offset + (i * page_size)}"
+                                            page_tasks.append(client.get(page_url))
+                                        
+                                        # Execute batch in parallel
+                                        responses = await asyncio.gather(*page_tasks, return_exceptions=True)
+                                        
+                                        # Process responses
+                                        found_data = False
+                                        should_continue = True
+                                        
+                                        for i, resp in enumerate(responses):
+                                            if isinstance(resp, Exception):
+                                                # First page in batch failed - stop pagination
+                                                if i == 0:
+                                                    should_continue = False
+                                                    break
+                                                # Later pages failed - stop at this batch but keep previous results
+                                                logger.warning(f"Error fetching page {offset // page_size + i + 1} for {year} chunk {chunk_idx + 1}: {resp}")
+                                                break
+                                            
+                                            try:
+                                                resp.raise_for_status()
+                                                page_data = resp.json()
+                                                page_results = page_data if isinstance(page_data, list) else [page_data]
+                                                
+                                                if len(page_results) == 0:
+                                                    should_continue = False
+                                                    break
+                                                
+                                                # Add year metadata
+                                                for result in page_results:
+                                                    result['_year'] = year
+                                                all_chunk_results.extend(page_results)
+                                                page_count += 1
+                                                found_data = True
+                                                
+                                                # If this page has fewer than page_size, we've reached the end
+                                                if len(page_results) < page_size:
+                                                    should_continue = False
+                                                    break
+                                            except httpx.HTTPStatusError as e:
+                                                if e.response.status_code == 404:
+                                                    # 404 means no more pages
+                                                    should_continue = False
+                                                    break
+                                                else:
+                                                    logger.warning(f"HTTP {e.response.status_code} on page {offset // page_size + i + 1} for {year} chunk {chunk_idx + 1}")
+                                                    if i == 0:
+                                                        should_continue = False
+                                                    break
+                                        
+                                        if not should_continue or not found_data:
+                                            break
+                                        
+                                        # Move offset forward for next batch
+                                        offset += max_parallel_pages * page_size
+                                
+                                logger.info(f"CMS API call for {year} chunk {chunk_idx + 1}: fetched {len(all_chunk_results)} rows across {page_count} page(s)")
                                 
                                 return all_chunk_results
                             except Exception as e:
