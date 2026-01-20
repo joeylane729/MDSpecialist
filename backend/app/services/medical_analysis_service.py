@@ -831,17 +831,38 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                         # Create async task for this API call
                         async def make_api_call(url: str, year: int, chunk_idx: int, total_chunks: int, chunk_size: int):
                             try:
-                                response = await client.get(url)
-                                response.raise_for_status()
+                                all_chunk_results = []
+                                page_size = 5000
+                                offset = 0
                                 
-                                cms_data = response.json()
-                                chunk_results = cms_data if isinstance(cms_data, list) else [cms_data]
+                                # Keep fetching pages until we get less than 5000 rows
+                                while True:
+                                    # Add pagination parameters to URL
+                                    pagination_params = f"&size={page_size}&offset={offset}"
+                                    paginated_url = url + pagination_params
+                                    
+                                    response = await client.get(paginated_url)
+                                    response.raise_for_status()
+                                    
+                                    cms_data = response.json()
+                                    chunk_results = cms_data if isinstance(cms_data, list) else [cms_data]
+                                    
+                                    # Add year metadata to each result for tracking
+                                    for result in chunk_results:
+                                        result['_year'] = year
+                                    
+                                    all_chunk_results.extend(chunk_results)
+                                    
+                                    # If we got less than page_size rows, we've reached the end
+                                    if len(chunk_results) < page_size:
+                                        break
+                                    
+                                    # Otherwise, fetch the next page
+                                    offset += page_size
                                 
-                                # Add year metadata to each result for tracking
-                                for result in chunk_results:
-                                    result['_year'] = year
+                                logger.info(f"CMS API call for {year} chunk {chunk_idx + 1}: fetched {len(all_chunk_results)} rows across {offset // page_size + 1} page(s)")
                                 
-                                return chunk_results
+                                return all_chunk_results
                             except Exception as e:
                                 logger.error(f"Error in CMS API call for {year} chunk {chunk_idx + 1}: {e}", exc_info=True)
                                 return []
