@@ -797,7 +797,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             
             async with httpx.AsyncClient(
                 timeout=300.0,
-                limits=httpx.Limits(max_keepalive_connections=50, max_connections=100)
+                limits=httpx.Limits(max_keepalive_connections=200, max_connections=500)
             ) as client:
                 # Create all API call tasks
                 tasks = []
@@ -836,7 +836,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                             try:
                                 all_chunk_results = []
                                 page_size = 5000
-                                max_parallel_pages = 10  # Fetch up to 10 pages in parallel
+                                max_parallel_pages = 30  # Fetch up to 30 pages in parallel
                                 
                                 # First, fetch page 0 to see if there's data
                                 first_url = url + f"&size={page_size}&offset=0"
