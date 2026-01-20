@@ -23,7 +23,7 @@ interface City {
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const [selectedState, setSelectedState] = useState<string>('');
+  const [selectedState, setSelectedState] = useState<string>('NY');
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [zipCode, setZipCode] = useState<string>('');
   const [diagnosis, setDiagnosis] = useState<string>('');
@@ -32,8 +32,8 @@ const HomePage: React.FC = () => {
   const [states, setStates] = useState<State[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [patientAge, setPatientAge] = useState<{ month: string; year: string }>({ month: '', year: '' });
-  const [proximity, setProximity] = useState<string>('');
+  const [patientAge, setPatientAge] = useState<{ month: string; year: string }>({ month: '1', year: '1980' });
+  const [proximity, setProximity] = useState<string>('statewide');
   const [gender, setGender] = useState<string>('');
   const [specialty, setSpecialty] = useState<string>('Neurosurgery');
 
@@ -492,11 +492,23 @@ const HomePage: React.FC = () => {
         ]
       };
       
-      setCities(mockCities[selectedState] || []);
-      setSelectedCity(''); // Reset city when state changes
+      const stateCities = mockCities[selectedState] || [];
+      setCities(stateCities);
+      
+      // Set default city for NY on initial load (only if city is empty)
+      if (selectedState === 'NY' && stateCities.length > 0 && !selectedCity) {
+        const nyCity = stateCities.find(city => city.name === 'New York');
+        if (nyCity) {
+          setSelectedCity('New York');
+        }
+      } else if (selectedState !== 'NY') {
+        setSelectedCity(''); // Reset city when state changes to non-NY
+      }
     } else {
       setCities([]);
-      setSelectedCity('');
+      if (selectedState !== 'NY') {
+        setSelectedCity('');
+      }
     }
   }, [selectedState]);
 
