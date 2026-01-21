@@ -205,3 +205,36 @@ async def generate_cpt_codes(
             status_code=500,
             detail=f"Error generating CPT codes: {str(e)}"
         )
+
+
+@router.get("/medical-analysis/cpt-codes-by-icd10/{icd10_code}")
+async def get_cpt_codes_by_icd10(
+    icd10_code: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Query database to get CPT codes mapped to an ICD-10 code.
+    Excludes codes starting with "98" or "99".
+    
+    Args:
+        icd10_code: ICD-10 code (e.g., "D35.2")
+        
+    Returns:
+        Dictionary with list of CPT codes and their descriptions
+    """
+    try:
+        medical_analysis_service = MedicalAnalysisService(db)
+        cpt_codes = medical_analysis_service.get_cpt_codes_from_icd10(icd10_code)
+        
+        return {
+            "icd10_code": icd10_code,
+            "cpt_codes": cpt_codes,
+            "count": len(cpt_codes)
+        }
+        
+    except Exception as e:
+        logger.error(f"Error querying CPT codes for ICD-10 {icd10_code}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error querying CPT codes: {str(e)}"
+        )

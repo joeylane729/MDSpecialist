@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Home, Search, User } from 'lucide-react'
+import { Home, Search, User, Code } from 'lucide-react'
 
 interface LayoutProps {
   children: ReactNode
@@ -51,6 +51,17 @@ export default function Layout({ children }: LayoutProps) {
               >
                 <Search className="h-4 w-4" />
                 <span>Results</span>
+              </Link>
+              <Link
+                to="/cpt-testing"
+                className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  isActive('/cpt-testing')
+                    ? 'text-primary-600 bg-primary-50'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <Code className="h-4 w-4" />
+                <span>CPT Testing</span>
               </Link>
             </nav>
 
