@@ -158,10 +158,13 @@ async def generate_cpt_codes(
     treatment_options_json: str = Form(...),  # JSON array of treatment options
     anatomical_location: Optional[str] = Form(None),
     custom_prompt: Optional[str] = Form(None),  # Optional custom prompt to override default
+    icd10_code: Optional[str] = Form(None),  # Optional ICD-10 code to query database for mapped CPT codes
     db: Session = Depends(get_db)
 ):
     """
     Generate CPT codes based on search query and treatment options.
+    Also queries database for CPT codes mapped to ICD-10 code if provided.
+    Runs both queries in parallel.
     
     This endpoint is called separately after the initial medical analysis to generate CPT codes.
     It requires the search_query and treatment_options from the previous step.
@@ -178,18 +181,20 @@ async def generate_cpt_codes(
                 detail=f"Invalid treatment_options_json: {str(e)}"
             )
         
-        # Initialize service and generate CPT codes
+        # Initialize service and generate CPT codes (both GPT and database)
         medical_analysis_service = MedicalAnalysisService(db)
-        cpt_codes, cpt_prompt_text = await medical_analysis_service.generate_cpt_codes_from_analysis(
+        gpt_cpt_codes, cpt_prompt_text, db_cpt_codes = await medical_analysis_service.generate_cpt_codes_from_analysis(
             search_query=search_query,
             treatment_options=treatment_options,
             anatomical_location=anatomical_location or "",
-            custom_prompt=custom_prompt
+            custom_prompt=custom_prompt,
+            icd10_code=icd10_code
         )
         
         return {
-            "cpt_codes": cpt_codes,
+            "cpt_codes": gpt_cpt_codes,  # GPT-generated CPT codes
             "cpt_prompt_text": cpt_prompt_text,
+            "db_cpt_codes": db_cpt_codes,  # Database-mapped CPT codes from ICD-10
         }
         
     except HTTPException:

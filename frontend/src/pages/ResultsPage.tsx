@@ -166,6 +166,8 @@ const ResultsPage: React.FC = () => {
   const [specialistRecommendationData, setSpecialistRecommendationData] = useState<any>(null);
   const [cptCodes, setCptCodes] = useState<Array<{ code: string; description: string }> | null>(null);
   const [cptCodesByCategory, setCptCodesByCategory] = useState<{ [category: string]: Array<{ code: string; description: string }> }>({});
+  const [dbCptCodes, setDbCptCodes] = useState<Array<{ code: string; description: string }> | null>(null); // Database-mapped CPT codes
+  const [dbCptCodesByCategory, setDbCptCodesByCategory] = useState<{ [category: string]: Array<{ code: string; description: string }> }>({}); // Database CPT codes by category
   const [cptPromptTextByCategory, setCptPromptTextByCategory] = useState<{ [category: string]: string }>({});
   const [editablePromptTextByCategory, setEditablePromptTextByCategory] = useState<{ [category: string]: string }>({});
   const [selectedCptCategory, setSelectedCptCategory] = useState<string | null>(null);
@@ -1179,9 +1181,13 @@ const ResultsPage: React.FC = () => {
         return;
       }
       
+      // Get ICD-10 code if available
+      const icd10Code = searchParams?.predicted_icd10 || location.state?.aiRecommendations?.patient_profile?.predicted_icd10;
+      
       // Generate CPT codes for each category
       const newCptCodesByCategory: { [category: string]: Array<{ code: string; description: string }> } = {};
       const newCptPromptTextByCategory: { [category: string]: string } = {};
+      const newDbCptCodesByCategory: { [category: string]: Array<{ code: string; description: string }> } = {};
       
       for (const category of categoriesToGenerate) {
         const categoryOptions = optionsByCategory[category];
@@ -1197,7 +1203,8 @@ const ResultsPage: React.FC = () => {
             search_query: searchQuery,
             treatment_options: categoryOptions,
             anatomical_location: searchParams?.anatomical_location,
-            custom_prompt: customPrompt
+            custom_prompt: customPrompt,
+            icd10_code: icd10Code  // Pass ICD-10 code to query database
           });
           
           if (response.cpt_codes && response.cpt_codes.length > 0) {
@@ -1208,9 +1215,16 @@ const ResultsPage: React.FC = () => {
               ...prev,
               [category]: response.cpt_prompt_text || ''
             }));
-            console.log(`✅ Generated ${response.cpt_codes.length} CPT codes for category: ${category}`);
+            console.log(`✅ Generated ${response.cpt_codes.length} GPT CPT codes for category: ${category}`);
           } else {
-            console.warn(`⚠️  Received 0 CPT codes for category: ${category}`);
+            console.warn(`⚠️  Received 0 GPT CPT codes for category: ${category}`);
+          }
+          
+          // Handle database CPT codes (same for all categories since they're based on ICD-10)
+          if (response.db_cpt_codes && response.db_cpt_codes.length > 0) {
+            // Store database CPT codes for this category (they're the same across categories)
+            newDbCptCodesByCategory[category] = response.db_cpt_codes;
+            console.log(`✅ Found ${response.db_cpt_codes.length} database CPT codes from ICD-10 ${icd10Code} for category: ${category}`);
           }
         } catch (error) {
           console.error(`❌ Error generating CPT codes for category ${category}:`, error);
@@ -1220,6 +1234,16 @@ const ResultsPage: React.FC = () => {
       // Update state with all categories
       setCptCodesByCategory(prev => ({ ...prev, ...newCptCodesByCategory }));
       setCptPromptTextByCategory(prev => ({ ...prev, ...newCptPromptTextByCategory }));
+      setDbCptCodesByCategory(prev => ({ ...prev, ...newDbCptCodesByCategory }));
+      
+      // Combine all database CPT codes (they're the same across categories)
+      const allDbCptCodes = Object.values(newDbCptCodesByCategory).flat();
+      if (allDbCptCodes.length > 0) {
+        // Deduplicate database CPT codes
+        const uniqueDbCodes = Array.from(new Map(allDbCptCodes.map(code => [code.code, code])).values());
+        setDbCptCodes(uniqueDbCodes);
+        console.log(`✅ Found ${uniqueDbCodes.length} unique database CPT codes from ICD-10 ${icd10Code}`);
+      }
       
       // Set first category as selected if none selected yet
       if (!selectedCptCategory && Object.keys(newCptCodesByCategory).length > 0) {
@@ -2401,6 +2425,44 @@ const ResultsPage: React.FC = () => {
                       </div>
                     ))}
                   </div>
+                  
+                  {/* Database CPT Codes Section - show if we have database CPT codes */}
+                  {dbCptCodes && dbCptCodes.length > 0 && (
+                    <div className="mt-6 pt-6 border-t border-gray-300">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Database-Mapped CPT Codes
+                        </h3>
+                        <div className="text-sm text-gray-600">
+                          {dbCptCodes.length} {dbCptCodes.length === 1 ? 'code' : 'codes'} from ICD-10 mapping
+                        </div>
+                      </div>
+                      
+                      <div className="text-sm text-gray-600 mb-3">
+                        CPT codes mapped from ICD-10 code: <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">{searchParams?.predicted_icd10 || location.state?.aiRecommendations?.patient_profile?.predicted_icd10 || 'N/A'}</code>
+                      </div>
+                      
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {dbCptCodes.map((cpt: any, index: number) => (
+                          <div key={index} className="bg-green-50 rounded-lg p-3 border border-green-200">
+                            <div className="flex items-start gap-3">
+                              <code className="bg-green-100 px-2 py-1 rounded text-sm font-semibold text-green-900 whitespace-nowrap">
+                                {cpt.code}
+                              </code>
+                              <span className="text-sm text-gray-700 flex-1">{cpt.description}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="mt-3 text-xs text-gray-500 italic">
+                        Note: These database-mapped CPT codes are shown for reference only and are not yet used for CMS/PubMed queries.
+                      </div>
+                    </div>
+                  )}
                   
                   {/* Button to generate specialist recommendations */}
                   <div className="text-center mt-6">

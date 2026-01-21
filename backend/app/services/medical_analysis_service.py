@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
+from ..models.icd_cpt_mapping import IcdCptMapping
 
 logger = logging.getLogger(__name__)
 
@@ -683,33 +684,102 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             logger.error(f"Error predicting CPT codes: {e}", exc_info=True)
             return [], ""
     
+    def get_cpt_codes_from_icd10(self, icd10_code: str) -> List[Dict[str, str]]:
+        """
+        Query database to get CPT codes mapped to an ICD-10 code.
+        
+        Args:
+            icd10_code: ICD-10 code (e.g., "D35.2" or "D352")
+            
+        Returns:
+            List of dictionaries containing CPT code and description
+        """
+        if not self.db:
+            logger.warning("Cannot query CPT codes - no database session")
+            return []
+        
+        if not icd10_code:
+            return []
+        
+        try:
+            # Normalize ICD-10 code (remove dots, uppercase)
+            normalized_icd = icd10_code.replace('.', '').strip().upper()
+            
+            # Query database for CPT codes
+            mappings = self.db.query(IcdCptMapping).filter(
+                IcdCptMapping.icd10_code == normalized_icd
+            ).all()
+            
+            # Convert to list of dicts with unique CPT codes (deduplicate)
+            cpt_codes_dict = {}
+            for mapping in mappings:
+                cpt_code = mapping.cpt_code.strip()
+                if cpt_code and cpt_code not in cpt_codes_dict:
+                    # Use description from mapping, or additional_field, or empty
+                    description = mapping.description or mapping.additional_field or ""
+                    cpt_codes_dict[cpt_code] = {
+                        "code": cpt_code,
+                        "description": description.strip() if description else f"CPT code for ICD-10 {icd10_code}"
+                    }
+            
+            cpt_codes = list(cpt_codes_dict.values())
+            logger.info(f"Found {len(cpt_codes)} CPT codes for ICD-10 code {icd10_code} (normalized: {normalized_icd})")
+            return cpt_codes
+            
+        except Exception as e:
+            logger.error(f"Error querying CPT codes from ICD-10 {icd10_code}: {e}", exc_info=True)
+            return []
+    
     async def generate_cpt_codes_from_analysis(
         self,
         search_query: str,
         treatment_options: List[Dict[str, str]],
         anatomical_location: str = "",
-        custom_prompt: Optional[str] = None
-    ) -> Tuple[List[Dict[str, str]], str]:
+        custom_prompt: Optional[str] = None,
+        icd10_code: Optional[str] = None
+    ) -> Tuple[List[Dict[str, str]], str, List[Dict[str, str]]]:
         """
         Generate CPT codes from search query and treatment options.
-        This is a convenience method for the separate CPT code generation endpoint.
+        Also queries database for CPT codes mapped to ICD-10 code if provided.
+        Runs both queries in parallel.
         
         Args:
             search_query: Search query string (typically from generate_search_query)
             treatment_options: List of treatment options with name, outcomes, and complications
             anatomical_location: Anatomical location of the condition (e.g., "brain", "spine", "arm")
+            custom_prompt: Optional custom prompt to override default
+            icd10_code: Optional ICD-10 code to query database for mapped CPT codes
             
         Returns:
-            Tuple of (List of dictionaries containing CPT code and description, rendered prompt text)
+            Tuple of (GPT-generated CPT codes, rendered prompt text, database-mapped CPT codes)
         """
         if not search_query:
             logger.warning("Cannot generate CPT codes - no search query provided")
-            return [], ""
+            return [], "", []
         
         # Parse search query to extract individual terms (split by " OR ")
         search_terms = [term.strip() for term in search_query.split(" OR ") if term.strip()]
         
-        return await self.predict_cpt_codes(search_terms, treatment_options, anatomical_location, custom_prompt=custom_prompt)
+        # Run GPT generation and database query in parallel
+        async def get_gpt_codes():
+            return await self.predict_cpt_codes(search_terms, treatment_options, anatomical_location, custom_prompt=custom_prompt)
+        
+        async def get_db_codes():
+            if icd10_code:
+                # Run database query in thread pool since it's synchronous
+                loop = asyncio.get_event_loop()
+                return await loop.run_in_executor(None, self.get_cpt_codes_from_icd10, icd10_code)
+            return []
+        
+        # Execute both in parallel
+        gpt_result, db_codes = await asyncio.gather(
+            get_gpt_codes(),
+            get_db_codes()
+        )
+        
+        gpt_codes, cpt_prompt_text = gpt_result
+        
+        return gpt_codes, cpt_prompt_text, db_codes
 
     async def query_cms_api(
         self,

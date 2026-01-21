@@ -328,6 +328,7 @@ export interface CPTCodeGenerationResponse {
   cpt_codes: Array<{ code: string; description: string }>;
   cpt_prompt_text: string;
   message: string;
+  db_cpt_codes?: Array<{ code: string; description: string }>; // Database-mapped CPT codes from ICD-10
 }
 
 export const generateSearchQuery = async (
@@ -411,7 +412,8 @@ export const generateCPTCodes = async (
   try {
     console.log('🔍 [Frontend] Generating CPT codes:', {
       search_query: request.search_query?.substring(0, 100),
-      treatment_options_count: request.treatment_options?.length
+      treatment_options_count: request.treatment_options?.length,
+      icd10_code: request.icd10_code
     });
 
     const formData = new FormData();
@@ -422,6 +424,9 @@ export const generateCPTCodes = async (
     }
     if (request.custom_prompt) {
       formData.append('custom_prompt', request.custom_prompt);
+    }
+    if (request.icd10_code) {
+      formData.append('icd10_code', request.icd10_code);
     }
     
     console.log('🔍 [Frontend] Making API call to:', `${API_BASE_URL}/api/v1/medical-analysis/cpt-codes`);

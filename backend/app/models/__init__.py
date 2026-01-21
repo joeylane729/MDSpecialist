@@ -1,6 +1,7 @@
 from .base import Base
 from .doctor import Doctor
 from .healthgrades_review import HealthgradesReview
+from .icd_cpt_mapping import IcdCptMapping
 from .medical_school_ranking import MedicalSchoolRanking
 from .npi_provider import NPIProvider
 from .pediatric_neurosurgeon_certification import PediatricNeurosurgeonCertification
@@ -11,6 +12,7 @@ __all__ = [
     "Base",
     "Doctor",
     "HealthgradesReview",
+    "IcdCptMapping",
     "MedicalSchoolRanking",
     "NPIProvider",
     "PediatricNeurosurgeonCertification",
