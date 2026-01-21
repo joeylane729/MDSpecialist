@@ -758,8 +758,8 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 2019: "867b8ac7-ccb7-4cc9-873d-b24340d89e32"
             }
             
-            # Split CPT codes into chunks of 100 if needed
-            chunk_size = 100
+            # Split CPT codes into chunks of 10 if needed
+            chunk_size = 10
             cpt_chunks = [
                 cpt_code_values[i:i + chunk_size] 
                 for i in range(0, len(cpt_code_values), chunk_size)
