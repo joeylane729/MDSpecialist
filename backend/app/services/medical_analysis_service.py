@@ -689,7 +689,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         Query database to get CPT codes mapped to an ICD-10 code.
         
         Args:
-            icd10_code: ICD-10 code (e.g., "D35.2" or "D352")
+            icd10_code: ICD-10 code (e.g., "D35.2")
             
         Returns:
             List of dictionaries containing CPT code and description
@@ -702,12 +702,13 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             return []
         
         try:
-            # Normalize ICD-10 code (remove dots, uppercase)
-            normalized_icd = icd10_code.replace('.', '').strip().upper()
+            # Keep dots in ICD-10 code (database stores with dots)
+            # Just strip whitespace and uppercase
+            cleaned_icd = icd10_code.strip().upper()
             
             # Query database for CPT codes
             mappings = self.db.query(IcdCptMapping).filter(
-                IcdCptMapping.icd10_code == normalized_icd
+                IcdCptMapping.icd10_code == cleaned_icd
             ).all()
             
             # Convert to list of dicts with unique CPT codes (deduplicate)
@@ -723,7 +724,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                     }
             
             cpt_codes = list(cpt_codes_dict.values())
-            logger.info(f"Found {len(cpt_codes)} CPT codes for ICD-10 code {icd10_code} (normalized: {normalized_icd})")
+            logger.info(f"Found {len(cpt_codes)} CPT codes for ICD-10 code {icd10_code}")
             return cpt_codes
             
         except Exception as e:
