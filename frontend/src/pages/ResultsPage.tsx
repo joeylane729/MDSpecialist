@@ -168,6 +168,7 @@ const ResultsPage: React.FC = () => {
   const [cptCodesByCategory, setCptCodesByCategory] = useState<{ [category: string]: Array<{ code: string; description: string }> }>({});
   const [dbCptCodes, setDbCptCodes] = useState<Array<{ code: string; description: string }> | null>(null); // Database-mapped CPT codes
   const [dbCptCodesByCategory, setDbCptCodesByCategory] = useState<{ [category: string]: Array<{ code: string; description: string }> }>({}); // Database CPT codes by category
+  const [activeCptSourceTab, setActiveCptSourceTab] = useState<'gpt' | 'database'>('gpt'); // Tab for CPT code source (GPT vs Database)
   const [cptPromptTextByCategory, setCptPromptTextByCategory] = useState<{ [category: string]: string }>({});
   const [editablePromptTextByCategory, setEditablePromptTextByCategory] = useState<{ [category: string]: string }>({});
   const [selectedCptCategory, setSelectedCptCategory] = useState<string | null>(null);
@@ -1243,6 +1244,10 @@ const ResultsPage: React.FC = () => {
         const uniqueDbCodes = Array.from(new Map(allDbCptCodes.map(code => [code.code, code])).values());
         setDbCptCodes(uniqueDbCodes);
         console.log(`✅ Found ${uniqueDbCodes.length} unique database CPT codes from ICD-10 ${icd10Code}`);
+        // If we have database codes but no GPT codes, switch to database tab
+        if (allCptCodes.length === 0 && uniqueDbCodes.length > 0) {
+          setActiveCptSourceTab('database');
+        }
       }
       
       // Set first category as selected if none selected yet
@@ -2254,10 +2259,11 @@ const ResultsPage: React.FC = () => {
                 );
               })()}
               
-              {/* CPT Codes Section - only show if we have actual CPT codes */}
+              {/* CPT Codes Section - only show if we have actual CPT codes or database codes */}
               {(() => {
-                // Use helper function to check if CPT codes exist
-                if (!hasCptCodes) {
+                // Show section if we have GPT codes OR database codes
+                const hasAnyCptCodes = hasCptCodes || (dbCptCodes && dbCptCodes.length > 0);
+                if (!hasAnyCptCodes) {
                   return null;
                 }
                 
@@ -2271,40 +2277,85 @@ const ResultsPage: React.FC = () => {
                 <div className="bg-white border border-gray-200 rounded-lg p-6">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-semibold text-gray-900">Relevant CPT Codes</h2>
-                    {hasCptCodesByCategory && (
+                    {hasCptCodesByCategory && activeCptSourceTab === 'gpt' && (
                       <div className="text-sm text-gray-600">
                         Total: {Object.values(cptCodesByCategory).flat().length} codes across {categories.length} {categories.length === 1 ? 'category' : 'categories'}
                       </div>
                     )}
+                    {activeCptSourceTab === 'database' && dbCptCodes && (
+                      <div className="text-sm text-gray-600">
+                        {dbCptCodes.length} {dbCptCodes.length === 1 ? 'code' : 'codes'} from ICD-10 mapping
+                      </div>
+                    )}
                   </div>
                   
-                  {/* Category Tabs - only show if we have multiple categories */}
-                  {hasCptCodesByCategory && categories.length > 1 && (
-                    <div className="mb-4 border-b border-gray-200">
-                      <div className="flex space-x-1 overflow-x-auto">
-                        {categories.map((category) => {
-                          const categoryCodes = cptCodesByCategory[category] || [];
-                          const isSelected = displayCategory === category;
-                          return (
-                            <button
-                              key={category}
-                              onClick={() => setSelectedCptCategory(category)}
-                              className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
-                                isSelected
-                                  ? 'border-blue-600 text-blue-600'
-                                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                              }`}
-                            >
-                              {category} ({categoryCodes.length})
-                            </button>
-                          );
-                        })}
-                      </div>
+                  {/* Source Tabs - GPT vs Database */}
+                  <div className="mb-4 border-b border-gray-200">
+                    <div className="flex space-x-1">
+                      {hasCptCodes && (
+                        <button
+                          onClick={() => setActiveCptSourceTab('gpt')}
+                          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                            activeCptSourceTab === 'gpt'
+                              ? 'border-blue-600 text-blue-600'
+                              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                          }`}
+                        >
+                          GPT CPT Codes
+                          {hasCptCodesByCategory && (
+                            <span className="ml-2 text-xs">({Object.values(cptCodesByCategory).flat().length})</span>
+                          )}
+                          {!hasCptCodesByCategory && cptCodes && (
+                            <span className="ml-2 text-xs">({cptCodes.length})</span>
+                          )}
+                        </button>
+                      )}
+                      {dbCptCodes && dbCptCodes.length > 0 && (
+                        <button
+                          onClick={() => setActiveCptSourceTab('database')}
+                          className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                            activeCptSourceTab === 'database'
+                              ? 'border-green-600 text-green-600'
+                              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                          }`}
+                        >
+                          AAPC ICD → CPT Crosswalk
+                          <span className="ml-2 text-xs">({dbCptCodes.length})</span>
+                        </button>
+                      )}
                     </div>
-                  )}
+                  </div>
                   
-                  {/* GPT Prompt Instructions (collapsed by default) */}
-                  {displayCategory && cptPromptTextByCategory[displayCategory] && (
+                  {/* GPT CPT Codes Tab Content */}
+                  {activeCptSourceTab === 'gpt' && hasCptCodes && (
+                    <>
+                      {/* Category Tabs - only show if we have multiple categories */}
+                      {hasCptCodesByCategory && categories.length > 1 && (
+                        <div className="mb-4 border-b border-gray-200">
+                          <div className="flex space-x-1 overflow-x-auto">
+                            {categories.map((category) => {
+                              const categoryCodes = cptCodesByCategory[category] || [];
+                              const isSelected = displayCategory === category;
+                              return (
+                                <button
+                                  key={category}
+                                  onClick={() => setSelectedCptCategory(category)}
+                                  className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                                    isSelected
+                                      ? 'border-blue-600 text-blue-600'
+                                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                  }`}
+                                >
+                                  {category} ({categoryCodes.length})
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* GPT Prompt Instructions (collapsed by default) */}
+                      {displayCategory && cptPromptTextByCategory[displayCategory] && (
                     <div className="mb-4">
                       <details className="bg-gray-50 rounded-lg border border-gray-200">
                         <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-t-lg">
@@ -2354,10 +2405,10 @@ const ResultsPage: React.FC = () => {
                         </div>
                       </details>
                     </div>
-                  )}
-                  
-                  {/* Fallback prompt section for legacy format */}
-                  {!hasCptCodesByCategory && (cptPromptText || searchParams?.cpt_prompt_text) && (
+                      )}
+                      
+                      {/* Fallback prompt section for legacy format */}
+                      {!hasCptCodesByCategory && (cptPromptText || searchParams?.cpt_prompt_text) && (
                     <div className="mb-4">
                       <details className="bg-gray-50 rounded-lg border border-gray-200">
                         <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-t-lg">
@@ -2402,45 +2453,35 @@ const ResultsPage: React.FC = () => {
                         </div>
                       </details>
                     </div>
-                  )}
-                  
-                  <div className="text-sm text-gray-600 mb-3">
-                    {displayCategory 
-                      ? `Procedural codes for ${displayCategory} category:`
-                      : 'Procedural codes that could be used by a neurosurgeon to treat this condition:'}
-                  </div>
-                  
-                  <div className="space-y-2 max-h-96 overflow-y-auto">
-                    {(hasCptCodesByCategory && displayCategory && cptCodesByCategory[displayCategory]
-                      ? cptCodesByCategory[displayCategory]
-                      : (cptCodes || searchParams?.cpt_codes || [])
-                    ).map((cpt: any, index: number) => (
-                      <div key={index} className="bg-amber-50 rounded-lg p-3 border border-amber-200">
-                        <div className="flex items-start gap-3">
-                          <code className="bg-amber-100 px-2 py-1 rounded text-sm font-semibold text-amber-900 whitespace-nowrap">
-                            {cpt.code}
-                          </code>
-                          <span className="text-sm text-gray-700 flex-1">{cpt.description}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Database CPT Codes Section - show if we have database CPT codes */}
-                  {dbCptCodes && dbCptCodes.length > 0 && (
-                    <div className="mt-6 pt-6 border-t border-gray-300">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          Database-Mapped CPT Codes
-                        </h3>
-                        <div className="text-sm text-gray-600">
-                          {dbCptCodes.length} {dbCptCodes.length === 1 ? 'code' : 'codes'} from ICD-10 mapping
-                        </div>
+                      )}
+                      
+                      <div className="text-sm text-gray-600 mb-3">
+                        {displayCategory 
+                          ? `Procedural codes for ${displayCategory} category:`
+                          : 'Procedural codes that could be used by a neurosurgeon to treat this condition:'}
                       </div>
                       
+                      <div className="space-y-2 max-h-96 overflow-y-auto">
+                        {(hasCptCodesByCategory && displayCategory && cptCodesByCategory[displayCategory]
+                          ? cptCodesByCategory[displayCategory]
+                          : (cptCodes || searchParams?.cpt_codes || [])
+                        ).map((cpt: any, index: number) => (
+                          <div key={index} className="bg-amber-50 rounded-lg p-3 border border-amber-200">
+                            <div className="flex items-start gap-3">
+                              <code className="bg-amber-100 px-2 py-1 rounded text-sm font-semibold text-amber-900 whitespace-nowrap">
+                                {cpt.code}
+                              </code>
+                              <span className="text-sm text-gray-700 flex-1">{cpt.description}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  
+                  {/* Database CPT Codes Tab Content */}
+                  {activeCptSourceTab === 'database' && dbCptCodes && dbCptCodes.length > 0 && (
+                    <>
                       <div className="text-sm text-gray-600 mb-3">
                         CPT codes mapped from ICD-10 code: <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">{searchParams?.predicted_icd10 || location.state?.aiRecommendations?.patient_profile?.predicted_icd10 || 'N/A'}</code>
                       </div>
@@ -2461,7 +2502,7 @@ const ResultsPage: React.FC = () => {
                       <div className="mt-3 text-xs text-gray-500 italic">
                         Note: These database-mapped CPT codes are shown for reference only and are not yet used for CMS/PubMed queries.
                       </div>
-                    </div>
+                    </>
                   )}
                   
                   {/* Button to generate specialist recommendations */}
