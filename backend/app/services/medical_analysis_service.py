@@ -758,8 +758,8 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 2019: "867b8ac7-ccb7-4cc9-873d-b24340d89e32"
             }
             
-            # Split CPT codes into chunks of 10 if needed
-            chunk_size = 10
+            # Split CPT codes into chunks of 50 if needed
+            chunk_size = 50
             cpt_chunks = [
                 cpt_code_values[i:i + chunk_size] 
                 for i in range(0, len(cpt_code_values), chunk_size)
@@ -836,7 +836,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                             try:
                                 all_chunk_results = []
                                 page_size = 5000
-                                max_parallel_pages = 30  # Fetch up to 30 pages in parallel
+                                max_parallel_pages = 10  # Fetch up to 10 pages in parallel
                                 
                                 # First, fetch page 0 to see if there's data
                                 first_url = url + f"&size={page_size}&offset=0"
