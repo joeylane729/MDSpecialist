@@ -144,11 +144,13 @@ test_query.sql
 !tsconfig.json
 !tsconfig.node.json
 !railway.json
+!vercel.json
 !frontend/package.json
 !frontend/package-lock.json
 !frontend/tsconfig.json
 !frontend/tsconfig.node.json
 !frontend/railway.json
+!frontend/vercel.json
 !backend/railway.json
 
 # Vumedi scraping data files
