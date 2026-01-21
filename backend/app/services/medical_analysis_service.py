@@ -712,10 +712,12 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             ).all()
             
             # Convert to list of dicts with unique CPT codes (deduplicate)
+            # Filter out codes starting with "98" or "99"
             cpt_codes_dict = {}
             for mapping in mappings:
                 cpt_code = mapping.cpt_code.strip()
-                if cpt_code and cpt_code not in cpt_codes_dict:
+                # Skip codes starting with "98" or "99"
+                if cpt_code and not cpt_code.startswith('98') and not cpt_code.startswith('99') and cpt_code not in cpt_codes_dict:
                     # Use description from mapping, or additional_field, or empty
                     description = mapping.description or mapping.additional_field or ""
                     cpt_codes_dict[cpt_code] = {
