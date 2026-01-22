@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { NPIProvider, getSpecialistRecommendations, SpecialistRecommendationRequest, searchNPIProviders, rankNPIProviders, NPISearchRequest, NPIRankingRequest, ProviderContent, generateCPTCodes, generateSearchQuery, getMedicalAnalysis, regenerateICD10Code } from '../services/api';
+import api from '../services/api';
 import NPIProviderCard from '../components/NPIProviderCard';
 import { SCORING_WEIGHTS } from '../constants/scoringWeights';
 
@@ -1185,10 +1186,23 @@ const ResultsPage: React.FC = () => {
       // Get ICD-10 code if available
       const icd10Code = searchParams?.predicted_icd10 || location.state?.aiRecommendations?.patient_profile?.predicted_icd10;
       
-      // Generate CPT codes for each category
+      // Query database CPT codes once (same for all categories since they're based on ICD-10)
+      let dbCptCodesResult: Array<{ code: string; description: string }> = [];
+      if (icd10Code) {
+        try {
+          console.log(`🔍 Querying database for CPT codes from ICD-10 ${icd10Code} (once for all categories)...`);
+          const dbResponse = await api.get(`/api/v1/medical-analysis/cpt-codes-by-icd10/${encodeURIComponent(icd10Code.trim())}`);
+          dbCptCodesResult = dbResponse.data.cpt_codes || [];
+          console.log(`✅ Found ${dbCptCodesResult.length} database CPT codes from ICD-10 ${icd10Code}`);
+        } catch (error) {
+          console.error(`❌ Error querying database CPT codes:`, error);
+          // Continue with GPT generation even if DB query fails
+        }
+      }
+      
+      // Generate CPT codes for each category (only GPT, DB codes already fetched)
       const newCptCodesByCategory: { [category: string]: Array<{ code: string; description: string }> } = {};
       const newCptPromptTextByCategory: { [category: string]: string } = {};
-      const newDbCptCodesByCategory: { [category: string]: Array<{ code: string; description: string }> } = {};
       
       for (const category of categoriesToGenerate) {
         const categoryOptions = optionsByCategory[category];
@@ -1200,12 +1214,13 @@ const ResultsPage: React.FC = () => {
         const customPrompt = useCustomPrompt && editablePromptText ? editablePromptText : undefined;
         
         try {
+          // Don't pass icd10_code - we already queried DB codes separately
           const response = await generateCPTCodes({
             search_query: searchQuery,
             treatment_options: categoryOptions,
             anatomical_location: searchParams?.anatomical_location,
-            custom_prompt: customPrompt,
-            icd10_code: icd10Code  // Pass ICD-10 code to query database
+            custom_prompt: customPrompt
+            // Removed: icd10_code - DB codes already fetched above
           });
           
           if (response.cpt_codes && response.cpt_codes.length > 0) {
@@ -1220,13 +1235,6 @@ const ResultsPage: React.FC = () => {
           } else {
             console.warn(`⚠️  Received 0 GPT CPT codes for category: ${category}`);
           }
-          
-          // Handle database CPT codes (same for all categories since they're based on ICD-10)
-          if (response.db_cpt_codes && response.db_cpt_codes.length > 0) {
-            // Store database CPT codes for this category (they're the same across categories)
-            newDbCptCodesByCategory[category] = response.db_cpt_codes;
-            console.log(`✅ Found ${response.db_cpt_codes.length} database CPT codes from ICD-10 ${icd10Code} for category: ${category}`);
-          }
         } catch (error) {
           console.error(`❌ Error generating CPT codes for category ${category}:`, error);
         }
@@ -1235,19 +1243,19 @@ const ResultsPage: React.FC = () => {
       // Update state with all categories
       setCptCodesByCategory(prev => ({ ...prev, ...newCptCodesByCategory }));
       setCptPromptTextByCategory(prev => ({ ...prev, ...newCptPromptTextByCategory }));
-      setDbCptCodesByCategory(prev => ({ ...prev, ...newDbCptCodesByCategory }));
       
-      // Combine all database CPT codes (they're the same across categories)
-      const allDbCptCodes = Object.values(newDbCptCodesByCategory).flat();
-      if (allDbCptCodes.length > 0) {
-        // Deduplicate database CPT codes
-        const uniqueDbCodes = Array.from(new Map(allDbCptCodes.map(code => [code.code, code])).values());
-        setDbCptCodes(uniqueDbCodes);
-        console.log(`✅ Found ${uniqueDbCodes.length} unique database CPT codes from ICD-10 ${icd10Code}`);
-        // If we have database codes but no GPT codes, switch to database tab
-        if (allCptCodes.length === 0 && uniqueDbCodes.length > 0) {
-          setActiveCptSourceTab('database');
-        }
+      // Store database CPT codes (same for all categories)
+      if (dbCptCodesResult.length > 0) {
+        // Store for each category (for consistency with existing structure)
+        const newDbCptCodesByCategory: { [category: string]: Array<{ code: string; description: string }> } = {};
+        categoriesToGenerate.forEach(category => {
+          newDbCptCodesByCategory[category] = dbCptCodesResult;
+        });
+        setDbCptCodesByCategory(prev => ({ ...prev, ...newDbCptCodesByCategory }));
+        
+        // Set the combined database CPT codes
+        setDbCptCodes(dbCptCodesResult);
+        console.log(`✅ Stored ${dbCptCodesResult.length} database CPT codes for all categories`);
       }
       
       // Set first category as selected if none selected yet
@@ -1257,6 +1265,11 @@ const ResultsPage: React.FC = () => {
       
       // Combine all CPT codes for backward compatibility and CMS API call
       const allCptCodes = Object.values(newCptCodesByCategory).flat();
+      
+      // If we have database codes but no GPT codes, switch to database tab
+      if (allCptCodes.length === 0 && dbCptCodesResult.length > 0) {
+        setActiveCptSourceTab('database');
+      }
       if (allCptCodes.length > 0) {
         setCptCodes(allCptCodes);
         
