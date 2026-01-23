@@ -909,7 +909,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
 
 For each CPT code, assign it to the most appropriate category based on the procedure type and treatment approach.
 
-IMPORTANT: Use only 2-5 distinct categories total. Group similar procedures together into the same category. Keep category names between 1 and 3 words.
+CRITICAL REQUIREMENT: You MUST use EXACTLY 3 categories maximum. You CANNOT use more than 3 categories. Group similar procedures together into the same category. Keep category names between 1 and 3 words.
 
 CPT Codes:
 {cpt_codes}
