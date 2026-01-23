@@ -544,11 +544,18 @@ const HomePage: React.FC = () => {
         files: uploadedFiles
       });
       
-      // Debug logging for treatment options
+      // Debug logging for treatment options and ICD codes
       if (aiRecommendations) {
-        console.log('🔍 DEBUG: aiRecommendations received:', aiRecommendations);
-        console.log('🔍 DEBUG: aiRecommendations keys:', Object.keys(aiRecommendations));
-        console.log('🔍 DEBUG: patient_profile:', aiRecommendations.patient_profile);
+        console.log('🔍 [Frontend] HomePage - aiRecommendations received:', aiRecommendations);
+        console.log('🔍 [Frontend] HomePage - aiRecommendations keys:', Object.keys(aiRecommendations));
+        console.log('🔍 [Frontend] HomePage - patient_profile:', aiRecommendations.patient_profile);
+        console.log('🔍 [Frontend] HomePage - ICD codes:', {
+          predicted_icd10: aiRecommendations.patient_profile?.predicted_icd10,
+          predicted_icd10_codes: aiRecommendations.patient_profile?.predicted_icd10_codes,
+          predicted_icd10_codes_type: typeof aiRecommendations.patient_profile?.predicted_icd10_codes,
+          predicted_icd10_codes_isArray: Array.isArray(aiRecommendations.patient_profile?.predicted_icd10_codes),
+          predicted_icd10_codes_length: aiRecommendations.patient_profile?.predicted_icd10_codes?.length
+        });
         if (aiRecommendations.patient_profile?.treatment_options) {
           console.log('🔍 DEBUG: Found treatment options:', aiRecommendations.patient_profile.treatment_options);
         }
@@ -566,6 +573,7 @@ const HomePage: React.FC = () => {
           patientAge: patientAge,
           determined_specialty: aiRecommendations?.patient_profile?.determined_specialty || aiRecommendations?.patient_profile?.specialties_needed?.[0],
           predicted_icd10: aiRecommendations?.patient_profile?.predicted_icd10,
+          predicted_icd10_codes: aiRecommendations?.patient_profile?.predicted_icd10_codes,
           icd10_description: aiRecommendations?.patient_profile?.icd10_description,
           treatment_options: aiRecommendations?.patient_profile?.treatment_options,
           cpt_codes: aiRecommendations?.patient_profile?.cpt_codes,
@@ -580,6 +588,15 @@ const HomePage: React.FC = () => {
         treatmentRankings: null
       }));
 
+      console.log('🔍 [Frontend] HomePage - AI recommendations received:', {
+        predicted_icd10: aiRecommendations?.patient_profile?.predicted_icd10,
+        predicted_icd10_codes: aiRecommendations?.patient_profile?.predicted_icd10_codes,
+        predicted_icd10_codes_type: typeof aiRecommendations?.patient_profile?.predicted_icd10_codes,
+        predicted_icd10_codes_isArray: Array.isArray(aiRecommendations?.patient_profile?.predicted_icd10_codes),
+        predicted_icd10_codes_length: aiRecommendations?.patient_profile?.predicted_icd10_codes?.length,
+        full_patient_profile: aiRecommendations?.patient_profile
+      });
+
       // Navigate to results page
       navigate('/results', {
         state: {
@@ -592,6 +609,7 @@ const HomePage: React.FC = () => {
           patientAge: patientAge,
           determined_specialty: aiRecommendations?.patient_profile?.determined_specialty || aiRecommendations?.patient_profile?.specialties_needed?.[0],
           predicted_icd10: aiRecommendations?.patient_profile?.predicted_icd10,
+          predicted_icd10_codes: aiRecommendations?.patient_profile?.predicted_icd10_codes,
           icd10_description: aiRecommendations?.patient_profile?.icd10_description,
           searchParams: {
             state: selectedState,
@@ -603,6 +621,7 @@ const HomePage: React.FC = () => {
             patientAge: patientAge,
             determined_specialty: aiRecommendations?.patient_profile?.determined_specialty || aiRecommendations?.patient_profile?.specialties_needed?.[0],
             predicted_icd10: aiRecommendations?.patient_profile?.predicted_icd10,
+            predicted_icd10_codes: aiRecommendations?.patient_profile?.predicted_icd10_codes,
             icd10_description: aiRecommendations?.patient_profile?.icd10_description,
             treatment_options: aiRecommendations?.patient_profile?.treatment_options,
             cpt_codes: aiRecommendations?.patient_profile?.cpt_codes,

@@ -151,7 +151,8 @@ export interface PatientProfile {
   }>;
   search_query?: string;  // Pre-generated search query
   search_query_prompt_text?: string;  // GPT prompt text used to generate search query
-  predicted_icd10?: string;  // Predicted ICD-10 code
+  predicted_icd10?: string;  // Predicted ICD-10 code (primary, for backward compatibility)
+  predicted_icd10_codes?: string[];  // All predicted ICD-10 codes
   icd10_description?: string;  // ICD-10 description
   icd10_prompt_text?: string;  // GPT prompt text used to generate ICD-10 code
   diagnoses_prompt_text?: string;  // GPT prompt text used to generate diagnoses/treatment options

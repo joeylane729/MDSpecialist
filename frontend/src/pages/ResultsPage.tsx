@@ -224,6 +224,13 @@ const ResultsPage: React.FC = () => {
         console.warn('⚠️ ResultsPage - cms_data MISSING!');
       }
       console.log('ResultsPage - patient_profile:', location.state.aiRecommendations.patient_profile);
+      console.log('🔍 [Frontend] ResultsPage - ICD codes in aiRecommendations.patient_profile:', {
+        predicted_icd10: location.state.aiRecommendations.patient_profile?.predicted_icd10,
+        predicted_icd10_codes: location.state.aiRecommendations.patient_profile?.predicted_icd10_codes,
+        predicted_icd10_codes_type: typeof location.state.aiRecommendations.patient_profile?.predicted_icd10_codes,
+        predicted_icd10_codes_isArray: Array.isArray(location.state.aiRecommendations.patient_profile?.predicted_icd10_codes),
+        predicted_icd10_codes_length: location.state.aiRecommendations.patient_profile?.predicted_icd10_codes?.length
+      });
       console.log('ResultsPage - recommendations:', location.state.aiRecommendations.recommendations);
       
       // Debug treatment options specifically
@@ -684,7 +691,14 @@ const ResultsPage: React.FC = () => {
     // Try to get data from location.state first (direct navigation)
     // Note: providers can be an empty array initially (providers are fetched later on ResultsPage)
     if (location.state?.searchParams && location.state.providers !== undefined) {
-      console.log('🔍 DEBUG: ResultsPage - location.state.searchParams:', location.state.searchParams);
+      console.log('🔍 [Frontend] ResultsPage - location.state.searchParams:', location.state.searchParams);
+      console.log('🔍 [Frontend] ResultsPage - ICD codes in searchParams:', {
+        predicted_icd10: location.state.searchParams.predicted_icd10,
+        predicted_icd10_codes: location.state.searchParams.predicted_icd10_codes,
+        predicted_icd10_codes_type: typeof location.state.searchParams.predicted_icd10_codes,
+        predicted_icd10_codes_isArray: Array.isArray(location.state.searchParams.predicted_icd10_codes),
+        predicted_icd10_codes_length: location.state.searchParams.predicted_icd10_codes?.length
+      });
       console.log('🔍 DEBUG: ResultsPage - search_query in searchParams:', location.state.searchParams.search_query);
       
       // Calculate age category if patientAge is available
@@ -699,6 +713,13 @@ const ResultsPage: React.FC = () => {
         patientAge: patientAge,
         patient_age_category: ageCategory
       };
+      
+      console.log('🔍 [Frontend] ResultsPage - Setting searchParams with ICD codes:', {
+        predicted_icd10: searchParamsWithAge.predicted_icd10,
+        predicted_icd10_codes: searchParamsWithAge.predicted_icd10_codes,
+        predicted_icd10_codes_length: searchParamsWithAge.predicted_icd10_codes?.length
+      });
+      
       setSearchParams(searchParamsWithAge);
       setProviders(location.state.providers);
       
@@ -963,6 +984,15 @@ const ResultsPage: React.FC = () => {
       
       // Update searchParams with new results
       if (response.patient_profile) {
+        console.log('🔍 [Frontend] Medical analysis response received:', {
+          predicted_icd10: response.patient_profile.predicted_icd10,
+          predicted_icd10_codes: response.patient_profile.predicted_icd10_codes,
+          predicted_icd10_codes_type: typeof response.patient_profile.predicted_icd10_codes,
+          predicted_icd10_codes_isArray: Array.isArray(response.patient_profile.predicted_icd10_codes),
+          predicted_icd10_codes_length: response.patient_profile.predicted_icd10_codes?.length,
+          full_patient_profile: response.patient_profile
+        });
+        
         const newSearchParams: SearchParams = {
           ...searchParams!,
           predicted_icd10: response.patient_profile.predicted_icd10,
@@ -974,6 +1004,15 @@ const ResultsPage: React.FC = () => {
           diagnoses_prompt_text: response.patient_profile.diagnoses_prompt_text,
           search_query_prompt_text: response.patient_profile.search_query_prompt_text
         };
+        
+        console.log('🔍 [Frontend] Setting searchParams with:', {
+          predicted_icd10: newSearchParams.predicted_icd10,
+          predicted_icd10_codes: newSearchParams.predicted_icd10_codes,
+          predicted_icd10_codes_type: typeof newSearchParams.predicted_icd10_codes,
+          predicted_icd10_codes_isArray: Array.isArray(newSearchParams.predicted_icd10_codes),
+          predicted_icd10_codes_length: newSearchParams.predicted_icd10_codes?.length
+        });
+        
         setSearchParams(newSearchParams);
         
         // Update prompt text state
@@ -2076,18 +2115,39 @@ const ResultsPage: React.FC = () => {
                     <div className="border-l-4 border-green-500 pl-4">
                       <h3 className="text-lg font-medium text-gray-900 mb-2">Medical Analysis</h3>
                       <div className="space-y-2">
+                        {(() => {
+                          console.log('🔍 [Frontend] Rendering ICD codes section:', {
+                            has_predicted_icd10: !!searchParams.predicted_icd10,
+                            predicted_icd10: searchParams.predicted_icd10,
+                            has_predicted_icd10_codes: !!searchParams.predicted_icd10_codes,
+                            predicted_icd10_codes: searchParams.predicted_icd10_codes,
+                            predicted_icd10_codes_type: typeof searchParams.predicted_icd10_codes,
+                            predicted_icd10_codes_isArray: Array.isArray(searchParams.predicted_icd10_codes),
+                            predicted_icd10_codes_length: searchParams.predicted_icd10_codes?.length,
+                            condition_check: searchParams.predicted_icd10 || (searchParams.predicted_icd10_codes && searchParams.predicted_icd10_codes.length > 0)
+                          });
+                          return null;
+                        })()}
                         {(searchParams.predicted_icd10 || (searchParams.predicted_icd10_codes && searchParams.predicted_icd10_codes.length > 0)) && (
                           <div>
                             <span className="font-medium text-gray-700">ICD-10 Code(s): </span>
-                            {searchParams.predicted_icd10_codes && Array.isArray(searchParams.predicted_icd10_codes) && searchParams.predicted_icd10_codes.length > 1 ? (
-                              <div className="flex flex-wrap gap-2 mt-1">
-                                {searchParams.predicted_icd10_codes.map((code: string, idx: number) => (
-                                  <code key={idx} className="bg-gray-100 px-2 py-1 rounded text-sm">{code}</code>
-                                ))}
-                              </div>
-                            ) : (
-                              <code className="bg-gray-100 px-2 py-1 rounded text-sm">{searchParams.predicted_icd10 || (searchParams.predicted_icd10_codes?.[0])}</code>
-                            )}
+                            {(() => {
+                              const shouldShowMultiple = searchParams.predicted_icd10_codes && Array.isArray(searchParams.predicted_icd10_codes) && searchParams.predicted_icd10_codes.length > 0;
+                              console.log('🔍 [Frontend] ICD codes display decision:', {
+                                shouldShowMultiple,
+                                codes: searchParams.predicted_icd10_codes,
+                                length: searchParams.predicted_icd10_codes?.length
+                              });
+                              return shouldShowMultiple ? (
+                                <div className="flex flex-wrap gap-2 mt-1">
+                                  {searchParams.predicted_icd10_codes.map((code: string, idx: number) => (
+                                    <code key={idx} className="bg-gray-100 px-2 py-1 rounded text-sm">{code}</code>
+                                  ))}
+                                </div>
+                              ) : (
+                                <code className="bg-gray-100 px-2 py-1 rounded text-sm">{searchParams.predicted_icd10 || 'N/A'}</code>
+                              );
+                            })()}
                           </div>
                         )}
                         <div>
