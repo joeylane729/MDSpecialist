@@ -73,13 +73,18 @@ class MedicalAnalysisService:
                 logger.warning("predict_diagnoses returned None, setting to empty dict")
                 medical_analysis["diagnoses"] = {}
             
-            # Add ICD-10 description if we have codes (use primary code for description)
-            if primary_icd10 and self.db:
-                icd10_description = self.lookup_icd10_description(primary_icd10)
-                if icd10_description:
-                    medical_analysis["icd10_description"] = icd10_description
-                else:
-                    logger.warning(f"Could not find ICD-10 description for: {primary_icd10}")
+            # Add ICD-10 descriptions for all codes
+            if predicted_icd10_codes and self.db:
+                icd10_descriptions = self.lookup_icd10_descriptions(predicted_icd10_codes)
+                medical_analysis["icd10_descriptions"] = icd10_descriptions  # All code -> description mappings
+                
+                # Also set primary description for backward compatibility
+                if primary_icd10:
+                    primary_description = icd10_descriptions.get(primary_icd10)
+                    if primary_description:
+                        medical_analysis["icd10_description"] = primary_description
+                    else:
+                        logger.warning(f"Could not find ICD-10 description for: {primary_icd10}")
             
             # Extract treatment options from diagnoses if available (needed for CPT code prediction)
             treatment_options = []
@@ -124,7 +129,8 @@ class MedicalAnalysisService:
                 # Medical analysis data (flattened for frontend compatibility)
                 "predicted_icd10": medical_analysis["predicted_icd10"],  # Primary code for backward compatibility
                 "predicted_icd10_codes": medical_analysis.get("predicted_icd10_codes", []),  # All ICD-10 codes
-                "icd10_description": medical_analysis.get("icd10_description"),
+                "icd10_description": medical_analysis.get("icd10_description"),  # Primary description for backward compatibility
+                "icd10_descriptions": medical_analysis.get("icd10_descriptions", {}),  # All code -> description mappings
                 "icd10_prompt_text": icd10_prompt_text,  # Actual GPT prompt used to generate ICD-10 code
                 "determined_specialty": determined_specialty,  # Specialty determined for provider search
                 "treatment_options": treatment_options,
@@ -178,6 +184,24 @@ class MedicalAnalysisService:
         except Exception as e:
             logger.error(f"Error looking up ICD-10 description for {code}: {e}", exc_info=True)
             return None
+    
+    def lookup_icd10_descriptions(self, codes: List[str]) -> Dict[str, Optional[str]]:
+        """
+        Look up descriptions for multiple ICD-10 codes from the database.
+        
+        Args:
+            codes: List of ICD-10 codes to look up
+            
+        Returns:
+            Dictionary mapping code to description (or None if not found)
+        """
+        if not self.db or not codes:
+            return {}
+        
+        result = {}
+        for code in codes:
+            result[code] = self.lookup_icd10_description(code)
+        return result
 
     async def determine_specialty(self, diagnosis_text: str) -> Optional[str]:
         """

@@ -21,6 +21,7 @@ interface SearchParams {
   determined_specialty?: string;
   predicted_icd10?: string;  // Primary code for backward compatibility
   predicted_icd10_codes?: string[];  // All ICD-10 codes
+  icd10_descriptions?: { [code: string]: string | null };  // All code -> description mappings
   icd10_description?: string;
   treatment_options?: Array<{
     name: string;
@@ -998,6 +999,7 @@ const ResultsPage: React.FC = () => {
           predicted_icd10: response.patient_profile.predicted_icd10,
           predicted_icd10_codes: response.patient_profile.predicted_icd10_codes,
           icd10_description: response.patient_profile.icd10_description,
+          icd10_descriptions: response.patient_profile.icd10_descriptions,
           icd10_prompt_text: response.patient_profile.icd10_prompt_text,
           treatment_options: response.patient_profile.treatment_options,
           search_query: response.patient_profile.search_query,
@@ -1096,6 +1098,7 @@ const ResultsPage: React.FC = () => {
         predicted_icd10: response.predicted_icd10 || undefined,
         predicted_icd10_codes: response.predicted_icd10_codes || undefined,
         icd10_description: response.icd10_description || undefined,
+        icd10_descriptions: response.icd10_descriptions || undefined,
         icd10_prompt_text: response.icd10_prompt_text
       };
       setSearchParams(newSearchParams);
@@ -2111,49 +2114,40 @@ const ResultsPage: React.FC = () => {
                   </div>
 
                   {/* Medical Analysis Results */}
-                  {searchParams?.icd10_description && (
+                  {(searchParams?.icd10_description || (searchParams?.predicted_icd10_codes && searchParams.predicted_icd10_codes.length > 0)) && (
                     <div className="border-l-4 border-green-500 pl-4">
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Medical Analysis</h3>
-                      <div className="space-y-2">
-                        {(() => {
-                          console.log('🔍 [Frontend] Rendering ICD codes section:', {
-                            has_predicted_icd10: !!searchParams.predicted_icd10,
-                            predicted_icd10: searchParams.predicted_icd10,
-                            has_predicted_icd10_codes: !!searchParams.predicted_icd10_codes,
-                            predicted_icd10_codes: searchParams.predicted_icd10_codes,
-                            predicted_icd10_codes_type: typeof searchParams.predicted_icd10_codes,
-                            predicted_icd10_codes_isArray: Array.isArray(searchParams.predicted_icd10_codes),
-                            predicted_icd10_codes_length: searchParams.predicted_icd10_codes?.length,
-                            condition_check: searchParams.predicted_icd10 || (searchParams.predicted_icd10_codes && searchParams.predicted_icd10_codes.length > 0)
-                          });
-                          return null;
-                        })()}
-                        {(searchParams.predicted_icd10 || (searchParams.predicted_icd10_codes && searchParams.predicted_icd10_codes.length > 0)) && (
-                          <div>
-                            <span className="font-medium text-gray-700">ICD-10 Code(s): </span>
-                            {(() => {
-                              const shouldShowMultiple = searchParams.predicted_icd10_codes && Array.isArray(searchParams.predicted_icd10_codes) && searchParams.predicted_icd10_codes.length > 0;
-                              console.log('🔍 [Frontend] ICD codes display decision:', {
-                                shouldShowMultiple,
-                                codes: searchParams.predicted_icd10_codes,
-                                length: searchParams.predicted_icd10_codes?.length
-                              });
-                              return shouldShowMultiple ? (
-                                <div className="flex flex-wrap gap-2 mt-1">
-                                  {searchParams.predicted_icd10_codes.map((code: string, idx: number) => (
-                                    <code key={idx} className="bg-gray-100 px-2 py-1 rounded text-sm">{code}</code>
-                                  ))}
+                      <h3 className="text-lg font-medium text-gray-900 mb-3">Medical Analysis</h3>
+                      <div className="space-y-3">
+                        {searchParams.predicted_icd10_codes && Array.isArray(searchParams.predicted_icd10_codes) && searchParams.predicted_icd10_codes.length > 0 ? (
+                          // Show all codes with their descriptions in a list format
+                          <div className="space-y-2">
+                            {searchParams.predicted_icd10_codes.map((code: string, idx: number) => {
+                              const description = searchParams.icd10_descriptions?.[code] || 
+                                                  (idx === 0 ? searchParams.icd10_description : null) || 
+                                                  'Description not available';
+                              return (
+                                <div key={idx} className="flex items-start gap-3 p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors">
+                                  <code className="bg-white px-3 py-1.5 rounded text-sm font-mono font-semibold text-gray-800 border border-gray-300 flex-shrink-0">
+                                    {code}
+                                  </code>
+                                  <span className="text-gray-700 text-sm flex-1 pt-1">{description}</span>
                                 </div>
-                              ) : (
-                                <code className="bg-gray-100 px-2 py-1 rounded text-sm">{searchParams.predicted_icd10 || 'N/A'}</code>
                               );
-                            })()}
+                            })}
+                          </div>
+                        ) : (
+                          // Fallback: single code display (backward compatibility)
+                          <div className="space-y-2">
+                            <div className="flex items-start gap-3 p-2 bg-gray-50 rounded-md">
+                              <code className="bg-white px-3 py-1.5 rounded text-sm font-mono font-semibold text-gray-800 border border-gray-300 flex-shrink-0">
+                                {searchParams.predicted_icd10 || 'N/A'}
+                              </code>
+                              <span className="text-gray-700 text-sm flex-1 pt-1">
+                                {searchParams.icd10_description || 'Description not available'}
+                              </span>
+                            </div>
                           </div>
                         )}
-                        <div>
-                          <span className="font-medium text-gray-700">Description: </span>
-                          <span className="text-gray-700">{searchParams.icd10_description}</span>
-                        </div>
                       </div>
                     </div>
                   )}

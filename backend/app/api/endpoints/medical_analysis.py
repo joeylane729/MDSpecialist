@@ -134,15 +134,19 @@ async def regenerate_icd10_code(
         # Use first code as primary for backward compatibility
         primary_icd10 = icd10_codes[0] if icd10_codes else None
         
-        # Look up description for primary code if we have codes
+        # Look up descriptions for all codes if we have codes
         icd10_description = None
-        if primary_icd10 and db:
-            icd10_description = medical_analysis_service.lookup_icd10_description(primary_icd10)
+        icd10_descriptions = {}
+        if icd10_codes and db:
+            icd10_descriptions = medical_analysis_service.lookup_icd10_descriptions(icd10_codes)
+            if primary_icd10:
+                icd10_description = icd10_descriptions.get(primary_icd10)
         
         return {
             "predicted_icd10": primary_icd10,  # Primary code for backward compatibility
             "predicted_icd10_codes": icd10_codes,  # All codes
-            "icd10_description": icd10_description,
+            "icd10_description": icd10_description,  # Primary description for backward compatibility
+            "icd10_descriptions": icd10_descriptions,  # All code -> description mappings
             "icd10_prompt_text": icd10_prompt_text,
         }
         

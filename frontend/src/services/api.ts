@@ -153,7 +153,8 @@ export interface PatientProfile {
   search_query_prompt_text?: string;  // GPT prompt text used to generate search query
   predicted_icd10?: string;  // Predicted ICD-10 code (primary, for backward compatibility)
   predicted_icd10_codes?: string[];  // All predicted ICD-10 codes
-  icd10_description?: string;  // ICD-10 description
+  icd10_description?: string;  // ICD-10 description (primary, for backward compatibility)
+  icd10_descriptions?: { [code: string]: string | null };  // All code -> description mappings
   icd10_prompt_text?: string;  // GPT prompt text used to generate ICD-10 code
   diagnoses_prompt_text?: string;  // GPT prompt text used to generate diagnoses/treatment options
   determined_specialty?: string;  // Specialty determined for provider search
@@ -309,7 +310,8 @@ export interface ICD10CodeGenerationRequest {
 export interface ICD10CodeGenerationResponse {
   predicted_icd10: string | null;  // Primary code for backward compatibility
   predicted_icd10_codes: string[];  // All ICD-10 codes
-  icd10_description: string | null;
+  icd10_description: string | null;  // Primary description for backward compatibility
+  icd10_descriptions: { [code: string]: string | null };  // All code -> description mappings
   icd10_prompt_text: string;
 }
 
