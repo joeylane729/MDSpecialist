@@ -55,12 +55,16 @@ class MedicalAnalysisService:
                 custom_prompt=custom_diagnoses_prompt
             )
             
-            predicted_icd10, icd10_prompt_text = await self.predict_icd10_code(
+            predicted_icd10_codes, icd10_prompt_text = await self.predict_icd10_code(
                 diagnosis, anatomical_location, pdf_content, custom_prompt=custom_icd10_prompt
             )
             
+            # Use first code as primary for backward compatibility, but store all codes
+            primary_icd10 = predicted_icd10_codes[0] if predicted_icd10_codes else None
+            
             medical_analysis = {
-                "predicted_icd10": predicted_icd10,
+                "predicted_icd10": primary_icd10,  # Primary code for backward compatibility
+                "predicted_icd10_codes": predicted_icd10_codes,  # All codes
                 "diagnoses": diagnoses_result
             }
             
@@ -69,13 +73,13 @@ class MedicalAnalysisService:
                 logger.warning("predict_diagnoses returned None, setting to empty dict")
                 medical_analysis["diagnoses"] = {}
             
-            # Add ICD-10 description if we have the code
-            if medical_analysis["predicted_icd10"] and self.db:
-                icd10_description = self.lookup_icd10_description(medical_analysis["predicted_icd10"])
+            # Add ICD-10 description if we have codes (use primary code for description)
+            if primary_icd10 and self.db:
+                icd10_description = self.lookup_icd10_description(primary_icd10)
                 if icd10_description:
                     medical_analysis["icd10_description"] = icd10_description
                 else:
-                    logger.warning(f"Could not find ICD-10 description for: {medical_analysis['predicted_icd10']}")
+                    logger.warning(f"Could not find ICD-10 description for: {primary_icd10}")
             
             # Extract treatment options from diagnoses if available (needed for CPT code prediction)
             treatment_options = []
@@ -118,7 +122,8 @@ class MedicalAnalysisService:
                 "user_diagnosis": diagnosis,  # User-entered diagnosis text
                 
                 # Medical analysis data (flattened for frontend compatibility)
-                "predicted_icd10": medical_analysis["predicted_icd10"],
+                "predicted_icd10": medical_analysis["predicted_icd10"],  # Primary code for backward compatibility
+                "predicted_icd10_codes": medical_analysis.get("predicted_icd10_codes", []),  # All ICD-10 codes
                 "icd10_description": medical_analysis.get("icd10_description"),
                 "icd10_prompt_text": icd10_prompt_text,  # Actual GPT prompt used to generate ICD-10 code
                 "determined_specialty": determined_specialty,  # Specialty determined for provider search
@@ -131,7 +136,7 @@ class MedicalAnalysisService:
                 "diagnoses": medical_analysis["diagnoses"]
             }
             
-            logger.info(f"Comprehensive analysis completed: ICD-10={comprehensive_result['predicted_icd10']}, {len(treatment_options)} treatment options")
+            logger.info(f"Comprehensive analysis completed: ICD-10 codes={comprehensive_result.get('predicted_icd10_codes', [])}, {len(treatment_options)} treatment options")
             return comprehensive_result
             
         except Exception as e:
@@ -195,9 +200,11 @@ class MedicalAnalysisService:
         anatomical_location: str = "",
         pdf_content: str = "",
         custom_prompt: Optional[str] = None
-    ) -> Tuple[Optional[str], str]:
+    ) -> Tuple[List[str], str]:
         """
-        Use GPT to predict the most accurate ICD-10 code based on patient information.
+        Use GPT to predict all possible ICD-10 codes based on patient information.
+        Includes codes for similar/related pathology from nearby anatomic locations.
+        May include codes with "uncertain" or "unspecified" in descriptions.
         
         Args:
             diagnosis: Patient diagnosis
@@ -206,7 +213,7 @@ class MedicalAnalysisService:
             custom_prompt: Optional custom prompt to override default
             
         Returns:
-            Tuple of (ICD-10 code as string or None if failed, rendered prompt text)
+            Tuple of (List of ICD-10 codes, rendered prompt text)
         """
         try:
             # Use custom prompt if provided, otherwise use default
@@ -239,19 +246,26 @@ class MedicalAnalysisService:
                 else:
                     rendered_prompt = custom_prompt
             else:
-                prompt_template = """
-                Patient Information:
-                Diagnosis: {diagnosis}
-                Anatomical Location: {anatomical_location}
-                
-                Additional Information from Medical Records/PDFs:
-                {pdf_content}
-                
-                Return ONLY the ICD-10 code.
-                Example: I21.9
-                
-                No other text.
-                """
+                prompt_template = """Patient Information:
+Diagnosis: {diagnosis}
+Anatomical Location: {anatomical_location}
+
+Additional Information from Medical Records/PDFs:
+{pdf_content}
+
+Provide ALL possible ICD-10 codes for this diagnosis, including:
+- Codes for similar or related pathology
+- Codes from nearby or adjacent anatomic locations
+- Codes that may use terms like "uncertain" or "unspecified" in their descriptions
+
+Return the response in this exact JSON format:
+[
+    "ICD10_CODE",
+    "ICD10_CODE",
+    "ICD10_CODE"
+]
+
+Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO additional text."""
                 
                 # Render the prompt with actual values to capture what was sent to GPT
                 rendered_prompt = prompt_template.format(
@@ -295,22 +309,53 @@ class MedicalAnalysisService:
                 "pdf_content": pdf_content
             })
             
-            # Extract the ICD-10 code from the response - LCEL returns AIMessage object
-            icd_code = response.content.strip() if hasattr(response, 'content') else str(response).strip()
+            # Extract the ICD-10 codes from the response - LCEL returns AIMessage object
+            response_text = response.content.strip() if hasattr(response, 'content') else str(response).strip()
             
-            # Clean up the response (remove quotes, extra punctuation, etc.)
-            icd_code = icd_code.replace('"', '').replace("'", "").strip()
+            # Clean up the response (remove markdown formatting if present)
+            if response_text.startswith('```json'):
+                response_text = response_text.replace('```json', '').replace('```', '').strip()
+            elif response_text.startswith('```'):
+                response_text = response_text.replace('```', '').strip()
             
-            # Basic validation that it looks like an ICD-10 code (letter followed by numbers)
-            if len(icd_code) >= 3 and icd_code[0].isalpha() and any(c.isdigit() for c in icd_code):
-                return icd_code, rendered_prompt
-            else:
-                logger.warning(f"GPT returned invalid ICD-10 code: {icd_code}")
-                return None, rendered_prompt
+            # Extract JSON array
+            first_bracket = response_text.find('[')
+            last_bracket = response_text.rfind(']')
+            if first_bracket != -1 and last_bracket != -1:
+                response_text = response_text[first_bracket:last_bracket + 1]
+            
+            # Parse JSON array
+            try:
+                icd_codes = json.loads(response_text)
+                if not isinstance(icd_codes, list):
+                    # If single code returned, wrap in list
+                    icd_codes = [icd_codes] if icd_codes else []
+                
+                # Validate and clean each code
+                valid_codes = []
+                for code in icd_codes:
+                    code_str = str(code).strip().replace('"', '').replace("'", "")
+                    # Basic validation that it looks like an ICD-10 code (letter followed by numbers)
+                    if len(code_str) >= 3 and code_str[0].isalpha() and any(c.isdigit() for c in code_str):
+                        valid_codes.append(code_str)
+                    else:
+                        logger.warning(f"GPT returned invalid ICD-10 code: {code_str}")
+                
+                if valid_codes:
+                    logger.info(f"GPT returned {len(valid_codes)} ICD-10 codes: {valid_codes}")
+                    return valid_codes, rendered_prompt
+                else:
+                    logger.warning("No valid ICD-10 codes found in GPT response")
+                    return [], rendered_prompt
+                    
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to parse ICD-10 codes JSON: {e}")
+                logger.debug(f"Response text: {response_text[:500]}")
+                return [], rendered_prompt
                 
         except Exception as e:
-            logger.error(f"Error in GPT ICD-10 prediction: {e}")
-            return None, rendered_prompt if 'rendered_prompt' in locals() else ""
+            logger.error(f"Error in GPT ICD-10 prediction: {e}", exc_info=True)
+            return [], rendered_prompt if 'rendered_prompt' in locals() else ""
 
     async def generate_search_query(
         self,
@@ -684,12 +729,12 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             logger.error(f"Error predicting CPT codes: {e}", exc_info=True)
             return [], ""
     
-    def get_cpt_codes_from_icd10(self, icd10_code: str) -> List[Dict[str, str]]:
+    def get_cpt_codes_from_icd10(self, icd10_codes: List[str]) -> List[Dict[str, str]]:
         """
-        Query database to get CPT codes mapped to an ICD-10 code.
+        Query database to get CPT codes mapped to one or more ICD-10 codes.
         
         Args:
-            icd10_code: ICD-10 code (e.g., "D35.2")
+            icd10_codes: List of ICD-10 codes (e.g., ["D35.2", "D35.1"])
             
         Returns:
             List of dictionaries containing CPT code and description
@@ -698,17 +743,19 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             logger.warning("Cannot query CPT codes - no database session")
             return []
         
-        if not icd10_code:
+        if not icd10_codes or len(icd10_codes) == 0:
             return []
         
         try:
-            # Keep dots in ICD-10 code (database stores with dots)
-            # Just strip whitespace and uppercase
-            cleaned_icd = icd10_code.strip().upper()
+            # Normalize all ICD-10 codes (keep dots, uppercase)
+            cleaned_icds = [code.strip().upper() for code in icd10_codes if code and code.strip()]
             
-            # Query database for CPT codes
+            if not cleaned_icds:
+                return []
+            
+            # Query database for CPT codes matching any of the ICD-10 codes
             mappings = self.db.query(IcdCptMapping).filter(
-                IcdCptMapping.icd10_code == cleaned_icd
+                IcdCptMapping.icd10_code.in_(cleaned_icds)
             ).all()
             
             # Convert to list of dicts with unique CPT codes (deduplicate)
@@ -733,15 +780,15 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                     description = mapping.description or mapping.additional_field or ""
                     cpt_codes_dict[cpt_code] = {
                         "code": cpt_code,
-                        "description": description.strip() if description else f"CPT code for ICD-10 {icd10_code}"
+                        "description": description.strip() if description else f"CPT code for ICD-10 {mapping.icd10_code}"
                     }
             
             cpt_codes = list(cpt_codes_dict.values())
-            logger.info(f"Found {len(cpt_codes)} CPT codes for ICD-10 code {icd10_code}")
+            logger.info(f"Found {len(cpt_codes)} CPT codes for {len(cleaned_icds)} ICD-10 code(s): {cleaned_icds}")
             return cpt_codes
             
         except Exception as e:
-            logger.error(f"Error querying CPT codes from ICD-10 {icd10_code}: {e}", exc_info=True)
+            logger.error(f"Error querying CPT codes from ICD-10 codes {icd10_codes}: {e}", exc_info=True)
             return []
     
     async def categorize_cpt_codes(
@@ -913,7 +960,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         treatment_options: List[Dict[str, str]],
         anatomical_location: str = "",
         custom_prompt: Optional[str] = None,
-        icd10_code: Optional[str] = None
+        icd10_code: Optional[List[str]] = None  # List of ICD-10 codes
     ) -> Tuple[List[Dict[str, str]], str, List[Dict[str, str]]]:
         """
         Generate CPT codes from search query and treatment options.
@@ -944,8 +991,10 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         async def get_db_codes():
             if icd10_code:
                 # Run database query in thread pool since it's synchronous
+                # Handle both single code (string) and multiple codes (list) for backward compatibility
+                codes_list = icd10_code if isinstance(icd10_code, list) else [icd10_code]
                 loop = asyncio.get_event_loop()
-                return await loop.run_in_executor(None, self.get_cpt_codes_from_icd10, icd10_code)
+                return await loop.run_in_executor(None, self.get_cpt_codes_from_icd10, codes_list)
             return []
         
         # Execute both in parallel

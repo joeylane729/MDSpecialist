@@ -306,7 +306,8 @@ export interface ICD10CodeGenerationRequest {
 }
 
 export interface ICD10CodeGenerationResponse {
-  predicted_icd10: string | null;
+  predicted_icd10: string | null;  // Primary code for backward compatibility
+  predicted_icd10_codes: string[];  // All ICD-10 codes
   icd10_description: string | null;
   icd10_prompt_text: string;
 }

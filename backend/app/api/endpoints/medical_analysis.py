@@ -122,22 +122,26 @@ async def regenerate_icd10_code(
     This endpoint is called separately to regenerate the ICD-10 code with a custom prompt.
     """
     try:
-        # Initialize service and generate ICD-10 code
+        # Initialize service and generate ICD-10 codes
         medical_analysis_service = MedicalAnalysisService(db)
-        icd10_code, icd10_prompt_text = await medical_analysis_service.predict_icd10_code(
+        icd10_codes, icd10_prompt_text = await medical_analysis_service.predict_icd10_code(
             diagnosis=diagnosis,
             anatomical_location=anatomical_location or "",
             pdf_content=pdf_content or "",
             custom_prompt=custom_prompt
         )
         
-        # Look up description if we have the code
+        # Use first code as primary for backward compatibility
+        primary_icd10 = icd10_codes[0] if icd10_codes else None
+        
+        # Look up description for primary code if we have codes
         icd10_description = None
-        if icd10_code and db:
-            icd10_description = medical_analysis_service.lookup_icd10_description(icd10_code)
+        if primary_icd10 and db:
+            icd10_description = medical_analysis_service.lookup_icd10_description(primary_icd10)
         
         return {
-            "predicted_icd10": icd10_code,
+            "predicted_icd10": primary_icd10,  # Primary code for backward compatibility
+            "predicted_icd10_codes": icd10_codes,  # All codes
             "icd10_description": icd10_description,
             "icd10_prompt_text": icd10_prompt_text,
         }
@@ -158,7 +162,7 @@ async def generate_cpt_codes(
     treatment_options_json: str = Form(...),  # JSON array of treatment options
     anatomical_location: Optional[str] = Form(None),
     custom_prompt: Optional[str] = Form(None),  # Optional custom prompt to override default
-    icd10_code: Optional[str] = Form(None),  # Optional ICD-10 code to query database for mapped CPT codes
+    icd10_code: Optional[str] = Form(None),  # Optional ICD-10 code(s) - comma-separated for multiple codes
     db: Session = Depends(get_db)
 ):
     """
@@ -183,12 +187,17 @@ async def generate_cpt_codes(
         
         # Initialize service and generate CPT codes (both GPT and database)
         medical_analysis_service = MedicalAnalysisService(db)
+        # Parse comma-separated ICD-10 codes if provided
+        icd10_codes_list = None
+        if icd10_code:
+            icd10_codes_list = [code.strip() for code in icd10_code.split(',') if code.strip()]
+        
         gpt_cpt_codes, cpt_prompt_text, db_cpt_codes = await medical_analysis_service.generate_cpt_codes_from_analysis(
             search_query=search_query,
             treatment_options=treatment_options,
             anatomical_location=anatomical_location or "",
             custom_prompt=custom_prompt,
-            icd10_code=icd10_code
+            icd10_code=icd10_codes_list  # Pass as list
         )
         
         return {
@@ -217,17 +226,20 @@ async def get_cpt_codes_by_icd10(
     Excludes codes starting with "98" or "99".
     
     Args:
-        icd10_code: ICD-10 code (e.g., "D35.2")
+        icd10_code: ICD-10 code (e.g., "D35.2") or comma-separated codes (e.g., "D35.2,D35.1")
         
     Returns:
         Dictionary with list of CPT codes and their descriptions
     """
     try:
         medical_analysis_service = MedicalAnalysisService(db)
-        cpt_codes = medical_analysis_service.get_cpt_codes_from_icd10(icd10_code)
+        # Support comma-separated codes for multiple ICD-10 codes
+        icd10_codes_list = [code.strip() for code in icd10_code.split(',') if code.strip()]
+        cpt_codes = medical_analysis_service.get_cpt_codes_from_icd10(icd10_codes_list)
         
         return {
-            "icd10_code": icd10_code,
+            "icd10_code": icd10_code,  # Original input
+            "icd10_codes": icd10_codes_list,  # Parsed list
             "cpt_codes": cpt_codes,
             "count": len(cpt_codes)
         }

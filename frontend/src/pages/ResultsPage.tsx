@@ -19,7 +19,8 @@ interface SearchParams {
   diagnosis: string;
   anatomical_location?: string;
   determined_specialty?: string;
-  predicted_icd10?: string;
+  predicted_icd10?: string;  // Primary code for backward compatibility
+  predicted_icd10_codes?: string[];  // All ICD-10 codes
   icd10_description?: string;
   treatment_options?: Array<{
     name: string;
@@ -965,6 +966,7 @@ const ResultsPage: React.FC = () => {
         const newSearchParams: SearchParams = {
           ...searchParams!,
           predicted_icd10: response.patient_profile.predicted_icd10,
+          predicted_icd10_codes: response.patient_profile.predicted_icd10_codes,
           icd10_description: response.patient_profile.icd10_description,
           icd10_prompt_text: response.patient_profile.icd10_prompt_text,
           treatment_options: response.patient_profile.treatment_options,
@@ -1053,6 +1055,7 @@ const ResultsPage: React.FC = () => {
       const newSearchParams: SearchParams = {
         ...searchParams,
         predicted_icd10: response.predicted_icd10 || undefined,
+        predicted_icd10_codes: response.predicted_icd10_codes || undefined,
         icd10_description: response.icd10_description || undefined,
         icd10_prompt_text: response.icd10_prompt_text
       };
@@ -1178,17 +1181,25 @@ const ResultsPage: React.FC = () => {
         return;
       }
       
-      // Get ICD-10 code if available
-      const icd10Code = searchParams?.predicted_icd10 || location.state?.aiRecommendations?.patient_profile?.predicted_icd10;
+      // Get ICD-10 code(s) if available - handle both single code (string) and multiple codes (array)
+      const icd10CodeOrCodes = searchParams?.predicted_icd10 || location.state?.aiRecommendations?.patient_profile?.predicted_icd10;
+      const icd10CodesList = searchParams?.predicted_icd10_codes || location.state?.aiRecommendations?.patient_profile?.predicted_icd10_codes;
+      
+      // Use list if available, otherwise use single code (for backward compatibility)
+      const icd10Codes = icd10CodesList && Array.isArray(icd10CodesList) && icd10CodesList.length > 0
+        ? icd10CodesList
+        : (icd10CodeOrCodes ? [icd10CodeOrCodes] : []);
       
       // Query database CPT codes once (same for all categories since they're based on ICD-10)
       let dbCptCodesResult: Array<{ code: string; description: string }> = [];
-      if (icd10Code) {
+      if (icd10Codes.length > 0) {
         try {
-          console.log(`🔍 Querying database for CPT codes from ICD-10 ${icd10Code} (once for all categories)...`);
-          const dbResponse = await api.get(`/api/v1/medical-analysis/cpt-codes-by-icd10/${encodeURIComponent(icd10Code.trim())}`);
+          // Join multiple codes with comma for API call
+          const icd10CodesStr = icd10Codes.join(',');
+          console.log(`🔍 Querying database for CPT codes from ICD-10 codes: ${icd10CodesStr} (once for all categories)...`);
+          const dbResponse = await api.get(`/api/v1/medical-analysis/cpt-codes-by-icd10/${encodeURIComponent(icd10CodesStr)}`);
           dbCptCodesResult = dbResponse.data.cpt_codes || [];
-          console.log(`✅ Found ${dbCptCodesResult.length} database CPT codes from ICD-10 ${icd10Code}`);
+          console.log(`✅ Found ${dbCptCodesResult.length} database CPT codes from ${icd10Codes.length} ICD-10 code(s)`);
           
           // Categorize database CPT codes using GPT
           if (dbCptCodesResult.length > 0 && selectedTreatmentOptions.length > 0) {
@@ -2065,10 +2076,18 @@ const ResultsPage: React.FC = () => {
                     <div className="border-l-4 border-green-500 pl-4">
                       <h3 className="text-lg font-medium text-gray-900 mb-2">Medical Analysis</h3>
                       <div className="space-y-2">
-                        {searchParams.predicted_icd10 && (
+                        {(searchParams.predicted_icd10 || (searchParams.predicted_icd10_codes && searchParams.predicted_icd10_codes.length > 0)) && (
                           <div>
-                            <span className="font-medium text-gray-700">ICD-10 Code: </span>
-                            <code className="bg-gray-100 px-2 py-1 rounded text-sm">{searchParams.predicted_icd10}</code>
+                            <span className="font-medium text-gray-700">ICD-10 Code(s): </span>
+                            {searchParams.predicted_icd10_codes && Array.isArray(searchParams.predicted_icd10_codes) && searchParams.predicted_icd10_codes.length > 1 ? (
+                              <div className="flex flex-wrap gap-2 mt-1">
+                                {searchParams.predicted_icd10_codes.map((code: string, idx: number) => (
+                                  <code key={idx} className="bg-gray-100 px-2 py-1 rounded text-sm">{code}</code>
+                                ))}
+                              </div>
+                            ) : (
+                              <code className="bg-gray-100 px-2 py-1 rounded text-sm">{searchParams.predicted_icd10 || (searchParams.predicted_icd10_codes?.[0])}</code>
+                            )}
                           </div>
                         )}
                         <div>
@@ -2641,7 +2660,15 @@ const ResultsPage: React.FC = () => {
                   {activeCptSourceTab === 'database' && dbCptCodes && dbCptCodes.length > 0 && (
                     <>
                       <div className="text-sm text-gray-600 mb-3">
-                        CPT codes mapped from ICD-10 code: <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">{searchParams?.predicted_icd10 || location.state?.aiRecommendations?.patient_profile?.predicted_icd10 || 'N/A'}</code>
+                        CPT codes mapped from ICD-10 code(s): <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">
+                          {(() => {
+                            const codes = searchParams?.predicted_icd10_codes || location.state?.aiRecommendations?.patient_profile?.predicted_icd10_codes;
+                            if (codes && Array.isArray(codes) && codes.length > 0) {
+                              return codes.join(', ');
+                            }
+                            return searchParams?.predicted_icd10 || location.state?.aiRecommendations?.patient_profile?.predicted_icd10 || 'N/A';
+                          })()}
+                        </code>
                       </div>
                       
                       {/* Categorization GPT Prompt Instructions (collapsed by default) */}
@@ -3174,7 +3201,9 @@ const ResultsPage: React.FC = () => {
                     searchInputs: {
                       userDiagnosis: searchParams?.diagnosis,
                       medicalAnalysisDiagnosis: searchParams?.icd10_description,
-                      icd10Code: searchParams?.predicted_icd10,
+                      icd10Code: (searchParams?.predicted_icd10_codes && searchParams.predicted_icd10_codes.length > 0) 
+                        ? searchParams.predicted_icd10_codes.join(',')
+                        : searchParams?.predicted_icd10,
                       city: searchParams?.city,
                       state: searchParams?.state,
                       specialty: searchParams?.determined_specialty
@@ -3212,7 +3241,15 @@ const ResultsPage: React.FC = () => {
                   </div>
                   <div>
                     <span className="text-gray-400">ICD-10 Code:</span>
-                    <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">{searchParams?.predicted_icd10 || 'N/A'}</p>
+                    <p className="text-white font-mono bg-gray-900 p-2 rounded mt-1">
+                      {(() => {
+                        const codes = searchParams?.predicted_icd10_codes;
+                        if (codes && Array.isArray(codes) && codes.length > 0) {
+                          return codes.join(', ');
+                        }
+                        return searchParams?.predicted_icd10 || 'N/A';
+                      })()}
+                    </p>
                   </div>
                   <div>
                     <span className="text-gray-400">Location:</span>
