@@ -23,8 +23,6 @@ interface SearchParams {
   icd10_description?: string;
   treatment_options?: Array<{
     name: string;
-    outcomes: string;
-    complications: string;
     category?: string;
   }>;
   cpt_codes?: Array<{
@@ -42,8 +40,6 @@ interface SearchParams {
 
 interface TreatmentOption {
   name: string;
-  outcomes: string;
-  complications: string;
   category?: string;
 }
 
@@ -53,8 +49,6 @@ const getTreatmentOptions = (searchParams: any, aiRecommendations?: any): Treatm
   if (searchParams?.treatment_options && Array.isArray(searchParams.treatment_options) && searchParams.treatment_options.length > 0) {
     return searchParams.treatment_options.map((option: any) => ({
       name: option.name || "Treatment Option",
-      outcomes: option.outcomes || "Outcomes not specified",
-      complications: option.complications || "Complications not specified",
       category: option.category || "Medical"
     }));
   }
@@ -63,8 +57,6 @@ const getTreatmentOptions = (searchParams: any, aiRecommendations?: any): Treatm
   if (aiRecommendations?.patient_profile?.treatment_options && Array.isArray(aiRecommendations.patient_profile.treatment_options) && aiRecommendations.patient_profile.treatment_options.length > 0) {
     return aiRecommendations.patient_profile.treatment_options.map((option: any) => ({
       name: option.name || "Treatment Option",
-      outcomes: option.outcomes || "Outcomes not specified",
-      complications: option.complications || "Complications not specified",
       category: option.category || "Medical"
     }));
   }
@@ -2144,7 +2136,7 @@ const ResultsPage: React.FC = () => {
                   )}
                 </div>
               </div>
-              {/* Treatment Options with Outcomes and Complications */}
+              {/* Treatment Options */}
               <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">Treatment Options</h2>
               
@@ -2221,17 +2213,13 @@ const ResultsPage: React.FC = () => {
                               />
                               <span className="text-sm text-gray-700 font-bold">{index + 1}.</span>
                               <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
+                                <div className="flex items-center gap-2">
                                   <h4 className="font-medium text-gray-900 text-sm">{treatment.name}</h4>
                                   {treatment.category && (
                                     <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
                                       {treatment.category}
                                     </span>
                                   )}
-                                </div>
-                                <div className="grid grid-cols-2 gap-4 text-xs text-gray-600">
-                                  <div><span className="font-medium">Outcomes:</span> {treatment.outcomes}</div>
-                                  <div><span className="font-medium">Complications:</span> {treatment.complications}</div>
                                 </div>
                               </div>
                             </div>

@@ -147,8 +147,7 @@ export interface PatientProfile {
   // Active fields
   treatment_options?: Array<{
     name: string;
-    outcomes: string;
-    complications: string;
+    category?: string;
   }>;
   search_query?: string;  // Pre-generated search query
   search_query_prompt_text?: string;  // GPT prompt text used to generate search query
@@ -186,7 +185,7 @@ export interface SpecialistRecommendationRequest {
   files?: File[];
   cpt_codes?: Array<{ code: string; description: string }>;  // Optional CPT codes to reuse (avoids duplicate generation)
   // Medical analysis results to reuse (avoids duplicate GPT calls)
-  treatment_options?: Array<{ name: string; outcomes: string; complications: string; category?: string }>;
+  treatment_options?: Array<{ name: string; category?: string }>;
   predicted_icd10?: string;
   icd10_description?: string;
   search_query?: string;
@@ -316,8 +315,7 @@ export interface CPTCodeGenerationRequest {
   search_query: string;
   treatment_options: Array<{
     name: string;
-    outcomes: string;
-    complications: string;
+    category?: string;
   }>;
   anatomical_location?: string; // Optional anatomical location
   custom_prompt?: string; // Optional custom prompt to override default
@@ -455,8 +453,6 @@ export interface CategorizeCPTCodesRequest {
   }>;
   treatment_options: Array<{
     name: string;
-    outcomes: string;
-    complications: string;
     category?: string;
   }>;
 }

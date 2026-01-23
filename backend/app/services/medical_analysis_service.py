@@ -456,7 +456,7 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
         
         Args:
             search_query_terms: List of diagnosis terms/descriptions from the search query (e.g., ["acoustic neuroma", "vestibular schwannoma", ...])
-            treatment_options: Optional list of treatment options with name, outcomes, and complications
+            treatment_options: Optional list of treatment options with name and category
             anatomical_location: Anatomical location of the condition (e.g., "brain", "spine", "arm")
             custom_prompt: Optional custom prompt to override default
             
@@ -860,7 +860,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         
         Args:
             search_query: Search query string (typically from generate_search_query)
-            treatment_options: List of treatment options with name, outcomes, and complications
+            treatment_options: List of treatment options with name and category
             anatomical_location: Anatomical location of the condition (e.g., "brain", "spine", "arm")
             custom_prompt: Optional custom prompt to override default
             icd10_code: Optional ICD-10 code to query database for mapped CPT codes
@@ -1302,8 +1302,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                     "treatment_options": [
                         {{
                             "name": "Treatment name",
-                            "outcomes": "Expected outcomes and success rates",
-                            "complications": "Potential complications and risks",
                             "category": "Category of the treatment option"
                         }}
                     ]
