@@ -2113,11 +2113,11 @@ const ResultsPage: React.FC = () => {
                     <p className="text-gray-700">{searchParams?.diagnosis || 'No diagnosis provided'}</p>
                   </div>
 
-                  {/* Medical Analysis Results */}
+                  {/* ICD Codes Results */}
                   {(searchParams?.icd10_description || (searchParams?.predicted_icd10_codes && searchParams.predicted_icd10_codes.length > 0)) && (
                     <div className="border-l-4 border-green-500 pl-4">
-                      <h3 className="text-lg font-medium text-gray-900 mb-3">Medical Analysis</h3>
-                      <div className="space-y-3">
+                      <h3 className="text-lg font-medium text-gray-900 mb-3">ICD Codes</h3>
+                      <div className="max-h-96 overflow-y-auto space-y-2 pr-2">
                         {searchParams.predicted_icd10_codes && Array.isArray(searchParams.predicted_icd10_codes) && searchParams.predicted_icd10_codes.length > 0 ? (
                           // Show all codes with their descriptions in a list format
                           <div className="space-y-2">

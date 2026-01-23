@@ -625,6 +625,7 @@ const HomePage: React.FC = () => {
             predicted_icd10: aiRecommendations?.patient_profile?.predicted_icd10,
             predicted_icd10_codes: aiRecommendations?.patient_profile?.predicted_icd10_codes,
             icd10_description: aiRecommendations?.patient_profile?.icd10_description,
+            icd10_descriptions: aiRecommendations?.patient_profile?.icd10_descriptions,
             treatment_options: aiRecommendations?.patient_profile?.treatment_options,
             cpt_codes: aiRecommendations?.patient_profile?.cpt_codes,
             cpt_prompt_text: aiRecommendations?.patient_profile?.cpt_prompt_text,
