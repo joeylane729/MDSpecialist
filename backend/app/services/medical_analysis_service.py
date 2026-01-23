@@ -823,7 +823,6 @@ Return the response in this exact JSON format:
 [
     {{
         "code": "CPT_CODE",
-        "description": "Procedure description",
         "category": "Category name"
     }}
 ]
@@ -880,13 +879,17 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             # Create a map of code -> category for quick lookup
             category_map = {item['code']: item.get('category', 'Medical') for item in categorized_codes if 'code' in item}
             
+            # Create a map of code -> description from original CPT codes
+            description_map = {cpt['code']: cpt.get('description', '') for cpt in cpt_codes}
+            
             # Apply categories to all CPT codes (including those not in GPT response)
+            # Attach descriptions from original data
             result = []
             for cpt in cpt_codes:
                 category = category_map.get(cpt['code'], 'Medical')  # Default to Medical if not categorized
                 result.append({
                     "code": cpt['code'],
-                    "description": cpt.get('description', ''),
+                    "description": description_map.get(cpt['code'], ''),  # Use description from original data
                     "category": category
                 })
             
