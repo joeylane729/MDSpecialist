@@ -2764,7 +2764,7 @@ const ResultsPage: React.FC = () => {
                         Side-by-side comparison of GPT-generated and AAPC database-mapped CPT codes across all categories.
                       </div>
                       
-                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                      <div className="space-y-1.5 max-h-96 overflow-y-auto">
                         {(() => {
                           // Get all GPT codes (flattened from categories or legacy format)
                           const allGptCodes: Array<{ code: string; description: string; category?: string }> = hasCptCodesByCategory
@@ -2816,35 +2816,35 @@ const ResultsPage: React.FC = () => {
                             }
                             
                             return (
-                              <div key={index} className={`${bgColor} rounded-lg p-4 border-2 ${borderColor}`}>
-                                <div className="flex items-start gap-4">
+                              <div key={index} className={`${bgColor} rounded-lg p-2 border-2 ${borderColor}`}>
+                                <div className="flex items-start gap-2">
                                   <div className="flex-1">
-                                    <div className="flex items-center gap-3 mb-2">
-                                      <code className="bg-white px-3 py-1 rounded text-sm font-semibold text-gray-900 border border-gray-300">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <code className="bg-white px-2 py-0.5 rounded text-sm font-semibold text-gray-900 border border-gray-300">
                                         {code}
                                       </code>
-                                      <div className="flex gap-2">
+                                      <div className="flex gap-1.5">
                                         {inGpt && (
-                                          <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                                          <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
                                             GPT
                                           </span>
                                         )}
                                         {inDb && (
-                                          <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                                          <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
                                             AAPC
                                           </span>
                                         )}
                                         {inGpt && inDb && (
-                                          <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                                          <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
                                             Both
                                           </span>
                                         )}
                                       </div>
                                     </div>
-                                    <p className="text-sm text-gray-700 mb-2">
+                                    <p className="text-xs text-gray-700 mb-1">
                                       {gptInfo?.description || dbInfo?.description || 'No description available'}
                                     </p>
-                                    <div className="flex gap-4 text-xs">
+                                    <div className="flex gap-3 text-xs">
                                       {inGpt && gptInfo?.category && (
                                         <div>
                                           <span className="font-medium text-gray-600">GPT Category:</span>{' '}
