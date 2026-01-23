@@ -980,6 +980,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             # Apply categories to all CPT codes (including those not in GPT response)
             # Attach descriptions from original data
             result = []
+            category_counts = {}
             for cpt in cpt_codes:
                 category = category_map.get(cpt['code'], 'Medical')  # Default to Medical if not categorized
                 result.append({
@@ -987,8 +988,10 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                     "description": description_map.get(cpt['code'], ''),  # Use description from original data
                     "category": category
                 })
+                category_counts[category] = category_counts.get(category, 0) + 1
             
             logger.info(f"Categorized {len(result)} CPT codes using GPT")
+            logger.info(f"Category distribution: {dict(sorted(category_counts.items(), key=lambda x: x[1], reverse=True))}")
             return result, rendered_prompt
             
         except Exception as e:
