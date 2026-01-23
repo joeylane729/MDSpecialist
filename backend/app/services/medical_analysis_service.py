@@ -817,6 +817,8 @@ CPT Codes:
 
 For each CPT code, assign it to the most appropriate category based on the procedure type and treatment approach.
 
+IMPORTANT: Use only 2-5 distinct categories total. Group similar procedures together into the same category.
+
 Return the response in this exact JSON format:
 [
     {{
@@ -968,6 +970,20 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         Returns:
             Dictionary with 'url', 'urls', 'results' (grouped by provider), and metadata
         """
+        # TEMPORARILY DISABLED: CMS API calls take too long and are being skipped for testing other features.
+        # The search functionality will still work without CMS data - it just won't include clinical volume metrics.
+        # To re-enable, remove this early return block.
+        return {
+            "url": None,
+            "urls": [],
+            "results": [],
+            "total_results": 0,
+            "total_providers": 0,
+            "cpt_codes_searched": [cpt.get("code", "") for cpt in cpt_codes] if cpt_codes else [],
+            "years_queried": [],
+            "error": None
+        }
+        
         if not cpt_codes or len(cpt_codes) == 0:
             logger.warning("No CPT codes provided for CMS API query")
             return {
