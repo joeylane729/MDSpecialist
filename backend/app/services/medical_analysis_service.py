@@ -834,6 +834,80 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             logger.error(f"Error querying CPT codes from ICD-10 codes {icd10_codes}: {e}", exc_info=True)
             return []
     
+    async def _get_categories_from_codes(
+        self,
+        cpt_codes: List[Dict[str, str]]
+    ) -> List[str]:
+        """
+        Step 1: Get 5 best categories that encompass all CPT codes.
+        
+        Args:
+            cpt_codes: List of all CPT codes with code and description
+            
+        Returns:
+            List of 5 category names
+        """
+        try:
+            # Format all CPT codes for prompt (just codes and descriptions, no need to limit)
+            cpt_codes_text = "\n".join([f"- {cpt['code']}: {cpt.get('description', '')}" for cpt in cpt_codes])
+            
+            prompt_template = """Analyze the following CPT codes and determine the 5 best categories that encompass all of them.
+
+CPT Codes:
+{cpt_codes}
+
+Based on these codes, identify exactly 5 distinct categories that best group all these procedures. Categories should be:
+- Broad enough to encompass multiple related procedures
+- Specific enough to be meaningful
+- Between 1-3 words each
+- Mutually exclusive (no overlap)
+
+Return ONLY a JSON array of exactly 5 category names:
+["Category 1", "Category 2", "Category 3", "Category 4", "Category 5"]
+
+Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO additional text."""
+            
+            prompt = PromptTemplate(
+                input_variables=["cpt_codes"],
+                template=prompt_template
+            )
+            
+            chain = prompt | self.llm
+            response = await chain.ainvoke({"cpt_codes": cpt_codes_text})
+            
+            # Extract JSON response
+            response_text = response.content.strip() if hasattr(response, 'content') else str(response).strip()
+            
+            # Clean up response
+            if response_text.startswith('```json'):
+                response_text = response_text.replace('```json', '').replace('```', '').strip()
+            elif response_text.startswith('```'):
+                response_text = response_text.replace('```', '').strip()
+            
+            # Extract JSON array
+            first_bracket = response_text.find('[')
+            last_bracket = response_text.rfind(']')
+            if first_bracket != -1 and last_bracket != -1:
+                response_text = response_text[first_bracket:last_bracket + 1]
+            
+            # Parse JSON
+            categories = json.loads(response_text)
+            
+            if not isinstance(categories, list) or len(categories) != 5:
+                logger.warning(f"GPT returned {len(categories) if isinstance(categories, list) else 'non-list'} categories, expected 5. Using first 5 or defaulting.")
+                if isinstance(categories, list):
+                    categories = categories[:5]
+                else:
+                    categories = ["Medical", "Surgery", "Radiosurgery", "Diagnostic", "Therapeutic"]
+            
+            logger.info(f"GPT determined 5 categories: {categories}")
+            return categories[:5]  # Ensure exactly 5
+            
+        except Exception as e:
+            logger.error(f"Error getting categories from GPT: {e}", exc_info=True)
+            # Default categories
+            return ["Medical", "Surgery", "Radiosurgery", "Diagnostic", "Therapeutic"]
+    
     async def categorize_cpt_codes(
         self,
         cpt_codes: List[Dict[str, str]],
@@ -842,6 +916,9 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
     ) -> Tuple[List[Dict[str, str]], str]:
         """
         Use GPT to assign categories to CPT codes from database.
+        Two-step process:
+        1. First, get 5 best categories from all codes
+        2. Then, categorize codes in batches of 10 using those categories
         
         Args:
             cpt_codes: List of CPT codes with code and description
@@ -855,10 +932,150 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             return [], ""
         
         try:
-            # Format CPT codes for prompt
-            cpt_codes_text = "\n".join([f"- {cpt['code']}: {cpt.get('description', '')}" for cpt in cpt_codes[:50]])  # Limit to 50 for prompt size
-            if len(cpt_codes) > 50:
-                cpt_codes_text += f"\n... and {len(cpt_codes) - 50} more codes"
+            # Step 1: Get 5 categories from all codes
+            logger.info(f"Step 1: Getting 5 categories from {len(cpt_codes)} CPT codes...")
+            categories = await self._get_categories_from_codes(cpt_codes)
+            categories_text = ", ".join(categories)
+            
+            # Step 2: Categorize codes in batches of 10
+            logger.info(f"Step 2: Categorizing {len(cpt_codes)} codes in batches of 10 using categories: {categories_text}")
+            
+            # Create a map of code -> description from original CPT codes
+            description_map = {cpt['code']: cpt.get('description', '') for cpt in cpt_codes}
+            
+            # Process in batches of 10
+            batch_size = 10
+            all_categorized = []
+            
+            for i in range(0, len(cpt_codes), batch_size):
+                batch = cpt_codes[i:i + batch_size]
+                batch_num = (i // batch_size) + 1
+                total_batches = (len(cpt_codes) + batch_size - 1) // batch_size
+                logger.info(f"Processing batch {batch_num}/{total_batches} ({len(batch)} codes)...")
+                
+                # Format batch for prompt
+                batch_codes_text = "\n".join([f"- {cpt['code']}: {cpt.get('description', '')}" for cpt in batch])
+                
+                # Use custom prompt if provided, otherwise use default with predefined categories
+                if custom_prompt:
+                    # For custom prompts, we'll still use the categories we determined
+                    prompt_template = custom_prompt.replace("{categories}", categories_text).replace("{cpt_codes}", batch_codes_text)
+                    rendered_prompt = prompt_template
+                    prompt = PromptTemplate(
+                        input_variables=[],
+                        template=prompt_template
+                    )
+                else:
+                    prompt_template = """Categorize the following CPT codes into ONE of these 5 categories:
+
+Categories (you MUST use only these):
+{categories}
+
+CPT Codes:
+{cpt_codes}
+
+For each CPT code, assign it to the most appropriate category from the list above.
+
+Return the response in this exact JSON format:
+[
+    {{
+        "code": "CPT_CODE",
+        "category": "Category name"
+    }}
+]
+
+Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO additional text. Use ONLY the categories provided above."""
+                    
+                    prompt = PromptTemplate(
+                        input_variables=["categories", "cpt_codes"],
+                        template=prompt_template
+                    )
+                    
+                    rendered_prompt = prompt_template.format(
+                        categories=categories_text,
+                        cpt_codes=batch_codes_text
+                    )
+                
+                # Create chain and invoke
+                chain = prompt | self.llm
+                
+                if custom_prompt:
+                    response = await chain.ainvoke({})
+                else:
+                    response = await chain.ainvoke({
+                        "categories": categories_text,
+                        "cpt_codes": batch_codes_text
+                    })
+                
+                # Extract JSON response
+                response_text = response.content.strip() if hasattr(response, 'content') else str(response).strip()
+                
+                # Clean up response
+                if response_text.startswith('```json'):
+                    response_text = response_text.replace('```json', '').replace('```', '').strip()
+                elif response_text.startswith('```'):
+                    response_text = response_text.replace('```', '').strip()
+                
+                # Extract JSON array
+                first_bracket = response_text.find('[')
+                last_bracket = response_text.rfind(']')
+                if first_bracket != -1 and last_bracket != -1:
+                    response_text = response_text[first_bracket:last_bracket + 1]
+                
+                # Parse JSON
+                try:
+                    batch_categorized = json.loads(response_text)
+                    all_categorized.extend(batch_categorized)
+                except json.JSONDecodeError as e:
+                    logger.error(f"Error parsing JSON for batch {batch_num}: {e}")
+                    # Add batch codes with default category
+                    for cpt in batch:
+                        all_categorized.append({
+                            "code": cpt['code'],
+                            "category": categories[0]  # Use first category as default
+                        })
+            
+            # Create a map of code -> category from all categorized results
+            category_map = {item['code']: item.get('category') for item in all_categorized if 'code' in item and item.get('category')}
+            
+            # Determine default category: use most common category from results
+            default_category = categories[0]
+            if category_map:
+                category_usage = {}
+                for cat in category_map.values():
+                    if cat:
+                        category_usage[cat] = category_usage.get(cat, 0) + 1
+                if category_usage:
+                    default_category = max(category_usage.items(), key=lambda x: x[1])[0]
+            
+            # Apply categories to all CPT codes (including those not in GPT response)
+            # Attach descriptions from original data
+            result = []
+            category_counts = {}
+            for cpt in cpt_codes:
+                category = category_map.get(cpt['code'], default_category)  # Default to most common category if not categorized
+                result.append({
+                    "code": cpt['code'],
+                    "description": description_map.get(cpt['code'], ''),  # Use description from original data
+                    "category": category
+                })
+                category_counts[category] = category_counts.get(category, 0) + 1
+            
+            logger.info(f"Categorized {len(result)} CPT codes using GPT")
+            logger.info(f"Category distribution: {dict(sorted(category_counts.items(), key=lambda x: x[1], reverse=True))}")
+            
+            # Build final rendered prompt (use the batch prompt format)
+            if not custom_prompt:
+                final_rendered_prompt = f"""Step 1: Determined 5 categories: {categories_text}
+
+Step 2: Categorize codes in batches using these categories:
+{categories_text}
+
+(Full prompt shown for first batch)"""
+            else:
+                final_rendered_prompt = rendered_prompt
+            
+            return result, final_rendered_prompt
             
             # Get categories from treatment options
             categories = list(set([opt.get('category', 'Medical') for opt in treatment_options if opt.get('category')]))
