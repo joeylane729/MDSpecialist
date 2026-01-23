@@ -747,20 +747,22 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
     async def categorize_cpt_codes(
         self,
         cpt_codes: List[Dict[str, str]],
-        treatment_options: List[Dict[str, str]]
-    ) -> List[Dict[str, str]]:
+        treatment_options: List[Dict[str, str]],
+        custom_prompt: Optional[str] = None
+    ) -> Tuple[List[Dict[str, str]], str]:
         """
         Use GPT to assign categories to CPT codes from database.
         
         Args:
             cpt_codes: List of CPT codes with code and description
             treatment_options: List of treatment options with categories (for context)
+            custom_prompt: Optional custom prompt to override default
             
         Returns:
-            List of CPT codes with category field added
+            Tuple of (List of CPT codes with category field added, rendered prompt text)
         """
         if not cpt_codes or len(cpt_codes) == 0:
-            return []
+            return [], ""
         
         try:
             # Format CPT codes for prompt
@@ -772,7 +774,43 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             categories = list(set([opt.get('category', 'Medical') for opt in treatment_options if opt.get('category')]))
             categories_text = ", ".join(categories) if categories else "Surgery, Radiosurgery, Medical"
             
-            prompt_template = """Categorize the following CPT codes into one of these categories: {categories}
+            # Use custom prompt if provided, otherwise use default
+            if custom_prompt:
+                # Escape all curly braces except for our template variables to prevent LangChain from parsing them
+                escaped_prompt = custom_prompt
+                # Temporarily replace our template variables with placeholders
+                escaped_prompt = escaped_prompt.replace("{categories}", "__CATEGORIES__")
+                escaped_prompt = escaped_prompt.replace("{cpt_codes}", "__CPT_CODES__")
+                # Escape all remaining curly braces
+                escaped_prompt = escaped_prompt.replace("{", "{{").replace("}", "}}")
+                # Restore our template variables
+                escaped_prompt = escaped_prompt.replace("{{__CATEGORIES__}}", "{categories}")
+                escaped_prompt = escaped_prompt.replace("{{__CPT_CODES__}}", "{cpt_codes}")
+                
+                prompt_template = escaped_prompt
+                # For custom prompts, format with the variables if they're present
+                if any(var in custom_prompt for var in ["{categories}", "{cpt_codes}"]):
+                    # Variables are present, use LangChain PromptTemplate
+                    input_vars = []
+                    if "{categories}" in custom_prompt:
+                        input_vars.append("categories")
+                    if "{cpt_codes}" in custom_prompt:
+                        input_vars.append("cpt_codes")
+                    prompt = PromptTemplate(
+                        input_variables=input_vars,
+                        template=prompt_template
+                    )
+                    invoke_dict = {}
+                    if "{categories}" in custom_prompt:
+                        invoke_dict["categories"] = categories_text
+                    if "{cpt_codes}" in custom_prompt:
+                        invoke_dict["cpt_codes"] = cpt_codes_text
+                    rendered_prompt = prompt.format(**invoke_dict)
+                else:
+                    # No variables, use prompt as-is
+                    rendered_prompt = custom_prompt
+            else:
+                prompt_template = """Categorize the following CPT codes into one of these categories: {categories}
 
 CPT Codes:
 {cpt_codes}
@@ -789,22 +827,37 @@ Return the response in this exact JSON format:
 ]
 
 Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO additional text."""
+                
+                prompt = PromptTemplate(
+                    input_variables=["categories", "cpt_codes"],
+                    template=prompt_template
+                )
+                
+                rendered_prompt = prompt_template.format(
+                    categories=categories_text,
+                    cpt_codes=cpt_codes_text
+                )
+                # Prompt already created above for default case (line 831)
             
-            prompt = PromptTemplate(
-                input_variables=["categories", "cpt_codes"],
-                template=prompt_template
-            )
-            
-            rendered_prompt = prompt_template.format(
-                categories=categories_text,
-                cpt_codes=cpt_codes_text
-            )
-            
+            # Create chain and invoke (prompt already created in both branches above)
             chain = prompt | self.llm
-            response = await chain.ainvoke({
-                "categories": categories_text,
-                "cpt_codes": cpt_codes_text
-            })
+            
+            # Invoke with variables - use the invoke_dict from custom prompt branch if it exists, otherwise build it
+            if custom_prompt and "{categories}" in custom_prompt:
+                # invoke_dict already created in custom_prompt branch above
+                response = await chain.ainvoke(invoke_dict)
+            elif custom_prompt and "{cpt_codes}" in custom_prompt:
+                # invoke_dict already created in custom_prompt branch above
+                response = await chain.ainvoke(invoke_dict)
+            elif custom_prompt:
+                # Custom prompt without variables
+                response = await chain.ainvoke({})
+            else:
+                # Default prompt - use variables
+                response = await chain.ainvoke({
+                    "categories": categories_text,
+                    "cpt_codes": cpt_codes_text
+                })
             
             # Extract JSON response
             response_text = response.content.strip() if hasattr(response, 'content') else str(response).strip()
@@ -838,12 +891,13 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 })
             
             logger.info(f"Categorized {len(result)} CPT codes using GPT")
-            return result
+            return result, rendered_prompt
             
         except Exception as e:
             logger.error(f"Error categorizing CPT codes: {e}", exc_info=True)
             # Return codes with default category if categorization fails
-            return [{"code": cpt['code'], "description": cpt.get('description', ''), "category": "Medical"} for cpt in cpt_codes]
+            default_prompt = f"Categorize the following CPT codes into one of these categories: {categories_text}\n\nCPT Codes:\n{cpt_codes_text}"
+            return [{"code": cpt['code'], "description": cpt.get('description', ''), "category": "Medical"} for cpt in cpt_codes], default_prompt
     
     async def generate_cpt_codes_from_analysis(
         self,

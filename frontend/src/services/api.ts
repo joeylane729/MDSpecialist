@@ -455,6 +455,7 @@ export interface CategorizeCPTCodesRequest {
     name: string;
     category?: string;
   }>;
+  custom_prompt?: string; // Optional custom prompt to override default
 }
 
 export interface CategorizeCPTCodesResponse {
@@ -464,6 +465,7 @@ export interface CategorizeCPTCodesResponse {
     category: string;
   }>;
   count: number;
+  categorization_prompt_text: string; // The prompt text that was used
 }
 
 export const categorizeCPTCodes = async (
@@ -472,12 +474,16 @@ export const categorizeCPTCodes = async (
   try {
     console.log('🔍 [Frontend] Categorizing CPT codes:', {
       cpt_codes_count: request.cpt_codes?.length,
-      treatment_options_count: request.treatment_options?.length
+      treatment_options_count: request.treatment_options?.length,
+      has_custom_prompt: !!request.custom_prompt
     });
 
     const formData = new FormData();
     formData.append('cpt_codes_json', JSON.stringify(request.cpt_codes));
     formData.append('treatment_options_json', JSON.stringify(request.treatment_options));
+    if (request.custom_prompt) {
+      formData.append('custom_prompt', request.custom_prompt);
+    }
     
     console.log('🔍 [Frontend] Making API call to:', `${API_BASE_URL}/api/v1/medical-analysis/categorize-cpt-codes`);
     

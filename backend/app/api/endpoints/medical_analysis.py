@@ -244,6 +244,7 @@ async def get_cpt_codes_by_icd10(
 async def categorize_cpt_codes(
     cpt_codes_json: str = Form(...),  # JSON array of CPT codes
     treatment_options_json: str = Form(...),  # JSON array of treatment options for context
+    custom_prompt: Optional[str] = Form(None),  # Optional custom prompt to override default
     db: Session = Depends(get_db)
 ):
     """
@@ -252,9 +253,10 @@ async def categorize_cpt_codes(
     Args:
         cpt_codes_json: JSON array of CPT codes with code and description
         treatment_options_json: JSON array of treatment options with categories (for context)
+        custom_prompt: Optional custom prompt to override default
         
     Returns:
-        Dictionary with categorized CPT codes
+        Dictionary with categorized CPT codes and prompt text
     """
     try:
         # Parse JSON inputs
@@ -271,14 +273,16 @@ async def categorize_cpt_codes(
         
         # Initialize service and categorize
         medical_analysis_service = MedicalAnalysisService(db)
-        categorized_codes = await medical_analysis_service.categorize_cpt_codes(
+        categorized_codes, prompt_text = await medical_analysis_service.categorize_cpt_codes(
             cpt_codes=cpt_codes,
-            treatment_options=treatment_options
+            treatment_options=treatment_options,
+            custom_prompt=custom_prompt
         )
         
         return {
             "categorized_cpt_codes": categorized_codes,
-            "count": len(categorized_codes)
+            "count": len(categorized_codes),
+            "categorization_prompt_text": prompt_text
         }
         
     except HTTPException:

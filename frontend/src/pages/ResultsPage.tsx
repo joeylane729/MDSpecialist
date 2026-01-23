@@ -162,6 +162,9 @@ const ResultsPage: React.FC = () => {
   const [dbCptCodes, setDbCptCodes] = useState<Array<{ code: string; description: string }> | null>(null); // Database-mapped CPT codes
   const [dbCptCodesByCategory, setDbCptCodesByCategory] = useState<{ [category: string]: Array<{ code: string; description: string }> }>({}); // Database CPT codes by category
   const [activeCptSourceTab, setActiveCptSourceTab] = useState<'gpt' | 'database'>('gpt'); // Tab for CPT code source (GPT vs Database)
+  const [categorizationPromptText, setCategorizationPromptText] = useState<string | null>(null); // Prompt text used for categorizing database CPT codes
+  const [editableCategorizationPromptText, setEditableCategorizationPromptText] = useState<string | null>(null); // Editable version of categorization prompt
+  const [isRecategorizingCPTCodes, setIsRecategorizingCPTCodes] = useState(false); // Loading state for recategorization
   const [cptPromptTextByCategory, setCptPromptTextByCategory] = useState<{ [category: string]: string }>({});
   const [editablePromptTextByCategory, setEditablePromptTextByCategory] = useState<{ [category: string]: string }>({});
   const [selectedCptCategory, setSelectedCptCategory] = useState<string | null>(null);
@@ -1198,6 +1201,13 @@ const ResultsPage: React.FC = () => {
               
               // Update dbCptCodesResult with categorized codes
               dbCptCodesResult = categorizeResponse.categorized_cpt_codes || dbCptCodesResult;
+              
+              // Store the prompt text
+              if (categorizeResponse.categorization_prompt_text) {
+                setCategorizationPromptText(categorizeResponse.categorization_prompt_text);
+                setEditableCategorizationPromptText(categorizeResponse.categorization_prompt_text);
+              }
+              
               console.log(`✅ Categorized ${categorizeResponse.count} database CPT codes`);
             } catch (error) {
               console.error(`❌ Error categorizing database CPT codes:`, error);
@@ -1315,6 +1325,69 @@ const ResultsPage: React.FC = () => {
     } finally {
       setIsGeneratingCPTCodes(false);
       setIsGeneratingCPTCodesForCategory(null);
+    }
+  };
+
+  const handleRecategorizeCPTCodes = async (useCustomPrompt: boolean = false) => {
+    if (!dbCptCodes || dbCptCodes.length === 0) {
+      alert('No database CPT codes available to recategorize');
+      return;
+    }
+
+    const allTreatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
+    if (!allTreatmentOptions || allTreatmentOptions.length === 0) {
+      alert('Treatment options are required to categorize CPT codes');
+      return;
+    }
+
+    try {
+      setIsRecategorizingCPTCodes(true);
+
+      // Use custom prompt if rerunning with edited prompt, otherwise use default (undefined)
+      const customPrompt = useCustomPrompt && editableCategorizationPromptText ? editableCategorizationPromptText : undefined;
+
+      console.log(`🔍 Recategorizing ${dbCptCodes.length} database CPT codes using GPT...`);
+      const categorizeResponse = await categorizeCPTCodes({
+        cpt_codes: dbCptCodes,
+        treatment_options: allTreatmentOptions,
+        custom_prompt: customPrompt
+      });
+
+      // Update categorized codes
+      const categorizedCodes = categorizeResponse.categorized_cpt_codes || dbCptCodes;
+
+      // Store the prompt text
+      if (categorizeResponse.categorization_prompt_text) {
+        setCategorizationPromptText(categorizeResponse.categorization_prompt_text);
+        if (!useCustomPrompt) {
+          // Only update editable prompt if not using custom (to preserve user edits)
+          setEditableCategorizationPromptText(categorizeResponse.categorization_prompt_text);
+        }
+      }
+
+      // Group categorized codes by category
+      const newDbCptCodesByCategory: { [category: string]: Array<{ code: string; description: string }> } = {};
+      categorizedCodes.forEach(cpt => {
+        const category = (cpt as any).category || 'Medical';
+        if (!newDbCptCodesByCategory[category]) {
+          newDbCptCodesByCategory[category] = [];
+        }
+        newDbCptCodesByCategory[category].push({
+          code: cpt.code,
+          description: cpt.description
+        });
+      });
+
+      setDbCptCodesByCategory(newDbCptCodesByCategory);
+      setDbCptCodes(categorizedCodes);
+
+      console.log(`✅ Recategorized ${categorizeResponse.count} database CPT codes across ${Object.keys(newDbCptCodesByCategory).length} categories`);
+    } catch (error) {
+      console.error('❌ Error recategorizing CPT codes:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert('Failed to recategorize CPT codes: ' + errorMessage);
+    } finally {
+      setIsRecategorizingCPTCodes(false);
     }
   };
 
@@ -2526,6 +2599,54 @@ const ResultsPage: React.FC = () => {
                       <div className="text-sm text-gray-600 mb-3">
                         CPT codes mapped from ICD-10 code: <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">{searchParams?.predicted_icd10 || location.state?.aiRecommendations?.patient_profile?.predicted_icd10 || 'N/A'}</code>
                       </div>
+                      
+                      {/* Categorization GPT Prompt Instructions (collapsed by default) */}
+                      {categorizationPromptText && (
+                        <div className="mb-4">
+                          <details className="bg-gray-50 rounded-lg border border-gray-200">
+                            <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-t-lg">
+                              <span className="flex items-center gap-2">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                View GPT Prompt Instructions for Categorization (for debugging)
+                              </span>
+                            </summary>
+                            <div className="p-4 border-t border-gray-200">
+                              <p className="text-xs text-gray-600 mb-2">The following prompt was sent to GPT to categorize the database CPT codes:</p>
+                              <textarea
+                                className="w-full text-xs text-gray-800 bg-white p-3 rounded border border-gray-300 font-mono min-h-[200px] resize-y"
+                                value={editableCategorizationPromptText || categorizationPromptText || ''}
+                                onChange={(e) => setEditableCategorizationPromptText(e.target.value)}
+                                placeholder="Prompt text..."
+                              />
+                              <div className="mt-3 flex justify-end">
+                                <button
+                                  type="button"
+                                  onClick={async (e) => {
+                                    e.preventDefault();
+                                    await handleRecategorizeCPTCodes(true);
+                                  }}
+                                  disabled={isRecategorizingCPTCodes || !editableCategorizationPromptText}
+                                  className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                                >
+                                  {isRecategorizingCPTCodes ? (
+                                    <span className="flex items-center gap-2">
+                                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                      </svg>
+                                      Recategorizing...
+                                    </span>
+                                  ) : (
+                                    'Rerun with Edited Prompt'
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          </details>
+                        </div>
+                      )}
                       
                       {/* Category Tabs - only show if we have multiple categories */}
                       {(() => {
