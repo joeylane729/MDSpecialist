@@ -2122,9 +2122,20 @@ const ResultsPage: React.FC = () => {
                           // Show all codes with their descriptions in a list format
                           <div className="space-y-2">
                             {searchParams.predicted_icd10_codes.map((code: string, idx: number) => {
-                              const description = searchParams.icd10_descriptions?.[code] || 
+                              const descriptionFromMap = searchParams.icd10_descriptions?.[code];
+                              const description = descriptionFromMap || 
                                                   (idx === 0 ? searchParams.icd10_description : null) || 
                                                   'Description not available';
+                              
+                              if (idx < 3) {  // Log first 3 for debugging
+                                console.log(`🔍 [Frontend] ICD code ${code} (idx ${idx}):`, {
+                                  has_icd10_descriptions: !!searchParams.icd10_descriptions,
+                                  descriptionFromMap,
+                                  icd10_description: idx === 0 ? searchParams.icd10_description : 'N/A (not first)',
+                                  final_description: description
+                                });
+                              }
+                              
                               return (
                                 <div key={idx} className="flex items-start gap-3 p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors">
                                   <code className="bg-white px-3 py-1.5 rounded text-sm font-mono font-semibold text-gray-800 border border-gray-300 flex-shrink-0">

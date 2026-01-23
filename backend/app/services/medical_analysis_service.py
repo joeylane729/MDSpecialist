@@ -75,7 +75,10 @@ class MedicalAnalysisService:
             
             # Add ICD-10 descriptions for all codes
             if predicted_icd10_codes and self.db:
+                logger.info(f"Fetching descriptions for {len(predicted_icd10_codes)} ICD-10 codes")
                 icd10_descriptions = self.lookup_icd10_descriptions(predicted_icd10_codes)
+                logger.info(f"Retrieved {len([d for d in icd10_descriptions.values() if d])} descriptions out of {len(icd10_descriptions)} codes")
+                logger.debug(f"ICD-10 descriptions mapping: {dict(list(icd10_descriptions.items())[:5])}...")  # Log first 5
                 medical_analysis["icd10_descriptions"] = icd10_descriptions  # All code -> description mappings
                 
                 # Also set primary description for backward compatibility
@@ -85,6 +88,8 @@ class MedicalAnalysisService:
                         medical_analysis["icd10_description"] = primary_description
                     else:
                         logger.warning(f"Could not find ICD-10 description for: {primary_icd10}")
+            else:
+                logger.warning(f"Not fetching ICD-10 descriptions: codes={len(predicted_icd10_codes) if predicted_icd10_codes else 0}, db={self.db is not None}")
             
             # Extract treatment options from diagnoses if available (needed for CPT code prediction)
             treatment_options = []
@@ -122,6 +127,12 @@ class MedicalAnalysisService:
             
             # Combine patient profile and medical analysis into unified result
             # Note: CPT codes are NOT generated in this step - they must be generated separately via /medical-analysis/cpt-codes
+            icd10_descriptions = medical_analysis.get("icd10_descriptions", {})
+            logger.info(f"Returning comprehensive result with {len(icd10_descriptions)} ICD-10 descriptions")
+            if icd10_descriptions:
+                found_descriptions = len([d for d in icd10_descriptions.values() if d])
+                logger.info(f"  - {found_descriptions} descriptions found, {len(icd10_descriptions) - found_descriptions} missing")
+            
             comprehensive_result = {
                 # User input fields
                 "user_diagnosis": diagnosis,  # User-entered diagnosis text
@@ -130,7 +141,7 @@ class MedicalAnalysisService:
                 "predicted_icd10": medical_analysis["predicted_icd10"],  # Primary code for backward compatibility
                 "predicted_icd10_codes": medical_analysis.get("predicted_icd10_codes", []),  # All ICD-10 codes
                 "icd10_description": medical_analysis.get("icd10_description"),  # Primary description for backward compatibility
-                "icd10_descriptions": medical_analysis.get("icd10_descriptions", {}),  # All code -> description mappings
+                "icd10_descriptions": icd10_descriptions,  # All code -> description mappings
                 "icd10_prompt_text": icd10_prompt_text,  # Actual GPT prompt used to generate ICD-10 code
                 "determined_specialty": determined_specialty,  # Specialty determined for provider search
                 "treatment_options": treatment_options,
@@ -196,11 +207,19 @@ class MedicalAnalysisService:
             Dictionary mapping code to description (or None if not found)
         """
         if not self.db or not codes:
+            logger.warning(f"lookup_icd10_descriptions called but db={self.db is not None}, codes={len(codes) if codes else 0}")
             return {}
         
+        logger.info(f"Looking up descriptions for {len(codes)} ICD-10 codes: {codes[:5]}{'...' if len(codes) > 5 else ''}")
         result = {}
+        found_count = 0
         for code in codes:
-            result[code] = self.lookup_icd10_description(code)
+            description = self.lookup_icd10_description(code)
+            result[code] = description
+            if description:
+                found_count += 1
+        
+        logger.info(f"Found descriptions for {found_count}/{len(codes)} ICD-10 codes")
         return result
 
     async def determine_specialty(self, diagnosis_text: str) -> Optional[str]:
