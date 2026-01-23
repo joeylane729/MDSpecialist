@@ -2824,20 +2824,23 @@ const ResultsPage: React.FC = () => {
                                         {code}
                                       </code>
                                       <div className="flex gap-1.5">
-                                        {inGpt && (
-                                          <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                                            GPT
-                                          </span>
-                                        )}
-                                        {inDb && (
-                                          <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                                            AAPC
-                                          </span>
-                                        )}
-                                        {inGpt && inDb && (
+                                        {inGpt && inDb ? (
                                           <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
                                             Both
                                           </span>
+                                        ) : (
+                                          <>
+                                            {inGpt && (
+                                              <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                                                GPT
+                                              </span>
+                                            )}
+                                            {inDb && (
+                                              <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                                                AAPC
+                                              </span>
+                                            )}
+                                          </>
                                         )}
                                       </div>
                                     </div>
