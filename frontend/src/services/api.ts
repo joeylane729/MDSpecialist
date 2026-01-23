@@ -448,6 +448,60 @@ export const generateCPTCodes = async (
   }
 };
 
+export interface CategorizeCPTCodesRequest {
+  cpt_codes: Array<{
+    code: string;
+    description: string;
+  }>;
+  treatment_options: Array<{
+    name: string;
+    outcomes: string;
+    complications: string;
+    category?: string;
+  }>;
+}
+
+export interface CategorizeCPTCodesResponse {
+  categorized_cpt_codes: Array<{
+    code: string;
+    description: string;
+    category: string;
+  }>;
+  count: number;
+}
+
+export const categorizeCPTCodes = async (
+  request: CategorizeCPTCodesRequest
+): Promise<CategorizeCPTCodesResponse> => {
+  try {
+    console.log('🔍 [Frontend] Categorizing CPT codes:', {
+      cpt_codes_count: request.cpt_codes?.length,
+      treatment_options_count: request.treatment_options?.length
+    });
+
+    const formData = new FormData();
+    formData.append('cpt_codes_json', JSON.stringify(request.cpt_codes));
+    formData.append('treatment_options_json', JSON.stringify(request.treatment_options));
+    
+    console.log('🔍 [Frontend] Making API call to:', `${API_BASE_URL}/api/v1/medical-analysis/categorize-cpt-codes`);
+    
+    const response = await api.post('/api/v1/medical-analysis/categorize-cpt-codes', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    console.log('✅ [Frontend] CPT code categorization response received:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ [Frontend] CPT code categorization error:', error);
+    if (axios.isAxiosError(error)) {
+      throw new Error(error.response?.data?.detail || 'Failed to categorize CPT codes');
+    }
+    throw error;
+  }
+};
+
 export const getMedicalAnalysis = async (
   request: MedicalAnalysisRequest
 ): Promise<MedicalAnalysisResponse> => {

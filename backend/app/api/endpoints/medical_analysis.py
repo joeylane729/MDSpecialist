@@ -238,3 +238,54 @@ async def get_cpt_codes_by_icd10(
             status_code=500,
             detail=f"Error querying CPT codes: {str(e)}"
         )
+
+
+@router.post("/medical-analysis/categorize-cpt-codes")
+async def categorize_cpt_codes(
+    cpt_codes_json: str = Form(...),  # JSON array of CPT codes
+    treatment_options_json: str = Form(...),  # JSON array of treatment options for context
+    db: Session = Depends(get_db)
+):
+    """
+    Categorize CPT codes using GPT.
+    
+    Args:
+        cpt_codes_json: JSON array of CPT codes with code and description
+        treatment_options_json: JSON array of treatment options with categories (for context)
+        
+    Returns:
+        Dictionary with categorized CPT codes
+    """
+    try:
+        # Parse JSON inputs
+        try:
+            cpt_codes = json.loads(cpt_codes_json)
+            treatment_options = json.loads(treatment_options_json)
+            if not isinstance(cpt_codes, list) or not isinstance(treatment_options, list):
+                raise ValueError("Both inputs must be JSON arrays")
+        except json.JSONDecodeError as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid JSON: {str(e)}"
+            )
+        
+        # Initialize service and categorize
+        medical_analysis_service = MedicalAnalysisService(db)
+        categorized_codes = await medical_analysis_service.categorize_cpt_codes(
+            cpt_codes=cpt_codes,
+            treatment_options=treatment_options
+        )
+        
+        return {
+            "categorized_cpt_codes": categorized_codes,
+            "count": len(categorized_codes)
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error categorizing CPT codes: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error categorizing CPT codes: {str(e)}"
+        )

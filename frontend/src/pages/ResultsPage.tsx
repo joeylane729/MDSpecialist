@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-import { NPIProvider, getSpecialistRecommendations, SpecialistRecommendationRequest, searchNPIProviders, rankNPIProviders, NPISearchRequest, NPIRankingRequest, ProviderContent, generateCPTCodes, generateSearchQuery, getMedicalAnalysis, regenerateICD10Code } from '../services/api';
+import { NPIProvider, getSpecialistRecommendations, SpecialistRecommendationRequest, searchNPIProviders, rankNPIProviders, NPISearchRequest, NPIRankingRequest, ProviderContent, generateCPTCodes, generateSearchQuery, getMedicalAnalysis, regenerateICD10Code, categorizeCPTCodes } from '../services/api';
 import api from '../services/api';
 import NPIProviderCard from '../components/NPIProviderCard';
 import { SCORING_WEIGHTS } from '../constants/scoringWeights';
@@ -1194,6 +1194,24 @@ const ResultsPage: React.FC = () => {
           const dbResponse = await api.get(`/api/v1/medical-analysis/cpt-codes-by-icd10/${encodeURIComponent(icd10Code.trim())}`);
           dbCptCodesResult = dbResponse.data.cpt_codes || [];
           console.log(`✅ Found ${dbCptCodesResult.length} database CPT codes from ICD-10 ${icd10Code}`);
+          
+          // Categorize database CPT codes using GPT
+          if (dbCptCodesResult.length > 0 && selectedTreatmentOptions.length > 0) {
+            try {
+              console.log(`🔍 Categorizing ${dbCptCodesResult.length} database CPT codes using GPT...`);
+              const categorizeResponse = await categorizeCPTCodes({
+                cpt_codes: dbCptCodesResult,
+                treatment_options: selectedTreatmentOptions
+              });
+              
+              // Update dbCptCodesResult with categorized codes
+              dbCptCodesResult = categorizeResponse.categorized_cpt_codes || dbCptCodesResult;
+              console.log(`✅ Categorized ${categorizeResponse.count} database CPT codes`);
+            } catch (error) {
+              console.error(`❌ Error categorizing database CPT codes:`, error);
+              // Continue with uncategorized codes if categorization fails
+            }
+          }
         } catch (error) {
           console.error(`❌ Error querying database CPT codes:`, error);
           // Continue with GPT generation even if DB query fails
@@ -1244,18 +1262,27 @@ const ResultsPage: React.FC = () => {
       setCptCodesByCategory(prev => ({ ...prev, ...newCptCodesByCategory }));
       setCptPromptTextByCategory(prev => ({ ...prev, ...newCptPromptTextByCategory }));
       
-      // Store database CPT codes (same for all categories)
+      // Store database CPT codes grouped by category (now that they're categorized)
       if (dbCptCodesResult.length > 0) {
-        // Store for each category (for consistency with existing structure)
+        // Group categorized codes by category
         const newDbCptCodesByCategory: { [category: string]: Array<{ code: string; description: string }> } = {};
-        categoriesToGenerate.forEach(category => {
-          newDbCptCodesByCategory[category] = dbCptCodesResult;
+        
+        dbCptCodesResult.forEach(cpt => {
+          const category = (cpt as any).category || 'Medical'; // Default to Medical if no category
+          if (!newDbCptCodesByCategory[category]) {
+            newDbCptCodesByCategory[category] = [];
+          }
+          newDbCptCodesByCategory[category].push({
+            code: cpt.code,
+            description: cpt.description
+          });
         });
+        
         setDbCptCodesByCategory(prev => ({ ...prev, ...newDbCptCodesByCategory }));
         
         // Set the combined database CPT codes
         setDbCptCodes(dbCptCodesResult);
-        console.log(`✅ Stored ${dbCptCodesResult.length} database CPT codes for all categories`);
+        console.log(`✅ Stored ${dbCptCodesResult.length} categorized database CPT codes across ${Object.keys(newDbCptCodesByCategory).length} categories`);
       }
       
       // Set first category as selected if none selected yet

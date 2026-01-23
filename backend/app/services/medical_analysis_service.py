@@ -744,6 +744,107 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             logger.error(f"Error querying CPT codes from ICD-10 {icd10_code}: {e}", exc_info=True)
             return []
     
+    async def categorize_cpt_codes(
+        self,
+        cpt_codes: List[Dict[str, str]],
+        treatment_options: List[Dict[str, str]]
+    ) -> List[Dict[str, str]]:
+        """
+        Use GPT to assign categories to CPT codes from database.
+        
+        Args:
+            cpt_codes: List of CPT codes with code and description
+            treatment_options: List of treatment options with categories (for context)
+            
+        Returns:
+            List of CPT codes with category field added
+        """
+        if not cpt_codes or len(cpt_codes) == 0:
+            return []
+        
+        try:
+            # Format CPT codes for prompt
+            cpt_codes_text = "\n".join([f"- {cpt['code']}: {cpt.get('description', '')}" for cpt in cpt_codes[:50]])  # Limit to 50 for prompt size
+            if len(cpt_codes) > 50:
+                cpt_codes_text += f"\n... and {len(cpt_codes) - 50} more codes"
+            
+            # Get categories from treatment options
+            categories = list(set([opt.get('category', 'Medical') for opt in treatment_options if opt.get('category')]))
+            categories_text = ", ".join(categories) if categories else "Surgery, Radiosurgery, Medical"
+            
+            prompt_template = """Categorize the following CPT codes into one of these categories: {categories}
+
+CPT Codes:
+{cpt_codes}
+
+For each CPT code, assign it to the most appropriate category based on the procedure type.
+
+Return the response in this exact JSON format:
+[
+    {{
+        "code": "CPT_CODE",
+        "description": "Procedure description",
+        "category": "Category name"
+    }}
+]
+
+Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO additional text."""
+            
+            prompt = PromptTemplate(
+                input_variables=["categories", "cpt_codes"],
+                template=prompt_template
+            )
+            
+            rendered_prompt = prompt_template.format(
+                categories=categories_text,
+                cpt_codes=cpt_codes_text
+            )
+            
+            chain = prompt | self.llm
+            response = await chain.ainvoke({
+                "categories": categories_text,
+                "cpt_codes": cpt_codes_text
+            })
+            
+            # Extract JSON response
+            response_text = response.content.strip() if hasattr(response, 'content') else str(response).strip()
+            
+            # Clean up response
+            if response_text.startswith('```json'):
+                response_text = response_text.replace('```json', '').replace('```', '').strip()
+            elif response_text.startswith('```'):
+                response_text = response_text.replace('```', '').strip()
+            
+            # Extract JSON array
+            first_bracket = response_text.find('[')
+            last_bracket = response_text.rfind(']')
+            if first_bracket != -1 and last_bracket != -1:
+                response_text = response_text[first_bracket:last_bracket + 1]
+            
+            # Parse JSON
+            categorized_codes = json.loads(response_text)
+            
+            # Create a map of code -> category for quick lookup
+            category_map = {item['code']: item.get('category', 'Medical') for item in categorized_codes if 'code' in item}
+            
+            # Apply categories to all CPT codes (including those not in GPT response)
+            result = []
+            for cpt in cpt_codes:
+                category = category_map.get(cpt['code'], 'Medical')  # Default to Medical if not categorized
+                result.append({
+                    "code": cpt['code'],
+                    "description": cpt.get('description', ''),
+                    "category": category
+                })
+            
+            logger.info(f"Categorized {len(result)} CPT codes using GPT")
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error categorizing CPT codes: {e}", exc_info=True)
+            # Return codes with default category if categorization fails
+            return [{"code": cpt['code'], "description": cpt.get('description', ''), "category": "Medical"} for cpt in cpt_codes]
+    
     async def generate_cpt_codes_from_analysis(
         self,
         search_query: str,
