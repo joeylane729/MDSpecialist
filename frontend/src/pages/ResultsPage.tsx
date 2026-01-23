@@ -1283,9 +1283,14 @@ const ResultsPage: React.FC = () => {
         // Set the combined database CPT codes
         setDbCptCodes(dbCptCodesResult);
         console.log(`✅ Stored ${dbCptCodesResult.length} categorized database CPT codes across ${Object.keys(newDbCptCodesByCategory).length} categories`);
+        
+        // Set first database category as selected if none selected yet and we're on database tab
+        if (!selectedCptCategory && Object.keys(newDbCptCodesByCategory).length > 0) {
+          setSelectedCptCategory(Object.keys(newDbCptCodesByCategory)[0]);
+        }
       }
       
-      // Set first category as selected if none selected yet
+      // Set first GPT category as selected if none selected yet (only if we have GPT codes)
       if (!selectedCptCategory && Object.keys(newCptCodesByCategory).length > 0) {
         setSelectedCptCategory(Object.keys(newCptCodesByCategory)[0]);
       }
@@ -2324,7 +2329,15 @@ const ResultsPage: React.FC = () => {
                     )}
                     {activeCptSourceTab === 'database' && dbCptCodes && (
                       <div className="text-sm text-gray-600">
-                        {dbCptCodes.length} {dbCptCodes.length === 1 ? 'code' : 'codes'} from ICD-10 mapping
+                        {Object.keys(dbCptCodesByCategory).length > 0 ? (
+                          <>
+                            {dbCptCodes.length} {dbCptCodes.length === 1 ? 'code' : 'codes'} across {Object.keys(dbCptCodesByCategory).length} {Object.keys(dbCptCodesByCategory).length === 1 ? 'category' : 'categories'} from ICD-10 mapping
+                          </>
+                        ) : (
+                          <>
+                            {dbCptCodes.length} {dbCptCodes.length === 1 ? 'code' : 'codes'} from ICD-10 mapping
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
@@ -2526,18 +2539,64 @@ const ResultsPage: React.FC = () => {
                         CPT codes mapped from ICD-10 code: <code className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">{searchParams?.predicted_icd10 || location.state?.aiRecommendations?.patient_profile?.predicted_icd10 || 'N/A'}</code>
                       </div>
                       
-                      <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {dbCptCodes.map((cpt: any, index: number) => (
-                          <div key={index} className="bg-green-50 rounded-lg p-3 border border-green-200">
-                            <div className="flex items-start gap-3">
-                              <code className="bg-green-100 px-2 py-1 rounded text-sm font-semibold text-green-900 whitespace-nowrap">
-                                {cpt.code}
-                              </code>
-                              <span className="text-sm text-gray-700 flex-1">{cpt.description}</span>
+                      {/* Category Tabs - only show if we have multiple categories */}
+                      {(() => {
+                        const dbCategories = Object.keys(dbCptCodesByCategory);
+                        const hasDbCategories = dbCategories.length > 1;
+                        const dbDisplayCategory = selectedCptCategory && dbCategories.includes(selectedCptCategory) 
+                          ? selectedCptCategory 
+                          : (dbCategories.length > 0 ? dbCategories[0] : null);
+                        
+                        return (
+                          <>
+                            {hasDbCategories && (
+                              <div className="mb-4 border-b border-gray-200">
+                                <div className="flex space-x-1 overflow-x-auto">
+                                  {dbCategories.map((category) => {
+                                    const categoryCodes = dbCptCodesByCategory[category] || [];
+                                    const isSelected = dbDisplayCategory === category;
+                                    return (
+                                      <button
+                                        key={category}
+                                        onClick={() => setSelectedCptCategory(category)}
+                                        className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                                          isSelected
+                                            ? 'border-green-600 text-green-600'
+                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        }`}
+                                      >
+                                        {category} ({categoryCodes.length})
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                            
+                            <div className="text-sm text-gray-600 mb-3">
+                              {dbDisplayCategory 
+                                ? `Procedural codes for ${dbDisplayCategory} category:`
+                                : 'Procedural codes from ICD-10 mapping:'}
                             </div>
-                          </div>
-                        ))}
-                      </div>
+                            
+                            <div className="space-y-2 max-h-96 overflow-y-auto">
+                              {(hasDbCategories && dbDisplayCategory && dbCptCodesByCategory[dbDisplayCategory]
+                                ? dbCptCodesByCategory[dbDisplayCategory]
+                                : dbCptCodes
+                              ).map((cpt: any, index: number) => (
+                                <div key={index} className="bg-green-50 rounded-lg p-3 border border-green-200">
+                                  <div className="flex items-start gap-3">
+                                    <code className="bg-green-100 px-2 py-1 rounded text-sm font-semibold text-green-900 whitespace-nowrap">
+                                      {cpt.code}
+                                    </code>
+                                    <span className="text-sm text-gray-700 flex-1">{cpt.description}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        );
+                      })()}
                       
                       <div className="mt-3 text-xs text-gray-500 italic">
                         Note: These database-mapped CPT codes are shown for reference only and are not yet used for CMS/PubMed queries.
