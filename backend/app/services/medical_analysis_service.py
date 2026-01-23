@@ -810,12 +810,12 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                     # No variables, use prompt as-is
                     rendered_prompt = custom_prompt
             else:
-                prompt_template = """Categorize the following CPT codes into one of these categories: {categories}
+                prompt_template = """Categorize the following CPT codes based on treatment type:
 
 CPT Codes:
 {cpt_codes}
 
-For each CPT code, assign it to the most appropriate category based on the procedure type.
+For each CPT code, assign it to the most appropriate category based on the procedure type and treatment approach.
 
 Return the response in this exact JSON format:
 [
@@ -829,12 +829,11 @@ Return the response in this exact JSON format:
 Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO additional text."""
                 
                 prompt = PromptTemplate(
-                    input_variables=["categories", "cpt_codes"],
+                    input_variables=["cpt_codes"],
                     template=prompt_template
                 )
                 
                 rendered_prompt = prompt_template.format(
-                    categories=categories_text,
                     cpt_codes=cpt_codes_text
                 )
                 # Prompt already created above for default case (line 831)
@@ -855,7 +854,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             else:
                 # Default prompt - use variables
                 response = await chain.ainvoke({
-                    "categories": categories_text,
                     "cpt_codes": cpt_codes_text
                 })
             
