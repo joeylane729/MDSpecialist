@@ -809,6 +809,11 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 else:
                     # No variables, use prompt as-is
                     rendered_prompt = custom_prompt
+                    # Still need to create a PromptTemplate for the chain (no variables)
+                    prompt = PromptTemplate(
+                        input_variables=[],
+                        template=prompt_template
+                    )
             else:
                 prompt_template = """Categorize the following CPT codes based on treatment type:
 
