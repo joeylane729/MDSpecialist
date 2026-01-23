@@ -812,12 +812,12 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             else:
                 prompt_template = """Categorize the following CPT codes based on treatment type:
 
-CPT Codes:
-{cpt_codes}
-
 For each CPT code, assign it to the most appropriate category based on the procedure type and treatment approach.
 
 IMPORTANT: Use only 2-5 distinct categories total. Group similar procedures together into the same category.
+
+CPT Codes:
+{cpt_codes}
 
 Return the response in this exact JSON format:
 [

@@ -1066,8 +1066,8 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
               
               return (
                 <>
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-3">
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
                       <div className={`p-2 rounded-full ${
                         isGreenFlag 
                           ? 'bg-green-100' 
@@ -1082,18 +1082,18 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                               ? 'text-red-600' 
                               : 'text-amber-600'
                         }`} />
-                      </div>
+                </div>
                       <h3 className="text-xl font-semibold text-gray-900">{flagInfo.title}</h3>
-                    </div>
-                    <button
-                      onClick={() => setRedFlagModalOpen(false)}
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
+              </div>
+              <button
+                onClick={() => setRedFlagModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
                   <div className={`p-4 rounded-lg mb-4 ${
                     isGreenFlag 
                       ? 'bg-green-50 border border-green-200' 
@@ -1102,21 +1102,21 @@ export default function NPIProviderCard({ provider, onClick, isHighlighted = fal
                         : 'bg-amber-50 border border-amber-200'
                   }`}>
                     <p className="text-gray-700 leading-relaxed">{description}</p>
-                  </div>
-                  <div className="flex justify-end">
-                    <button
-                      onClick={() => setRedFlagModalOpen(false)}
-                      className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setRedFlagModalOpen(false)}
+                className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
                         isGreenFlag
                           ? 'bg-green-600 text-white hover:bg-green-700'
                           : severity === 'error'
-                            ? 'bg-red-600 text-white hover:bg-red-700'
-                            : 'bg-amber-600 text-white hover:bg-amber-700'
-                      }`}
-                    >
-                      Close
-                    </button>
-                  </div>
+                    ? 'bg-red-600 text-white hover:bg-red-700'
+                    : 'bg-amber-600 text-white hover:bg-amber-700'
+                }`}
+              >
+                Close
+              </button>
+            </div>
                 </>
               );
             })()}

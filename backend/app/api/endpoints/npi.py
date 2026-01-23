@@ -301,7 +301,7 @@ async def search_providers_by_criteria(
 
             # Check if provider is a pediatric neurosurgeon
             is_pediatric_neurosurgeon = provider_npi_str in pediatric_npis
-            
+
             formatted_provider = {
                 "id": provider.npi,  # Use NPI as ID
                 "npi": provider.npi,
