@@ -2852,114 +2852,162 @@ const ResultsPage: React.FC = () => {
                   {/* Comparison Tab Content */}
                   {activeCptSourceTab === 'comparison' && hasCptCodes && dbCptCodes && dbCptCodes.length > 0 && (
                     <>
-                      <div className="text-sm text-gray-600 mb-4">
-                        Side-by-side comparison of GPT-generated and AAPC database-mapped CPT codes across all categories.
-                      </div>
-                      
-                      <div className="space-y-1.5 max-h-96 overflow-y-auto">
-                        {(() => {
-                          // Get all GPT codes (flattened from categories or legacy format)
-                          const allGptCodes: Array<{ code: string; description: string; category?: string }> = hasCptCodesByCategory
-                            ? Object.entries(cptCodesByCategory).flatMap(([category, codes]: [string, any[]]) =>
-                                codes.map((c: any) => ({ ...c, category }))
-                              )
-                            : (cptCodes || []).map((c: any) => ({ ...c, category: undefined }));
+                      {(() => {
+                        // Get all GPT codes (flattened from categories or legacy format)
+                        const allGptCodes: Array<{ code: string; description: string; category?: string }> = hasCptCodesByCategory
+                          ? Object.entries(cptCodesByCategory).flatMap(([category, codes]: [string, any[]]) =>
+                              codes.map((c: any) => ({ ...c, category }))
+                            )
+                          : (cptCodes || []).map((c: any) => ({ ...c, category: undefined }));
+                        
+                        // Get all DB codes (flattened from categories or flat list)
+                        const allDbCodes: Array<{ code: string; description: string; category?: string }> = Object.keys(dbCptCodesByCategory).length > 0
+                          ? Object.entries(dbCptCodesByCategory).flatMap(([category, codes]: [string, any[]]) =>
+                              codes.map((c: any) => ({ ...c, category }))
+                            )
+                          : (dbCptCodes || []).map((c: any) => ({ ...c, category: undefined }));
+                        
+                        // Create maps for quick lookup
+                        const gptCodeMap = new Map<string, { description: string; category?: string }>();
+                        allGptCodes.forEach(c => {
+                          gptCodeMap.set(c.code, { description: c.description, category: c.category });
+                        });
+                        
+                        const dbCodeMap = new Map<string, { description: string; category?: string }>();
+                        allDbCodes.forEach(c => {
+                          dbCodeMap.set(c.code, { description: c.description, category: c.category });
+                        });
+                        
+                        // Get all categories from both sources (union)
+                        const gptCategories = hasCptCodesByCategory ? Object.keys(cptCodesByCategory) : [];
+                        const dbCategories = Object.keys(dbCptCodesByCategory);
+                        const allCategories = Array.from(new Set([...gptCategories, ...dbCategories])).sort();
+                        const hasCategories = allCategories.length > 1;
+                        
+                        // Determine the display category
+                        const comparisonDisplayCategory = selectedCptCategory && allCategories.includes(selectedCptCategory)
+                          ? selectedCptCategory
+                          : (allCategories.length > 0 ? allCategories[0] : null);
+                        
+                        // Get codes for the selected category
+                        const getCodesForCategory = (category: string | null) => {
+                          if (!category) {
+                            // Return all codes if no category
+                            const allCodesSet = new Set([...allGptCodes.map(c => c.code), ...allDbCodes.map(c => c.code)]);
+                            return Array.from(allCodesSet).sort();
+                          }
                           
-                          // Get all DB codes (flattened from categories or flat list)
-                          const allDbCodes: Array<{ code: string; description: string; category?: string }> = Object.keys(dbCptCodesByCategory).length > 0
-                            ? Object.entries(dbCptCodesByCategory).flatMap(([category, codes]: [string, any[]]) =>
-                                codes.map((c: any) => ({ ...c, category }))
-                              )
-                            : (dbCptCodes || []).map((c: any) => ({ ...c, category: undefined }));
-                          
-                          // Create maps for quick lookup
-                          const gptCodeMap = new Map<string, { description: string; category?: string }>();
-                          allGptCodes.forEach(c => {
-                            gptCodeMap.set(c.code, { description: c.description, category: c.category });
-                          });
-                          
-                          const dbCodeMap = new Map<string, { description: string; category?: string }>();
-                          allDbCodes.forEach(c => {
-                            dbCodeMap.set(c.code, { description: c.description, category: c.category });
-                          });
-                          
-                          // Create union of all codes
-                          const allCodesSet = new Set([...allGptCodes.map(c => c.code), ...allDbCodes.map(c => c.code)]);
-                          const allCodes = Array.from(allCodesSet).sort();
-                          
-                          return allCodes.map((code, index) => {
-                            const inGpt = gptCodeMap.has(code);
-                            const inDb = dbCodeMap.has(code);
-                            const gptInfo = gptCodeMap.get(code);
-                            const dbInfo = dbCodeMap.get(code);
-                            
-                            // Determine background color based on source
-                            let bgColor = 'bg-gray-50';
-                            let borderColor = 'border-gray-200';
-                            if (inGpt && inDb) {
-                              bgColor = 'bg-purple-50';
-                              borderColor = 'border-purple-300';
-                            } else if (inGpt) {
-                              bgColor = 'bg-blue-50';
-                              borderColor = 'border-blue-200';
-                            } else if (inDb) {
-                              bgColor = 'bg-green-50';
-                              borderColor = 'border-green-200';
-                            }
-                            
-                            return (
-                              <div key={index} className={`${bgColor} rounded-lg p-2 border-2 ${borderColor}`}>
-                                <div className="flex items-start gap-2">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <code className="bg-white px-2 py-0.5 rounded text-sm font-semibold text-gray-900 border border-gray-300">
-                                        {code}
-                                      </code>
-                                      <div className="flex gap-1.5">
-                                        {inGpt && inDb ? (
-                                          <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
-                                            Both
-                                          </span>
-                                        ) : (
-                                          <>
-                                            {inGpt && (
-                                              <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                                                GPT
-                                              </span>
-                                            )}
-                                            {inDb && (
-                                              <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                                                AAPC
-                                              </span>
-                                            )}
-                                          </>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <p className="text-xs text-gray-700 mb-1">
-                                      {gptInfo?.description || dbInfo?.description || 'No description available'}
-                                    </p>
-                                    <div className="flex gap-3 text-xs">
-                                      {inGpt && gptInfo?.category && (
-                                        <div>
-                                          <span className="font-medium text-gray-600">GPT Category:</span>{' '}
-                                          <span className="text-blue-700">{gptInfo.category}</span>
-                                        </div>
-                                      )}
-                                      {inDb && dbInfo?.category && (
-                                        <div>
-                                          <span className="font-medium text-gray-600">AAPC Category:</span>{' '}
-                                          <span className="text-green-700">{dbInfo.category}</span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
+                          // Get codes that are in this category in either source
+                          const gptCodesInCategory = allGptCodes.filter(c => c.category === category).map(c => c.code);
+                          const dbCodesInCategory = allDbCodes.filter(c => c.category === category).map(c => c.code);
+                          const codesSet = new Set([...gptCodesInCategory, ...dbCodesInCategory]);
+                          return Array.from(codesSet).sort();
+                        };
+                        
+                        const displayCodes = getCodesForCategory(comparisonDisplayCategory);
+                        
+                        // Count codes per category for tabs
+                        const getCodeCountForCategory = (category: string) => {
+                          const gptCodesInCategory = allGptCodes.filter(c => c.category === category).map(c => c.code);
+                          const dbCodesInCategory = allDbCodes.filter(c => c.category === category).map(c => c.code);
+                          return new Set([...gptCodesInCategory, ...dbCodesInCategory]).size;
+                        };
+                        
+                        return (
+                          <>
+                            {/* Category Tabs */}
+                            {hasCategories && (
+                              <div className="mb-4 border-b border-gray-200">
+                                <div className="flex space-x-1 overflow-x-auto">
+                                  {allCategories.map((category) => {
+                                    const codeCount = getCodeCountForCategory(category);
+                                    const isSelected = comparisonDisplayCategory === category;
+                                    return (
+                                      <button
+                                        key={category}
+                                        onClick={() => setSelectedCptCategory(category)}
+                                        className={`px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                                          isSelected
+                                            ? 'border-purple-600 text-purple-600'
+                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        }`}
+                                      >
+                                        {category} ({codeCount})
+                                      </button>
+                                    );
+                                  })}
                                 </div>
                               </div>
-                            );
-                          });
-                        })()}
-                      </div>
+                            )}
+                            
+                            <div className="text-sm text-gray-600 mb-3">
+                              {comparisonDisplayCategory 
+                                ? `Comparison of GPT and AAPC codes for ${comparisonDisplayCategory}:`
+                                : 'Side-by-side comparison of GPT-generated and AAPC database-mapped CPT codes:'}
+                            </div>
+                            
+                            <div className="space-y-1.5 max-h-96 overflow-y-auto">
+                              {displayCodes.map((code, index) => {
+                                const inGpt = gptCodeMap.has(code);
+                                const inDb = dbCodeMap.has(code);
+                                const gptInfo = gptCodeMap.get(code);
+                                const dbInfo = dbCodeMap.get(code);
+                                
+                                // Determine background color based on source
+                                let bgColor = 'bg-gray-50';
+                                let borderColor = 'border-gray-200';
+                                if (inGpt && inDb) {
+                                  bgColor = 'bg-purple-50';
+                                  borderColor = 'border-purple-300';
+                                } else if (inGpt) {
+                                  bgColor = 'bg-blue-50';
+                                  borderColor = 'border-blue-200';
+                                } else if (inDb) {
+                                  bgColor = 'bg-green-50';
+                                  borderColor = 'border-green-200';
+                                }
+                                
+                                return (
+                                  <div key={index} className={`${bgColor} rounded-lg p-2 border-2 ${borderColor}`}>
+                                    <div className="flex items-start gap-2">
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <code className="bg-white px-2 py-0.5 rounded text-sm font-semibold text-gray-900 border border-gray-300">
+                                            {code}
+                                          </code>
+                                          <div className="flex gap-1.5">
+                                            {inGpt && inDb ? (
+                                              <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                                                Both
+                                              </span>
+                                            ) : (
+                                              <>
+                                                {inGpt && (
+                                                  <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                                                    GPT
+                                                  </span>
+                                                )}
+                                                {inDb && (
+                                                  <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                                                    AAPC
+                                                  </span>
+                                                )}
+                                              </>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <p className="text-xs text-gray-700">
+                                          {gptInfo?.description || dbInfo?.description || 'No description available'}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </>
+                        );
+                      })()}
                     </>
                   )}
                   
