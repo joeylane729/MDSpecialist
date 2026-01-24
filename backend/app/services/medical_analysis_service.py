@@ -870,6 +870,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             # Process in batches of 10
             batch_size = 10
             all_categorized = []
+            first_batch_prompt = ""  # Save the first batch's prompt to show in UI
             
             for i in range(0, len(cpt_codes), batch_size):
                 batch = cpt_codes[i:i + batch_size]
@@ -919,6 +920,10 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                         categories=categories_text,
                         cpt_codes=batch_codes_text
                     )
+                
+                # Save the first batch's prompt to display in UI
+                if batch_num == 1:
+                    first_batch_prompt = rendered_prompt
                 
                 # Create chain and invoke
                 chain = prompt | self.llm
@@ -988,13 +993,11 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             logger.info(f"Categorized {len(result)} CPT codes using GPT")
             logger.info(f"Category distribution: {dict(sorted(category_counts.items(), key=lambda x: x[1], reverse=True))}")
             
-            # Build final rendered prompt (use the batch prompt format)
+            # Build final rendered prompt (show the first batch's actual prompt)
             if not custom_prompt:
-                final_rendered_prompt = f"""Categorizing codes in batches using hardcoded categories: {categories_text}
-
-(Full prompt shown for first batch)"""
+                final_rendered_prompt = first_batch_prompt
             else:
-                final_rendered_prompt = rendered_prompt
+                final_rendered_prompt = first_batch_prompt if first_batch_prompt else rendered_prompt
             
             return result, final_rendered_prompt
             
