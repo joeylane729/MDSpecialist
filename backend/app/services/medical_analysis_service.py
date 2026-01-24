@@ -296,10 +296,10 @@ Anatomical Location: {anatomical_location}
 Additional Information from Medical Records/PDFs:
 {pdf_content}
 
-Provide ALL possible ICD-10 codes for this diagnosis, including:
-- Codes for similar or related pathology
-- Codes from nearby or adjacent anatomic locations
-- Codes that may use terms like "uncertain" or "unspecified" in their descriptions
+Provide the top 10 most likely ICD-10 codes for this diagnosis, including:
+- Codes for similar pathology in a similar anatomic location
+- Codes may use terms like "uncertain" or "unspecified" in their descriptions
+- Do not include codes that contain descriptions of anatomic parts of the body that are not nearby or immediately adjacent
 
 Return the response in this exact JSON format:
 [
@@ -858,7 +858,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         
         try:
             # Use hardcoded categories matching GPT treatment options generation
-            categories = ["Surgery", "Radiosurgery", "Endovascular", "Medical"]
+            categories = ["Surgery", "Radiation", "Endovascular", "Medical", "Diagnostic Testing"]
             categories_text = ", ".join(categories)
             
             # Categorize codes in batches of 10
@@ -890,7 +890,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                         template=prompt_template
                     )
                 else:
-                    prompt_template = """Categorize the following CPT codes into ONE of these 4 categories:
+                    prompt_template = """Categorize the following CPT codes into ONE of these 5 categories:
 
 Categories (you MUST use only these):
 {categories}
@@ -1001,7 +1001,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         except Exception as e:
             logger.error(f"Error categorizing CPT codes: {e}", exc_info=True)
             # Return codes with default category if categorization fails
-            default_prompt = f"Categorize the following CPT codes into one of these categories: Surgery, Radiosurgery, Endovascular, Medical"
+            default_prompt = f"Categorize the following CPT codes into one of these categories: Surgery, Radiation, Endovascular, Medical, Diagnostic Testing"
             return [{"code": cpt['code'], "description": cpt.get('description', ''), "category": "Medical"} for cpt in cpt_codes], default_prompt
     
     async def generate_cpt_codes_from_analysis(
@@ -1466,11 +1466,12 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 {pdf_content}
                 
                 Analyze the information above and provide the most common treatment options based on the diagnosis, specialty, and anatomical location. 
-                For each treatment option, include the general category of the treatment option. For example:
+                For each treatment option, include the general category of the treatment option. You MUST use one of these categories:
                 - Surgery
-                - Radiosurgery
+                - Radiation
                 - Endovascular
                 - Medical
+                - Diagnostic Testing
                                 
                 Return the response in this exact JSON format:
                 {{
