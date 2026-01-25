@@ -992,6 +992,7 @@ const ResultsPage: React.FC = () => {
           predicted_icd10_codes_type: typeof response.patient_profile.predicted_icd10_codes,
           predicted_icd10_codes_isArray: Array.isArray(response.patient_profile.predicted_icd10_codes),
           predicted_icd10_codes_length: response.patient_profile.predicted_icd10_codes?.length,
+          icd10_relevancy_scores: response.patient_profile.icd10_relevancy_scores,
           full_patient_profile: response.patient_profile
         });
         
@@ -1014,7 +1015,8 @@ const ResultsPage: React.FC = () => {
           predicted_icd10_codes: newSearchParams.predicted_icd10_codes,
           predicted_icd10_codes_type: typeof newSearchParams.predicted_icd10_codes,
           predicted_icd10_codes_isArray: Array.isArray(newSearchParams.predicted_icd10_codes),
-          predicted_icd10_codes_length: newSearchParams.predicted_icd10_codes?.length
+          predicted_icd10_codes_length: newSearchParams.predicted_icd10_codes?.length,
+          icd10_relevancy_scores: newSearchParams.icd10_relevancy_scores
         });
         
         setSearchParams(newSearchParams);

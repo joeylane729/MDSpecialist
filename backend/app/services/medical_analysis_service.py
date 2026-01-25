@@ -141,6 +141,7 @@ class MedicalAnalysisService:
                 # Medical analysis data (flattened for frontend compatibility)
                 "predicted_icd10": medical_analysis["predicted_icd10"],  # Primary code for backward compatibility
                 "predicted_icd10_codes": medical_analysis.get("predicted_icd10_codes", []),  # All ICD-10 codes
+                "icd10_relevancy_scores": medical_analysis.get("icd10_relevancy_scores", {}),  # Code -> relevancy score mapping (0-100)
                 "icd10_description": medical_analysis.get("icd10_description"),  # Primary description for backward compatibility
                 "icd10_descriptions": icd10_descriptions,  # All code -> description mappings
                 "icd10_prompt_text": icd10_prompt_text,  # Actual GPT prompt used to generate ICD-10 code
