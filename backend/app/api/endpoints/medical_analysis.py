@@ -124,7 +124,7 @@ async def regenerate_icd10_code(
     try:
         # Initialize service and generate ICD-10 codes
         medical_analysis_service = MedicalAnalysisService(db)
-        icd10_codes, icd10_prompt_text = await medical_analysis_service.predict_icd10_code(
+        icd10_codes, icd10_relevancy_scores, icd10_prompt_text = await medical_analysis_service.predict_icd10_code(
             diagnosis=diagnosis,
             anatomical_location=anatomical_location or "",
             pdf_content=pdf_content or "",
@@ -145,6 +145,7 @@ async def regenerate_icd10_code(
         return {
             "predicted_icd10": primary_icd10,  # Primary code for backward compatibility
             "predicted_icd10_codes": icd10_codes,  # All codes
+            "icd10_relevancy_scores": icd10_relevancy_scores,  # Code -> relevancy score mapping (0-100)
             "icd10_description": icd10_description,  # Primary description for backward compatibility
             "icd10_descriptions": icd10_descriptions,  # All code -> description mappings
             "icd10_prompt_text": icd10_prompt_text,

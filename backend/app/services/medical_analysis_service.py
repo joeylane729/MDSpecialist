@@ -55,7 +55,7 @@ class MedicalAnalysisService:
                 custom_prompt=custom_diagnoses_prompt
             )
             
-            predicted_icd10_codes, icd10_prompt_text = await self.predict_icd10_code(
+            predicted_icd10_codes, icd10_relevancy_scores, icd10_prompt_text = await self.predict_icd10_code(
                 diagnosis, anatomical_location, pdf_content, custom_prompt=custom_icd10_prompt
             )
             
@@ -65,6 +65,7 @@ class MedicalAnalysisService:
             medical_analysis = {
                 "predicted_icd10": primary_icd10,  # Primary code for backward compatibility
                 "predicted_icd10_codes": predicted_icd10_codes,  # All codes
+                "icd10_relevancy_scores": icd10_relevancy_scores,  # Code -> relevancy score mapping
                 "diagnoses": diagnoses_result
             }
             
@@ -243,11 +244,12 @@ class MedicalAnalysisService:
         anatomical_location: str = "",
         pdf_content: str = "",
         custom_prompt: Optional[str] = None
-    ) -> Tuple[List[str], str]:
+    ) -> Tuple[List[str], Dict[str, int], str]:
         """
-        Use GPT to predict all possible ICD-10 codes based on patient information.
+        Use GPT to predict 5-10 ICD-10 codes based on patient information.
         Includes codes for similar/related pathology from nearby anatomic locations.
         May include codes with "uncertain" or "unspecified" in descriptions.
+        Each code includes a relevancy score (0-100%).
         
         Args:
             diagnosis: Patient diagnosis
@@ -256,7 +258,7 @@ class MedicalAnalysisService:
             custom_prompt: Optional custom prompt to override default
             
         Returns:
-            Tuple of (List of ICD-10 codes, rendered prompt text)
+            Tuple of (List of ICD-10 codes, Dict mapping code -> relevancy_score, rendered prompt text)
         """
         try:
             # Use custom prompt if provided, otherwise use default
@@ -296,16 +298,23 @@ Anatomical Location: {anatomical_location}
 Additional Information from Medical Records/PDFs:
 {pdf_content}
 
-Provide the top 10 most likely ICD-10 codes for this diagnosis, including:
+Provide 5-10 most likely ICD-10 codes for this diagnosis, including:
 - Codes for similar pathology in a similar anatomic location
 - Codes may use terms like "uncertain" or "unspecified" in their descriptions
 - Do not include codes that contain descriptions of anatomic parts of the body that are not nearby or immediately adjacent
 
+For each code, assign a relevancy score from 0-100% indicating how relevant the code is to the diagnosis.
+
 Return the response in this exact JSON format:
 [
-    "ICD10_CODE",
-    "ICD10_CODE",
-    "ICD10_CODE"
+    {{
+        "code": "ICD10_CODE",
+        "relevancy_score": 95
+    }},
+    {{
+        "code": "ICD10_CODE",
+        "relevancy_score": 85
+    }}
 ]
 
 Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO additional text."""
@@ -369,15 +378,29 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             
             # Parse JSON array
             try:
-                icd_codes = json.loads(response_text)
-                if not isinstance(icd_codes, list):
-                    # If single code returned, wrap in list
-                    icd_codes = [icd_codes] if icd_codes else []
+                icd_data = json.loads(response_text)
+                if not isinstance(icd_data, list):
+                    # If single item returned, wrap in list
+                    icd_data = [icd_data] if icd_data else []
                 
-                # Validate and clean each code
+                # Validate and extract codes and scores
                 valid_codes = []
-                for code in icd_codes:
-                    code_str = str(code).strip().replace('"', '').replace("'", "")
+                relevancy_scores = {}
+                
+                for item in icd_data:
+                    # Handle both old format (string) and new format (dict with code and relevancy_score)
+                    if isinstance(item, dict):
+                        code_str = str(item.get('code', '')).strip()
+                        score = item.get('relevancy_score', 0)
+                        # Validate score is 0-100
+                        if not isinstance(score, (int, float)) or score < 0 or score > 100:
+                            score = 0
+                        relevancy_scores[code_str] = int(score)
+                    else:
+                        # Old format: just a string code
+                        code_str = str(item).strip().replace('"', '').replace("'", "")
+                        relevancy_scores[code_str] = 0  # Default score if not provided
+                    
                     # Basic validation that it looks like an ICD-10 code (letter followed by numbers)
                     if len(code_str) >= 3 and code_str[0].isalpha() and any(c.isdigit() for c in code_str):
                         valid_codes.append(code_str)
@@ -386,10 +409,11 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 
                 if valid_codes:
                     logger.info(f"GPT returned {len(valid_codes)} ICD-10 codes: {valid_codes}")
-                    return valid_codes, rendered_prompt
+                    logger.info(f"Relevancy scores: {relevancy_scores}")
+                    return valid_codes, relevancy_scores, rendered_prompt
                 else:
                     logger.warning("No valid ICD-10 codes found in GPT response")
-                    return [], rendered_prompt
+                    return [], {}, rendered_prompt
                     
             except json.JSONDecodeError as e:
                 logger.error(f"Failed to parse ICD-10 codes JSON: {e}")

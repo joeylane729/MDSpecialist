@@ -21,6 +21,7 @@ interface SearchParams {
   determined_specialty?: string;
   predicted_icd10?: string;  // Primary code for backward compatibility
   predicted_icd10_codes?: string[];  // All ICD-10 codes
+  icd10_relevancy_scores?: { [code: string]: number };  // Code -> relevancy score mapping (0-100)
   icd10_descriptions?: { [code: string]: string | null };  // All code -> description mappings
   icd10_description?: string;
   treatment_options?: Array<{
@@ -998,6 +999,7 @@ const ResultsPage: React.FC = () => {
           ...searchParams!,
           predicted_icd10: response.patient_profile.predicted_icd10,
           predicted_icd10_codes: response.patient_profile.predicted_icd10_codes,
+          icd10_relevancy_scores: response.patient_profile.icd10_relevancy_scores,
           icd10_description: response.patient_profile.icd10_description,
           icd10_descriptions: response.patient_profile.icd10_descriptions,
           icd10_prompt_text: response.patient_profile.icd10_prompt_text,
@@ -1097,6 +1099,7 @@ const ResultsPage: React.FC = () => {
         ...searchParams,
         predicted_icd10: response.predicted_icd10 || undefined,
         predicted_icd10_codes: response.predicted_icd10_codes || undefined,
+        icd10_relevancy_scores: response.icd10_relevancy_scores || undefined,
         icd10_description: response.icd10_description || undefined,
         icd10_descriptions: response.icd10_descriptions || undefined,
         icd10_prompt_text: response.icd10_prompt_text
@@ -2126,13 +2129,15 @@ const ResultsPage: React.FC = () => {
                               const description = descriptionFromMap || 
                                                   (idx === 0 ? searchParams.icd10_description : null) || 
                                                   'Description not available';
+                              const relevancyScore = searchParams.icd10_relevancy_scores?.[code];
                               
                               if (idx < 3) {  // Log first 3 for debugging
                                 console.log(`🔍 [Frontend] ICD code ${code} (idx ${idx}):`, {
                                   has_icd10_descriptions: !!searchParams.icd10_descriptions,
                                   descriptionFromMap,
                                   icd10_description: idx === 0 ? searchParams.icd10_description : 'N/A (not first)',
-                                  final_description: description
+                                  final_description: description,
+                                  relevancy_score: relevancyScore
                                 });
                               }
                               
@@ -2142,6 +2147,11 @@ const ResultsPage: React.FC = () => {
                                     {code}
                                   </code>
                                   <span className="text-gray-700 text-sm flex-1 pt-1">{description}</span>
+                                  {relevancyScore !== undefined && (
+                                    <span className="text-xs font-medium text-gray-600 bg-gray-200 px-2 py-1 rounded flex-shrink-0">
+                                      {relevancyScore}%
+                                    </span>
+                                  )}
                                 </div>
                               );
                             })}
