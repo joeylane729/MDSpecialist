@@ -644,15 +644,19 @@ IMPORTANT:
 - Do NOT include newlines in description strings
 - Ensure all strings are properly closed
 
+For each CPT code, assign a relevancy score from 0-100% indicating how relevant the code is to the diagnosis and treatment options.
+
 Return the response in this exact JSON format:
 [
     {{
         "code": "CPT_CODE",
-        "description": "Procedure description"
+        "description": "Procedure description",
+        "relevancy_score": 95
     }},
     {{
         "code": "CPT_CODE",
-        "description": "Procedure description"
+        "description": "Procedure description",
+        "relevancy_score": 85
     }}
 ]
 
@@ -765,8 +769,8 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                     # Strategy 2: Try to extract individual valid JSON objects using regex
                     # This is a fallback if binary search fails
                     import re
-                    # Find all complete JSON objects: { "code": "...", "description": "..." }
-                    object_pattern = r'\{\s*"code"\s*:\s*"[^"]*"\s*,\s*"description"\s*:\s*"[^"]*"\s*\}'
+                    # Find all complete JSON objects: { "code": "...", "description": "...", "relevancy_score": ... }
+                    object_pattern = r'\{\s*"code"\s*:\s*"[^"]*"\s*,\s*"description"\s*:\s*"[^"]*"\s*(?:,\s*"relevancy_score"\s*:\s*\d+)?\s*\}'
                     matches = re.findall(object_pattern, response_text)
                     
                     if matches:
@@ -790,6 +794,16 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                         logger.error(f"Could not extract valid CPT codes. JSON error: {json_error}")
                         logger.debug(f"Problematic JSON (first 1000 chars): {response_text[:1000]}")
                         return []
+            
+            # Ensure all CPT codes have relevancy_score, defaulting to 50 if not provided
+            for cpt in cpt_codes:
+                if 'relevancy_score' not in cpt:
+                    cpt['relevancy_score'] = 50
+                else:
+                    # Validate score is 0-100
+                    score = cpt.get('relevancy_score', 50)
+                    if not isinstance(score, (int, float)) or score < 0 or score > 100:
+                        cpt['relevancy_score'] = 50
             
             logger.info(f"Predicted {len(cpt_codes)} CPT codes for {len(search_query_terms)} diagnosis terms")
             return cpt_codes, rendered_prompt
@@ -924,13 +938,14 @@ Categories (you MUST use only these):
 CPT Codes:
 {cpt_codes}
 
-For each CPT code, assign it to the most appropriate category from the list above.
+For each CPT code, assign it to the most appropriate category from the list above, and also assign a relevancy score from 0-100% indicating how relevant the code is to the diagnosis.
 
 Return the response in this exact JSON format:
 [
     {{
         "code": "CPT_CODE",
-        "category": "Category name"
+        "category": "Category name",
+        "relevancy_score": 95
     }}
 ]
 
@@ -982,15 +997,26 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                     all_categorized.extend(batch_categorized)
                 except json.JSONDecodeError as e:
                     logger.error(f"Error parsing JSON for batch {batch_num}: {e}")
-                    # Add batch codes with default category
+                    # Add batch codes with default category and score
                     for cpt in batch:
                         all_categorized.append({
                             "code": cpt['code'],
-                            "category": categories[0]  # Use first category as default
+                            "category": categories[0],  # Use first category as default
+                            "relevancy_score": 50  # Default score
                         })
             
             # Create a map of code -> category from all categorized results
             category_map = {item['code']: item.get('category') for item in all_categorized if 'code' in item and item.get('category')}
+            
+            # Create a map of code -> relevancy_score from all categorized results
+            relevancy_score_map = {}
+            for item in all_categorized:
+                if 'code' in item and 'relevancy_score' in item:
+                    score = item.get('relevancy_score', 0)
+                    # Validate score is 0-100
+                    if not isinstance(score, (int, float)) or score < 0 or score > 100:
+                        score = 0
+                    relevancy_score_map[item['code']] = int(score)
             
             # Determine default category: use most common category from results
             default_category = categories[0]
@@ -1002,16 +1028,25 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 if category_usage:
                     default_category = max(category_usage.items(), key=lambda x: x[1])[0]
             
-            # Apply categories to all CPT codes (including those not in GPT response)
+            # Determine default relevancy score: use average of all scores, or 50 if none
+            default_relevancy_score = 50
+            if relevancy_score_map:
+                scores = list(relevancy_score_map.values())
+                if scores:
+                    default_relevancy_score = int(sum(scores) / len(scores))
+            
+            # Apply categories and relevancy scores to all CPT codes (including those not in GPT response)
             # Attach descriptions from original data
             result = []
             category_counts = {}
             for cpt in cpt_codes:
                 category = category_map.get(cpt['code'], default_category)  # Default to most common category if not categorized
+                relevancy_score = relevancy_score_map.get(cpt['code'], default_relevancy_score)  # Default to average score if not provided
                 result.append({
                     "code": cpt['code'],
                     "description": description_map.get(cpt['code'], ''),  # Use description from original data
-                    "category": category
+                    "category": category,
+                    "relevancy_score": relevancy_score
                 })
                 category_counts[category] = category_counts.get(category, 0) + 1
             
@@ -1028,9 +1063,9 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             
         except Exception as e:
             logger.error(f"Error categorizing CPT codes: {e}", exc_info=True)
-            # Return codes with default category if categorization fails
+            # Return codes with default category and score if categorization fails
             default_prompt = f"Categorize the following CPT codes into one of these categories: Surgery, Radiation, Endovascular, Medical, Diagnostic Testing"
-            return [{"code": cpt['code'], "description": cpt.get('description', ''), "category": "Medical"} for cpt in cpt_codes], default_prompt
+            return [{"code": cpt['code'], "description": cpt.get('description', ''), "category": "Medical", "relevancy_score": 50} for cpt in cpt_codes], default_prompt
     
     async def generate_cpt_codes_from_analysis(
         self,

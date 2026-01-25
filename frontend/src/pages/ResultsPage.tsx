@@ -2726,6 +2726,11 @@ const ResultsPage: React.FC = () => {
                                 {cpt.code}
                               </code>
                               <span className="text-sm text-gray-700 flex-1">{cpt.description}</span>
+                              {cpt.relevancy_score !== undefined && (
+                                <span className="text-xs font-medium text-gray-600 bg-gray-200 px-2 py-1 rounded flex-shrink-0">
+                                  {cpt.relevancy_score}%
+                                </span>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -2847,6 +2852,11 @@ const ResultsPage: React.FC = () => {
                                       {cpt.code}
                                     </code>
                                     <span className="text-sm text-gray-700 flex-1">{cpt.description}</span>
+                                    {cpt.relevancy_score !== undefined && (
+                                      <span className="text-xs font-medium text-gray-600 bg-gray-200 px-2 py-1 rounded flex-shrink-0">
+                                        {cpt.relevancy_score}%
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                               ))}
@@ -2880,14 +2890,14 @@ const ResultsPage: React.FC = () => {
                           : (dbCptCodes || []).map((c: any) => ({ ...c, category: undefined }));
                         
                         // Create maps for quick lookup
-                        const gptCodeMap = new Map<string, { description: string; category?: string }>();
+                        const gptCodeMap = new Map<string, { description: string; category?: string; relevancy_score?: number }>();
                         allGptCodes.forEach(c => {
-                          gptCodeMap.set(c.code, { description: c.description, category: c.category });
+                          gptCodeMap.set(c.code, { description: c.description, category: c.category, relevancy_score: (c as any).relevancy_score });
                         });
                         
-                        const dbCodeMap = new Map<string, { description: string; category?: string }>();
+                        const dbCodeMap = new Map<string, { description: string; category?: string; relevancy_score?: number }>();
                         allDbCodes.forEach(c => {
-                          dbCodeMap.set(c.code, { description: c.description, category: c.category });
+                          dbCodeMap.set(c.code, { description: c.description, category: c.category, relevancy_score: (c as any).relevancy_score });
                         });
                         
                         // Get all categories from both sources (union)
@@ -3008,9 +3018,21 @@ const ResultsPage: React.FC = () => {
                                             )}
                                           </div>
                                         </div>
-                                        <p className="text-xs text-gray-700">
+                                        <p className="text-xs text-gray-700 mb-1">
                                           {gptInfo?.description || dbInfo?.description || 'No description available'}
                                         </p>
+                                        <div className="flex gap-3 text-xs">
+                                          {inGpt && gptInfo?.relevancy_score !== undefined && (
+                                            <span className="text-gray-600">
+                                              GPT: <span className="font-medium">{gptInfo.relevancy_score}%</span>
+                                            </span>
+                                          )}
+                                          {inDb && dbInfo?.relevancy_score !== undefined && (
+                                            <span className="text-gray-600">
+                                              AAPC: <span className="font-medium">{dbInfo.relevancy_score}%</span>
+                                            </span>
+                                          )}
+                                        </div>
                                       </div>
                                     </div>
                                   </div>

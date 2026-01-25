@@ -186,7 +186,7 @@ export interface SpecialistRecommendationRequest {
   surgical_history?: string;
   state?: string;
   files?: File[];
-  cpt_codes?: Array<{ code: string; description: string }>;  // Optional CPT codes to reuse (avoids duplicate generation)
+  cpt_codes?: Array<{ code: string; description: string; relevancy_score?: number }>;  // Optional CPT codes to reuse (avoids duplicate generation)
   // Medical analysis results to reuse (avoids duplicate GPT calls)
   treatment_options?: Array<{ name: string; category?: string }>;
   predicted_icd10?: string;
@@ -329,10 +329,10 @@ export interface CPTCodeGenerationRequest {
 
 export interface CPTCodeGenerationResponse {
   status: string;
-  cpt_codes: Array<{ code: string; description: string }>;
+  cpt_codes: Array<{ code: string; description: string; relevancy_score?: number }>;
   cpt_prompt_text: string;
   message: string;
-  db_cpt_codes?: Array<{ code: string; description: string }>; // Database-mapped CPT codes from ICD-10
+  db_cpt_codes?: Array<{ code: string; description: string; relevancy_score?: number }>; // Database-mapped CPT codes from ICD-10
 }
 
 export const generateSearchQuery = async (
@@ -456,6 +456,7 @@ export interface CategorizeCPTCodesRequest {
   cpt_codes: Array<{
     code: string;
     description: string;
+    relevancy_score?: number;
   }>;
   treatment_options: Array<{
     name: string;
@@ -469,6 +470,7 @@ export interface CategorizeCPTCodesResponse {
     code: string;
     description: string;
     category: string;
+    relevancy_score?: number;
   }>;
   count: number;
   categorization_prompt_text: string; // The prompt text that was used
