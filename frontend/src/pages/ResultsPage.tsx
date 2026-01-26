@@ -162,8 +162,8 @@ const ResultsPage: React.FC = () => {
   const [specialistRecommendationData, setSpecialistRecommendationData] = useState<any>(null);
   const [cptCodes, setCptCodes] = useState<Array<{ code: string; description: string }> | null>(null);
   const [cptCodesByCategory, setCptCodesByCategory] = useState<{ [category: string]: Array<{ code: string; description: string }> }>({});
-  const [dbCptCodes, setDbCptCodes] = useState<Array<{ code: string; description: string }> | null>(null); // Database-mapped CPT codes
-  const [dbCptCodesByCategory, setDbCptCodesByCategory] = useState<{ [category: string]: Array<{ code: string; description: string }> }>({}); // Database CPT codes by category
+  const [dbCptCodes, setDbCptCodes] = useState<Array<{ code: string; description: string; relevancy_score?: number }> | null>(null); // Database-mapped CPT codes
+  const [dbCptCodesByCategory, setDbCptCodesByCategory] = useState<{ [category: string]: Array<{ code: string; description: string; relevancy_score?: number }> }>({}); // Database CPT codes by category
   const [activeCptSourceTab, setActiveCptSourceTab] = useState<'gpt' | 'database' | 'comparison'>('gpt'); // Tab for CPT code source (GPT vs Database vs Comparison)
   const [categorizationPromptText, setCategorizationPromptText] = useState<string | null>(null); // Prompt text used for categorizing database CPT codes
   const [editableCategorizationPromptText, setEditableCategorizationPromptText] = useState<string | null>(null); // Editable version of categorization prompt
@@ -1325,7 +1325,7 @@ const ResultsPage: React.FC = () => {
       // Store database CPT codes grouped by category (now that they're categorized)
       if (dbCptCodesResult.length > 0) {
         // Group categorized codes by category
-        const newDbCptCodesByCategory: { [category: string]: Array<{ code: string; description: string }> } = {};
+        const newDbCptCodesByCategory: { [category: string]: Array<{ code: string; description: string; relevancy_score?: number }> } = {};
         
         dbCptCodesResult.forEach(cpt => {
           const category = (cpt as any).category || 'Medical'; // Default to Medical if no category
@@ -1334,7 +1334,8 @@ const ResultsPage: React.FC = () => {
           }
           newDbCptCodesByCategory[category].push({
             code: cpt.code,
-            description: cpt.description
+            description: cpt.description,
+            relevancy_score: (cpt as any).relevancy_score
           });
         });
         
@@ -1424,7 +1425,7 @@ const ResultsPage: React.FC = () => {
       }
 
       // Group categorized codes by category
-      const newDbCptCodesByCategory: { [category: string]: Array<{ code: string; description: string }> } = {};
+      const newDbCptCodesByCategory: { [category: string]: Array<{ code: string; description: string; relevancy_score?: number }> } = {};
       categorizedCodes.forEach(cpt => {
         const category = (cpt as any).category || 'Medical';
         if (!newDbCptCodesByCategory[category]) {
@@ -1432,7 +1433,8 @@ const ResultsPage: React.FC = () => {
         }
         newDbCptCodesByCategory[category].push({
           code: cpt.code,
-          description: cpt.description
+          description: cpt.description,
+          relevancy_score: (cpt as any).relevancy_score
         });
       });
 
