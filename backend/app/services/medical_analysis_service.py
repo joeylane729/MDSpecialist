@@ -5,8 +5,8 @@ import httpx
 from typing import List, Optional, Tuple, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
+from ..config.llm_config import get_llm
 from ..models.icd_cpt_mapping import IcdCptMapping
 
 logger = logging.getLogger(__name__)
@@ -15,7 +15,7 @@ class MedicalAnalysisService:
     """Service for comprehensive medical analysis including specialty determination, ICD-10 coding, and diagnosis prediction."""
     
     def __init__(self, db: Session = None):
-        self.llm = ChatOpenAI(model="gpt-5.1", temperature=0.1)
+        self.llm = get_llm(model_name="gpt-5.1", temperature=0.1)
         self.db = db
     
     def set_db(self, db: Session):

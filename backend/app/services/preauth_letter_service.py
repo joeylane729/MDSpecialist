@@ -2,13 +2,13 @@
 Pre-authorization Letter Generation Service
 
 This service generates pre-authorization letters for insurance companies
-using GPT, incorporating doctor qualifications and patient diagnosis information.
+using LLM (GPT or Gemini), incorporating doctor qualifications and patient diagnosis information.
 """
 
 import logging
 from typing import Dict, Any, Optional, Tuple
-from langchain_openai import ChatOpenAI
 from langchain_core.prompts import PromptTemplate
+from ..config.llm_config import get_llm
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ class PreAuthLetterService:
     """Service for generating pre-authorization letters."""
     
     def __init__(self):
-        self.llm = ChatOpenAI(model="gpt-4o", temperature=0.3)  # Using gpt-4o for letter generation quality
+        self.llm = get_llm(model_name="gpt-4o", temperature=0.3)  # Using gpt-4o for letter generation quality
     
     async def generate_preauth_letter(
         self,
