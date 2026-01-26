@@ -877,7 +877,8 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         self,
         cpt_codes: List[Dict[str, str]],
         treatment_options: List[Dict[str, str]],
-        custom_prompt: Optional[str] = None
+        custom_prompt: Optional[str] = None,
+        diagnosis_terms: Optional[List[str]] = None
     ) -> Tuple[List[Dict[str, str]], str]:
         """
         Use GPT to assign categories to CPT codes from database.
@@ -888,6 +889,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             cpt_codes: List of CPT codes with code and description
             treatment_options: List of treatment options with categories (for context)
             custom_prompt: Optional custom prompt to override default
+            diagnosis_terms: Optional list of diagnosis terms for relevancy scoring
             
         Returns:
             Tuple of (List of CPT codes with category field added, rendered prompt text)
@@ -899,6 +901,13 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             # Use hardcoded categories matching GPT treatment options generation
             categories = ["Surgery", "Radiation", "Endovascular", "Medical", "Diagnostic Testing"]
             categories_text = ", ".join(categories)
+            
+            # Format diagnosis terms for prompt (similar to GPT CPT code generation)
+            diagnosis_terms_text = ""
+            if diagnosis_terms and len(diagnosis_terms) > 0:
+                diagnosis_terms_text = "\n".join([f"- {term.strip()}" for term in diagnosis_terms if term.strip()])
+            else:
+                diagnosis_terms_text = "Not specified"
             
             # Categorize codes in batches of 10
             logger.info(f"Categorizing {len(cpt_codes)} codes in batches of 10 using categories: {categories_text}")
@@ -935,10 +944,13 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
 Categories (you MUST use only these):
 {categories}
 
+Diagnosis Terms:
+{diagnosis_terms}
+
 CPT Codes:
 {cpt_codes}
 
-For each CPT code, assign it to the most appropriate category from the list above, and also assign a relevancy score from 0-100% indicating how relevant the code is to the diagnosis.
+For each CPT code, assign it to the most appropriate category from the list above, and also assign a relevancy score from 0-100% indicating how relevant the code is to the diagnosis terms above.
 
 Return the response in this exact JSON format:
 [
@@ -952,12 +964,13 @@ Return the response in this exact JSON format:
 Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO additional text. Use ONLY the categories provided above."""
                     
                     prompt = PromptTemplate(
-                        input_variables=["categories", "cpt_codes"],
+                        input_variables=["categories", "diagnosis_terms", "cpt_codes"],
                         template=prompt_template
                     )
                     
                     rendered_prompt = prompt_template.format(
                         categories=categories_text,
+                        diagnosis_terms=diagnosis_terms_text,
                         cpt_codes=batch_codes_text
                     )
                 
@@ -973,6 +986,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 else:
                     response = await chain.ainvoke({
                         "categories": categories_text,
+                        "diagnosis_terms": diagnosis_terms_text,
                         "cpt_codes": batch_codes_text
                     })
                 

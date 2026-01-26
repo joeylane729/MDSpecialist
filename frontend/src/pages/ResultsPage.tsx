@@ -1254,7 +1254,8 @@ const ResultsPage: React.FC = () => {
               console.log(`🔍 Categorizing ${dbCptCodesResult.length} database CPT codes using GPT...`);
               const categorizeResponse = await categorizeCPTCodes({
                 cpt_codes: dbCptCodesResult,
-                treatment_options: selectedTreatmentOptions
+                treatment_options: selectedTreatmentOptions,
+                search_query: searchQuery
               });
               
               // Update dbCptCodesResult with categorized codes
@@ -1399,6 +1400,9 @@ const ResultsPage: React.FC = () => {
       return;
     }
 
+    // Get search query for diagnosis terms
+    const searchQuery = searchParams?.search_query || location.state?.aiRecommendations?.patient_profile?.search_query;
+
     try {
       setIsRecategorizingCPTCodes(true);
 
@@ -1409,7 +1413,8 @@ const ResultsPage: React.FC = () => {
       const categorizeResponse = await categorizeCPTCodes({
         cpt_codes: dbCptCodes,
         treatment_options: allTreatmentOptions,
-        custom_prompt: customPrompt
+        custom_prompt: customPrompt,
+        search_query: searchQuery
       });
 
       // Update categorized codes

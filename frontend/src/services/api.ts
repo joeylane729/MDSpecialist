@@ -463,6 +463,7 @@ export interface CategorizeCPTCodesRequest {
     category?: string;
   }>;
   custom_prompt?: string; // Optional custom prompt to override default
+  search_query?: string; // Optional search query to extract diagnosis terms for relevancy scoring
 }
 
 export interface CategorizeCPTCodesResponse {
@@ -491,6 +492,9 @@ export const categorizeCPTCodes = async (
     formData.append('treatment_options_json', JSON.stringify(request.treatment_options));
     if (request.custom_prompt) {
       formData.append('custom_prompt', request.custom_prompt);
+    }
+    if (request.search_query) {
+      formData.append('search_query', request.search_query);
     }
     
     console.log('🔍 [Frontend] Making API call to:', `${API_BASE_URL}/api/v1/medical-analysis/categorize-cpt-codes`);
