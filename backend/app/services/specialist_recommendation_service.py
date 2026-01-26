@@ -44,9 +44,9 @@ class SpecialistRecommendationService:
         self,
         patient_input: str,
         cpt_codes: List[Dict[str, str]],
-        treatment_options: List[Dict[str, Any]],
-        predicted_icd10: str,
-        search_query: str,
+        treatment_options: Optional[List[Dict[str, Any]]] = None,
+        predicted_icd10: str = "",
+        search_query: str = "",
         state: Optional[str] = None,
         icd10_description: Optional[str] = None,
         determined_specialty: Optional[str] = None
@@ -57,7 +57,7 @@ class SpecialistRecommendationService:
             patient_input: Patient input string (still needed for specialist information retrieval service)
             state: Optional state filter for CMS API
             cpt_codes: Required pre-generated CPT codes (must be generated first)
-            treatment_options: Required pre-generated treatment options from medical analysis step
+            treatment_options: Optional treatment options (deprecated - no longer generated, defaults to empty list)
             predicted_icd10: Required ICD-10 code from medical analysis step
             search_query: Required pre-generated search query from medical analysis step
             icd10_description: Optional ICD-10 description from medical analysis step
@@ -66,14 +66,17 @@ class SpecialistRecommendationService:
         start_time = datetime.now()
         
         try:
+            # Default treatment_options to empty list if not provided (deprecated - no longer generated)
+            if treatment_options is None:
+                treatment_options = []
+                logger.info("📋 treatment_options not provided, using empty list (treatment options no longer generated)")
+            
             # Step 1: Validate that required medical analysis results are provided (no fallback - must be passed through)
             if not cpt_codes or len(cpt_codes) == 0:
                 raise ValueError("CPT codes are required. Please generate CPT codes first before requesting specialist recommendations.")
             
-            if not (treatment_options and predicted_icd10 and search_query):
+            if not (predicted_icd10 and search_query):
                 missing_fields = []
-                if not treatment_options:
-                    missing_fields.append("treatment_options")
                 if not predicted_icd10:
                     missing_fields.append("predicted_icd10")
                 if not search_query:
@@ -204,14 +207,14 @@ class SpecialistRecommendationService:
                 cms_data=cms_results  # Add CMS API results to response
             )
             
-            # Debug logging for treatment options
+            # Debug logging for treatment options (deprecated - kept for backward compatibility)
             logger.debug(f"🔍 Response patient_profile keys: {list(medical_analysis_results.keys())}")
-            if "treatment_options" in medical_analysis_results:
-                logger.info(f"📋 Response includes {len(medical_analysis_results['treatment_options'])} treatment options")
+            if "treatment_options" in medical_analysis_results and medical_analysis_results['treatment_options']:
+                logger.info(f"📋 Response includes {len(medical_analysis_results['treatment_options'])} treatment options (deprecated)")
                 for i, option in enumerate(medical_analysis_results['treatment_options']):
                     logger.info(f"   {i+1}. {option.get('name', 'Unnamed')}")
             else:
-                logger.warning("⚠️  No treatment_options in response patient_profile")
+                logger.info("📋 No treatment_options in response (expected - treatment options no longer generated)")
             
             logger.info(f"✅ Generated {len(recommendations)} recommendations in {processing_time:.2f}ms")
             return response
