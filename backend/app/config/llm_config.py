@@ -32,6 +32,7 @@ def get_llm(
     
     Returns:
         LangChain ChatModel instance (ChatOpenAI or ChatGoogleGenerativeAI)
+        The instance will have a _provider attribute set to "openai" or "gemini"
     """
     # Determine provider
     if provider is None:
@@ -39,10 +40,16 @@ def get_llm(
     
     provider = provider.lower()
     
+    logger.info(f"🔧 [LLM Config] Creating LLM instance - Provider: {provider.upper()}, Model: {model_name or 'default'}, Temperature: {temperature}")
+    
     if provider == "gemini":
-        return _create_gemini_llm(model_name, temperature)
+        llm = _create_gemini_llm(model_name, temperature)
     else:  # default to openai
-        return _create_openai_llm(model_name, temperature)
+        llm = _create_openai_llm(model_name, temperature)
+    
+    # Add provider attribute for easy identification
+    llm._provider = provider
+    return llm
 
 
 def _create_openai_llm(model_name: Optional[str], temperature: float) -> Any:
@@ -71,13 +78,16 @@ def _create_openai_llm(model_name: Optional[str], temperature: float) -> Any:
     
     model = model_name or os.getenv("LLM_MODEL", default_models.get("default", "gpt-5.1"))
     
-    logger.info(f"🤖 Initializing OpenAI LLM: {model} (temperature={temperature})")
+    logger.info(f"🤖 [LLM] Provider: OpenAI | Model: {model} | Temperature: {temperature}")
     
-    return ChatOpenAI(
+    llm_instance = ChatOpenAI(
         model=model,
         temperature=temperature,
         api_key=api_key
     )
+    
+    logger.info(f"✅ [LLM] OpenAI LLM instance created successfully")
+    return llm_instance
 
 
 def _create_gemini_llm(model_name: Optional[str], temperature: float) -> Any:
@@ -106,10 +116,13 @@ def _create_gemini_llm(model_name: Optional[str], temperature: float) -> Any:
     
     model = model_name or os.getenv("LLM_MODEL", default_models.get("default", "gemini-1.5-pro"))
     
-    logger.info(f"🤖 Initializing Gemini LLM: {model} (temperature={temperature})")
+    logger.info(f"🤖 [LLM] Provider: Gemini | Model: {model} | Temperature: {temperature}")
     
-    return ChatGoogleGenerativeAI(
+    llm_instance = ChatGoogleGenerativeAI(
         model=model,
         temperature=temperature,
         google_api_key=api_key
     )
+    
+    logger.info(f"✅ [LLM] Gemini LLM instance created successfully")
+    return llm_instance

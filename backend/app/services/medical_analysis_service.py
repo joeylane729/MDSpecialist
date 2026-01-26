@@ -15,7 +15,9 @@ class MedicalAnalysisService:
     """Service for comprehensive medical analysis including specialty determination, ICD-10 coding, and diagnosis prediction."""
     
     def __init__(self, db: Session = None):
+        logger.info(f"🏥 [MedicalAnalysisService] Initializing service...")
         self.llm = get_llm(model_name="gpt-5.1", temperature=0.1)
+        logger.info(f"✅ [MedicalAnalysisService] Service initialized with LLM configured")
         self.db = db
     
     def set_db(self, db: Session):
@@ -335,6 +337,10 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             
             chain = prompt | self.llm
             
+            # Log which LLM provider is being used for ICD-10 generation
+            llm_provider = getattr(self.llm, '_provider', 'unknown').upper()
+            logger.info(f"🔍 [ICD-10 Generation] Using {llm_provider} LLM to generate ICD-10 codes")
+            
             invoke_dict = {}
             if "{diagnosis}" in prompt_template:
                 invoke_dict["diagnosis"] = diagnosis
@@ -348,6 +354,8 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 "anatomical_location": anatomical_location or "",
                 "pdf_content": pdf_content
             })
+            
+            logger.info(f"✅ [ICD-10 Generation] {llm_provider} LLM response received")
             
             # Extract the ICD-10 codes from the response - LCEL returns AIMessage object
             response_text = response.content.strip() if hasattr(response, 'content') else str(response).strip()
@@ -515,6 +523,10 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
             
             chain = prompt | self.llm
             
+            # Log which LLM provider is being used for search query generation
+            llm_provider = getattr(self.llm, '_provider', 'unknown').upper()
+            logger.info(f"🔍 [Search Query Generation] Using {llm_provider} LLM to generate search query")
+            
             # Invoke with variables if they exist in the template
             if "{icd10_description}" in prompt_template or "{user_diagnosis}" in prompt_template or "{anatomical_location}" in prompt_template:
                 invoke_dict = {}
@@ -679,6 +691,10 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             
             chain = prompt | self.llm
             
+            # Log which LLM provider is being used for CPT code generation
+            llm_provider = getattr(self.llm, '_provider', 'unknown').upper()
+            logger.info(f"🔍 [CPT Code Generation] Using {llm_provider} LLM to generate and categorize CPT codes")
+            
             # Invoke with variables only if they're expected
             invoke_dict = {}
             if "{diagnosis_terms}" in prompt_template:
@@ -692,9 +708,12 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 response = await chain.ainvoke(invoke_dict)
             else:
                 response = await chain.ainvoke({})
-                # For custom prompts without variables, the rendered prompt is the prompt itself
-                if not rendered_prompt:
-                    rendered_prompt = prompt_template
+            
+            # For custom prompts without variables, the rendered prompt is the prompt itself
+            if not rendered_prompt:
+                rendered_prompt = prompt_template
+            
+            logger.info(f"✅ [CPT Code Generation] {llm_provider} LLM response received")
             
             # Extract the JSON response
             response_text = response.content.strip() if hasattr(response, 'content') else str(response).strip()
@@ -994,6 +1013,11 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 
                 # Create chain and invoke
                 chain = prompt | self.llm
+                
+                # Log which LLM provider is being used for AAPC categorization
+                llm_provider = getattr(self.llm, '_provider', 'unknown').upper()
+                if batch_num == 1:
+                    logger.info(f"🔍 [AAPC CPT Categorization] Using {llm_provider} LLM to categorize database CPT codes (batch {batch_num}/{total_batches})")
                 
                 if custom_prompt:
                     response = await chain.ainvoke({})

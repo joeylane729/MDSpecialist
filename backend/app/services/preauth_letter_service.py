@@ -260,9 +260,11 @@ Write a professional email (400-600 words) with:
             
             chain = prompt | self.llm
             
-            logger.info("🤖 [PreAuth] Calling GPT-4o API to generate letter...")
+            # Log which LLM provider is being used
+            llm_provider = getattr(self.llm, '_provider', 'unknown').upper()
+            logger.info(f"🤖 [PreAuth] Calling {llm_provider} LLM API to generate letter...")
             response = await chain.ainvoke(prompt_vars)
-            logger.info("✅ [PreAuth] GPT API call completed")
+            logger.info(f"✅ [PreAuth] {llm_provider} LLM API call completed")
             
             # Extract the letter content
             letter = response.content.strip() if hasattr(response, 'content') else str(response).strip()
