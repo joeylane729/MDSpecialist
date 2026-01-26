@@ -623,7 +623,6 @@ IMPORTANT:
 - Include all CPT codes for treatment of related diagnoses in an adjacent location in a simple or complex treatment
 - Do not include any add-on CPT codes (these generally start with a + sign)
 - Do not include codes that start with 99XXX, 98XXX, or 6178X
-- Do not include codes that would be better classified as medical treatment, radiation therapy, endovascular treatment or diagnostic testing
 - Escape all quotes in descriptions (use \\" for quotes inside strings)
 - Keep descriptions concise (under 100 characters)
 - Do NOT include newlines in description strings
