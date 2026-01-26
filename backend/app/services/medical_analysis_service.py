@@ -285,10 +285,11 @@ Anatomical Location: {anatomical_location}
 Additional Information from Medical Records/PDFs:
 {pdf_content}
 
-Provide 5-10 most likely ICD-10 codes for this diagnosis, including:
+Provide between 5 and 10 of the most likely ICD-10 codes for this diagnosis, including:
 - Codes for similar pathology in a similar anatomic location
-- Codes may use terms like "uncertain" or "unspecified" in their descriptions
-- Do not include codes that contain descriptions of anatomic parts of the body that are not nearby or immediately adjacent
+- If codes use terms like "uncertain behavior" or "unspecified behavior" in their descriptions then the anatomic location and/or the pathologic diagnosis must be the same as the original diagnosis
+- DO NOT include codes that contain descriptions of anatomy that is not immediately adjacent to the anatomical location
+- Please make sure to preserve the pathologic category of the original diagnosis. For example, if the original diagnosis is a neoplasm, then all the ICD-10 codes should designate neoplasms. If the original diagnosis is a vascular lesion, then all the ICD- 10 codes should be vascular lesions. If the original diagnosis is a medical condition, then all the ICD-10 codes should be medical conditions. If the original diagnosis is a degenerative disease, then all the ICD-10 codes should be degenerative diseases.
 
 For each code, assign a relevancy score from 0-100% indicating how relevant the code is to the diagnosis.
 
@@ -621,14 +622,15 @@ Specialty: Neurosurgery
 IMPORTANT: 
 - Include all CPT codes for treatment of related diagnoses in an adjacent location in a simple or complex treatment
 - Do not include any add-on CPT codes (these generally start with a + sign)
-- Do not include codes that start with 99XXX or 6178X
+- Do not include codes that start with 99XXX, 98XXX, or 6178X
+- Do not include codes that would be better classified as medical treatment, radiation therapy, endovascular treatment or diagnostic testing
 - Escape all quotes in descriptions (use \\" for quotes inside strings)
 - Keep descriptions concise (under 100 characters)
 - Do NOT include newlines in description strings
 - Ensure all strings are properly closed
 
 For each CPT code, you MUST:
-1. Assign it to ONE of these 5 categories: {categories}
+1. Assign it to ONE of these 5 categories based on the type of therapy: {categories}
 2. Assign a relevancy score from 0-100% indicating how relevant the code is to the diagnosis terms above
 
 Return the response in this exact JSON format:
