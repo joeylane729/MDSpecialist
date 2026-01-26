@@ -164,32 +164,20 @@ async def regenerate_icd10_code(
 @router.post("/medical-analysis/cpt-codes")
 async def generate_cpt_codes(
     search_query: str = Form(...),
-    treatment_options_json: str = Form(...),  # JSON array of treatment options
     anatomical_location: Optional[str] = Form(None),
     custom_prompt: Optional[str] = Form(None),  # Optional custom prompt to override default
     icd10_code: Optional[str] = Form(None),  # Optional ICD-10 code(s) - comma-separated for multiple codes
     db: Session = Depends(get_db)
 ):
     """
-    Generate CPT codes based on search query and treatment options.
+    Generate and categorize CPT codes based on search query in a single GPT call.
     Also queries database for CPT codes mapped to ICD-10 code if provided.
     Runs both queries in parallel.
     
     This endpoint is called separately after the initial medical analysis to generate CPT codes.
-    It requires the search_query and treatment_options from the previous step.
+    It requires the search_query from the previous step.
     """
     try:
-        # Parse treatment options JSON
-        try:
-            treatment_options = json.loads(treatment_options_json)
-            if not isinstance(treatment_options, list):
-                raise ValueError("treatment_options_json must be a JSON array")
-        except json.JSONDecodeError as e:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Invalid treatment_options_json: {str(e)}"
-            )
-        
         # Initialize service and generate CPT codes (both GPT and database)
         medical_analysis_service = MedicalAnalysisService(db)
         # Parse comma-separated ICD-10 codes if provided
@@ -199,7 +187,6 @@ async def generate_cpt_codes(
         
         gpt_cpt_codes, cpt_prompt_text, db_cpt_codes = await medical_analysis_service.generate_cpt_codes_from_analysis(
             search_query=search_query,
-            treatment_options=treatment_options,
             anatomical_location=anatomical_location or "",
             custom_prompt=custom_prompt,
             icd10_code=icd10_codes_list  # Pass as list

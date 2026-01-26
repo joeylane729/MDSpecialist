@@ -319,17 +319,13 @@ export interface ICD10CodeGenerationResponse {
 
 export interface CPTCodeGenerationRequest {
   search_query: string;
-  treatment_options: Array<{
-    name: string;
-    category?: string;
-  }>;
   anatomical_location?: string; // Optional anatomical location
   custom_prompt?: string; // Optional custom prompt to override default
 }
 
 export interface CPTCodeGenerationResponse {
   status: string;
-  cpt_codes: Array<{ code: string; description: string; relevancy_score?: number }>;
+  cpt_codes: Array<{ code: string; description: string; category?: string; relevancy_score?: number }>;
   cpt_prompt_text: string;
   message: string;
   db_cpt_codes?: Array<{ code: string; description: string; relevancy_score?: number }>; // Database-mapped CPT codes from ICD-10
@@ -416,13 +412,11 @@ export const generateCPTCodes = async (
   try {
     console.log('🔍 [Frontend] Generating CPT codes:', {
       search_query: request.search_query?.substring(0, 100),
-      treatment_options_count: request.treatment_options?.length,
-      icd10_code: request.icd10_code
+      anatomical_location: request.anatomical_location
     });
 
     const formData = new FormData();
     formData.append('search_query', request.search_query);
-    formData.append('treatment_options_json', JSON.stringify(request.treatment_options));
     if (request.anatomical_location) {
       formData.append('anatomical_location', request.anatomical_location);
     }

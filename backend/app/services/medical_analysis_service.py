@@ -49,15 +49,17 @@ class MedicalAnalysisService:
             custom_icd10_prompt: Optional custom prompt to override default for ICD-10 code generation
         """
         try:
-            # Perform medical analysis with diagnosis, anatomical location, and PDF content
-            diagnoses_result, diagnoses_prompt_text = await self.predict_diagnoses(
-                diagnosis, anatomical_location, pdf_content,
-                custom_prompt=custom_diagnoses_prompt
-            )
+            logger.info(f"🏥 [Medical Analysis] Starting comprehensive analysis")
+            logger.info(f"   - Diagnosis: {diagnosis[:100] if diagnosis else 'None'}...")
+            logger.info(f"   - Anatomical location: {anatomical_location or 'Not specified'}")
+            logger.info(f"   - Treatment options generation: REMOVED (no longer generated)")
             
+            # Generate ICD-10 codes (treatment options generation removed)
+            logger.info(f"   🔄 Generating ICD-10 codes...")
             predicted_icd10_codes, icd10_relevancy_scores, icd10_prompt_text = await self.predict_icd10_code(
                 diagnosis, anatomical_location, pdf_content, custom_prompt=custom_icd10_prompt
             )
+            logger.info(f"   ✅ Generated {len(predicted_icd10_codes)} ICD-10 codes")
             
             # Use first code as primary for backward compatibility, but store all codes
             primary_icd10 = predicted_icd10_codes[0] if predicted_icd10_codes else None
@@ -66,13 +68,8 @@ class MedicalAnalysisService:
                 "predicted_icd10": primary_icd10,  # Primary code for backward compatibility
                 "predicted_icd10_codes": predicted_icd10_codes,  # All codes
                 "icd10_relevancy_scores": icd10_relevancy_scores,  # Code -> relevancy score mapping
-                "diagnoses": diagnoses_result
+                "diagnoses": {}  # Empty dict for backward compatibility
             }
-            
-            # Ensure diagnoses is not None
-            if medical_analysis["diagnoses"] is None:
-                logger.warning("predict_diagnoses returned None, setting to empty dict")
-                medical_analysis["diagnoses"] = {}
             
             # Add ICD-10 descriptions for all codes
             if predicted_icd10_codes and self.db:
@@ -91,19 +88,6 @@ class MedicalAnalysisService:
                         logger.warning(f"Could not find ICD-10 description for: {primary_icd10}")
             else:
                 logger.warning(f"Not fetching ICD-10 descriptions: codes={len(predicted_icd10_codes) if predicted_icd10_codes else 0}, db={self.db is not None}")
-            
-            # Extract treatment options from diagnoses if available (needed for CPT code prediction)
-            treatment_options = []
-            if medical_analysis["diagnoses"] and "treatment_options" in medical_analysis["diagnoses"]:
-                treatment_options = medical_analysis["diagnoses"]["treatment_options"]
-                # Log treatment options with categories
-                logger.info(f"📋 Extracted {len(treatment_options)} treatment options from medical analysis:")
-                for i, option in enumerate(treatment_options, 1):
-                    category = option.get('category', 'Not specified')
-                    name = option.get('name', 'Unnamed')
-                    logger.info(f"   {i}. {name} (Category: {category})")
-            else:
-                logger.warning("No treatment options found in medical analysis")
             
             # Generate search query using the same prompt as SpecialistInformationRetrievalService
             search_query = ""
@@ -146,8 +130,6 @@ class MedicalAnalysisService:
                 "icd10_descriptions": icd10_descriptions,  # All code -> description mappings
                 "icd10_prompt_text": icd10_prompt_text,  # Actual GPT prompt used to generate ICD-10 code
                 "determined_specialty": determined_specialty,  # Specialty determined for provider search
-                "treatment_options": treatment_options,
-                "diagnoses_prompt_text": diagnoses_prompt_text,  # Actual GPT prompt used to generate diagnoses/treatment options
                 "search_query": search_query,  # Pre-generated search query
                 "search_query_prompt_text": search_query_prompt_text,  # Actual GPT prompt used to generate search query
                 
@@ -155,7 +137,11 @@ class MedicalAnalysisService:
                 "diagnoses": medical_analysis["diagnoses"]
             }
             
-            logger.info(f"Comprehensive analysis completed: ICD-10 codes={comprehensive_result.get('predicted_icd10_codes', [])}, {len(treatment_options)} treatment options")
+            logger.info(f"✅ [Medical Analysis] Comprehensive analysis completed successfully")
+            logger.info(f"   - ICD-10 codes: {len(comprehensive_result.get('predicted_icd10_codes', []))} codes")
+            logger.info(f"   - Search query: {'Generated' if comprehensive_result.get('search_query') else 'Not generated'}")
+            logger.info(f"   - Treatment options: REMOVED (no longer part of flow)")
+            logger.info(f"   - Next step: User will click 'Generate CPT Codes' button to get categorized CPT codes")
             return comprehensive_result
             
         except Exception as e:
@@ -557,39 +543,37 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
             logger.error(f"Error generating search query: {e}", exc_info=True)
             return "", ""
 
-    async def predict_cpt_codes(
+    async def generate_and_categorize_cpt_codes(
         self,
         search_query_terms: List[str],
-        treatment_options: Optional[List[Dict[str, str]]] = None,
         anatomical_location: str = "",
         custom_prompt: Optional[str] = None
     ) -> Tuple[List[Dict[str, str]], str]:
         """
-        Use GPT to predict relevant CPT codes that a neurosurgeon would use to treat the given diagnosis terms and treatment options.
+        Use GPT to generate and categorize CPT codes in a single call.
+        Generates CPT codes, assigns them to one of 5 categories, and assigns relevancy scores.
         
         Args:
             search_query_terms: List of diagnosis terms/descriptions from the search query (e.g., ["acoustic neuroma", "vestibular schwannoma", ...])
-            treatment_options: Optional list of treatment options with name and category
             anatomical_location: Anatomical location of the condition (e.g., "brain", "spine", "arm")
             custom_prompt: Optional custom prompt to override default
             
         Returns:
-            Tuple of (List of dictionaries containing CPT code and description, rendered prompt text with actual values)
+            Tuple of (List of dictionaries containing CPT code, description, category, and relevancy_score, rendered prompt text)
         """
         try:
+            logger.info(f"🚀 [GPT CPT Generation] Starting combined generation and categorization")
+            logger.info(f"   - Diagnosis terms: {len(search_query_terms)} terms")
+            logger.info(f"   - Anatomical location: {anatomical_location or 'Not specified'}")
+            logger.info(f"   - Using custom prompt: {custom_prompt is not None}")
+            
             # Format the terms as a readable list
             terms_text = "\n".join([f"- {term.strip()}" for term in search_query_terms if term.strip()])
             
-            # Format treatment options for the prompt
-            treatment_options_text = ""
-            if treatment_options and len(treatment_options) > 0:
-                treatment_lines = []
-                for i, option in enumerate(treatment_options, 1):
-                    name = option.get('name', f'Treatment {i}')
-                    treatment_lines.append(f"{i}. {name}")
-                treatment_options_text = "\n".join(treatment_lines)
-            else:
-                treatment_options_text = "None specified"
+            # Hardcoded categories matching treatment options
+            categories = ["Surgery", "Radiation", "Endovascular", "Medical", "Diagnostic Testing"]
+            categories_text = ", ".join(categories)
+            logger.info(f"   - Using hardcoded categories: {categories_text}")
             
             # Use custom prompt if provided, otherwise use default
             if custom_prompt:
@@ -598,25 +582,25 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
                 # Temporarily replace our template variables with placeholders
                 escaped_prompt = escaped_prompt.replace("{diagnosis_terms}", "__DIAGNOSIS_TERMS__")
                 escaped_prompt = escaped_prompt.replace("{anatomical_location}", "__ANATOMICAL_LOCATION__")
-                escaped_prompt = escaped_prompt.replace("{treatment_options}", "__TREATMENT_OPTIONS__")
+                escaped_prompt = escaped_prompt.replace("{categories}", "__CATEGORIES__")
                 # Escape all remaining curly braces
                 escaped_prompt = escaped_prompt.replace("{", "{{").replace("}", "}}")
                 # Restore our template variables
                 escaped_prompt = escaped_prompt.replace("{{__DIAGNOSIS_TERMS__}}", "{diagnosis_terms}")
                 escaped_prompt = escaped_prompt.replace("{{__ANATOMICAL_LOCATION__}}", "{anatomical_location}")
-                escaped_prompt = escaped_prompt.replace("{{__TREATMENT_OPTIONS__}}", "{treatment_options}")
+                escaped_prompt = escaped_prompt.replace("{{__CATEGORIES__}}", "{categories}")
                 
                 prompt_template = escaped_prompt
                 # For custom prompts, format with the variables if they're present
-                if "{diagnosis_terms}" in custom_prompt or "{anatomical_location}" in custom_prompt or "{treatment_options}" in custom_prompt:
+                if "{diagnosis_terms}" in custom_prompt or "{anatomical_location}" in custom_prompt or "{categories}" in custom_prompt:
                     try:
                         invoke_dict = {}
                         if "{diagnosis_terms}" in custom_prompt:
                             invoke_dict["diagnosis_terms"] = terms_text
                         if "{anatomical_location}" in custom_prompt:
                             invoke_dict["anatomical_location"] = anatomical_location or ""
-                        if "{treatment_options}" in custom_prompt:
-                            invoke_dict["treatment_options"] = treatment_options_text
+                        if "{categories}" in custom_prompt:
+                            invoke_dict["categories"] = categories_text
                         rendered_prompt = custom_prompt.format(**invoke_dict)
                     except KeyError as e:
                         # If formatting fails, log and use as-is
@@ -627,13 +611,12 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
                     rendered_prompt = custom_prompt
             else:
                 prompt_template = """Give an exhaustive list of primary CPT codes that could possibly be used to treat patients with any of these diagnoses or a similar diagnosis in an adjacent location in a simple or complex treatment:
+
+Diagnosis Terms:
 {diagnosis_terms}
 
 Anatomical Location: {anatomical_location}
 Specialty: Neurosurgery
-
-Only consider CPT codes that could be used for the following treatment options and this anatomical location: 
-{treatment_options}
 
 IMPORTANT: 
 - Include all CPT codes for treatment of related diagnoses in an adjacent location in a simple or complex treatment
@@ -644,29 +627,33 @@ IMPORTANT:
 - Do NOT include newlines in description strings
 - Ensure all strings are properly closed
 
-For each CPT code, assign a relevancy score from 0-100% indicating how relevant the code is to the diagnosis and treatment options.
+For each CPT code, you MUST:
+1. Assign it to ONE of these 5 categories: {categories}
+2. Assign a relevancy score from 0-100% indicating how relevant the code is to the diagnosis terms above
 
 Return the response in this exact JSON format:
 [
     {{
         "code": "CPT_CODE",
         "description": "Procedure description",
+        "category": "Category name",
         "relevancy_score": 95
     }},
     {{
         "code": "CPT_CODE",
         "description": "Procedure description",
+        "category": "Category name",
         "relevancy_score": 85
     }}
 ]
 
-Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO additional text."""
+Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO additional text. Use ONLY the categories provided above."""
                 
                 # Render the prompt with actual values to capture what was sent to GPT
                 rendered_prompt = prompt_template.format(
                     diagnosis_terms=terms_text,
                     anatomical_location=anatomical_location or "",
-                    treatment_options=treatment_options_text
+                    categories=categories_text
                 )
             
             # Create prompt template with variables only if custom prompt uses them
@@ -677,15 +664,15 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                     input_vars.append("diagnosis_terms")
                 if "{anatomical_location}" in custom_prompt:
                     input_vars.append("anatomical_location")
-                if "{treatment_options}" in custom_prompt:
-                    input_vars.append("treatment_options")
+                if "{categories}" in custom_prompt:
+                    input_vars.append("categories")
                 prompt = PromptTemplate(
-                    input_variables=input_vars if input_vars else ["diagnosis_terms", "anatomical_location", "treatment_options"],
+                    input_variables=input_vars if input_vars else ["diagnosis_terms", "anatomical_location", "categories"],
                     template=prompt_template
                 )
             else:
                 prompt = PromptTemplate(
-                    input_variables=["diagnosis_terms", "anatomical_location", "treatment_options"],
+                    input_variables=["diagnosis_terms", "anatomical_location", "categories"],
                     template=prompt_template
                 )
             
@@ -697,8 +684,8 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 invoke_dict["diagnosis_terms"] = terms_text
             if "{anatomical_location}" in prompt_template:
                 invoke_dict["anatomical_location"] = anatomical_location or ""
-            if "{treatment_options}" in prompt_template:
-                invoke_dict["treatment_options"] = treatment_options_text
+            if "{categories}" in prompt_template:
+                invoke_dict["categories"] = categories_text
             
             if invoke_dict:
                 response = await chain.ainvoke(invoke_dict)
@@ -769,8 +756,8 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                     # Strategy 2: Try to extract individual valid JSON objects using regex
                     # This is a fallback if binary search fails
                     import re
-                    # Find all complete JSON objects: { "code": "...", "description": "...", "relevancy_score": ... }
-                    object_pattern = r'\{\s*"code"\s*:\s*"[^"]*"\s*,\s*"description"\s*:\s*"[^"]*"\s*(?:,\s*"relevancy_score"\s*:\s*\d+)?\s*\}'
+                    # Find all complete JSON objects: { "code": "...", "description": "...", "category": "...", "relevancy_score": ... }
+                    object_pattern = r'\{\s*"code"\s*:\s*"[^"]*"\s*,\s*"description"\s*:\s*"[^"]*"\s*,\s*"category"\s*:\s*"[^"]*"\s*(?:,\s*"relevancy_score"\s*:\s*\d+)?\s*\}'
                     matches = re.findall(object_pattern, response_text)
                     
                     if matches:
@@ -795,17 +782,43 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                         logger.debug(f"Problematic JSON (first 1000 chars): {response_text[:1000]}")
                         return []
             
-            # Ensure all CPT codes have relevancy_score, defaulting to 50 if not provided
+            # Ensure all CPT codes have category and relevancy_score, with defaults if not provided
+            default_category = categories[0]  # Default to first category
+            category_counts = {}
+            relevancy_score_stats = {"min": 100, "max": 0, "sum": 0, "count": 0}
+            
             for cpt in cpt_codes:
+                # Validate and set category
+                if 'category' not in cpt or cpt.get('category') not in categories:
+                    logger.warning(f"   ⚠️  CPT code {cpt.get('code', 'unknown')} has invalid/missing category, defaulting to {default_category}")
+                    cpt['category'] = default_category
+                
+                category = cpt.get('category', default_category)
+                category_counts[category] = category_counts.get(category, 0) + 1
+                
+                # Validate and set relevancy_score
                 if 'relevancy_score' not in cpt:
+                    logger.warning(f"   ⚠️  CPT code {cpt.get('code', 'unknown')} missing relevancy_score, defaulting to 50")
                     cpt['relevancy_score'] = 50
                 else:
                     # Validate score is 0-100
                     score = cpt.get('relevancy_score', 50)
                     if not isinstance(score, (int, float)) or score < 0 or score > 100:
+                        logger.warning(f"   ⚠️  CPT code {cpt.get('code', 'unknown')} has invalid relevancy_score {score}, defaulting to 50")
                         cpt['relevancy_score'] = 50
+                    else:
+                        relevancy_score_stats["min"] = min(relevancy_score_stats["min"], score)
+                        relevancy_score_stats["max"] = max(relevancy_score_stats["max"], score)
+                        relevancy_score_stats["sum"] += score
+                        relevancy_score_stats["count"] += 1
             
-            logger.info(f"Predicted {len(cpt_codes)} CPT codes for {len(search_query_terms)} diagnosis terms")
+            avg_relevancy = relevancy_score_stats["sum"] / relevancy_score_stats["count"] if relevancy_score_stats["count"] > 0 else 0
+            
+            logger.info(f"✅ [GPT CPT Generation] Successfully generated and categorized {len(cpt_codes)} CPT codes")
+            logger.info(f"   - Category distribution: {dict(sorted(category_counts.items(), key=lambda x: x[1], reverse=True))}")
+            logger.info(f"   - Relevancy scores: min={relevancy_score_stats['min']}, max={relevancy_score_stats['max']}, avg={avg_relevancy:.1f}")
+            logger.info(f"   - All codes have category and relevancy_score validated")
+            
             return cpt_codes, rendered_prompt
         except Exception as e:
             logger.error(f"Error predicting CPT codes: {e}", exc_info=True)
@@ -1084,25 +1097,23 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
     async def generate_cpt_codes_from_analysis(
         self,
         search_query: str,
-        treatment_options: List[Dict[str, str]],
         anatomical_location: str = "",
         custom_prompt: Optional[str] = None,
         icd10_code: Optional[List[str]] = None  # List of ICD-10 codes
     ) -> Tuple[List[Dict[str, str]], str, List[Dict[str, str]]]:
         """
-        Generate CPT codes from search query and treatment options.
+        Generate and categorize CPT codes from search query in a single GPT call.
         Also queries database for CPT codes mapped to ICD-10 code if provided.
         Runs both queries in parallel.
         
         Args:
             search_query: Search query string (typically from generate_search_query)
-            treatment_options: List of treatment options with name and category
             anatomical_location: Anatomical location of the condition (e.g., "brain", "spine", "arm")
             custom_prompt: Optional custom prompt to override default
             icd10_code: Optional ICD-10 code to query database for mapped CPT codes
             
         Returns:
-            Tuple of (GPT-generated CPT codes, rendered prompt text, database-mapped CPT codes)
+            Tuple of (GPT-generated and categorized CPT codes, rendered prompt text, database-mapped CPT codes)
         """
         if not search_query:
             logger.warning("Cannot generate CPT codes - no search query provided")
@@ -1110,27 +1121,49 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         
         # Parse search query to extract individual terms (split by " OR ")
         search_terms = [term.strip() for term in search_query.split(" OR ") if term.strip()]
+        logger.info(f"📋 [CPT Code Generation] Starting parallel GPT + Database query")
+        logger.info(f"   - Search terms: {len(search_terms)} terms")
+        logger.info(f"   - ICD-10 codes for DB query: {len(icd10_code) if icd10_code else 0} codes")
+        logger.info(f"   - Anatomical location: {anatomical_location or 'Not specified'}")
         
         # Run GPT generation and database query in parallel
         async def get_gpt_codes():
-            return await self.predict_cpt_codes(search_terms, treatment_options, anatomical_location, custom_prompt=custom_prompt)
+            logger.info(f"   🔄 [GPT] Starting GPT CPT code generation and categorization...")
+            start_time = asyncio.get_event_loop().time()
+            result = await self.generate_and_categorize_cpt_codes(search_terms, anatomical_location, custom_prompt=custom_prompt)
+            elapsed = asyncio.get_event_loop().time() - start_time
+            logger.info(f"   ✅ [GPT] Completed in {elapsed:.2f}s")
+            return result
         
         async def get_db_codes():
             if icd10_code:
+                logger.info(f"   🔄 [Database] Starting database CPT code query...")
+                start_time = asyncio.get_event_loop().time()
                 # Run database query in thread pool since it's synchronous
                 # Handle both single code (string) and multiple codes (list) for backward compatibility
                 codes_list = icd10_code if isinstance(icd10_code, list) else [icd10_code]
                 loop = asyncio.get_event_loop()
-                return await loop.run_in_executor(None, self.get_cpt_codes_from_icd10, codes_list)
+                result = await loop.run_in_executor(None, self.get_cpt_codes_from_icd10, codes_list)
+                elapsed = asyncio.get_event_loop().time() - start_time
+                logger.info(f"   ✅ [Database] Found {len(result)} CPT codes in {elapsed:.2f}s")
+                return result
+            logger.info(f"   ⏭️  [Database] Skipping - no ICD-10 codes provided")
             return []
         
         # Execute both in parallel
+        overall_start = asyncio.get_event_loop().time()
         gpt_result, db_codes = await asyncio.gather(
             get_gpt_codes(),
             get_db_codes()
         )
+        overall_elapsed = asyncio.get_event_loop().time() - overall_start
         
         gpt_codes, cpt_prompt_text = gpt_result
+        
+        logger.info(f"✅ [CPT Code Generation] Parallel execution completed in {overall_elapsed:.2f}s")
+        logger.info(f"   - GPT codes: {len(gpt_codes)} codes (pre-categorized)")
+        logger.info(f"   - Database codes: {len(db_codes)} codes (will be categorized separately)")
+        logger.info(f"   - Total unique codes: {len(set(c['code'] for c in gpt_codes + db_codes))} unique codes")
         
         return gpt_codes, cpt_prompt_text, db_codes
 

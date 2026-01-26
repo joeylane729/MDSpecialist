@@ -41,32 +41,7 @@ interface SearchParams {
   patient_age_category?: 'adult' | 'child';  // Patient age category
 }
 
-interface TreatmentOption {
-  name: string;
-  category?: string;
-}
-
-// Function to get treatment options from GPT-generated data
-const getTreatmentOptions = (searchParams: any, aiRecommendations?: any): TreatmentOption[] | null => {
-  // Use GPT-generated treatment options if available from searchParams
-  if (searchParams?.treatment_options && Array.isArray(searchParams.treatment_options) && searchParams.treatment_options.length > 0) {
-    return searchParams.treatment_options.map((option: any) => ({
-      name: option.name || "Treatment Option",
-      category: option.category || "Medical"
-    }));
-  }
-
-  // Fallback to location.state if searchParams doesn't have treatment options
-  if (aiRecommendations?.patient_profile?.treatment_options && Array.isArray(aiRecommendations.patient_profile.treatment_options) && aiRecommendations.patient_profile.treatment_options.length > 0) {
-    return aiRecommendations.patient_profile.treatment_options.map((option: any) => ({
-      name: option.name || "Treatment Option",
-      category: option.category || "Medical"
-    }));
-  }
-
-  // Return null if no treatment options found
-  return null;
-};
+// Treatment options removed - no longer generated
 
 // Helper function to map CPT codes to categories
 const getCptCodeToCategoryMap = (cptCodesByCategory: { [category: string]: Array<{ code: string; description: string }> }): { [cptCode: string]: string } => {
@@ -79,7 +54,37 @@ const getCptCodeToCategoryMap = (cptCodesByCategory: { [category: string]: Array
   return map;
 };
 
-// Helper function to get categories from treatment options
+// Helper function to get categories from CPT codes
+const getCategoriesFromCptCodes = (cptCodesByCategory: { [category: string]: Array<any> }): string[] => {
+  const categories = Object.keys(cptCodesByCategory);
+  
+  // Define the preferred order for categories (case-insensitive matching)
+  const categoryOrder = ['surgery', 'radiation', 'endovascular', 'medical', 'diagnostic testing'];
+  
+  // Sort categories: first by preferred order, then alphabetically for any others
+  return categories.sort((a, b) => {
+    const aLower = a.toLowerCase();
+    const bLower = b.toLowerCase();
+    const aIndex = categoryOrder.indexOf(aLower);
+    const bIndex = categoryOrder.indexOf(bLower);
+    
+    // If both are in the preferred order, sort by their index
+    if (aIndex !== -1 && bIndex !== -1) {
+      return aIndex - bIndex;
+    }
+    // If only a is in the preferred order, it comes first
+    if (aIndex !== -1) {
+      return -1;
+    }
+    // If only b is in the preferred order, it comes first
+    if (bIndex !== -1) {
+      return 1;
+    }
+    // If neither is in the preferred order, sort alphabetically
+    return a.localeCompare(b);
+  });
+};
+
 // Helper function to calculate patient age category from birth month and year
 const calculateAgeCategory = (month: string, year: string): 'adult' | 'child' | null => {
   if (!month || !year) return null;
@@ -103,41 +108,7 @@ const calculateAgeCategory = (month: string, year: string): 'adult' | 'child' | 
   return age >= 18 ? 'adult' : 'child';
 };
 
-const getCategoriesFromTreatmentOptions = (treatmentOptions: TreatmentOption[] | null): string[] => {
-  if (!treatmentOptions || treatmentOptions.length === 0) return [];
-  const categories = new Set<string>();
-  treatmentOptions.forEach(option => {
-    if (option.category) {
-      categories.add(option.category);
-    }
-  });
-  
-  // Define the preferred order for categories (case-insensitive matching)
-  const categoryOrder = ['surgery', 'radiosurgery', 'endovascular', 'medical'];
-  
-  // Sort categories: first by preferred order, then alphabetically for any others
-  return Array.from(categories).sort((a, b) => {
-    const aLower = a.toLowerCase();
-    const bLower = b.toLowerCase();
-    const aIndex = categoryOrder.indexOf(aLower);
-    const bIndex = categoryOrder.indexOf(bLower);
-    
-    // If both are in the preferred order, sort by their index
-    if (aIndex !== -1 && bIndex !== -1) {
-      return aIndex - bIndex;
-    }
-    // If only a is in the preferred order, it comes first
-    if (aIndex !== -1) {
-      return -1;
-    }
-    // If only b is in the preferred order, it comes first
-    if (bIndex !== -1) {
-      return 1;
-    }
-    // If neither is in the preferred order, sort alphabetically
-    return a.localeCompare(b);
-  });
-};
+// Treatment options removed - categories now come from CPT codes
 
 const ResultsPage: React.FC = () => {
   const location = useLocation();
@@ -149,7 +120,7 @@ const ResultsPage: React.FC = () => {
   const [providersPerPage, setProvidersPerPage] = useState(20);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const [selectedTreatmentOptions, setSelectedTreatmentOptions] = useState<string[]>([]);
+  // Treatment options removed - no longer needed
   const [isBackNavigation, setIsBackNavigation] = useState(false);
   const [rankedProviders, setRankedProviders] = useState<Provider[]>([]);
   const [filteredProviders, setFilteredProviders] = useState<Provider[]>([]);
@@ -183,10 +154,9 @@ const ResultsPage: React.FC = () => {
   const [isRegeneratingICD10, setIsRegeneratingICD10] = useState(false);
   const [isGeneratingCPTCodes, setIsGeneratingCPTCodes] = useState(false);
   const [isGeneratingCPTCodesForCategory, setIsGeneratingCPTCodesForCategory] = useState<string | null>(null);
-  const [isRegeneratingDiagnoses, setIsRegeneratingDiagnoses] = useState(false);
+  // Treatment options/diagnoses regeneration removed
   const [isGeneratingSpecialists, setIsGeneratingSpecialists] = useState(false);
-  const [selectedTreatmentIndices, setSelectedTreatmentIndices] = useState<Set<number>>(new Set());
-  const hasInitializedTreatments = useRef(false);
+  // Treatment options removed - no longer needed
   const hasInitializedCategoryFilter = useRef(false);
   
   // Helper function to get existing CPT codes from all possible sources (reusable logic)
@@ -235,13 +205,6 @@ const ResultsPage: React.FC = () => {
       });
       console.log('ResultsPage - recommendations:', location.state.aiRecommendations.recommendations);
       
-      // Debug treatment options specifically
-      if (location.state.aiRecommendations.patient_profile?.treatment_options) {
-        console.log('🔍 DEBUG: ResultsPage found treatment_options in aiRecommendations:', location.state.aiRecommendations.patient_profile.treatment_options);
-      } else {
-        console.log('🔍 DEBUG: ResultsPage - No treatment_options in aiRecommendations patient_profile');
-      }
-      
       // Debug search_query specifically
       if (location.state.aiRecommendations.patient_profile?.search_query) {
         console.log('🔍 DEBUG: ResultsPage found search_query in aiRecommendations patient_profile:', location.state.aiRecommendations.patient_profile.search_query);
@@ -254,13 +217,7 @@ const ResultsPage: React.FC = () => {
       console.log('ResultsPage - first 5 provider NPIs:', location.state.providers.slice(0, 5).map((p: Provider) => p.npi));
     }
     
-    // Debug searchParams treatment options
-    if (searchParams?.treatment_options) {
-      console.log('🔍 DEBUG: ResultsPage found treatment_options in searchParams:', searchParams.treatment_options);
-    } else {
-      console.log('🔍 DEBUG: ResultsPage - No treatment_options in searchParams');
-      console.log('🔍 DEBUG: searchParams keys:', searchParams ? Object.keys(searchParams) : 'searchParams is null');
-    }
+    // Treatment options removed - no longer generated
     
     // Debug search_query specifically
     if (searchParams?.search_query) {
@@ -291,38 +248,7 @@ const ResultsPage: React.FC = () => {
     }
   }, [location.state, cptCodesByCategory]);
 
-  // Initialize cptCodesByCategory from treatment options and CMS CPT codes if empty
-  useEffect(() => {
-    // Only try to reconstruct if cptCodesByCategory is empty and we have treatment options
-    if (Object.keys(cptCodesByCategory).length === 0) {
-      const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
-      const cmsData = location.state?.aiRecommendations?.cms_data || specialistRecommendationData?.cms_data;
-      const cmsCptCodes = cmsData?.cpt_codes_searched;
-      
-      if (treatmentOptions && treatmentOptions.length > 0 && cmsCptCodes && Array.isArray(cmsCptCodes) && cmsCptCodes.length > 0) {
-        console.log('⚠️ cptCodesByCategory is empty, attempting to reconstruct from treatment options and CMS CPT codes...');
-        console.log('🔍 Treatment options:', treatmentOptions);
-        console.log('🔍 CMS CPT codes searched:', cmsCptCodes);
-        
-        // Group treatment options by category
-        const optionsByCategory: { [category: string]: TreatmentOption[] } = {};
-        treatmentOptions.forEach(option => {
-          const category = option.category || 'Medical';
-          if (!optionsByCategory[category]) {
-            optionsByCategory[category] = [];
-          }
-          optionsByCategory[category].push(option);
-        });
-        
-        console.log('🔍 Options by category:', Object.keys(optionsByCategory));
-        
-        // Note: We can't perfectly reconstruct without knowing which CPT codes belong to which category
-        // This is a limitation - we'd need the actual mapping from when CPT codes were generated
-        // For now, we'll log a warning
-        console.warn('⚠️ Cannot fully reconstruct cptCodesByCategory - need actual CPT codes per category mapping');
-      }
-    }
-  }, [searchParams, location.state, specialistRecommendationData, cptCodesByCategory]);
+  // Treatment options removed - cptCodesByCategory is now set directly from GPT response
 
   // Initialize selected category when treatmentRankings are available
   useEffect(() => {
@@ -336,8 +262,11 @@ const ResultsPage: React.FC = () => {
   // Apply category filter when selectedCategory is set for the first time
   useEffect(() => {
     if (selectedCategory && Object.keys(treatmentRankings).length > 0 && !hasInitializedCategoryFilter.current) {
-      const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
-      const categories = getCategoriesFromTreatmentOptions(treatmentOptions);
+      // Get categories from CPT codes (combine GPT and AAPC categories)
+      const allCategories = new Set<string>();
+      Object.keys(cptCodesByCategory).forEach(cat => allCategories.add(cat));
+      Object.keys(dbCptCodesByCategory).forEach(cat => allCategories.add(cat));
+      const categories = Array.from(allCategories);
       
       // Handle both "All" and specific categories
       if (selectedCategory === 'All' || categories.includes(selectedCategory)) {
@@ -401,51 +330,12 @@ const ResultsPage: React.FC = () => {
   
   // Initialize selected treatment indices - all checked by default (only once)
   useEffect(() => {
-    // Only initialize once, even if searchParams changes later
-    if (hasInitializedTreatments.current) {
-      return;
-    }
+    // Treatment options removed - no longer needed
     
-    // Only run if we have searchParams or aiRecommendations
-    if (!searchParams && !location.state?.aiRecommendations) {
-      return;
-    }
-    
-    const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
-    if (treatmentOptions && treatmentOptions.length > 0) {
-      // Only initialize if we don't have any selected yet
-      if (selectedTreatmentIndices.size === 0) {
-        // Set all treatment options as selected by default
-        setSelectedTreatmentIndices(new Set(treatmentOptions.map((_, index) => index)));
-        hasInitializedTreatments.current = true;
-      }
-    }
-  }, [searchParams, location.state?.aiRecommendations, selectedTreatmentIndices.size]);
+    // Treatment options removed - no longer needed
+  }, [searchParams, location.state?.aiRecommendations]);
 
-  // Initialize cptCodesByCategory from searchParams if available
-  useEffect(() => {
-    // Only initialize if cptCodesByCategory is empty and we have CPT codes in searchParams
-    if (Object.keys(cptCodesByCategory).length === 0 && searchParams?.cpt_codes) {
-      console.log('🔍 Attempting to initialize cptCodesByCategory from searchParams...');
-      // Try to reconstruct from treatment options and CPT codes
-      const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
-      if (treatmentOptions && treatmentOptions.length > 0 && Array.isArray(searchParams.cpt_codes)) {
-        // This is a fallback - ideally we'd have the actual category mapping
-        // For now, we'll group by treatment option categories
-        const reconstructed: { [category: string]: Array<{ code: string; description: string }> } = {};
-        treatmentOptions.forEach(option => {
-          const category = option.category || 'Medical';
-          if (!reconstructed[category]) {
-            reconstructed[category] = [];
-          }
-          // Add all CPT codes to each category (this is approximate)
-          // The real mapping should come from the actual CPT code generation
-        });
-        // Note: This won't work perfectly without the actual mapping
-        console.log('⚠️ Cannot fully reconstruct cptCodesByCategory without category-specific CPT codes');
-      }
-    }
-  }, [searchParams, location.state?.aiRecommendations, cptCodesByCategory]);
+  // CPT codes now come pre-categorized from GPT, so no reconstruction needed
 
   // Get provider score and breakdown
   const getProviderScore = (provider: any): { score: number; breakdown: string } => {
@@ -730,11 +620,12 @@ const ResultsPage: React.FC = () => {
         console.log('🔍 Initializing with treatment rankings from location.state');
         setTreatmentRankings(location.state.treatmentRankings);
         
-        // Initialize selected category to first available category
-        const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
-        const categories = getCategoriesFromTreatmentOptions(treatmentOptions);
-        if (categories.length > 0 && !selectedCategory) {
-          // Default to "All" instead of first category
+        // Initialize selected category to "All"
+        const allCategories = new Set<string>();
+        Object.keys(cptCodesByCategory).forEach(cat => allCategories.add(cat));
+        Object.keys(dbCptCodesByCategory).forEach(cat => allCategories.add(cat));
+        if (allCategories.size > 0 && !selectedCategory) {
+          // Default to "All"
           setSelectedCategory('All');
           console.log('🔍 Initializing selected category to: All');
         }
@@ -964,7 +855,7 @@ const ResultsPage: React.FC = () => {
 
   const handleRegenerateDiagnoses = async (useCustomPrompt: boolean = false) => {
     try {
-      setIsRegeneratingDiagnoses(true);
+      // Note: This function regenerates ICD codes and search query (treatment options removed)
       
       // Get original request data from searchParams or location.state
       if (!searchParams) {
@@ -1045,18 +936,11 @@ const ResultsPage: React.FC = () => {
           }
         }
         
-        // Reset selected treatment indices since options may have changed
-        if (response.patient_profile.treatment_options) {
-          setSelectedTreatmentIndices(new Set(Array.from({length: response.patient_profile.treatment_options.length}, (_, i) => i)));
-        }
-        
-        console.log('✅ Regenerated diagnoses and treatment options');
+        console.log('✅ Regenerated medical analysis');
       }
     } catch (error) {
       console.error('Error regenerating diagnoses:', error);
-      alert('Failed to regenerate diagnoses. Please try again.');
-    } finally {
-      setIsRegeneratingDiagnoses(false);
+      alert('Failed to regenerate medical analysis. Please try again.');
     }
   };
 
@@ -1189,44 +1073,24 @@ const ResultsPage: React.FC = () => {
     }
   };
 
-  const handleGenerateCPTCodes = async (useCustomPrompt: boolean = false, categoryFilter?: string) => {
+  const handleGenerateCPTCodes = async (useCustomPrompt: boolean = false) => {
     try {
       setIsGeneratingCPTCodes(true);
       
-      // Get treatment options and search query from current data
-      const allTreatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
+      console.log(`🚀 [Frontend] ===== Starting CPT Code Generation =====`);
+      console.log(`   - Mode: GPT generation + categorization in single call (treatment options removed)`);
+      console.log(`   - Use custom prompt: ${useCustomPrompt}`);
+      
+      // Get search query from current data
       const searchQuery = searchParams?.search_query || location.state?.aiRecommendations?.patient_profile?.search_query;
       
-      if (!allTreatmentOptions || allTreatmentOptions.length === 0) {
-        alert('Treatment options are required to generate CPT codes');
-        return;
-      }
-      
-      // Filter to only selected treatment options
-      let selectedTreatmentOptions = allTreatmentOptions.filter((_, index) => selectedTreatmentIndices.has(index));
-      
-      // Group selected treatment options by category
-      const optionsByCategory: { [category: string]: TreatmentOption[] } = {};
-      selectedTreatmentOptions.forEach(option => {
-        const category = option.category || 'Medical';
-        if (!optionsByCategory[category]) {
-          optionsByCategory[category] = [];
-        }
-        optionsByCategory[category].push(option);
-      });
-      
-      // If a specific category is requested, only generate for that category
-      const categoriesToGenerate = categoryFilter ? [categoryFilter] : Object.keys(optionsByCategory);
-      
-      if (categoriesToGenerate.length === 0) {
-        alert('Please select at least one treatment option to generate CPT codes');
-        return;
-      }
-      
       if (!searchQuery) {
+        console.error(`❌ [Frontend] Missing search query - cannot generate CPT codes`);
         alert('Search query is required to generate CPT codes');
         return;
       }
+      
+      console.log(`   - Search query available: Yes`);
       
       // Get ICD-10 code(s) if available - handle both single code (string) and multiple codes (array)
       const icd10CodeOrCodes = searchParams?.predicted_icd10 || location.state?.aiRecommendations?.patient_profile?.predicted_icd10;
@@ -1249,12 +1113,12 @@ const ResultsPage: React.FC = () => {
           console.log(`✅ Found ${dbCptCodesResult.length} database CPT codes from ${icd10Codes.length} ICD-10 code(s)`);
           
           // Categorize database CPT codes using GPT
-          if (dbCptCodesResult.length > 0 && selectedTreatmentOptions.length > 0) {
+          if (dbCptCodesResult.length > 0) {
             try {
               console.log(`🔍 Categorizing ${dbCptCodesResult.length} database CPT codes using GPT...`);
               const categorizeResponse = await categorizeCPTCodes({
                 cpt_codes: dbCptCodesResult,
-                treatment_options: selectedTreatmentOptions,
+                treatment_options: [],  // Empty array - not used but required for API
                 search_query: searchQuery
               });
               
@@ -1279,124 +1143,151 @@ const ResultsPage: React.FC = () => {
         }
       }
       
-      // Generate CPT codes for each category (only GPT, DB codes already fetched)
-      const newCptCodesByCategory: { [category: string]: Array<{ code: string; description: string }> } = {};
-      const newCptPromptTextByCategory: { [category: string]: string } = {};
+      // Generate and categorize CPT codes in a single GPT call (no treatment options needed)
+      const customPrompt = useCustomPrompt && editablePromptText ? editablePromptText : undefined;
       
-      for (const category of categoriesToGenerate) {
-        const categoryOptions = optionsByCategory[category];
-        if (!categoryOptions || categoryOptions.length === 0) continue;
+      console.log(`🚀 [Frontend] Starting GPT CPT code generation and categorization`);
+      console.log(`   - Search query: ${searchQuery?.substring(0, 100)}...`);
+      console.log(`   - Anatomical location: ${searchParams?.anatomical_location || 'Not specified'}`);
+      console.log(`   - Using custom prompt: ${customPrompt ? 'Yes' : 'No'}`);
+      console.log(`   - Treatment options: REMOVED (not needed for GPT CPT generation)`);
+      
+      try {
+        const startTime = Date.now();
+        const response = await generateCPTCodes({
+          search_query: searchQuery,
+          anatomical_location: searchParams?.anatomical_location,
+          custom_prompt: customPrompt
+        });
+        const elapsed = Date.now() - startTime;
         
-        setIsGeneratingCPTCodesForCategory(category);
+        console.log(`✅ [Frontend] GPT CPT code generation completed in ${elapsed}ms`);
+        console.log(`   - Received ${response.cpt_codes?.length || 0} CPT codes`);
+        console.log(`   - All codes come pre-categorized from GPT`);
         
-        // Use custom prompt if rerunning with edited prompt, otherwise use default (undefined)
-        const customPrompt = useCustomPrompt && editablePromptText ? editablePromptText : undefined;
-        
-        try {
-          // Don't pass icd10_code - we already queried DB codes separately
-          const response = await generateCPTCodes({
-            search_query: searchQuery,
-            treatment_options: categoryOptions,
-            anatomical_location: searchParams?.anatomical_location,
-            custom_prompt: customPrompt
-            // Removed: icd10_code - DB codes already fetched above
+        if (response.cpt_codes && response.cpt_codes.length > 0) {
+          // Group GPT codes by category (they come pre-categorized)
+          const newCptCodesByCategory: { [category: string]: Array<{ code: string; description: string; category?: string; relevancy_score?: number }> } = {};
+          const newCptPromptTextByCategory: { [category: string]: string } = {};
+          const categoryStats: { [category: string]: { count: number; avgRelevancy: number; relevancySum: number } } = {};
+          
+          response.cpt_codes.forEach((cpt: any) => {
+            const category = cpt.category || 'Medical';
+            if (!newCptCodesByCategory[category]) {
+              newCptCodesByCategory[category] = [];
+              categoryStats[category] = { count: 0, avgRelevancy: 0, relevancySum: 0 };
+            }
+            newCptCodesByCategory[category].push(cpt);
+            categoryStats[category].count++;
+            if (cpt.relevancy_score !== undefined) {
+              categoryStats[category].relevancySum += cpt.relevancy_score || 0;
+            }
           });
           
-          if (response.cpt_codes && response.cpt_codes.length > 0) {
-            newCptCodesByCategory[category] = response.cpt_codes;
+          // Calculate averages
+          Object.keys(categoryStats).forEach(cat => {
+            const stats = categoryStats[cat];
+            stats.avgRelevancy = stats.relevancySum / stats.count;
+          });
+          
+          // Store prompt text for all categories (same prompt used for all)
+          Object.keys(newCptCodesByCategory).forEach(category => {
             newCptPromptTextByCategory[category] = response.cpt_prompt_text || '';
-            // Initialize editable prompt text for this category
             setEditablePromptTextByCategory(prev => ({
               ...prev,
               [category]: response.cpt_prompt_text || ''
             }));
-            console.log(`✅ Generated ${response.cpt_codes.length} GPT CPT codes for category: ${category}`);
-          } else {
-            console.warn(`⚠️  Received 0 GPT CPT codes for category: ${category}`);
-          }
-        } catch (error) {
-          console.error(`❌ Error generating CPT codes for category ${category}:`, error);
-        }
-      }
-      
-      // Update state with all categories
-      setCptCodesByCategory(prev => ({ ...prev, ...newCptCodesByCategory }));
-      setCptPromptTextByCategory(prev => ({ ...prev, ...newCptPromptTextByCategory }));
-      
-      // Store database CPT codes grouped by category (now that they're categorized)
-      if (dbCptCodesResult.length > 0) {
-        // Group categorized codes by category
-        const newDbCptCodesByCategory: { [category: string]: Array<{ code: string; description: string; relevancy_score?: number }> } = {};
-        
-        dbCptCodesResult.forEach(cpt => {
-          const category = (cpt as any).category || 'Medical'; // Default to Medical if no category
-          if (!newDbCptCodesByCategory[category]) {
-            newDbCptCodesByCategory[category] = [];
-          }
-          newDbCptCodesByCategory[category].push({
-            code: cpt.code,
-            description: cpt.description,
-            relevancy_score: (cpt as any).relevancy_score
           });
-        });
-        
-        setDbCptCodesByCategory(prev => ({ ...prev, ...newDbCptCodesByCategory }));
-        
-        // Set the combined database CPT codes
-        setDbCptCodes(dbCptCodesResult);
-        console.log(`✅ Stored ${dbCptCodesResult.length} categorized database CPT codes across ${Object.keys(newDbCptCodesByCategory).length} categories`);
-        
-        // Set first database category as selected if none selected yet and we're on database tab
-        if (!selectedCptCategory && Object.keys(newDbCptCodesByCategory).length > 0) {
-          setSelectedCptCategory(Object.keys(newDbCptCodesByCategory)[0]);
+          
+          // Update state with all categories
+          setCptCodesByCategory(newCptCodesByCategory);
+          setCptPromptTextByCategory(newCptPromptTextByCategory);
+          
+          console.log(`✅ [Frontend] Successfully processed GPT CPT codes`);
+          console.log(`   - Total codes: ${response.cpt_codes.length}`);
+          console.log(`   - Categories: ${Object.keys(newCptCodesByCategory).join(', ')}`);
+          console.log(`   - Category distribution:`, Object.entries(categoryStats).map(([cat, stats]) => 
+            `${cat}: ${stats.count} codes (avg relevancy: ${stats.avgRelevancy.toFixed(1)}%)`
+          ).join(', '));
+          console.log(`   - All codes have category and relevancy_score from GPT`);
+          
+          // Store database CPT codes grouped by category (now that they're categorized)
+          if (dbCptCodesResult.length > 0) {
+            // Group categorized codes by category
+            const newDbCptCodesByCategory: { [category: string]: Array<{ code: string; description: string; relevancy_score?: number }> } = {};
+            
+            dbCptCodesResult.forEach(cpt => {
+              const category = (cpt as any).category || 'Medical'; // Default to Medical if no category
+              if (!newDbCptCodesByCategory[category]) {
+                newDbCptCodesByCategory[category] = [];
+              }
+              newDbCptCodesByCategory[category].push({
+                code: cpt.code,
+                description: cpt.description,
+                relevancy_score: (cpt as any).relevancy_score
+              });
+            });
+            
+            setDbCptCodesByCategory(prev => ({ ...prev, ...newDbCptCodesByCategory }));
+            
+            // Set the combined database CPT codes
+            setDbCptCodes(dbCptCodesResult);
+            console.log(`✅ Stored ${dbCptCodesResult.length} categorized database CPT codes across ${Object.keys(newDbCptCodesByCategory).length} categories`);
+            
+            // Set first database category as selected if none selected yet and we're on database tab
+            if (!selectedCptCategory && Object.keys(newDbCptCodesByCategory).length > 0) {
+              setSelectedCptCategory(Object.keys(newDbCptCodesByCategory)[0]);
+            }
+          }
+          
+          // Set first GPT category as selected if none selected yet (only if we have GPT codes)
+          if (!selectedCptCategory && Object.keys(newCptCodesByCategory).length > 0) {
+            setSelectedCptCategory(Object.keys(newCptCodesByCategory)[0]);
+          }
+          
+          // Combine all CPT codes for backward compatibility and CMS API call
+          const allCptCodes = Object.values(newCptCodesByCategory).flat() as Array<{ code: string; description: string }>;
+          
+          // If we have database codes but no GPT codes, switch to database tab
+          if (allCptCodes.length === 0 && dbCptCodesResult.length > 0) {
+            setActiveCptSourceTab('database');
+          }
+          if (allCptCodes.length > 0) {
+            setCptCodes(allCptCodes);
+            
+            // Update searchParams to include combined CPT codes
+            if (searchParams) {
+              setSearchParams({
+                ...searchParams,
+                cpt_codes: allCptCodes
+              });
+            }
+            
+            console.log(`✅ [Frontend] Generated total ${allCptCodes.length} CPT codes across ${Object.keys(newCptCodesByCategory).length} categories`);
+            console.log(`✅ [Frontend] ===== CPT Code Generation Complete =====`);
+          }
+        } else {
+          console.warn(`⚠️  [Frontend] Received 0 GPT CPT codes from API`);
         }
-      }
-      
-      // Set first GPT category as selected if none selected yet (only if we have GPT codes)
-      if (!selectedCptCategory && Object.keys(newCptCodesByCategory).length > 0) {
-        setSelectedCptCategory(Object.keys(newCptCodesByCategory)[0]);
-      }
-      
-      // Combine all CPT codes for backward compatibility and CMS API call
-      const allCptCodes = Object.values(newCptCodesByCategory).flat();
-      
-      // If we have database codes but no GPT codes, switch to database tab
-      if (allCptCodes.length === 0 && dbCptCodesResult.length > 0) {
-        setActiveCptSourceTab('database');
-      }
-      if (allCptCodes.length > 0) {
-        setCptCodes(allCptCodes);
-        
-        // Update searchParams to include combined CPT codes
-        if (searchParams) {
-          setSearchParams({
-            ...searchParams,
-            cpt_codes: allCptCodes
-          });
-        }
-        
-        console.log(`✅ Generated total ${allCptCodes.length} CPT codes across ${Object.keys(newCptCodesByCategory).length} categories`);
+      } catch (error) {
+        console.error(`❌ [Frontend] Error in GPT CPT code generation:`, error);
+        throw error;
       }
       
     } catch (error) {
-      console.error('❌ Error generating CPT codes:', error);
+      console.error('❌ [Frontend] Fatal error in handleGenerateCPTCodes:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       alert('Failed to generate CPT codes: ' + errorMessage);
     } finally {
       setIsGeneratingCPTCodes(false);
       setIsGeneratingCPTCodesForCategory(null);
+      console.log(`🏁 [Frontend] CPT code generation process finished`);
     }
   };
 
   const handleRecategorizeCPTCodes = async (useCustomPrompt: boolean = false) => {
     if (!dbCptCodes || dbCptCodes.length === 0) {
       alert('No database CPT codes available to recategorize');
-      return;
-    }
-
-    const allTreatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
-    if (!allTreatmentOptions || allTreatmentOptions.length === 0) {
-      alert('Treatment options are required to categorize CPT codes');
       return;
     }
 
@@ -1412,7 +1303,7 @@ const ResultsPage: React.FC = () => {
       console.log(`🔍 Recategorizing ${dbCptCodes.length} database CPT codes using GPT...`);
       const categorizeResponse = await categorizeCPTCodes({
         cpt_codes: dbCptCodes,
-        treatment_options: allTreatmentOptions,
+        treatment_options: [],  // Not used but required for API
         custom_prompt: customPrompt,
         search_query: searchQuery
       });
@@ -1484,7 +1375,7 @@ const ResultsPage: React.FC = () => {
         files: [],
         cpt_codes: existingCptCodes,  // Pass existing CPT codes to reuse them
         // Pass medical analysis results to reuse (avoids duplicate GPT calls)
-        treatment_options: patientProfile?.treatment_options,
+        treatment_options: [],  // Treatment options no longer generated - pass empty array
         predicted_icd10: patientProfile?.predicted_icd10,
         icd10_description: patientProfile?.icd10_description,
         search_query: patientProfile?.search_query,
@@ -1698,7 +1589,7 @@ const ResultsPage: React.FC = () => {
     }
   };
 
-  const handleCategoryFilterChange = (category: string, treatmentsByCategory: { [category: string]: Array<{ id: string; treatment: any }> }) => {
+  const handleCategoryFilterChange = (category: string, _treatmentsByCategory?: { [category: string]: Array<{ id: string; treatment: any }> }) => {
     console.log('🔍 Category filter changed to:', category);
     
     // Always show ALL providers from all treatments (combine all ranked providers)
@@ -1950,7 +1841,6 @@ const ResultsPage: React.FC = () => {
 
   const resetFilters = () => {
     setSearchTerm('');
-    setSelectedTreatmentOptions([]);
     setCurrentPage(1);
     saveFilterState();
   };
@@ -2312,126 +2202,12 @@ const ResultsPage: React.FC = () => {
                   )}
                 </div>
               </div>
-              {/* Treatment Options */}
-              <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Treatment Options</h2>
-              
-              {/* GPT Prompt Instructions for Diagnoses/Treatment (collapsed by default) */}
-              {(diagnosesPromptText || searchParams?.diagnoses_prompt_text) && (
-                <div className="mb-4">
-                  <details className="bg-gray-50 rounded-lg border border-gray-200">
-                    <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-t-lg">
-                      <span className="flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        View GPT Prompt Instructions (for debugging)
-                      </span>
-                    </summary>
-                    <div className="p-4 border-t border-gray-200">
-                      <p className="text-xs text-gray-600 mb-2">The following prompt was sent to GPT to generate the diagnoses and treatment options:</p>
-                      <textarea
-                        className="w-full text-xs text-gray-800 bg-white p-3 rounded border border-gray-300 font-mono min-h-[200px] resize-y"
-                        value={editableDiagnosesPromptText || diagnosesPromptText || searchParams?.diagnoses_prompt_text || ''}
-                        onChange={(e) => setEditableDiagnosesPromptText(e.target.value)}
-                        placeholder="Prompt text..."
-                      />
-                      <div className="mt-3 flex justify-end">
-                        <button
-                          type="button"
-                          onClick={async (e) => {
-                            e.preventDefault();
-                            await handleRegenerateDiagnoses(true);
-                          }}
-                          disabled={isRegeneratingDiagnoses || !editableDiagnosesPromptText}
-                          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                        >
-                          {isRegeneratingDiagnoses ? (
-                            <span className="flex items-center gap-2">
-                              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                              Regenerating...
-                            </span>
-                          ) : (
-                            'Rerun with Edited Prompt'
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </details>
-                </div>
-              )}
-              {(() => {
-                const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
-                if (treatmentOptions && treatmentOptions.length > 0) {
-                  return (
-                    <div className="space-y-3">
-                      {treatmentOptions.map((treatment, index) => {
-                        const isChecked = selectedTreatmentIndices.has(index);
-                        return (
-                          <div key={index} className={`p-3 rounded-lg border-2 transition-colors ${isChecked ? 'bg-gray-50 border-blue-500' : 'bg-gray-50 border-gray-200'}`}>
-                            <div className="flex items-start gap-3">
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={(e) => {
-                                  const newSelected = new Set(selectedTreatmentIndices);
-                                  if (e.target.checked) {
-                                    newSelected.add(index);
-                                  } else {
-                                    newSelected.delete(index);
-                                  }
-                                  setSelectedTreatmentIndices(newSelected);
-                                }}
-                                className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                              />
-                              <span className="text-sm text-gray-700 font-bold">{index + 1}.</span>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                  <h4 className="font-medium text-gray-900 text-sm">{treatment.name}</h4>
-                                  {treatment.category && (
-                                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                                      {treatment.category}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                } else {
-                  return (
-                    <div className="text-center py-8">
-                      <div className="text-gray-500 mb-2">
-                        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                      </div>
-                      <p className="text-gray-500 text-sm">No treatment options were generated for this case.</p>
-                      <p className="text-gray-400 text-xs mt-1">Please consult with a healthcare provider for personalized treatment recommendations.</p>
-                    </div>
-                  );
-                }
-              })()}
-              </div>
-              
               {/* Button to generate CPT codes */}
               {(() => {
-                const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
                 const searchQuery = searchParams?.search_query || location.state?.aiRecommendations?.patient_profile?.search_query;
                 const existingCptCodes = cptCodes || searchParams?.cpt_codes;
                 const hasCptCodes = Array.isArray(existingCptCodes) && existingCptCodes.length > 0;
                 const hasCptCodesByCategory = Object.keys(cptCodesByCategory).length > 0;
-                
-                // Show button if we have treatment options
-                if (!treatmentOptions || treatmentOptions.length === 0) {
-                  return null;
-                }
                 
                 // Don't show button if CPT codes already exist (either legacy or category-based)
                 if (hasCptCodes || hasCptCodesByCategory) {
@@ -2645,7 +2421,7 @@ const ResultsPage: React.FC = () => {
                               type="button"
                               onClick={async (e) => {
                                 e.preventDefault();
-                                await handleGenerateCPTCodes(true, displayCategory);
+                                await handleGenerateCPTCodes(true);
                               }}
                               disabled={isGeneratingCPTCodes || !editablePromptTextByCategory[displayCategory]}
                               className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
@@ -3142,11 +2918,16 @@ const ResultsPage: React.FC = () => {
 
             {/* Category Tabs */}
             {(() => {
-              const treatmentOptions = getTreatmentOptions(searchParams, location.state?.aiRecommendations);
-              const categories = getCategoriesFromTreatmentOptions(treatmentOptions);
+              // Get categories from CPT codes (combine GPT and AAPC)
+              const allCategories = new Set<string>();
+              Object.keys(cptCodesByCategory).forEach(cat => allCategories.add(cat));
+              Object.keys(dbCptCodesByCategory).forEach(cat => allCategories.add(cat));
+              const categories = getCategoriesFromCptCodes(
+                Object.assign({}, cptCodesByCategory, dbCptCodesByCategory)
+              );
               
               if (categories.length > 0 && Object.keys(treatmentRankings).length > 0) {
-                // Group treatments by category
+                // Group treatments by category (for handleCategoryFilterChange - not used for filtering anymore)
                 const treatmentsByCategory: { [category: string]: Array<{ id: string; treatment: any }> } = {};
                 Object.entries(treatmentRankings).forEach(([treatmentId, treatment]) => {
                   const category = (treatment as any).category || 'Medical';

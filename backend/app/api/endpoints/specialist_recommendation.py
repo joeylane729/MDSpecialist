@@ -27,7 +27,7 @@ async def get_specialist_recommendations(
     diagnosis: str = Form(...),
     state: Optional[str] = Form(None),
     cpt_codes_json: str = Form(...),  # Required JSON string of CPT codes (must be generated first)
-    treatment_options_json: str = Form(...),  # Required JSON string of treatment options from medical analysis
+    treatment_options_json: Optional[str] = Form(None),  # Optional JSON string of treatment options (deprecated - not used)
     predicted_icd10: str = Form(...),  # Required pre-determined ICD-10 code from medical analysis
     search_query: str = Form(...),  # Required pre-generated search query from medical analysis
     icd10_description: Optional[str] = Form(None),  # Optional ICD-10 description from medical analysis
@@ -64,19 +64,16 @@ async def get_specialist_recommendations(
                 detail=f"Invalid cpt_codes_json: {str(e)}"
             )
         
-        # Parse required treatment options
-        try:
-            treatment_options = json.loads(treatment_options_json)
-            if not isinstance(treatment_options, list) or len(treatment_options) == 0:
-                raise HTTPException(
-                    status_code=400,
-                    detail="treatment_options_json must be a non-empty JSON array"
-                )
-        except json.JSONDecodeError as e:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid treatment_options_json: {str(e)}"
-            )
+        # Parse optional treatment options (deprecated - not used in specialist retrieval)
+        treatment_options = []
+        if treatment_options_json:
+            try:
+                treatment_options = json.loads(treatment_options_json)
+                if not isinstance(treatment_options, list):
+                    treatment_options = []
+            except json.JSONDecodeError:
+                # If invalid JSON, default to empty list
+                treatment_options = []
         
         # Build patient input (only diagnosis needed)
         patient_input = await build_patient_input(
