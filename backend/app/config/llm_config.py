@@ -117,7 +117,13 @@ def _create_openai_llm(model_name: Optional[str], temperature: float) -> Any:
     # Use provided model_name, or fall back to env var, or default
     model = model_name or os.getenv("LLM_MODEL", "gpt-5.2-chat-latest")
     
-    logger.info(f"🤖 [LLM] Provider: OpenAI | Model: {model} | Temperature: {temperature}")
+    # gpt-5.2-chat-latest only supports temperature=1 (no custom values)
+    if model == "gpt-5.2-chat-latest":
+        original_temp = temperature
+        temperature = 1
+        logger.info(f"🤖 [LLM] Provider: OpenAI | Model: {model} | Temperature: {temperature} (overridden from {original_temp} - model requires default)")
+    else:
+        logger.info(f"🤖 [LLM] Provider: OpenAI | Model: {model} | Temperature: {temperature}")
     
     llm_instance = ChatOpenAI(
         model=model,
