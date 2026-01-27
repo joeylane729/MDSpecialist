@@ -10,8 +10,7 @@ pinecone
 langchain>=0.3.0
 langchain-core>=0.3.0
 langchain-openai
-# Optional: Uncomment to enable Gemini support
-# langchain-google-genai
+langchain-google-genai
 langchain-pinecone
 langchain-community
 PyPDF2
