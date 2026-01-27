@@ -11,6 +11,28 @@ from ..models.icd_cpt_mapping import IcdCptMapping
 
 logger = logging.getLogger(__name__)
 
+
+def extract_llm_response_content(response: Any) -> str:
+    """
+    Extract text content from LLM response, handling both OpenAI (string) and Gemini (list) formats.
+    
+    Args:
+        response: LLM response object (AIMessage from LangChain)
+    
+    Returns:
+        Extracted text content as a string
+    """
+    if hasattr(response, 'content'):
+        content = response.content
+        if isinstance(content, list):
+            # Gemini may return content as a list of text parts
+            return ' '.join(str(item) for item in content).strip()
+        else:
+            return str(content).strip()
+    else:
+        return str(response).strip()
+
+
 class MedicalAnalysisService:
     """Service for comprehensive medical analysis including specialty determination, ICD-10 coding, and diagnosis prediction."""
     
@@ -358,7 +380,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             logger.info(f"✅ [ICD-10 Generation] {llm_provider} LLM response received")
             
             # Extract the ICD-10 codes from the response - LCEL returns AIMessage object
-            response_text = response.content.strip() if hasattr(response, 'content') else str(response).strip()
+            response_text = extract_llm_response_content(response)
             
             # Clean up the response (remove markdown formatting if present)
             if response_text.startswith('```json'):
@@ -541,7 +563,7 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
                 response = await chain.ainvoke({})
             
             # Extract the query response
-            query = response.content.strip() if hasattr(response, 'content') else str(response).strip()
+            query = extract_llm_response_content(response)
             
             # Clean up the response (remove markdown formatting if present)
             if query.startswith('```json'):
@@ -716,7 +738,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             logger.info(f"✅ [CPT Code Generation] {llm_provider} LLM response received")
             
             # Extract the JSON response
-            response_text = response.content.strip() if hasattr(response, 'content') else str(response).strip()
+            response_text = extract_llm_response_content(response)
             
             # Clean up the response (remove markdown formatting if present)
             if response_text.startswith('```json'):
@@ -1029,7 +1051,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                     })
                 
                 # Extract JSON response
-                response_text = response.content.strip() if hasattr(response, 'content') else str(response).strip()
+                response_text = extract_llm_response_content(response)
                 
                 # Clean up response
                 if response_text.startswith('```json'):
@@ -1709,7 +1731,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             })
             
             # Extract the JSON response - LCEL returns AIMessage object
-            response_text = response.content.strip() if hasattr(response, 'content') else str(response).strip()
+            response_text = extract_llm_response_content(response)
             
             # Clean up the response (remove markdown formatting if present)
             if response_text.startswith('```json'):

@@ -267,7 +267,15 @@ Write a professional email (400-600 words) with:
             logger.info(f"✅ [PreAuth] {llm_provider} LLM API call completed")
             
             # Extract the letter content
-            letter = response.content.strip() if hasattr(response, 'content') else str(response).strip()
+            # Handle both string and list responses (Gemini may return list)
+            if hasattr(response, 'content'):
+                content = response.content
+                if isinstance(content, list):
+                    letter = ' '.join(str(item) for item in content).strip()
+                else:
+                    letter = str(content).strip()
+            else:
+                letter = str(response).strip()
             letter_length = len(letter)
             logger.info(f"📄 [PreAuth] Generated letter length: {letter_length} characters")
             
