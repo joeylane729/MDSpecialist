@@ -78,6 +78,7 @@ async def generate_search_query(
     icd10_description: str = Form(...),
     user_diagnosis: str = Form(...),
     anatomical_location: Optional[str] = Form(None),
+    llm_provider: Optional[str] = Form(None),  # Optional: "openai" or "gemini"
     custom_prompt: Optional[str] = Form(None),  # Optional custom prompt to override default
     db: Session = Depends(get_db)
 ):
@@ -89,7 +90,7 @@ async def generate_search_query(
     """
     try:
         # Initialize service and generate search query
-        medical_analysis_service = MedicalAnalysisService(db)
+        medical_analysis_service = MedicalAnalysisService(db, llm_provider=llm_provider)
         search_query, search_query_prompt_text = await medical_analysis_service.generate_search_query(
             icd10_description=icd10_description,
             user_diagnosis=user_diagnosis,
@@ -117,6 +118,7 @@ async def regenerate_icd10_code(
     diagnosis: str = Form(...),
     anatomical_location: Optional[str] = Form(None),
     pdf_content: Optional[str] = Form(None),
+    llm_provider: Optional[str] = Form(None),  # Optional: "openai" or "gemini"
     custom_prompt: Optional[str] = Form(None),  # Optional custom prompt to override default
     db: Session = Depends(get_db)
 ):
@@ -127,8 +129,8 @@ async def regenerate_icd10_code(
     """
     try:
         # Initialize service and generate ICD-10 codes
-        medical_analysis_service = MedicalAnalysisService(db)
-        icd10_codes, icd10_relevancy_scores, icd10_prompt_text = await medical_analysis_service.predict_icd10_code(
+        medical_analysis_service = MedicalAnalysisService(db, llm_provider=llm_provider)
+        icd10_codes, icd10_relevancy_scores, icd10_llm_descriptions, icd10_prompt_text = await medical_analysis_service.predict_icd10_code(
             diagnosis=diagnosis,
             anatomical_location=anatomical_location or "",
             pdf_content=pdf_content or "",
@@ -150,8 +152,9 @@ async def regenerate_icd10_code(
             "predicted_icd10": primary_icd10,  # Primary code for backward compatibility
             "predicted_icd10_codes": icd10_codes,  # All codes
             "icd10_relevancy_scores": icd10_relevancy_scores,  # Code -> relevancy score mapping (0-100)
+            "icd10_llm_descriptions": icd10_llm_descriptions,  # Code -> LLM description mappings
             "icd10_description": icd10_description,  # Primary description for backward compatibility
-            "icd10_descriptions": icd10_descriptions,  # All code -> description mappings
+            "icd10_descriptions": icd10_descriptions,  # All code -> database description mappings
             "icd10_prompt_text": icd10_prompt_text,
         }
         
@@ -169,6 +172,7 @@ async def regenerate_icd10_code(
 async def generate_cpt_codes(
     search_query: str = Form(...),
     anatomical_location: Optional[str] = Form(None),
+    llm_provider: Optional[str] = Form(None),  # Optional: "openai" or "gemini"
     custom_prompt: Optional[str] = Form(None),  # Optional custom prompt to override default
     icd10_code: Optional[str] = Form(None),  # Optional ICD-10 code(s) - comma-separated for multiple codes
     db: Session = Depends(get_db)
@@ -183,7 +187,7 @@ async def generate_cpt_codes(
     """
     try:
         # Initialize service and generate CPT codes (both GPT and database)
-        medical_analysis_service = MedicalAnalysisService(db)
+        medical_analysis_service = MedicalAnalysisService(db, llm_provider=llm_provider)
         # Parse comma-separated ICD-10 codes if provided
         icd10_codes_list = None
         if icd10_code:

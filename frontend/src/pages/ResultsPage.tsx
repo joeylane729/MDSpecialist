@@ -37,6 +37,7 @@ interface SearchParams {
   diagnoses_prompt_text?: string;  // GPT prompt text used to generate diagnoses/treatment options
   icd10_prompt_text?: string;  // GPT prompt text used to generate ICD-10 code
   search_query?: string;  // Pre-generated search query
+  llm_provider?: string;  // LLM provider used ("openai" or "gemini")
   search_query_prompt_text?: string;  // GPT prompt text used to generate search query
   patientAge?: { month: string; year: string };  // Patient age (month and year of birth)
   patient_age_category?: 'adult' | 'child';  // Patient age category
@@ -900,7 +901,8 @@ const ResultsPage: React.FC = () => {
           treatment_options: response.patient_profile.treatment_options,
           search_query: response.patient_profile.search_query,
           diagnoses_prompt_text: response.patient_profile.diagnoses_prompt_text,
-          search_query_prompt_text: response.patient_profile.search_query_prompt_text
+          search_query_prompt_text: response.patient_profile.search_query_prompt_text,
+          llm_provider: response.patient_profile.llm_provider
         };
         
         console.log('🔍 [Frontend] Setting searchParams with:', {
@@ -979,6 +981,7 @@ const ResultsPage: React.FC = () => {
       const response = await regenerateICD10Code({
         diagnosis: searchParams.diagnosis,
         anatomical_location: searchParams.anatomical_location,
+        llm_provider: searchParams.llm_provider,
         custom_prompt: customPrompt
       });
       
@@ -1047,6 +1050,7 @@ const ResultsPage: React.FC = () => {
       const response = await generateSearchQuery({
         icd10_description: searchParams.icd10_description,
         user_diagnosis: searchParams.diagnosis,
+        llm_provider: searchParams.llm_provider,
         custom_prompt: customPrompt
       });
       
@@ -1160,6 +1164,7 @@ const ResultsPage: React.FC = () => {
         const response = await generateCPTCodes({
           search_query: searchQuery,
           anatomical_location: searchParams?.anatomical_location,
+          llm_provider: searchParams?.llm_provider,
           custom_prompt: customPrompt
         });
         const elapsed = Date.now() - startTime;

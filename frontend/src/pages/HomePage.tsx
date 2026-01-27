@@ -581,7 +581,8 @@ const HomePage: React.FC = () => {
           cpt_codes: aiRecommendations?.patient_profile?.cpt_codes,
           cpt_prompt_text: aiRecommendations?.patient_profile?.cpt_prompt_text,
           diagnoses_prompt_text: aiRecommendations?.patient_profile?.diagnoses_prompt_text,
-          search_query: aiRecommendations?.patient_profile?.search_query
+          search_query: aiRecommendations?.patient_profile?.search_query,
+          llm_provider: aiRecommendations?.patient_profile?.llm_provider
         },
         providers: [], // Providers will be fetched later on ResultsPage
         totalProviders: 0,
@@ -633,7 +634,8 @@ const HomePage: React.FC = () => {
             cpt_codes: aiRecommendations?.patient_profile?.cpt_codes,
             cpt_prompt_text: aiRecommendations?.patient_profile?.cpt_prompt_text,
             diagnoses_prompt_text: aiRecommendations?.patient_profile?.diagnoses_prompt_text,
-            search_query: aiRecommendations?.patient_profile?.search_query
+            search_query: aiRecommendations?.patient_profile?.search_query,
+            llm_provider: aiRecommendations?.patient_profile?.llm_provider
           },
           providers: [], // Providers will be fetched later on ResultsPage
           totalProviders: 0,

@@ -296,6 +296,7 @@ export interface MedicalAnalysisResponse {
 export interface SearchQueryGenerationRequest {
   icd10_description: string;
   user_diagnosis: string;
+  llm_provider?: string; // Optional: "openai" or "gemini"
   custom_prompt?: string; // Optional custom prompt to override default
 }
 
@@ -308,6 +309,7 @@ export interface ICD10CodeGenerationRequest {
   diagnosis: string;
   anatomical_location?: string;
   pdf_content?: string;
+  llm_provider?: string; // Optional: "openai" or "gemini"
   custom_prompt?: string; // Optional custom prompt to override default
 }
 
@@ -324,6 +326,7 @@ export interface ICD10CodeGenerationResponse {
 export interface CPTCodeGenerationRequest {
   search_query: string;
   anatomical_location?: string; // Optional anatomical location
+  llm_provider?: string; // Optional: "openai" or "gemini"
   custom_prompt?: string; // Optional custom prompt to override default
 }
 
@@ -347,6 +350,9 @@ export const generateSearchQuery = async (
     const formData = new FormData();
     formData.append('icd10_description', request.icd10_description);
     formData.append('user_diagnosis', request.user_diagnosis);
+    if (request.llm_provider) {
+      formData.append('llm_provider', request.llm_provider);
+    }
     if (request.custom_prompt) {
       formData.append('custom_prompt', request.custom_prompt);
     }
@@ -387,6 +393,9 @@ export const regenerateICD10Code = async (
     if (request.pdf_content) {
       formData.append('pdf_content', request.pdf_content);
     }
+    if (request.llm_provider) {
+      formData.append('llm_provider', request.llm_provider);
+    }
     if (request.custom_prompt) {
       formData.append('custom_prompt', request.custom_prompt);
     }
@@ -423,6 +432,9 @@ export const generateCPTCodes = async (
     formData.append('search_query', request.search_query);
     if (request.anatomical_location) {
       formData.append('anatomical_location', request.anatomical_location);
+    }
+    if (request.llm_provider) {
+      formData.append('llm_provider', request.llm_provider);
     }
     if (request.custom_prompt) {
       formData.append('custom_prompt', request.custom_prompt);
