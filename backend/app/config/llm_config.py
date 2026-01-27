@@ -87,10 +87,10 @@ def _get_model_for_use_case(use_case: str, provider: str) -> Optional[str]:
             "default": "gpt-5.1"
         },
         "gemini": {
-            "medical_analysis": "gemini-1.5-pro",
-            "letter_generation": "gemini-1.5-pro",
+            "medical_analysis": "gemini-pro",
+            "letter_generation": "gemini-pro",
             "matching": "gemini-1.5-flash",
-            "default": "gemini-1.5-pro"
+            "default": "gemini-pro"
         }
     }
     
@@ -146,7 +146,8 @@ def _create_gemini_llm(model_name: Optional[str], temperature: float) -> Any:
         )
     
     # Use provided model_name, or fall back to env var, or default
-    model = model_name or os.getenv("LLM_MODEL", "gemini-1.5-pro")
+    # Try gemini-pro first (standard name), fall back to gemini-1.5-pro if needed
+    model = model_name or os.getenv("LLM_MODEL", "gemini-pro")
     
     logger.info(f"🤖 [LLM] Provider: Gemini | Model: {model} | Temperature: {temperature}")
     

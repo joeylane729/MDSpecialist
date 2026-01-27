@@ -414,11 +414,11 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             except json.JSONDecodeError as e:
                 logger.error(f"Failed to parse ICD-10 codes JSON: {e}")
                 logger.debug(f"Response text: {response_text[:500]}")
-                return [], rendered_prompt
+                return [], {}, rendered_prompt
                 
         except Exception as e:
             logger.error(f"Error in GPT ICD-10 prediction: {e}", exc_info=True)
-            return [], rendered_prompt if 'rendered_prompt' in locals() else ""
+            return [], {}, rendered_prompt if 'rendered_prompt' in locals() else ""
 
     async def generate_search_query(
         self,
