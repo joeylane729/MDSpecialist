@@ -81,10 +81,10 @@ def _get_model_for_use_case(use_case: str, provider: str) -> Optional[str]:
     # Model mappings by provider and use case
     model_mappings = {
         "openai": {
-            "medical_analysis": "gpt-5.1",
+            "medical_analysis": "gpt-5.2-chat-latest",
             "letter_generation": "gpt-4o",
             "matching": "gpt-5",
-            "default": "gpt-5.1"
+            "default": "gpt-5.2-chat-latest"
         },
         "gemini": {
             "medical_analysis": "gemini-3-flash-preview",
@@ -115,7 +115,7 @@ def _create_openai_llm(model_name: Optional[str], temperature: float) -> Any:
         )
     
     # Use provided model_name, or fall back to env var, or default
-    model = model_name or os.getenv("LLM_MODEL", "gpt-5.1")
+    model = model_name or os.getenv("LLM_MODEL", "gpt-5.2-chat-latest")
     
     logger.info(f"🤖 [LLM] Provider: OpenAI | Model: {model} | Temperature: {temperature}")
     
@@ -148,13 +148,13 @@ def _create_gemini_llm(model_name: Optional[str], temperature: float) -> Any:
     # Use provided model_name, or fall back to env var, or default
     model = model_name or os.getenv("LLM_MODEL", "gemini-3-flash-preview")
     
-    logger.info(f"🤖 [LLM] Provider: Gemini | Model: {model} | Temperature: {temperature} | ThinkingBudget: 0")
+    logger.info(f"🤖 [LLM] Provider: Gemini | Model: {model} | Temperature: {temperature} | ThinkingBudget: -1")
     
     llm_instance = ChatGoogleGenerativeAI(
         model=model,
         temperature=temperature,
         google_api_key=api_key,
-        thinking_budget=0
+        thinking_budget=-1
     )
     
     logger.info(f"✅ [LLM] Gemini LLM instance created successfully")
