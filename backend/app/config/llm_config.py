@@ -148,12 +148,13 @@ def _create_gemini_llm(model_name: Optional[str], temperature: float) -> Any:
     # Use provided model_name, or fall back to env var, or default
     model = model_name or os.getenv("LLM_MODEL", "gemini-3-flash-preview")
     
-    logger.info(f"🤖 [LLM] Provider: Gemini | Model: {model} | Temperature: {temperature}")
+    logger.info(f"🤖 [LLM] Provider: Gemini | Model: {model} | Temperature: {temperature} | ThinkingBudget: 0")
     
     llm_instance = ChatGoogleGenerativeAI(
         model=model,
         temperature=temperature,
-        google_api_key=api_key
+        google_api_key=api_key,
+        thinking_budget=0
     )
     
     logger.info(f"✅ [LLM] Gemini LLM instance created successfully")
