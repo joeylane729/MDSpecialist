@@ -267,11 +267,18 @@ Write a professional email (400-600 words) with:
             logger.info(f"✅ [PreAuth] {llm_provider} LLM API call completed")
             
             # Extract the letter content
-            # Handle both string and list responses (Gemini may return list)
+            # Handle both string and list responses (Gemini may return list of dicts)
             if hasattr(response, 'content'):
                 content = response.content
                 if isinstance(content, list):
-                    letter = ' '.join(str(item) for item in content).strip()
+                    # Gemini returns content as a list of dictionaries with 'type' and 'text' keys
+                    text_parts = []
+                    for item in content:
+                        if isinstance(item, dict) and 'text' in item:
+                            text_parts.append(item['text'])
+                        else:
+                            text_parts.append(str(item))
+                    letter = ' '.join(text_parts).strip()
                 else:
                     letter = str(content).strip()
             else:
