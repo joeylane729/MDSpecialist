@@ -16,7 +16,7 @@ class MedicalAnalysisService:
     
     def __init__(self, db: Session = None):
         logger.info(f"🏥 [MedicalAnalysisService] Initializing service...")
-        self.llm = get_llm(model_name="gpt-5.1", temperature=0.1)
+        self.llm = get_llm(use_case="medical_analysis", temperature=0.1)
         logger.info(f"✅ [MedicalAnalysisService] Service initialized with LLM configured")
         self.db = db
     

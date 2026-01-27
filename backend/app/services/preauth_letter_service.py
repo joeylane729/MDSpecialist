@@ -16,7 +16,7 @@ class PreAuthLetterService:
     """Service for generating pre-authorization letters."""
     
     def __init__(self):
-        self.llm = get_llm(model_name="gpt-4o", temperature=0.3)  # Using gpt-4o for letter generation quality
+        self.llm = get_llm(use_case="letter_generation", temperature=0.3)
     
     async def generate_preauth_letter(
         self,

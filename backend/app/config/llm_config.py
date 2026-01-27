@@ -19,16 +19,22 @@ logger = logging.getLogger(__name__)
 def get_llm(
     model_name: Optional[str] = None,
     temperature: float = 0.1,
-    provider: Optional[str] = None
+    provider: Optional[str] = None,
+    use_case: Optional[str] = None
 ) -> BaseChatModel:
     """
     Factory function to create an LLM instance based on configuration.
     
     Args:
-        model_name: Specific model to use (overrides defaults)
+        model_name: Specific model to use (overrides defaults and use_case)
         temperature: Temperature setting (default: 0.1)
         provider: Force a specific provider ("openai" or "gemini")
                  If None, uses LLM_PROVIDER env var or defaults to "openai"
+        use_case: Use case identifier that maps to provider-appropriate models:
+                 - "medical_analysis" -> gpt-5.1 / gemini-1.5-pro
+                 - "letter_generation" -> gpt-4o / gemini-1.5-pro
+                 - "matching" -> gpt-5 / gemini-1.5-flash
+                 - "default" -> gpt-5.1 / gemini-1.5-pro
     
     Returns:
         LangChain ChatModel instance (ChatOpenAI or ChatGoogleGenerativeAI)
@@ -40,7 +46,16 @@ def get_llm(
     
     provider = provider.lower()
     
-    logger.info(f"🔧 [LLM Config] Creating LLM instance - Provider: {provider.upper()}, Model: {model_name or 'default'}, Temperature: {temperature}")
+    # If model_name is provided, use it directly (allows explicit override)
+    # Otherwise, map use_case to provider-appropriate model, or use default
+    if model_name is None:
+        if use_case:
+            model_name = _get_model_for_use_case(use_case, provider)
+        else:
+            # No model_name and no use_case - use default for provider
+            model_name = _get_model_for_use_case("default", provider)
+    
+    logger.info(f"🔧 [LLM Config] Creating LLM instance - Provider: {provider.upper()}, Model: {model_name}, Temperature: {temperature}, UseCase: {use_case or 'default'}")
     
     if provider == "gemini":
         llm = _create_gemini_llm(model_name, temperature)
@@ -50,6 +65,37 @@ def get_llm(
     # Add provider attribute for easy identification
     llm._provider = provider
     return llm
+
+
+def _get_model_for_use_case(use_case: str, provider: str) -> Optional[str]:
+    """
+    Map use case to provider-appropriate model.
+    
+    Args:
+        use_case: Use case identifier
+        provider: Provider name ("openai" or "gemini")
+    
+    Returns:
+        Model name appropriate for the provider and use case
+    """
+    # Model mappings by provider and use case
+    model_mappings = {
+        "openai": {
+            "medical_analysis": "gpt-5.1",
+            "letter_generation": "gpt-4o",
+            "matching": "gpt-5",
+            "default": "gpt-5.1"
+        },
+        "gemini": {
+            "medical_analysis": "gemini-1.5-pro",
+            "letter_generation": "gemini-1.5-pro",
+            "matching": "gemini-1.5-flash",
+            "default": "gemini-1.5-pro"
+        }
+    }
+    
+    provider_mappings = model_mappings.get(provider.lower(), model_mappings["openai"])
+    return provider_mappings.get(use_case.lower(), provider_mappings.get("default"))
 
 
 def _create_openai_llm(model_name: Optional[str], temperature: float) -> Any:
@@ -68,15 +114,8 @@ def _create_openai_llm(model_name: Optional[str], temperature: float) -> Any:
             "OPENAI_API_KEY environment variable is required when using OpenAI provider"
         )
     
-    # Default models for OpenAI
-    default_models = {
-        "default": "gpt-5.1",
-        "medical_analysis": "gpt-5.1",
-        "letter_generation": "gpt-4o",
-        "matching": "gpt-5"
-    }
-    
-    model = model_name or os.getenv("LLM_MODEL", default_models.get("default", "gpt-5.1"))
+    # Use provided model_name, or fall back to env var, or default
+    model = model_name or os.getenv("LLM_MODEL", "gpt-5.1")
     
     logger.info(f"🤖 [LLM] Provider: OpenAI | Model: {model} | Temperature: {temperature}")
     
@@ -106,15 +145,8 @@ def _create_gemini_llm(model_name: Optional[str], temperature: float) -> Any:
             "GOOGLE_API_KEY environment variable is required when using Gemini provider"
         )
     
-    # Default models for Gemini
-    default_models = {
-        "default": "gemini-1.5-pro",
-        "medical_analysis": "gemini-1.5-pro",
-        "letter_generation": "gemini-1.5-pro",
-        "matching": "gemini-1.5-flash"  # Faster/cheaper for matching tasks
-    }
-    
-    model = model_name or os.getenv("LLM_MODEL", default_models.get("default", "gemini-1.5-pro"))
+    # Use provided model_name, or fall back to env var, or default
+    model = model_name or os.getenv("LLM_MODEL", "gemini-1.5-pro")
     
     logger.info(f"🤖 [LLM] Provider: Gemini | Model: {model} | Temperature: {temperature}")
     
