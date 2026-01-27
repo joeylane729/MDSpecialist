@@ -161,6 +161,7 @@ export interface PatientProfile {
   diagnoses_prompt_text?: string;  // GPT prompt text used to generate diagnoses/treatment options
   determined_specialty?: string;  // Specialty determined for provider search
   user_diagnosis?: string;  // User-entered diagnosis text
+  llm_provider?: string;  // LLM provider used ("openai" or "gemini")
 }
 
 export interface SpecialistRecommendationResponse {
@@ -280,6 +281,7 @@ export const getSpecialistRecommendations = async (
 export interface MedicalAnalysisRequest {
   diagnosis: string;
   anatomical_location?: string;
+  llm_provider?: string;  // Optional: "openai" or "gemini"
   files?: File[];
   custom_diagnoses_prompt?: string;
   custom_search_query_prompt?: string;  // Optional custom prompt for search query generation
@@ -528,6 +530,11 @@ export const getMedicalAnalysis = async (
     
     if (request.anatomical_location) {
       formData.append('anatomical_location', request.anatomical_location);
+    }
+    
+    if (request.llm_provider) {
+      formData.append('llm_provider', request.llm_provider);
+      console.log('🤖 [Frontend] Using LLM provider:', request.llm_provider);
     }
     
     // Add files if provided

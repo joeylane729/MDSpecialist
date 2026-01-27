@@ -22,6 +22,7 @@ router = APIRouter()
 async def get_medical_analysis(
     diagnosis: str = Form(...),
     anatomical_location: Optional[str] = Form(None),
+    llm_provider: Optional[str] = Form(None),  # Optional: "openai" or "gemini"
     files: List[UploadFile] = File([]),
     custom_diagnoses_prompt: Optional[str] = Form(None),  # Optional custom prompt for diagnosis/treatment generation
     custom_search_query_prompt: Optional[str] = Form(None),  # Optional custom prompt for search query generation
@@ -38,7 +39,7 @@ async def get_medical_analysis(
         pdf_content = await extract_pdf_content(files)
         
         # Initialize service and perform analysis
-        medical_analysis_service = MedicalAnalysisService(db)
+        medical_analysis_service = MedicalAnalysisService(db, llm_provider=llm_provider)
         analysis_results = await medical_analysis_service.comprehensive_analysis(
             diagnosis=diagnosis,
             anatomical_location=anatomical_location or "",
@@ -50,6 +51,9 @@ async def get_medical_analysis(
             custom_search_query_prompt=custom_search_query_prompt,
             custom_icd10_prompt=custom_icd10_prompt
         )
+        
+        # Add the provider to the response so frontend knows which was used
+        analysis_results["llm_provider"] = llm_provider or "openai"
         
         # Wrap response in expected structure for frontend
         return {

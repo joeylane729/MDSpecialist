@@ -523,9 +523,7 @@ const HomePage: React.FC = () => {
 
 
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSearch = async (provider: 'openai' | 'gemini') => {
     if (!selectedState || !selectedCity || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity) {
       alert('Please fill in all required fields before searching');
       return;
@@ -541,6 +539,7 @@ const HomePage: React.FC = () => {
       const aiRecommendations = await getMedicalAnalysis({
         diagnosis: diagnosis,
         anatomical_location: anatomicalLocation,
+        llm_provider: provider,
         files: uploadedFiles
       });
       
@@ -698,7 +697,7 @@ const HomePage: React.FC = () => {
               </p>
             </div>
             
-            <form onSubmit={handleSearch} className="space-y-8">
+            <form onSubmit={(e) => e.preventDefault()} className="space-y-8">
               {/* Section 1: Basic Information */}
               <div className="bg-gray-100/70 rounded-2xl p-6">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
@@ -960,29 +959,51 @@ const HomePage: React.FC = () => {
                 )}
               </div>
 
-              {/* Search Button */}
+              {/* Search Buttons */}
               <div className="text-center">
-                <button
-                  type="submit"
-                  disabled={isLoading || !selectedState || !selectedCity || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity}
-                  className="group relative inline-flex items-center justify-center w-full max-w-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-                >
-                  {isLoading ? (
-                    <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
-                      <span>Searching...</span>
-                    </div>
-                  ) : (
-                    <>
-                      <Zap className="w-6 h-6 mr-3" />
-                      <span>Search</span>
-                      <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
-                    </>
-                  )}
-                </button>
-                
-                
+                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-4xl mx-auto">
+                  {/* OpenAI Search Button */}
+                  <button
+                    type="button"
+                    onClick={() => handleSearch('openai')}
+                    disabled={isLoading || !selectedState || !selectedCity || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity}
+                    className="group relative inline-flex items-center justify-center w-full sm:w-auto bg-gradient-to-r from-green-600 to-emerald-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-green-700 hover:to-emerald-700 focus:ring-4 focus:ring-green-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
+                        <span>Searching...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Zap className="w-6 h-6 mr-3" />
+                        <span>Search with OpenAI</span>
+                        <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
+                  </button>
 
+                  {/* Gemini Search Button */}
+                  <button
+                    type="button"
+                    onClick={() => handleSearch('gemini')}
+                    disabled={isLoading || !selectedState || !selectedCity || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity}
+                    className="group relative inline-flex items-center justify-center w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
+                        <span>Searching...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Zap className="w-6 h-6 mr-3" />
+                        <span>Search with Gemini</span>
+                        <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </form>
 

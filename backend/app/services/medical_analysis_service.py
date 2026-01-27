@@ -43,9 +43,9 @@ def extract_llm_response_content(response: Any) -> str:
 class MedicalAnalysisService:
     """Service for comprehensive medical analysis including specialty determination, ICD-10 coding, and diagnosis prediction."""
     
-    def __init__(self, db: Session = None):
+    def __init__(self, db: Session = None, llm_provider: Optional[str] = None):
         logger.info(f"🏥 [MedicalAnalysisService] Initializing service...")
-        self.llm = get_llm(use_case="medical_analysis", temperature=0.1)
+        self.llm = get_llm(use_case="medical_analysis", temperature=0.1, provider=llm_provider)
         logger.info(f"✅ [MedicalAnalysisService] Service initialized with LLM configured")
         self.db = db
     
