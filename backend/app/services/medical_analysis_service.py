@@ -87,7 +87,7 @@ class MedicalAnalysisService:
             
             # Generate ICD-10 codes (treatment options generation removed)
             logger.info(f"   🔄 Generating ICD-10 codes...")
-            predicted_icd10_codes, icd10_relevancy_scores, icd10_prompt_text = await self.predict_icd10_code(
+            predicted_icd10_codes, icd10_relevancy_scores, icd10_llm_descriptions, icd10_prompt_text = await self.predict_icd10_code(
                 diagnosis, anatomical_location, pdf_content, custom_prompt=custom_icd10_prompt
             )
             logger.info(f"   ✅ Generated {len(predicted_icd10_codes)} ICD-10 codes")
@@ -99,6 +99,7 @@ class MedicalAnalysisService:
                 "predicted_icd10": primary_icd10,  # Primary code for backward compatibility
                 "predicted_icd10_codes": predicted_icd10_codes,  # All codes
                 "icd10_relevancy_scores": icd10_relevancy_scores,  # Code -> relevancy score mapping
+                "icd10_llm_descriptions": icd10_llm_descriptions,  # Code -> LLM description mapping
                 "diagnoses": {}  # Empty dict for backward compatibility
             }
             
@@ -157,8 +158,9 @@ class MedicalAnalysisService:
                 "predicted_icd10": medical_analysis["predicted_icd10"],  # Primary code for backward compatibility
                 "predicted_icd10_codes": medical_analysis.get("predicted_icd10_codes", []),  # All ICD-10 codes
                 "icd10_relevancy_scores": medical_analysis.get("icd10_relevancy_scores", {}),  # Code -> relevancy score mapping (0-100)
+                "icd10_llm_descriptions": medical_analysis.get("icd10_llm_descriptions", {}),  # Code -> LLM description mappings
                 "icd10_description": medical_analysis.get("icd10_description"),  # Primary description for backward compatibility
-                "icd10_descriptions": icd10_descriptions,  # All code -> description mappings
+                "icd10_descriptions": icd10_descriptions,  # All code -> database description mappings
                 "icd10_prompt_text": icd10_prompt_text,  # Actual GPT prompt used to generate ICD-10 code
                 "determined_specialty": determined_specialty,  # Specialty determined for provider search
                 "search_query": search_query,  # Pre-generated search query
@@ -262,12 +264,12 @@ class MedicalAnalysisService:
         anatomical_location: str = "",
         pdf_content: str = "",
         custom_prompt: Optional[str] = None
-    ) -> Tuple[List[str], Dict[str, int], str]:
+    ) -> Tuple[List[str], Dict[str, int], Dict[str, str], str]:
         """
         Use GPT to predict 5-10 ICD-10 codes based on patient information.
         Includes codes for similar/related pathology from nearby anatomic locations.
         May include codes with "uncertain" or "unspecified" in descriptions.
-        Each code includes a relevancy score (0-100%).
+        Each code includes a relevancy score (0-100%) and a description.
         
         Args:
             diagnosis: Patient diagnosis
@@ -276,7 +278,7 @@ class MedicalAnalysisService:
             custom_prompt: Optional custom prompt to override default
             
         Returns:
-            Tuple of (List of ICD-10 codes, Dict mapping code -> relevancy_score, rendered prompt text)
+            Tuple of (List of ICD-10 codes, Dict mapping code -> relevancy_score, Dict mapping code -> LLM description, rendered prompt text)
         """
         try:
             # Use custom prompt if provided, otherwise use default
@@ -322,16 +324,18 @@ Provide between 5 and 10 of the most likely ICD-10 codes for this diagnosis, inc
 - DO NOT include codes that contain descriptions of anatomy that is not immediately adjacent to the anatomical location
 - Please make sure to preserve the pathologic category of the original diagnosis. For example, if the original diagnosis is a neoplasm, then all the ICD-10 codes should designate neoplasms. If the original diagnosis is a vascular lesion, then all the ICD- 10 codes should be vascular lesions. If the original diagnosis is a medical condition, then all the ICD-10 codes should be medical conditions. If the original diagnosis is a degenerative disease, then all the ICD-10 codes should be degenerative diseases.
 
-For each code, assign a relevancy score from 0-100% indicating how relevant the code is to the diagnosis.
+For each code, assign a relevancy score from 0-100% indicating how relevant the code is to the diagnosis, and provide a description of what the code represents.
 
 Return the response in this exact JSON format:
 [
     {{
         "code": "ICD10_CODE",
+        "description": "Brief description of what this code represents",
         "relevancy_score": 95
     }},
     {{
         "code": "ICD10_CODE",
+        "description": "Brief description of what this code represents",
         "relevancy_score": 85
     }}
 ]
@@ -408,19 +412,23 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                     # If single item returned, wrap in list
                     icd_data = [icd_data] if icd_data else []
                 
-                # Validate and extract codes and scores
+                # Validate and extract codes, scores, and descriptions
                 valid_codes = []
                 relevancy_scores = {}
+                llm_descriptions = {}
                 
                 for item in icd_data:
-                    # Handle both old format (string) and new format (dict with code and relevancy_score)
+                    # Handle both old format (string) and new format (dict with code, description, and relevancy_score)
                     if isinstance(item, dict):
                         code_str = str(item.get('code', '')).strip()
                         score = item.get('relevancy_score', 0)
+                        description = str(item.get('description', '')).strip()
                         # Validate score is 0-100
                         if not isinstance(score, (int, float)) or score < 0 or score > 100:
                             score = 0
                         relevancy_scores[code_str] = int(score)
+                        if description:
+                            llm_descriptions[code_str] = description
                     else:
                         # Old format: just a string code
                         code_str = str(item).strip().replace('"', '').replace("'", "")
@@ -435,19 +443,20 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 if valid_codes:
                     logger.info(f"GPT returned {len(valid_codes)} ICD-10 codes: {valid_codes}")
                     logger.info(f"Relevancy scores: {relevancy_scores}")
-                    return valid_codes, relevancy_scores, rendered_prompt
+                    logger.info(f"LLM descriptions: {len(llm_descriptions)} codes with descriptions")
+                    return valid_codes, relevancy_scores, llm_descriptions, rendered_prompt
                 else:
                     logger.warning("No valid ICD-10 codes found in GPT response")
-                    return [], {}, rendered_prompt
+                    return [], {}, {}, rendered_prompt
                     
             except json.JSONDecodeError as e:
                 logger.error(f"Failed to parse ICD-10 codes JSON: {e}")
                 logger.debug(f"Response text: {response_text[:500]}")
-                return [], {}, rendered_prompt
+                return [], {}, {}, rendered_prompt
                 
         except Exception as e:
             logger.error(f"Error in GPT ICD-10 prediction: {e}", exc_info=True)
-            return [], {}, rendered_prompt if 'rendered_prompt' in locals() else ""
+            return [], {}, {}, rendered_prompt if 'rendered_prompt' in locals() else ""
 
     async def generate_search_query(
         self,

@@ -22,7 +22,8 @@ interface SearchParams {
   predicted_icd10?: string;  // Primary code for backward compatibility
   predicted_icd10_codes?: string[];  // All ICD-10 codes
   icd10_relevancy_scores?: { [code: string]: number };  // Code -> relevancy score mapping (0-100)
-  icd10_descriptions?: { [code: string]: string | null };  // All code -> description mappings
+  icd10_llm_descriptions?: { [code: string]: string };  // Code -> LLM description mappings
+  icd10_descriptions?: { [code: string]: string | null };  // All code -> database description mappings
   icd10_description?: string;
   treatment_options?: Array<{
     name: string;
@@ -892,6 +893,7 @@ const ResultsPage: React.FC = () => {
           predicted_icd10: response.patient_profile.predicted_icd10,
           predicted_icd10_codes: response.patient_profile.predicted_icd10_codes,
           icd10_relevancy_scores: response.patient_profile.icd10_relevancy_scores,
+          icd10_llm_descriptions: response.patient_profile.icd10_llm_descriptions,
           icd10_description: response.patient_profile.icd10_description,
           icd10_descriptions: response.patient_profile.icd10_descriptions,
           icd10_prompt_text: response.patient_profile.icd10_prompt_text,
@@ -986,6 +988,7 @@ const ResultsPage: React.FC = () => {
         predicted_icd10: response.predicted_icd10 || undefined,
         predicted_icd10_codes: response.predicted_icd10_codes || undefined,
         icd10_relevancy_scores: response.icd10_relevancy_scores || undefined,
+        icd10_llm_descriptions: response.icd10_llm_descriptions || undefined,
         icd10_description: response.icd10_description || undefined,
         icd10_descriptions: response.icd10_descriptions || undefined,
         icd10_prompt_text: response.icd10_prompt_text
@@ -2024,32 +2027,46 @@ const ResultsPage: React.FC = () => {
                           // Show all codes with their descriptions in a list format
                           <div className="space-y-2">
                             {searchParams.predicted_icd10_codes.map((code: string, idx: number) => {
-                              const descriptionFromMap = searchParams.icd10_descriptions?.[code];
-                              const description = descriptionFromMap || 
-                                                  (idx === 0 ? searchParams.icd10_description : null) || 
-                                                  'Description not available';
+                              const llmDescription = searchParams.icd10_llm_descriptions?.[code];
+                              const dbDescription = searchParams.icd10_descriptions?.[code];
                               const relevancyScore = searchParams.icd10_relevancy_scores?.[code];
                               
                               if (idx < 3) {  // Log first 3 for debugging
                                 console.log(`🔍 [Frontend] ICD code ${code} (idx ${idx}):`, {
-                                  has_icd10_descriptions: !!searchParams.icd10_descriptions,
-                                  descriptionFromMap,
-                                  icd10_description: idx === 0 ? searchParams.icd10_description : 'N/A (not first)',
-                                  final_description: description,
+                                  has_llm_descriptions: !!searchParams.icd10_llm_descriptions,
+                                  has_db_descriptions: !!searchParams.icd10_descriptions,
+                                  llmDescription,
+                                  dbDescription,
                                   relevancy_score: relevancyScore
                                 });
                               }
                               
                               return (
-                                <div key={idx} className="flex items-start gap-3 p-2 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors">
-                                  <code className="bg-white px-3 py-1.5 rounded text-sm font-mono font-semibold text-gray-800 border border-gray-300 flex-shrink-0">
-                                    {code}
-                                  </code>
-                                  <span className="text-gray-700 text-sm flex-1 pt-1">{description}</span>
-                                  {relevancyScore !== undefined && (
-                                    <span className="text-xs font-medium text-gray-600 bg-gray-200 px-2 py-1 rounded flex-shrink-0">
-                                      {relevancyScore}%
-                                    </span>
+                                <div key={idx} className="p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors">
+                                  <div className="flex items-start gap-3 mb-2">
+                                    <code className="bg-white px-3 py-1.5 rounded text-sm font-mono font-semibold text-gray-800 border border-gray-300 flex-shrink-0">
+                                      {code}
+                                    </code>
+                                    {relevancyScore !== undefined && (
+                                      <span className="text-xs font-medium text-gray-600 bg-gray-200 px-2 py-1 rounded flex-shrink-0">
+                                        {relevancyScore}%
+                                      </span>
+                                    )}
+                                  </div>
+                                  {llmDescription && (
+                                    <div className="ml-0 mb-2">
+                                      <span className="text-xs font-semibold text-blue-600 uppercase">LLM Description:</span>
+                                      <p className="text-gray-700 text-sm mt-1">{llmDescription}</p>
+                                    </div>
+                                  )}
+                                  {dbDescription && (
+                                    <div className="ml-0">
+                                      <span className="text-xs font-semibold text-green-600 uppercase">Database Description:</span>
+                                      <p className="text-gray-700 text-sm mt-1">{dbDescription}</p>
+                                    </div>
+                                  )}
+                                  {!llmDescription && !dbDescription && (
+                                    <p className="text-gray-500 text-sm ml-0">No descriptions available</p>
                                   )}
                                 </div>
                               );
