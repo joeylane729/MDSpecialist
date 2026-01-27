@@ -382,6 +382,10 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             # Extract the ICD-10 codes from the response - LCEL returns AIMessage object
             response_text = extract_llm_response_content(response)
             
+            # Debug: Log the raw response
+            logger.info(f"🔍 [ICD-10 Generation] Raw response (first 500 chars): {response_text[:500]}")
+            logger.info(f"🔍 [ICD-10 Generation] Response length: {len(response_text)} chars")
+            
             # Clean up the response (remove markdown formatting if present)
             if response_text.startswith('```json'):
                 response_text = response_text.replace('```json', '').replace('```', '').strip()
