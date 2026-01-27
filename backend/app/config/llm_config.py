@@ -81,10 +81,10 @@ def _get_model_for_use_case(use_case: str, provider: str) -> Optional[str]:
     # Model mappings by provider and use case
     model_mappings = {
         "openai": {
-            "medical_analysis": "gpt-5.2-chat-latest",
+            "medical_analysis": "gpt-5.2",
             "letter_generation": "gpt-4o",
             "matching": "gpt-5",
-            "default": "gpt-5.2-chat-latest"
+            "default": "gpt-5.2"
         },
         "gemini": {
             "medical_analysis": "gemini-3-flash-preview",
@@ -115,10 +115,10 @@ def _create_openai_llm(model_name: Optional[str], temperature: float) -> Any:
         )
     
     # Use provided model_name, or fall back to env var, or default
-    model = model_name or os.getenv("LLM_MODEL", "gpt-5.2-chat-latest")
+    model = model_name or os.getenv("LLM_MODEL", "gpt-5.2")
     
-    # gpt-5.2-chat-latest only supports temperature=1 (no custom values)
-    if model == "gpt-5.2-chat-latest":
+    # gpt-5.2 and gpt-5.2-chat-latest only support temperature=1 (no custom values)
+    if model in ["gpt-5.2", "gpt-5.2-chat-latest"]:
         original_temp = temperature
         temperature = 1
         logger.info(f"🤖 [LLM] Provider: OpenAI | Model: {model} | Temperature: {temperature} (overridden from {original_temp} - model requires default)")
