@@ -2597,8 +2597,13 @@ const ResultsPage: React.FC = () => {
                                 </span>
                               )}
                               {isIrrelevant && (
-                                <span className="text-xs font-medium text-red-700 bg-red-100 px-1.5 py-0.5 rounded flex-shrink-0">
-                                  Irrelevant
+                                <span
+                                  className="inline-flex flex-shrink-0 text-red-600 cursor-help"
+                                  title="Excluded from clinical volume (relevancy < 40%)"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                  </svg>
                                 </span>
                               )}
                               <div className="flex-1 min-w-0 text-sm">
@@ -2747,8 +2752,13 @@ const ResultsPage: React.FC = () => {
                                       </span>
                                     )}
                                     {isIrrelevant && (
-                                      <span className="text-xs font-medium text-red-700 bg-red-100 px-2 py-1 rounded flex-shrink-0">
-                                        Irrelevant
+                                      <span
+                                        className="inline-flex flex-shrink-0 text-red-600 cursor-help"
+                                        title="Excluded from clinical volume (relevancy < 40%)"
+                                      >
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                        </svg>
                                       </span>
                                     )}
                                   </div>

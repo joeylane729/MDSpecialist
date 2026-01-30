@@ -595,294 +595,6 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
             logger.error(f"Error generating search query: {e}", exc_info=True)
             return "", ""
 
-    async def generate_and_categorize_cpt_codes(
-        self,
-        search_query_terms: List[str],
-        anatomical_location: str = "",
-        custom_prompt: Optional[str] = None
-    ) -> Tuple[List[Dict[str, str]], str]:
-        """
-        Use GPT to generate and categorize CPT codes in a single call.
-        Generates CPT codes, assigns them to one of 5 categories, and assigns relevancy scores.
-        
-        Args:
-            search_query_terms: List of diagnosis terms/descriptions from the search query (e.g., ["acoustic neuroma", "vestibular schwannoma", ...])
-            anatomical_location: Anatomical location of the condition (e.g., "brain", "spine", "arm")
-            custom_prompt: Optional custom prompt to override default
-            
-        Returns:
-            Tuple of (List of dictionaries containing CPT code, description, category, and relevancy_score, rendered prompt text)
-        """
-        try:
-            logger.info(f"🚀 [GPT CPT Generation] Starting combined generation and categorization")
-            logger.info(f"   - Diagnosis terms: {len(search_query_terms)} terms")
-            logger.info(f"   - Anatomical location: {anatomical_location or 'Not specified'}")
-            logger.info(f"   - Using custom prompt: {custom_prompt is not None}")
-            
-            # Format the terms as a readable list
-            terms_text = "\n".join([f"- {term.strip()}" for term in search_query_terms if term.strip()])
-            
-            # Hardcoded categories matching treatment options
-            categories = ["Surgery", "Radiation", "Endovascular", "Medical", "Diagnostic Testing"]
-            categories_text = ", ".join(categories)
-            logger.info(f"   - Using hardcoded categories: {categories_text}")
-            
-            # Use custom prompt if provided, otherwise use default
-            if custom_prompt:
-                # Escape all curly braces except for our template variables to prevent LangChain from parsing them
-                escaped_prompt = custom_prompt
-                # Temporarily replace our template variables with placeholders
-                escaped_prompt = escaped_prompt.replace("{diagnosis_terms}", "__DIAGNOSIS_TERMS__")
-                escaped_prompt = escaped_prompt.replace("{anatomical_location}", "__ANATOMICAL_LOCATION__")
-                escaped_prompt = escaped_prompt.replace("{categories}", "__CATEGORIES__")
-                # Escape all remaining curly braces
-                escaped_prompt = escaped_prompt.replace("{", "{{").replace("}", "}}")
-                # Restore our template variables
-                escaped_prompt = escaped_prompt.replace("{{__DIAGNOSIS_TERMS__}}", "{diagnosis_terms}")
-                escaped_prompt = escaped_prompt.replace("{{__ANATOMICAL_LOCATION__}}", "{anatomical_location}")
-                escaped_prompt = escaped_prompt.replace("{{__CATEGORIES__}}", "{categories}")
-                
-                prompt_template = escaped_prompt
-                # For custom prompts, format with the variables if they're present
-                if "{diagnosis_terms}" in custom_prompt or "{anatomical_location}" in custom_prompt or "{categories}" in custom_prompt:
-                    try:
-                        invoke_dict = {}
-                        if "{diagnosis_terms}" in custom_prompt:
-                            invoke_dict["diagnosis_terms"] = terms_text
-                        if "{anatomical_location}" in custom_prompt:
-                            invoke_dict["anatomical_location"] = anatomical_location or ""
-                        if "{categories}" in custom_prompt:
-                            invoke_dict["categories"] = categories_text
-                        rendered_prompt = custom_prompt.format(**invoke_dict)
-                    except KeyError as e:
-                        # If formatting fails, log and use as-is
-                        logger.warning(f"Could not format custom prompt with variables: {e}")
-                        rendered_prompt = custom_prompt
-                else:
-                    # If custom prompt doesn't have these variables, use it as-is
-                    rendered_prompt = custom_prompt
-            else:
-                prompt_template = """Give an exhaustive list of primary CPT codes that could possibly be used to treat patients with any of these diagnoses or a similar diagnosis in an adjacent location in a simple or complex treatment:
-
-Diagnosis Terms:
-{diagnosis_terms}
-
-Anatomical Location: {anatomical_location}
-Specialty: Neurosurgery
-
-IMPORTANT: 
-- Include all CPT codes for treatment of related diagnoses in an adjacent location in a simple or complex treatment
-- Do not include any add-on CPT codes (these generally start with a + sign)
-- Do not include codes that start with 99XXX, 98XXX, or 6178X
-- Escape all quotes in descriptions (use \\" for quotes inside strings)
-- Keep descriptions concise (under 100 characters)
-- Do NOT include newlines in description strings
-- Ensure all strings are properly closed
-
-For each CPT code, you MUST:
-1. Assign it to ONE of these 5 categories based on the type of therapy: {categories}
-2. Assign a relevancy score from 0-100% indicating how relevant the code is to the diagnosis terms above
-
-Return the response in this exact JSON format:
-[
-    {{
-        "code": "CPT_CODE",
-        "description": "Procedure description",
-        "category": "Category name",
-        "relevancy_score": 95
-    }},
-    {{
-        "code": "CPT_CODE",
-        "description": "Procedure description",
-        "category": "Category name",
-        "relevancy_score": 85
-    }}
-]
-
-Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO additional text. Use ONLY the categories provided above."""
-                
-                # Render the prompt with actual values to capture what was sent to GPT
-                rendered_prompt = prompt_template.format(
-                    diagnosis_terms=terms_text,
-                    anatomical_location=anatomical_location or "",
-                    categories=categories_text
-                )
-            
-            # Create prompt template with variables only if custom prompt uses them
-            if custom_prompt:
-                # Try to detect if the custom prompt uses the variables
-                input_vars = []
-                if "{diagnosis_terms}" in custom_prompt:
-                    input_vars.append("diagnosis_terms")
-                if "{anatomical_location}" in custom_prompt:
-                    input_vars.append("anatomical_location")
-                if "{categories}" in custom_prompt:
-                    input_vars.append("categories")
-                prompt = PromptTemplate(
-                    input_variables=input_vars if input_vars else ["diagnosis_terms", "anatomical_location", "categories"],
-                    template=prompt_template
-                )
-            else:
-                prompt = PromptTemplate(
-                    input_variables=["diagnosis_terms", "anatomical_location", "categories"],
-                    template=prompt_template
-                )
-            
-            chain = prompt | self.llm
-            
-            # Log which LLM provider is being used for CPT code generation
-            llm_provider = getattr(self.llm, '_provider', 'unknown').upper()
-            logger.info(f"🔍 [CPT Code Generation] Using {llm_provider} LLM to generate and categorize CPT codes")
-            
-            # Invoke with variables only if they're expected
-            invoke_dict = {}
-            if "{diagnosis_terms}" in prompt_template:
-                invoke_dict["diagnosis_terms"] = terms_text
-            if "{anatomical_location}" in prompt_template:
-                invoke_dict["anatomical_location"] = anatomical_location or ""
-            if "{categories}" in prompt_template:
-                invoke_dict["categories"] = categories_text
-            
-            if invoke_dict:
-                response = await chain.ainvoke(invoke_dict)
-            else:
-                response = await chain.ainvoke({})
-            
-            # For custom prompts without variables, the rendered prompt is the prompt itself
-            if not rendered_prompt:
-                rendered_prompt = prompt_template
-            
-            logger.info(f"✅ [CPT Code Generation] {llm_provider} LLM response received")
-            
-            # Extract the JSON response
-            response_text = extract_llm_response_content(response)
-            
-            # Clean up the response (remove markdown formatting if present)
-            if response_text.startswith('```json'):
-                response_text = response_text.replace('```json', '').replace('```', '').strip()
-            elif response_text.startswith('```'):
-                response_text = response_text.replace('```', '').strip()
-            
-            # Try to extract JSON array if response contains other text
-            # Look for the first '[' and last ']' to extract just the JSON array
-            first_bracket = response_text.find('[')
-            last_bracket = response_text.rfind(']')
-            if first_bracket != -1 and last_bracket != -1 and last_bracket > first_bracket:
-                response_text = response_text[first_bracket:last_bracket + 1]
-            
-            # Try to fix common JSON issues
-            # Fix unescaped quotes in description fields (but not in code fields)
-            # This is a simple heuristic - look for patterns like "description": "text with "quote" here"
-            # We'll try to escape quotes that appear inside description values
-            try:
-                # First attempt: parse as-is
-                cpt_codes = json.loads(response_text)
-            except json.JSONDecodeError as json_error:
-                logger.warning(f"Initial JSON parse failed, attempting to fix: {json_error}")
-                
-                # Strategy 1: Try to find the last complete JSON object and extract valid portion
-                # Look for complete objects by finding closing braces followed by commas or closing brackets
-                cpt_codes = []
-                
-                # Strategy 1: Binary search to find the largest valid prefix
-                # This is more efficient than removing fixed chunks
-                left, right = 0, len(response_text)
-                best_valid = None
-                
-                for attempt in range(10):  # Max 10 binary search attempts
-                    mid = (left + right) // 2
-                    test_text = response_text[:mid]
-                    
-                    # Close any open brackets/braces
-                    open_brackets = test_text.count('[') - test_text.count(']')
-                    open_braces = test_text.count('{') - test_text.count('}')
-                    test_text += '}' * open_braces + ']' * open_brackets
-                    
-                    try:
-                        parsed = json.loads(test_text)
-                        if isinstance(parsed, list) and len(parsed) > 0:
-                            best_valid = parsed
-                            left = mid  # Try to get more
-                        else:
-                            right = mid  # Too much, reduce
-                    except json.JSONDecodeError:
-                        right = mid  # Invalid, reduce
-                
-                if best_valid:
-                    cpt_codes = best_valid
-                    logger.info(f"Extracted {len(cpt_codes)} valid CPT codes from partial JSON")
-                else:
-                    # Strategy 2: Try to extract individual valid JSON objects using regex
-                    # This is a fallback if binary search fails
-                    import re
-                    # Find all complete JSON objects: { "code": "...", "description": "...", "category": "...", "relevancy_score": ... }
-                    object_pattern = r'\{\s*"code"\s*:\s*"[^"]*"\s*,\s*"description"\s*:\s*"[^"]*"\s*,\s*"category"\s*:\s*"[^"]*"\s*(?:,\s*"relevancy_score"\s*:\s*\d+)?\s*\}'
-                    matches = re.findall(object_pattern, response_text)
-                    
-                    if matches:
-                        # Try to parse each match as JSON
-                        valid_objects = []
-                        for match in matches:
-                            try:
-                                obj = json.loads(match)
-                                valid_objects.append(obj)
-                            except json.JSONDecodeError:
-                                continue
-                        
-                        if valid_objects:
-                            cpt_codes = valid_objects
-                            logger.info(f"Extracted {len(cpt_codes)} valid CPT codes using regex pattern matching")
-                        else:
-                            logger.error(f"Could not extract any valid CPT codes. JSON error: {json_error}")
-                            logger.debug(f"Problematic JSON (first 1000 chars): {response_text[:1000]}")
-                            return []
-                    else:
-                        logger.error(f"Could not extract valid CPT codes. JSON error: {json_error}")
-                        logger.debug(f"Problematic JSON (first 1000 chars): {response_text[:1000]}")
-                        return []
-            
-            # Ensure all CPT codes have category and relevancy_score, with defaults if not provided
-            default_category = categories[0]  # Default to first category
-            category_counts = {}
-            relevancy_score_stats = {"min": 100, "max": 0, "sum": 0, "count": 0}
-            
-            for cpt in cpt_codes:
-                # Validate and set category
-                if 'category' not in cpt or cpt.get('category') not in categories:
-                    logger.warning(f"   ⚠️  CPT code {cpt.get('code', 'unknown')} has invalid/missing category, defaulting to {default_category}")
-                    cpt['category'] = default_category
-                
-                category = cpt.get('category', default_category)
-                category_counts[category] = category_counts.get(category, 0) + 1
-                
-                # Validate and set relevancy_score
-                if 'relevancy_score' not in cpt:
-                    logger.warning(f"   ⚠️  CPT code {cpt.get('code', 'unknown')} missing relevancy_score, defaulting to 50")
-                    cpt['relevancy_score'] = 50
-                else:
-                    # Validate score is 0-100
-                    score = cpt.get('relevancy_score', 50)
-                    if not isinstance(score, (int, float)) or score < 0 or score > 100:
-                        logger.warning(f"   ⚠️  CPT code {cpt.get('code', 'unknown')} has invalid relevancy_score {score}, defaulting to 50")
-                        cpt['relevancy_score'] = 50
-                    else:
-                        relevancy_score_stats["min"] = min(relevancy_score_stats["min"], score)
-                        relevancy_score_stats["max"] = max(relevancy_score_stats["max"], score)
-                        relevancy_score_stats["sum"] += score
-                        relevancy_score_stats["count"] += 1
-            
-            avg_relevancy = relevancy_score_stats["sum"] / relevancy_score_stats["count"] if relevancy_score_stats["count"] > 0 else 0
-            
-            logger.info(f"✅ [GPT CPT Generation] Successfully generated and categorized {len(cpt_codes)} CPT codes")
-            logger.info(f"   - Category distribution: {dict(sorted(category_counts.items(), key=lambda x: x[1], reverse=True))}")
-            logger.info(f"   - Relevancy scores: min={relevancy_score_stats['min']}, max={relevancy_score_stats['max']}, avg={avg_relevancy:.1f}")
-            logger.info(f"   - All codes have category and relevancy_score validated")
-            
-            return cpt_codes, rendered_prompt
-        except Exception as e:
-            logger.error(f"Error predicting CPT codes: {e}", exc_info=True)
-            return [], ""
-
     async def generate_cpt_codes_only(
         self,
         search_query_terms: List[str],
@@ -936,6 +648,7 @@ IMPORTANT:
 - Include all CPT codes for treatment of related diagnoses in an adjacent location in a simple or complex treatment
 - Do not include any add-on CPT codes (these generally start with a + sign)
 - Do not include codes that start with 99XXX, 98XXX, or 6178X
+- Do not include codes ending in 99 or 89 (XXX99, XXX89 format)
 - Escape all quotes in descriptions (use \\" for quotes inside strings)
 - Keep descriptions concise (under 100 characters)
 - Do NOT include newlines in description strings
@@ -992,8 +705,11 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             cpt_codes = []
             for item in raw_codes:
                 if isinstance(item, dict) and item.get("code"):
+                    code = str(item["code"]).strip()
+                    if code.endswith("99") or code.endswith("89"):
+                        continue
                     cpt_codes.append({
-                        "code": str(item["code"]).strip(),
+                        "code": code,
                         "description": str(item.get("description", "")).strip()
                     })
             logger.info(f"✅ [GPT CPT Generation] Generated {len(cpt_codes)} codes (description only)")
@@ -1046,6 +762,9 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                     continue
                 # Skip codes ending with "F" or "U"
                 if cpt_code.endswith('F') or cpt_code.endswith('U'):
+                    continue
+                # Skip XXX99 and XXX89 format
+                if cpt_code.endswith('99') or cpt_code.endswith('89'):
                     continue
                 # Add to dict if not already present; store mapping description as fallback
                 if cpt_code not in cpt_codes_dict:
@@ -1394,6 +1113,8 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         merged_gpt_codes = []
         for cat in categorized_codes:
             code = cat.get("code", "")
+            if code.endswith("99") or code.endswith("89"):
+                continue
             score = cat.get("relevancy_score", 50)
             merged_gpt_codes.append({
                 "code": code,
