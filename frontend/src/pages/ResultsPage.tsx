@@ -2187,35 +2187,39 @@ const ResultsPage: React.FC = () => {
                         <h3 className="text-lg font-medium text-gray-900 mb-2">Search Query Variations</h3>
                         <p className="text-sm text-gray-600 mb-3">Terms used to find relevant specialists (at least one diagnostic and one anatomic match required):</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="bg-indigo-50/60 p-3 rounded-lg border border-indigo-100">
-                            <h4 className="text-xs font-semibold text-indigo-700 uppercase tracking-wide mb-2">Diagnostic terms</h4>
-                            {hasDiagnostic ? (
-                              <ul className="text-sm text-gray-800 space-y-1">
-                                {diagnosticTerms.map((t, i) => (
-                                  <li key={i} className="flex items-center gap-2">
-                                    <span className="text-indigo-500">•</span>
-                                    <span>{t}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className="text-sm text-gray-500 italic">None</p>
-                            )}
+                          <div className="bg-indigo-50/60 p-3 rounded-lg border border-indigo-100 flex flex-col min-h-0">
+                            <h4 className="text-xs font-semibold text-indigo-700 uppercase tracking-wide mb-2 shrink-0">Diagnostic terms</h4>
+                            <div className="min-h-0 max-h-32 overflow-y-auto">
+                              {hasDiagnostic ? (
+                                <ul className="text-sm text-gray-800 space-y-1">
+                                  {diagnosticTerms.map((t, i) => (
+                                    <li key={i} className="flex items-center gap-2">
+                                      <span className="text-indigo-500">•</span>
+                                      <span>{t}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-sm text-gray-500 italic">None</p>
+                              )}
+                            </div>
                           </div>
-                          <div className="bg-amber-50/60 p-3 rounded-lg border border-amber-100">
-                            <h4 className="text-xs font-semibold text-amber-800 uppercase tracking-wide mb-2">Anatomic terms</h4>
-                            {hasAnatomic ? (
-                              <ul className="text-sm text-gray-800 space-y-1">
-                                {anatomicTerms.map((t, i) => (
-                                  <li key={i} className="flex items-center gap-2">
-                                    <span className="text-amber-600">•</span>
-                                    <span>{t}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            ) : (
-                              <p className="text-sm text-gray-500 italic">None</p>
-                            )}
+                          <div className="bg-amber-50/60 p-3 rounded-lg border border-amber-100 flex flex-col min-h-0">
+                            <h4 className="text-xs font-semibold text-amber-800 uppercase tracking-wide mb-2 shrink-0">Anatomic terms</h4>
+                            <div className="min-h-0 max-h-32 overflow-y-auto">
+                              {hasAnatomic ? (
+                                <ul className="text-sm text-gray-800 space-y-1">
+                                  {anatomicTerms.map((t, i) => (
+                                    <li key={i} className="flex items-center gap-2">
+                                      <span className="text-amber-600">•</span>
+                                      <span>{t}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : (
+                                <p className="text-sm text-gray-500 italic">None</p>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
