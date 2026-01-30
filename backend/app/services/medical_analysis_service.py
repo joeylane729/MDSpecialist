@@ -1164,7 +1164,7 @@ Categories (you MUST use only these):
 CPT Codes:
 {cpt_codes}
 
-Then, for each CPT code, assign a relevancy score from 0-100% indicating how relevant the code is to the diagnosis terms below.
+Then, for each CPT code, assign a relevancy score from 0-100% indicating how likely the code is to be used to treat the diagnosis terms below.
 
 Diagnosis Terms:
 {diagnosis_terms}
