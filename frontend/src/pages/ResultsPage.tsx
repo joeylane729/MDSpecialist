@@ -2585,6 +2585,7 @@ const ResultsPage: React.FC = () => {
                         ).map((cpt: any, index: number) => {
                           const llmDescription = cpt.description;
                           const dbDescription = cptDbDescriptions[cpt.code];
+                          const isIrrelevant = cpt.relevant === false || (typeof cpt.relevancy_score === 'number' && cpt.relevancy_score < 40);
                           return (
                             <div key={index} className="flex items-start gap-3 py-2 px-2 bg-amber-50 rounded border border-amber-200 min-h-0">
                               <code className="bg-amber-100 px-2 py-1 rounded text-sm font-semibold text-amber-900 whitespace-nowrap flex-shrink-0">
@@ -2593,6 +2594,11 @@ const ResultsPage: React.FC = () => {
                               {cpt.relevancy_score !== undefined && (
                                 <span className="text-xs font-medium text-gray-600 bg-gray-200 px-1.5 py-0.5 rounded flex-shrink-0">
                                   {cpt.relevancy_score}%
+                                </span>
+                              )}
+                              {isIrrelevant && (
+                                <span className="text-xs font-medium text-red-700 bg-red-100 px-1.5 py-0.5 rounded flex-shrink-0">
+                                  Irrelevant
                                 </span>
                               )}
                               <div className="flex-1 min-w-0 text-sm">
@@ -2726,7 +2732,9 @@ const ResultsPage: React.FC = () => {
                               {(hasDbCategories && dbDisplayCategory && dbCptCodesByCategory[dbDisplayCategory]
                                 ? dbCptCodesByCategory[dbDisplayCategory]
                                 : dbCptCodes
-                              ).map((cpt: any, index: number) => (
+                              ).map((cpt: any, index: number) => {
+                                const isIrrelevant = cpt.relevant === false || (typeof cpt.relevancy_score === 'number' && cpt.relevancy_score < 40);
+                                return (
                                 <div key={index} className="bg-green-50 rounded-lg p-3 border border-green-200">
                                   <div className="flex items-start gap-3">
                                     <code className="bg-green-100 px-2 py-1 rounded text-sm font-semibold text-green-900 whitespace-nowrap">
@@ -2738,9 +2746,14 @@ const ResultsPage: React.FC = () => {
                                         {cpt.relevancy_score}%
                                       </span>
                                     )}
+                                    {isIrrelevant && (
+                                      <span className="text-xs font-medium text-red-700 bg-red-100 px-2 py-1 rounded flex-shrink-0">
+                                        Irrelevant
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
-                              ))}
+                              );})}
                             </div>
                           </>
                         );

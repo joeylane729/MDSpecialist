@@ -332,11 +332,11 @@ export interface CPTCodeGenerationRequest {
 
 export interface CPTCodeGenerationResponse {
   status: string;
-  cpt_codes: Array<{ code: string; description: string; category?: string; relevancy_score?: number }>;
+  cpt_codes: Array<{ code: string; description: string; category?: string; relevancy_score?: number; relevant?: boolean }>;
   cpt_prompt_text: string;  // Step 1: generation prompt
   cpt_categorization_prompt_text?: string;  // Step 2: categorization prompt
   message: string;
-  db_cpt_codes?: Array<{ code: string; description: string; relevancy_score?: number }>; // Database-mapped CPT codes from ICD-10
+  db_cpt_codes?: Array<{ code: string; description: string; relevancy_score?: number; relevant?: boolean }>; // Database-mapped CPT codes from ICD-10
   cpt_db_descriptions?: { [code: string]: string }; // code -> long_desc from cpt_consolidated for GPT codes
 }
 

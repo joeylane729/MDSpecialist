@@ -1287,7 +1287,8 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                     "code": cpt['code'],
                     "description": description_map.get(cpt['code'], ''),  # Use description from original data
                     "category": category,
-                    "relevancy_score": relevancy_score
+                    "relevancy_score": relevancy_score,
+                    "relevant": relevancy_score >= 40,
                 })
                 category_counts[category] = category_counts.get(category, 0) + 1
             
@@ -1306,7 +1307,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             logger.error(f"Error categorizing CPT codes: {e}", exc_info=True)
             # Return codes with default category and score if categorization fails
             default_prompt = f"Categorize the following CPT codes into one of these categories: Surgery, Radiation, Endovascular, Medical, Diagnostic Testing"
-            return [{"code": cpt['code'], "description": cpt.get('description', ''), "category": "Medical", "relevancy_score": 50} for cpt in cpt_codes], default_prompt
+            return [{"code": cpt['code'], "description": cpt.get('description', ''), "category": "Medical", "relevancy_score": 50, "relevant": True} for cpt in cpt_codes], default_prompt
     
     async def generate_cpt_codes_from_analysis(
         self,
@@ -1393,11 +1394,13 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         merged_gpt_codes = []
         for cat in categorized_codes:
             code = cat.get("code", "")
+            score = cat.get("relevancy_score", 50)
             merged_gpt_codes.append({
                 "code": code,
                 "description": llm_desc_by_code.get(code, cat.get("description", "")),
                 "category": cat.get("category", "Medical"),
-                "relevancy_score": cat.get("relevancy_score", 50)
+                "relevancy_score": score,
+                "relevant": score >= 40,
             })
 
         logger.info(f"✅ [CPT Code Generation] Two-step completed in {overall_elapsed:.2f}s")
