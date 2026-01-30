@@ -110,9 +110,9 @@ class MedicalAnalysisService:
             logger.info(f"   - Anatomical location: {anatomical_location or 'Not specified'}")
             logger.info(f"   - Treatment options generation: REMOVED (no longer generated)")
             
-            # Generate ICD-10 codes (treatment options generation removed)
+            # Generate ICD-10 codes (two-step: codes + LLM desc, then DB lookup + relevancy scoring)
             logger.info(f"   🔄 Generating ICD-10 codes...")
-            predicted_icd10_codes, icd10_relevancy_scores, icd10_llm_descriptions, icd10_prompt_text = await self.predict_icd10_code(
+            predicted_icd10_codes, icd10_relevancy_scores, icd10_llm_descriptions, icd10_descriptions, icd10_prompt_text, icd10_scoring_prompt_text = await self.predict_icd10_code(
                 diagnosis, anatomical_location, pdf_content, custom_prompt=custom_icd10_prompt
             )
             logger.info(f"   ✅ Generated {len(predicted_icd10_codes)} ICD-10 codes")
@@ -125,26 +125,19 @@ class MedicalAnalysisService:
                 "predicted_icd10_codes": predicted_icd10_codes,  # All codes
                 "icd10_relevancy_scores": icd10_relevancy_scores,  # Code -> relevancy score mapping
                 "icd10_llm_descriptions": icd10_llm_descriptions,  # Code -> LLM description mapping
+                "icd10_descriptions": icd10_descriptions,  # All code -> DB description (from two-step flow)
+                "icd10_prompt_text": icd10_prompt_text,
+                "icd10_scoring_prompt_text": icd10_scoring_prompt_text,
                 "diagnoses": {}  # Empty dict for backward compatibility
             }
             
-            # Add ICD-10 descriptions for all codes
-            if predicted_icd10_codes and self.db:
-                logger.info(f"Fetching descriptions for {len(predicted_icd10_codes)} ICD-10 codes")
-                icd10_descriptions = self.lookup_icd10_descriptions(predicted_icd10_codes)
-                logger.info(f"Retrieved {len([d for d in icd10_descriptions.values() if d])} descriptions out of {len(icd10_descriptions)} codes")
-                logger.debug(f"ICD-10 descriptions mapping: {dict(list(icd10_descriptions.items())[:5])}...")  # Log first 5
-                medical_analysis["icd10_descriptions"] = icd10_descriptions  # All code -> description mappings
-                
-                # Also set primary description for backward compatibility
-                if primary_icd10:
-                    primary_description = icd10_descriptions.get(primary_icd10)
-                    if primary_description:
-                        medical_analysis["icd10_description"] = primary_description
-                    else:
-                        logger.warning(f"Could not find ICD-10 description for: {primary_icd10}")
-            else:
-                logger.warning(f"Not fetching ICD-10 descriptions: codes={len(predicted_icd10_codes) if predicted_icd10_codes else 0}, db={self.db is not None}")
+            # Set primary description for backward compatibility
+            if primary_icd10 and icd10_descriptions:
+                primary_description = icd10_descriptions.get(primary_icd10)
+                if primary_description:
+                    medical_analysis["icd10_description"] = primary_description
+                else:
+                    logger.warning(f"Could not find ICD-10 description for: {primary_icd10}")
             
             # Generate search query
             search_query = ""
@@ -192,7 +185,8 @@ class MedicalAnalysisService:
                 "icd10_llm_descriptions": medical_analysis.get("icd10_llm_descriptions", {}),  # Code -> LLM description mappings
                 "icd10_description": medical_analysis.get("icd10_description"),  # Primary description for backward compatibility
                 "icd10_descriptions": icd10_descriptions,  # All code -> database description mappings
-                "icd10_prompt_text": icd10_prompt_text,  # Actual GPT prompt used to generate ICD-10 code
+                "icd10_prompt_text": icd10_prompt_text,  # Step 1: GPT prompt used to generate ICD-10 codes + descriptions
+                "icd10_scoring_prompt_text": medical_analysis.get("icd10_scoring_prompt_text"),  # Step 2: GPT prompt used to assign relevancy (DB descriptions)
                 "determined_specialty": determined_specialty,  # Specialty determined for provider search
                 "search_query": search_query,  # Pre-generated search query (display / legacy)
                 "search_query_prompt_text": search_query_prompt_text,  # Actual GPT prompt used to generate search query
@@ -290,46 +284,31 @@ class MedicalAnalysisService:
         """
         return "Neurological Surgery"
 
-    async def predict_icd10_code(
-        self, 
-        diagnosis: str, 
+    async def predict_icd10_codes_only(
+        self,
+        diagnosis: str,
         anatomical_location: str = "",
         pdf_content: str = "",
         custom_prompt: Optional[str] = None
-    ) -> Tuple[List[str], Dict[str, int], Dict[str, str], str]:
+    ) -> Tuple[List[Dict[str, str]], str]:
         """
-        Use GPT to predict 5-10 ICD-10 codes based on patient information.
-        Includes codes for similar/related pathology from nearby anatomic locations.
-        May include codes with "uncertain" or "unspecified" in descriptions.
-        Each code includes a relevancy score (0-100%) and a description.
-        
-        Args:
-            diagnosis: Patient diagnosis
-            anatomical_location: Anatomical location of the condition (e.g., "brain", "spine", "arm")
-            pdf_content: Extracted content from uploaded PDF files (optional)
-            custom_prompt: Optional custom prompt to override default
-            
+        Step 1: Use GPT to generate ICD-10 codes and brief descriptions only (no relevancy score).
+        Used before DB lookup and relevancy scoring.
+
         Returns:
-            Tuple of (List of ICD-10 codes, Dict mapping code -> relevancy_score, Dict mapping code -> LLM description, rendered prompt text)
+            Tuple of (list of {"code", "description"}, rendered prompt text)
         """
         try:
-            # Use custom prompt if provided, otherwise use default
             if custom_prompt:
-                # Escape all curly braces except for our template variables to prevent LangChain from parsing them
                 escaped_prompt = custom_prompt
-                # Temporarily replace our template variables with placeholders
                 escaped_prompt = escaped_prompt.replace("{diagnosis}", "__DIAGNOSIS__")
                 escaped_prompt = escaped_prompt.replace("{anatomical_location}", "__ANATOMICAL_LOCATION__")
                 escaped_prompt = escaped_prompt.replace("{pdf_content}", "__PDF_CONTENT__")
-                # Escape all remaining curly braces
                 escaped_prompt = escaped_prompt.replace("{", "{{").replace("}", "}}")
-                # Restore our template variables
                 escaped_prompt = escaped_prompt.replace("{{__DIAGNOSIS__}}", "{diagnosis}")
                 escaped_prompt = escaped_prompt.replace("{{__ANATOMICAL_LOCATION__}}", "{anatomical_location}")
                 escaped_prompt = escaped_prompt.replace("{{__PDF_CONTENT__}}", "{pdf_content}")
-                
                 prompt_template = escaped_prompt
-                # For custom prompts, format with the variables if they're present
                 if any(var in custom_prompt for var in ["{diagnosis}", "{anatomical_location}", "{pdf_content}"]):
                     try:
                         rendered_prompt = custom_prompt.format(
@@ -338,7 +317,7 @@ class MedicalAnalysisService:
                             pdf_content=pdf_content
                         )
                     except KeyError as e:
-                        logger.warning(f"Could not format custom prompt with variables: {e}")
+                        logger.warning(f"Could not format custom prompt: {e}")
                         rendered_prompt = custom_prompt
                 else:
                     rendered_prompt = custom_prompt
@@ -354,58 +333,34 @@ Provide between 5 and 10 of the most likely ICD-10 codes for this diagnosis, inc
 - Codes for similar pathology in a similar anatomic location
 - If codes use terms like "uncertain behavior" or "unspecified behavior" in their descriptions then the anatomic location and/or the pathologic diagnosis must be the same as the original diagnosis
 - DO NOT include codes that contain descriptions of anatomy that is not immediately adjacent to the anatomical location
-- Please make sure to preserve the pathologic category of the original diagnosis. For example, if the original diagnosis is a neoplasm, then all the ICD-10 codes should designate neoplasms. If the original diagnosis is a vascular lesion, then all the ICD- 10 codes should be vascular lesions. If the original diagnosis is a medical condition, then all the ICD-10 codes should be medical conditions. If the original diagnosis is a degenerative disease, then all the ICD-10 codes should be degenerative diseases.
+- Preserve the pathologic category of the original diagnosis (e.g. neoplasm, vascular, medical, degenerative).
 
-For each code, assign a relevancy score from 0-100% indicating how relevant the code is to the diagnosis, and provide a description of what the code represents.
+For each code, provide a brief description of what the code represents. Do NOT assign relevancy scores.
 
-Return the response in this exact JSON format:
+Return ONLY a JSON array in this exact format:
 [
-    {{
-        "code": "ICD10_CODE",
-        "description": "Brief description of what this code represents",
-        "relevancy_score": 95
-    }},
-    {{
-        "code": "ICD10_CODE",
-        "description": "Brief description of what this code represents",
-        "relevancy_score": 85
-    }}
+    {{"code": "ICD10_CODE", "description": "Brief description"}},
+    {{"code": "ICD10_CODE", "description": "Brief description"}}
 ]
 
-Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO additional text."""
-                
-                # Render the prompt with actual values to capture what was sent to GPT
+Return ONLY the JSON array with NO markdown, NO code blocks, NO additional text."""
                 rendered_prompt = prompt_template.format(
                     diagnosis=diagnosis,
                     anatomical_location=anatomical_location or "",
                     pdf_content=pdf_content
                 )
-            
-            # Create prompt template with variables only if custom prompt uses them
+
+            input_vars = ["diagnosis", "anatomical_location", "pdf_content"]
             if custom_prompt:
-                input_vars = []
-                if "{diagnosis}" in prompt_template:
-                    input_vars.append("diagnosis")
-                if "{anatomical_location}" in prompt_template:
-                    input_vars.append("anatomical_location")
-                if "{pdf_content}" in prompt_template:
-                    input_vars.append("pdf_content")
-                prompt = PromptTemplate(
-                    input_variables=input_vars if input_vars else ["diagnosis", "anatomical_location", "pdf_content"],
-                    template=prompt_template
-                )
-            else:
-                prompt = PromptTemplate(
-                    input_variables=["diagnosis", "anatomical_location", "pdf_content"],
-                    template=prompt_template
-                )
-            
+                input_vars = [v for v in input_vars if f"{{{v}}}" in prompt_template]
+            prompt = PromptTemplate(
+                input_variables=input_vars if input_vars else ["diagnosis", "anatomical_location", "pdf_content"],
+                template=prompt_template
+            )
             chain = prompt | self.llm
-            
-            # Log which LLM provider is being used for ICD-10 generation
             llm_provider = getattr(self.llm, '_provider', 'unknown').upper()
-            logger.info(f"🔍 [ICD-10 Generation] Using {llm_provider} LLM to generate ICD-10 codes")
-            
+            logger.info(f"🔍 [ICD-10 Step 1] Using {llm_provider} LLM to generate ICD-10 codes (no relevancy)")
+
             invoke_dict = {}
             if "{diagnosis}" in prompt_template:
                 invoke_dict["diagnosis"] = diagnosis
@@ -413,82 +368,201 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 invoke_dict["anatomical_location"] = anatomical_location or ""
             if "{pdf_content}" in prompt_template:
                 invoke_dict["pdf_content"] = pdf_content
-            
+
             response = await chain.ainvoke(invoke_dict if invoke_dict else {
                 "diagnosis": diagnosis,
                 "anatomical_location": anatomical_location or "",
                 "pdf_content": pdf_content
             })
-            
-            logger.info(f"✅ [ICD-10 Generation] {llm_provider} LLM response received")
-            
-            # Extract the ICD-10 codes from the response - LCEL returns AIMessage object
             response_text = extract_llm_response_content(response)
-            
-            # Clean up the response (remove markdown formatting if present)
-            if response_text.startswith('```json'):
-                response_text = response_text.replace('```json', '').replace('```', '').strip()
-            elif response_text.startswith('```'):
-                response_text = response_text.replace('```', '').strip()
-            
-            # Extract JSON array
-            first_bracket = response_text.find('[')
-            last_bracket = response_text.rfind(']')
+            if response_text.startswith("```json"):
+                response_text = response_text.replace("```json", "").replace("```", "").strip()
+            elif response_text.startswith("```"):
+                response_text = response_text.replace("```", "").strip()
+            first_bracket = response_text.find("[")
+            last_bracket = response_text.rfind("]")
             if first_bracket != -1 and last_bracket != -1:
-                response_text = response_text[first_bracket:last_bracket + 1]
-            
-            # Parse JSON array
+                response_text = response_text[first_bracket : last_bracket + 1]
+
             try:
-                icd_data = json.loads(response_text)
-                if not isinstance(icd_data, list):
-                    # If single item returned, wrap in list
-                    icd_data = [icd_data] if icd_data else []
-                
-                # Validate and extract codes, scores, and descriptions
-                valid_codes = []
-                relevancy_scores = {}
-                llm_descriptions = {}
-                
-                for item in icd_data:
-                    # Handle both old format (string) and new format (dict with code, description, and relevancy_score)
-                    if isinstance(item, dict):
-                        code_str = str(item.get('code', '')).strip()
-                        score = item.get('relevancy_score', 0)
-                        description = str(item.get('description', '')).strip()
-                        # Validate score is 0-100
-                        if not isinstance(score, (int, float)) or score < 0 or score > 100:
-                            score = 0
-                        relevancy_scores[code_str] = int(score)
-                        if description:
-                            llm_descriptions[code_str] = description
-                    else:
-                        # Old format: just a string code
-                        code_str = str(item).strip().replace('"', '').replace("'", "")
-                        relevancy_scores[code_str] = 0  # Default score if not provided
-                    
-                    # Basic validation that it looks like an ICD-10 code (letter followed by numbers)
-                    if len(code_str) >= 3 and code_str[0].isalpha() and any(c.isdigit() for c in code_str):
-                        valid_codes.append(code_str)
-                    else:
-                        logger.warning(f"GPT returned invalid ICD-10 code: {code_str}")
-                
-                if valid_codes:
-                    logger.info(f"GPT returned {len(valid_codes)} ICD-10 codes: {valid_codes}")
-                    logger.info(f"Relevancy scores: {relevancy_scores}")
-                    logger.info(f"LLM descriptions: {len(llm_descriptions)} codes with descriptions")
-                    return valid_codes, relevancy_scores, llm_descriptions, rendered_prompt
-                else:
-                    logger.warning("No valid ICD-10 codes found in GPT response")
-                    return [], {}, {}, rendered_prompt
-                    
+                raw = json.loads(response_text)
+                if not isinstance(raw, list):
+                    raw = [raw] if raw else []
             except json.JSONDecodeError as e:
-                logger.error(f"Failed to parse ICD-10 codes JSON: {e}")
-                logger.debug(f"Response text: {response_text[:500]}")
-                return [], {}, {}, rendered_prompt
-                
+                logger.warning(f"ICD-10 step 1 JSON parse failed: {e}")
+                return [], rendered_prompt
+
+            codes_with_desc = []
+            for item in raw:
+                if isinstance(item, dict) and item.get("code"):
+                    code_str = str(item.get("code", "")).strip()
+                    if len(code_str) >= 3 and code_str[0].isalpha() and any(c.isdigit() for c in code_str):
+                        codes_with_desc.append({
+                            "code": code_str,
+                            "description": str(item.get("description", "")).strip()
+                        })
+            logger.info(f"✅ [ICD-10 Step 1] Generated {len(codes_with_desc)} ICD-10 codes (no relevancy)")
+            return codes_with_desc, rendered_prompt
         except Exception as e:
-            logger.error(f"Error in GPT ICD-10 prediction: {e}", exc_info=True)
-            return [], {}, {}, rendered_prompt if 'rendered_prompt' in locals() else ""
+            logger.error(f"Error in predict_icd10_codes_only: {e}", exc_info=True)
+            return [], ""
+
+    async def score_icd10_codes(
+        self,
+        diagnosis: str,
+        anatomical_location: str,
+        codes_with_descriptions: List[Dict[str, str]],
+        custom_prompt: Optional[str] = None
+    ) -> Tuple[Dict[str, int], str]:
+        """
+        Step 2: Assign relevancy scores (0-100) to ICD-10 codes using their database descriptions.
+        codes_with_descriptions: list of {"code": str, "description": str} (description = DB description).
+
+        Returns:
+            Tuple of (Dict mapping code -> relevancy_score, rendered prompt text)
+        """
+        if not codes_with_descriptions:
+            return {}, ""
+
+        try:
+            lines = []
+            for item in codes_with_descriptions:
+                code = item.get("code", "").strip()
+                desc = (item.get("description") or "").strip() or "(no description)"
+                lines.append(f"- {code}: {desc}")
+
+            codes_block = "\n".join(lines)
+            if custom_prompt:
+                escaped = custom_prompt.replace("{diagnosis}", "__D__").replace("{anatomical_location}", "__A__").replace("{icd10_list}", "__L__")
+                escaped = escaped.replace("{", "{{").replace("}", "}}")
+                escaped = escaped.replace("{{__D__}}", "{diagnosis}").replace("{{__A__}}", "{anatomical_location}").replace("{{__L__}}", "{icd10_list}")
+                prompt_template = escaped
+                rendered_prompt = custom_prompt.replace("{diagnosis}", diagnosis).replace("{anatomical_location}", anatomical_location or "").replace("{icd10_list}", codes_block)
+            else:
+                prompt_template = """Given the patient diagnosis and anatomical location, assign a relevancy score from 0 to 100 for each ICD-10 code below.
+Use the official code descriptions (from the database) to decide how relevant each code is to the diagnosis.
+
+Patient Diagnosis: {diagnosis}
+Anatomical Location: {anatomical_location}
+
+ICD-10 codes with their official descriptions:
+{icd10_list}
+
+Return ONLY a JSON array with one object per code, in the same order, with "code" and "relevancy_score" (integer 0-100):
+[
+  {{"code": "CODE", "relevancy_score": 95}},
+  {{"code": "CODE", "relevancy_score": 70}}
+]
+
+No markdown, no code blocks, no other text."""
+                rendered_prompt = prompt_template.format(
+                    diagnosis=diagnosis,
+                    anatomical_location=anatomical_location or "",
+                    icd10_list=codes_block
+                )
+
+            input_vars = ["diagnosis", "anatomical_location", "icd10_list"]
+            if custom_prompt:
+                input_vars = [v for v in input_vars if f"{{{v}}}" in prompt_template]
+            prompt = PromptTemplate(
+                input_variables=input_vars if input_vars else ["diagnosis", "anatomical_location", "icd10_list"],
+                template=prompt_template
+            )
+            chain = prompt | self.llm
+            llm_provider = getattr(self.llm, '_provider', 'unknown').upper()
+            logger.info(f"🔍 [ICD-10 Step 2] Using {llm_provider} LLM to assign relevancy scores (database descriptions)")
+
+            invoke_dict = {}
+            if "{diagnosis}" in prompt_template:
+                invoke_dict["diagnosis"] = diagnosis
+            if "{anatomical_location}" in prompt_template:
+                invoke_dict["anatomical_location"] = anatomical_location or ""
+            if "{icd10_list}" in prompt_template:
+                invoke_dict["icd10_list"] = codes_block
+
+            response = await chain.ainvoke(invoke_dict if invoke_dict else {
+                "diagnosis": diagnosis,
+                "anatomical_location": anatomical_location or "",
+                "icd10_list": codes_block
+            })
+            response_text = extract_llm_response_content(response)
+            if response_text.startswith("```json"):
+                response_text = response_text.replace("```json", "").replace("```", "").strip()
+            elif response_text.startswith("```"):
+                response_text = response_text.replace("```", "").strip()
+            first_bracket = response_text.find("[")
+            last_bracket = response_text.rfind("]")
+            if first_bracket != -1 and last_bracket != -1:
+                response_text = response_text[first_bracket : last_bracket + 1]
+
+            try:
+                raw = json.loads(response_text)
+                if not isinstance(raw, list):
+                    raw = [raw] if raw else []
+            except json.JSONDecodeError as e:
+                logger.warning(f"ICD-10 step 2 JSON parse failed: {e}")
+                return {}, rendered_prompt
+
+            relevancy_scores = {}
+            for item in raw:
+                if isinstance(item, dict) and item.get("code") is not None:
+                    code_str = str(item.get("code", "")).strip()
+                    score = item.get("relevancy_score", 0)
+                    if not isinstance(score, (int, float)) or score < 0 or score > 100:
+                        score = 0
+                    relevancy_scores[code_str] = int(score)
+            logger.info(f"✅ [ICD-10 Step 2] Assigned relevancy scores for {len(relevancy_scores)} codes")
+            return relevancy_scores, rendered_prompt
+        except Exception as e:
+            logger.error(f"Error in score_icd10_codes: {e}", exc_info=True)
+            return {}, ""
+
+    async def predict_icd10_code(
+        self, 
+        diagnosis: str, 
+        anatomical_location: str = "",
+        pdf_content: str = "",
+        custom_prompt: Optional[str] = None
+    ) -> Tuple[List[str], Dict[str, int], Dict[str, str], Dict[str, Optional[str]], str, str]:
+        """
+        Two-step: (1) generate ICD-10 codes + LLM descriptions, (2) DB lookup then assign relevancy using DB descriptions.
+        Returns:
+            (codes, relevancy_scores, llm_descriptions, db_descriptions, generation_prompt_text, scoring_prompt_text)
+        """
+        try:
+            # Step 1: codes + descriptions only (no relevancy)
+            codes_with_llm_desc, generation_prompt_text = await self.predict_icd10_codes_only(
+                diagnosis, anatomical_location, pdf_content, custom_prompt=custom_prompt
+            )
+            if not codes_with_llm_desc:
+                return [], {}, {}, {}, generation_prompt_text, ""
+
+            codes = [x["code"] for x in codes_with_llm_desc]
+            llm_descriptions = {x["code"]: x["description"] for x in codes_with_llm_desc if x.get("description")}
+
+            # DB lookup for descriptions (used in step 2 prompt)
+            db_descriptions = self.lookup_icd10_descriptions(codes) if self.db else {}
+            codes_with_db_desc = [
+                {"code": c, "description": (db_descriptions.get(c) or "") or "(no description)"}
+                for c in codes
+            ]
+
+            # Step 2: relevancy scores using DB descriptions
+            relevancy_scores, scoring_prompt_text = await self.score_icd10_codes(
+                diagnosis, anatomical_location, codes_with_db_desc, custom_prompt=None
+            )
+            # Fill missing scores with 0
+            for c in codes:
+                if c not in relevancy_scores:
+                    relevancy_scores[c] = 0
+
+            logger.info(f"GPT returned {len(codes)} ICD-10 codes: {codes}")
+            logger.info(f"Relevancy scores: {relevancy_scores}")
+            logger.info(f"LLM descriptions: {len(llm_descriptions)} codes with descriptions")
+            return codes, relevancy_scores, llm_descriptions, db_descriptions, generation_prompt_text, scoring_prompt_text
+        except Exception as e:
+            logger.error(f"Error in predict_icd10_code: {e}", exc_info=True)
+            return [], {}, {}, {}, "", ""
 
     async def generate_search_query(
         self,

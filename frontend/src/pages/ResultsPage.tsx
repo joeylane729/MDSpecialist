@@ -36,7 +36,8 @@ interface SearchParams {
   cpt_prompt_text?: string;  // Step 1: GPT prompt used to generate CPT codes + descriptions
   cpt_categorization_prompt_text?: string;  // Step 2: GPT prompt used to categorize and score codes
   diagnoses_prompt_text?: string;  // GPT prompt text used to generate diagnoses/treatment options
-  icd10_prompt_text?: string;  // GPT prompt text used to generate ICD-10 code
+  icd10_prompt_text?: string;  // Step 1: GPT prompt used to generate ICD-10 codes + descriptions
+  icd10_scoring_prompt_text?: string;  // Step 2: GPT prompt used to assign relevancy (DB descriptions)
   search_query?: string;  // Pre-generated search query
   search_query_diagnostic_terms?: string[];  // Parsed diagnostic terms (first OR group)
   search_query_anatomic_terms?: string[];  // Parsed anatomic terms (second OR group)
@@ -342,6 +343,7 @@ const ResultsPage: React.FC = () => {
       setIcd10PromptText(location.state.aiRecommendations.patient_profile.icd10_prompt_text);
       setEditableIcd10PromptText(location.state.aiRecommendations.patient_profile.icd10_prompt_text);
     }
+    // icd10_scoring_prompt_text is read from searchParams / patient_profile for display only (no separate state)
   }, [searchParams, icd10PromptText, location.state]);
 
   // Initialize search query prompt text from searchParams or location.state if available
@@ -923,6 +925,7 @@ const ResultsPage: React.FC = () => {
           icd10_description: response.patient_profile.icd10_description,
           icd10_descriptions: response.patient_profile.icd10_descriptions,
           icd10_prompt_text: response.patient_profile.icd10_prompt_text,
+          icd10_scoring_prompt_text: response.patient_profile.icd10_scoring_prompt_text,
           treatment_options: response.patient_profile.treatment_options,
           search_query: response.patient_profile.search_query,
           search_query_diagnostic_terms: response.patient_profile.search_query_diagnostic_terms,
@@ -1012,7 +1015,7 @@ const ResultsPage: React.FC = () => {
         custom_prompt: customPrompt
       });
       
-      // Update searchParams with new ICD-10 code
+      // Update searchParams with new ICD-10 code and both prompts
       const newSearchParams: SearchParams = {
         ...searchParams,
         predicted_icd10: response.predicted_icd10 || undefined,
@@ -1021,14 +1024,14 @@ const ResultsPage: React.FC = () => {
         icd10_llm_descriptions: response.icd10_llm_descriptions || undefined,
         icd10_description: response.icd10_description || undefined,
         icd10_descriptions: response.icd10_descriptions || undefined,
-        icd10_prompt_text: response.icd10_prompt_text
+        icd10_prompt_text: response.icd10_prompt_text,
+        icd10_scoring_prompt_text: response.icd10_scoring_prompt_text
       };
       setSearchParams(newSearchParams);
       
-      // Update prompt text state
+      // Update prompt text state (step 1 only; step 2 is display-only)
       if (response.icd10_prompt_text) {
         setIcd10PromptText(response.icd10_prompt_text);
-        // Only update editable prompt if we used the default (not custom), otherwise keep the edited version
         if (!useCustomPrompt) {
           setEditableIcd10PromptText(response.icd10_prompt_text);
         }
@@ -2125,20 +2128,20 @@ const ResultsPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* ICD-10 Code Generation Prompt */}
+                  {/* ICD-10 Code Generation — two steps: generation then relevancy scoring */}
                   {(icd10PromptText || searchParams?.icd10_prompt_text) && (
-                    <div className="border-l-4 border-green-500 pl-4">
+                    <div className="border-l-4 border-green-500 pl-4 space-y-3">
                       <details className="bg-gray-50 rounded-lg border border-gray-200">
                         <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-t-lg">
                           <span className="flex items-center gap-2">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            ICD-10 Code Generation Prompt (Click to view/edit and re-run)
+                            Step 1: ICD-10 Generation Prompt (codes + descriptions) — Click to view/edit and re-run
                           </span>
                         </summary>
                         <div className="p-4 border-t border-gray-200">
-                          <p className="text-xs text-gray-600 mb-2">The following prompt was sent to GPT to generate the ICD-10 code:</p>
+                          <p className="text-xs text-gray-600 mb-2">Prompt sent to GPT to generate ICD-10 codes and brief descriptions (no relevancy yet):</p>
                           <textarea
                             className="w-full text-xs text-gray-800 bg-white p-3 rounded border border-gray-300 font-mono min-h-[200px] resize-y"
                             value={editableIcd10PromptText || icd10PromptText || searchParams?.icd10_prompt_text || ''}
@@ -2170,6 +2173,24 @@ const ResultsPage: React.FC = () => {
                           </div>
                         </div>
                       </details>
+                      {(searchParams?.icd10_scoring_prompt_text || location.state?.aiRecommendations?.patient_profile?.icd10_scoring_prompt_text) && (
+                        <details className="bg-gray-50 rounded-lg border border-gray-200">
+                          <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-t-lg">
+                            <span className="flex items-center gap-2">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Step 2: Relevancy Scoring Prompt (database descriptions)
+                            </span>
+                          </summary>
+                          <div className="p-4 border-t border-gray-200">
+                            <p className="text-xs text-gray-600 mb-2">Prompt sent to GPT to assign relevancy scores using official (database) code descriptions:</p>
+                            <pre className="w-full text-xs text-gray-800 bg-white p-3 rounded border border-gray-300 font-mono min-h-[120px] max-h-[300px] overflow-y-auto whitespace-pre-wrap">
+                              {searchParams?.icd10_scoring_prompt_text || location.state?.aiRecommendations?.patient_profile?.icd10_scoring_prompt_text || ''}
+                            </pre>
+                          </div>
+                        </details>
+                      )}
                     </div>
                   )}
 

@@ -124,9 +124,9 @@ async def regenerate_icd10_code(
     This endpoint is called separately to regenerate the ICD-10 code with a custom prompt.
     """
     try:
-        # Initialize service and generate ICD-10 codes
+        # Initialize service and generate ICD-10 codes (two-step: codes + LLM desc, then DB + relevancy)
         medical_analysis_service = MedicalAnalysisService(db, llm_provider=llm_provider)
-        icd10_codes, icd10_relevancy_scores, icd10_llm_descriptions, icd10_prompt_text = await medical_analysis_service.predict_icd10_code(
+        icd10_codes, icd10_relevancy_scores, icd10_llm_descriptions, icd10_descriptions, icd10_prompt_text, icd10_scoring_prompt_text = await medical_analysis_service.predict_icd10_code(
             diagnosis=diagnosis,
             anatomical_location=anatomical_location or "",
             pdf_content=pdf_content or "",
@@ -135,14 +135,7 @@ async def regenerate_icd10_code(
         
         # Use first code as primary for backward compatibility
         primary_icd10 = icd10_codes[0] if icd10_codes else None
-        
-        # Look up descriptions for all codes if we have codes
-        icd10_description = None
-        icd10_descriptions = {}
-        if icd10_codes and db:
-            icd10_descriptions = medical_analysis_service.lookup_icd10_descriptions(icd10_codes)
-            if primary_icd10:
-                icd10_description = icd10_descriptions.get(primary_icd10)
+        icd10_description = icd10_descriptions.get(primary_icd10) if primary_icd10 and icd10_descriptions else None
         
         return {
             "predicted_icd10": primary_icd10,  # Primary code for backward compatibility
@@ -152,6 +145,7 @@ async def regenerate_icd10_code(
             "icd10_description": icd10_description,  # Primary description for backward compatibility
             "icd10_descriptions": icd10_descriptions,  # All code -> database description mappings
             "icd10_prompt_text": icd10_prompt_text,
+            "icd10_scoring_prompt_text": icd10_scoring_prompt_text,
         }
         
     except HTTPException:
