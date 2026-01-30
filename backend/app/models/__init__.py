@@ -1,4 +1,5 @@
 from .base import Base
+from .cpt_consolidated import CptConsolidated
 from .doctor import Doctor
 from .healthgrades_review import HealthgradesReview
 from .icd_cpt_mapping import IcdCptMapping
@@ -11,6 +12,7 @@ from .vumedi_content import VumediContent
 
 __all__ = [
     "Base",
+    "CptConsolidated",
     "Doctor",
     "HealthgradesReview",
     "IcdCptMapping",

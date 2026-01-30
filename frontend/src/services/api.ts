@@ -336,6 +336,7 @@ export interface CPTCodeGenerationResponse {
   cpt_prompt_text: string;
   message: string;
   db_cpt_codes?: Array<{ code: string; description: string; relevancy_score?: number }>; // Database-mapped CPT codes from ICD-10
+  cpt_db_descriptions?: { [code: string]: string }; // code -> long_desc from cpt_consolidated for GPT codes
 }
 
 export const generateSearchQuery = async (

@@ -8,6 +8,7 @@ from sqlalchemy import text
 from langchain_core.prompts import PromptTemplate
 from ..config.llm_config import get_llm
 from ..models.icd_cpt_mapping import IcdCptMapping
+from ..models.cpt_consolidated import CptConsolidated
 
 logger = logging.getLogger(__name__)
 
@@ -943,7 +944,33 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         except Exception as e:
             logger.error(f"Error querying CPT codes from ICD-10 codes {icd10_codes}: {e}", exc_info=True)
             return []
-    
+
+    def lookup_cpt_long_descriptions(self, cpt_codes: List[str]) -> Dict[str, str]:
+        """
+        Look up long descriptions from cpt_consolidated for the given CPT codes.
+
+        Args:
+            cpt_codes: List of CPT codes (e.g., ["99202", "61510"])
+
+        Returns:
+            Dict mapping cpt_code -> long_desc from cpt_consolidated (only codes found)
+        """
+        if not self.db or not cpt_codes:
+            return {}
+        try:
+            cleaned = [c.strip() for c in cpt_codes if c and str(c).strip()]
+            if not cleaned:
+                return {}
+            rows = self.db.query(CptConsolidated.cpt_code, CptConsolidated.long_desc).filter(
+                CptConsolidated.cpt_code.in_(cleaned)
+            ).all()
+            result = {row.cpt_code: (row.long_desc or "").strip() for row in rows if row.long_desc}
+            logger.info(f"Looked up {len(result)} CPT long descriptions from cpt_consolidated for {len(cleaned)} codes")
+            return result
+        except Exception as e:
+            logger.error(f"Error looking up CPT descriptions from cpt_consolidated: {e}", exc_info=True)
+            return {}
+
     async def categorize_cpt_codes(
         self,
         cpt_codes: List[Dict[str, str]],
@@ -1176,11 +1203,11 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             icd10_code: Optional ICD-10 code to query database for mapped CPT codes
             
         Returns:
-            Tuple of (GPT-generated and categorized CPT codes, rendered prompt text, database-mapped CPT codes)
+            Tuple of (GPT-generated and categorized CPT codes, rendered prompt text, database-mapped CPT codes, GPT CPT db descriptions map)
         """
         if not search_query:
             logger.warning("Cannot generate CPT codes - no search query provided")
-            return [], "", []
+            return [], "", [], {}
         
         # Parse search query to extract individual terms (split by " OR ")
         search_terms = [term.strip() for term in search_query.split(" OR ") if term.strip()]
@@ -1223,12 +1250,19 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         
         gpt_codes, cpt_prompt_text = gpt_result
         
+        # Look up long descriptions from cpt_consolidated for GPT codes
+        gpt_cpt_db_descriptions = {}
+        if gpt_codes and self.db:
+            gpt_code_list = [c.get("code") for c in gpt_codes if c.get("code")]
+            gpt_cpt_db_descriptions = self.lookup_cpt_long_descriptions(gpt_code_list)
+        
         logger.info(f"✅ [CPT Code Generation] Parallel execution completed in {overall_elapsed:.2f}s")
         logger.info(f"   - GPT codes: {len(gpt_codes)} codes (pre-categorized)")
         logger.info(f"   - Database codes: {len(db_codes)} codes (will be categorized separately)")
+        logger.info(f"   - CPT consolidated lookups: {len(gpt_cpt_db_descriptions)} long descriptions for GPT codes")
         logger.info(f"   - Total unique codes: {len(set(c['code'] for c in gpt_codes + db_codes))} unique codes")
         
-        return gpt_codes, cpt_prompt_text, db_codes
+        return gpt_codes, cpt_prompt_text, db_codes, gpt_cpt_db_descriptions
 
     async def query_cms_api(
         self,

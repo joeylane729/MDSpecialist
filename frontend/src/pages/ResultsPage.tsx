@@ -145,6 +145,7 @@ const ResultsPage: React.FC = () => {
   const [editablePromptTextByCategory, setEditablePromptTextByCategory] = useState<{ [category: string]: string }>({});
   const [selectedCptCategory, setSelectedCptCategory] = useState<string | null>(null);
   const [cptPromptText, setCptPromptText] = useState<string | null>(null);
+  const [cptDbDescriptions, setCptDbDescriptions] = useState<{ [code: string]: string }>({}); // code -> long_desc from cpt_consolidated for GPT codes
   const [editablePromptText, setEditablePromptText] = useState<string | null>(null);
   const [diagnosesPromptText, setDiagnosesPromptText] = useState<string | null>(null);
   const [editableDiagnosesPromptText, setEditableDiagnosesPromptText] = useState<string | null>(null);
@@ -1206,6 +1207,13 @@ const ResultsPage: React.FC = () => {
               [category]: response.cpt_prompt_text || ''
             }));
           });
+          
+          // Store database descriptions from cpt_consolidated for GPT codes
+          if (response.cpt_db_descriptions && Object.keys(response.cpt_db_descriptions).length > 0) {
+            setCptDbDescriptions(response.cpt_db_descriptions);
+          } else {
+            setCptDbDescriptions({});
+          }
           
           // Update state with all categories
           setCptCodesByCategory(newCptCodesByCategory);
@@ -2524,21 +2532,39 @@ const ResultsPage: React.FC = () => {
                         {(hasCptCodesByCategory && displayCategory && cptCodesByCategory[displayCategory]
                           ? cptCodesByCategory[displayCategory]
                           : (cptCodes || searchParams?.cpt_codes || [])
-                        ).map((cpt: any, index: number) => (
-                          <div key={index} className="bg-amber-50 rounded-lg p-3 border border-amber-200">
-                            <div className="flex items-start gap-3">
-                              <code className="bg-amber-100 px-2 py-1 rounded text-sm font-semibold text-amber-900 whitespace-nowrap">
+                        ).map((cpt: any, index: number) => {
+                          const llmDescription = cpt.description;
+                          const dbDescription = cptDbDescriptions[cpt.code];
+                          return (
+                            <div key={index} className="flex items-start gap-3 py-2 px-2 bg-amber-50 rounded border border-amber-200 min-h-0">
+                              <code className="bg-amber-100 px-2 py-1 rounded text-sm font-semibold text-amber-900 whitespace-nowrap flex-shrink-0">
                                 {cpt.code}
                               </code>
-                              <span className="text-sm text-gray-700 flex-1">{cpt.description}</span>
                               {cpt.relevancy_score !== undefined && (
-                                <span className="text-xs font-medium text-gray-600 bg-gray-200 px-2 py-1 rounded flex-shrink-0">
+                                <span className="text-xs font-medium text-gray-600 bg-gray-200 px-1.5 py-0.5 rounded flex-shrink-0">
                                   {cpt.relevancy_score}%
                                 </span>
                               )}
+                              <div className="flex-1 min-w-0 text-sm">
+                                {llmDescription && (
+                                  <div className="leading-tight">
+                                    <span className="text-xs font-semibold text-blue-600 uppercase">LLM DESCRIPTION: </span>
+                                    <span className="text-gray-700">{llmDescription}</span>
+                                  </div>
+                                )}
+                                {dbDescription && (
+                                  <div className="leading-tight mt-0.5">
+                                    <span className="text-xs font-semibold text-green-600 uppercase">DATABASE DESCRIPTION: </span>
+                                    <span className="text-gray-700">{dbDescription}</span>
+                                  </div>
+                                )}
+                                {!llmDescription && !dbDescription && (
+                                  <span className="text-gray-500 text-xs">No descriptions available</span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </>
                   )}
