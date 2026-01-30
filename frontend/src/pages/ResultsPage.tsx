@@ -33,7 +33,8 @@ interface SearchParams {
     code: string;
     description: string;
   }>;
-  cpt_prompt_text?: string;  // GPT prompt text used to generate CPT codes
+  cpt_prompt_text?: string;  // Step 1: GPT prompt used to generate CPT codes + descriptions
+  cpt_categorization_prompt_text?: string;  // Step 2: GPT prompt used to categorize and score codes
   diagnoses_prompt_text?: string;  // GPT prompt text used to generate diagnoses/treatment options
   icd10_prompt_text?: string;  // GPT prompt text used to generate ICD-10 code
   search_query?: string;  // Pre-generated search query
@@ -145,6 +146,7 @@ const ResultsPage: React.FC = () => {
   const [editablePromptTextByCategory, setEditablePromptTextByCategory] = useState<{ [category: string]: string }>({});
   const [selectedCptCategory, setSelectedCptCategory] = useState<string | null>(null);
   const [cptPromptText, setCptPromptText] = useState<string | null>(null);
+  const [cptCategorizationPromptText, setCptCategorizationPromptText] = useState<string | null>(null);
   const [cptDbDescriptions, setCptDbDescriptions] = useState<{ [code: string]: string }>({}); // code -> long_desc from cpt_consolidated for GPT codes
   const [editablePromptText, setEditablePromptText] = useState<string | null>(null);
   const [diagnosesPromptText, setDiagnosesPromptText] = useState<string | null>(null);
@@ -239,6 +241,9 @@ const ResultsPage: React.FC = () => {
         setCptPromptText(searchParams.cpt_prompt_text);
         setEditablePromptText(searchParams.cpt_prompt_text);
       }
+      if (searchParams.cpt_categorization_prompt_text) {
+        setCptCategorizationPromptText(searchParams.cpt_categorization_prompt_text);
+      }
     }
   }, [searchParams, cptCodes]);
 
@@ -297,6 +302,9 @@ const ResultsPage: React.FC = () => {
       if (searchParams.cpt_prompt_text) {
         setCptPromptText(searchParams.cpt_prompt_text);
         setEditablePromptText(searchParams.cpt_prompt_text);
+      }
+      if (searchParams.cpt_categorization_prompt_text) {
+        setCptCategorizationPromptText(searchParams.cpt_categorization_prompt_text);
       }
     }
   }, [searchParams, cptCodes]);
@@ -1199,7 +1207,7 @@ const ResultsPage: React.FC = () => {
             stats.avgRelevancy = stats.relevancySum / stats.count;
           });
           
-          // Store prompt text for all categories (same prompt used for all)
+          // Store prompt text for all categories (same generation prompt used for all)
           Object.keys(newCptCodesByCategory).forEach(category => {
             newCptPromptTextByCategory[category] = response.cpt_prompt_text || '';
             setEditablePromptTextByCategory(prev => ({
@@ -1207,6 +1215,9 @@ const ResultsPage: React.FC = () => {
               [category]: response.cpt_prompt_text || ''
             }));
           });
+          setCptPromptText(response.cpt_prompt_text || null);
+          setEditablePromptText(response.cpt_prompt_text || null);
+          setCptCategorizationPromptText(response.cpt_categorization_prompt_text || null);
           
           // Store database descriptions from cpt_consolidated for GPT codes
           if (response.cpt_db_descriptions && Object.keys(response.cpt_db_descriptions).length > 0) {
@@ -1271,11 +1282,13 @@ const ResultsPage: React.FC = () => {
           if (allCptCodes.length > 0) {
             setCptCodes(allCptCodes);
             
-            // Update searchParams to include combined CPT codes
+            // Update searchParams to include combined CPT codes and both prompts
             if (searchParams) {
               setSearchParams({
                 ...searchParams,
-                cpt_codes: allCptCodes
+                cpt_codes: allCptCodes,
+                cpt_prompt_text: response.cpt_prompt_text,
+                cpt_categorization_prompt_text: response.cpt_categorization_prompt_text
               });
             }
             
@@ -2038,49 +2051,38 @@ const ResultsPage: React.FC = () => {
                       <div className="max-h-96 overflow-y-auto space-y-2 pr-2">
                         {searchParams.predicted_icd10_codes && Array.isArray(searchParams.predicted_icd10_codes) && searchParams.predicted_icd10_codes.length > 0 ? (
                           // Show all codes with their descriptions in a list format
-                          <div className="space-y-2">
+                          <div className="space-y-1">
                             {searchParams.predicted_icd10_codes.map((code: string, idx: number) => {
                               const llmDescription = searchParams.icd10_llm_descriptions?.[code];
                               const dbDescription = searchParams.icd10_descriptions?.[code];
                               const relevancyScore = searchParams.icd10_relevancy_scores?.[code];
-                              
-                              if (idx < 3) {  // Log first 3 for debugging
-                                console.log(`🔍 [Frontend] ICD code ${code} (idx ${idx}):`, {
-                                  has_llm_descriptions: !!searchParams.icd10_llm_descriptions,
-                                  has_db_descriptions: !!searchParams.icd10_descriptions,
-                                  llmDescription,
-                                  dbDescription,
-                                  relevancy_score: relevancyScore
-                                });
-                              }
-                              
                               return (
-                                <div key={idx} className="p-3 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors">
-                                  <div className="flex items-start gap-3 mb-2">
-                                    <code className="bg-white px-3 py-1.5 rounded text-sm font-mono font-semibold text-gray-800 border border-gray-300 flex-shrink-0">
-                                      {code}
-                                    </code>
-                                    {relevancyScore !== undefined && (
-                                      <span className="text-xs font-medium text-gray-600 bg-gray-200 px-2 py-1 rounded flex-shrink-0">
-                                        {relevancyScore}%
-                                      </span>
+                                <div key={idx} className="flex items-start gap-3 py-2 px-2 bg-gray-50 rounded border border-gray-200 min-h-0">
+                                  <code className="bg-white px-2 py-1 rounded text-sm font-mono font-semibold text-gray-800 border border-gray-300 flex-shrink-0">
+                                    {code}
+                                  </code>
+                                  {relevancyScore !== undefined && (
+                                    <span className="text-xs font-medium text-gray-600 bg-gray-200 px-1.5 py-0.5 rounded flex-shrink-0">
+                                      {relevancyScore}%
+                                    </span>
+                                  )}
+                                  <div className="flex-1 min-w-0 text-sm">
+                                    {llmDescription && (
+                                      <div className="leading-tight">
+                                        <span className="text-xs font-semibold text-blue-600 uppercase">LLM DESCRIPTION: </span>
+                                        <span className="text-gray-700">{llmDescription}</span>
+                                      </div>
+                                    )}
+                                    {dbDescription && (
+                                      <div className="leading-tight mt-0.5">
+                                        <span className="text-xs font-semibold text-green-600 uppercase">DATABASE DESCRIPTION: </span>
+                                        <span className="text-gray-700">{dbDescription}</span>
+                                      </div>
+                                    )}
+                                    {!llmDescription && !dbDescription && (
+                                      <span className="text-gray-500 text-xs">No descriptions available</span>
                                     )}
                                   </div>
-                                  {llmDescription && (
-                                    <div className="ml-0 mb-2">
-                                      <span className="text-xs font-semibold text-blue-600 uppercase">LLM Description:</span>
-                                      <p className="text-gray-700 text-sm mt-1">{llmDescription}</p>
-                                    </div>
-                                  )}
-                                  {dbDescription && (
-                                    <div className="ml-0">
-                                      <span className="text-xs font-semibold text-green-600 uppercase">Database Description:</span>
-                                      <p className="text-gray-700 text-sm mt-1">{dbDescription}</p>
-                                    </div>
-                                  )}
-                                  {!llmDescription && !dbDescription && (
-                                    <p className="text-gray-500 text-sm ml-0">No descriptions available</p>
-                                  )}
                                 </div>
                               );
                             })}
@@ -2421,20 +2423,21 @@ const ResultsPage: React.FC = () => {
                         </div>
                       )}
                       
-                      {/* GPT Prompt Instructions (collapsed by default) */}
-                      {displayCategory && cptPromptTextByCategory[displayCategory] && (
-                    <div className="mb-4">
+                      {/* Both LLM prompts: Generation (Step 1) and Categorization (Step 2) */}
+                      {displayCategory && (cptPromptTextByCategory[displayCategory] || cptCategorizationPromptText) && (
+                    <div className="mb-4 space-y-3">
+                      {cptPromptTextByCategory[displayCategory] && (
                       <details className="bg-gray-50 rounded-lg border border-gray-200">
                         <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-t-lg">
                           <span className="flex items-center gap-2">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            View GPT Prompt Instructions for {displayCategory} (for debugging)
+                            Step 1: Generation Prompt (CPT codes + descriptions)
                           </span>
                         </summary>
                         <div className="p-4 border-t border-gray-200">
-                          <p className="text-xs text-gray-600 mb-2">The following prompt was sent to GPT to generate the CPT codes for {displayCategory}:</p>
+                          <p className="text-xs text-gray-600 mb-2">Prompt sent to the LLM to generate CPT codes and descriptions:</p>
                           <textarea
                             className="w-full text-xs text-gray-800 bg-white p-3 rounded border border-gray-300 font-mono min-h-[200px] resize-y"
                             value={editablePromptTextByCategory[displayCategory] || cptPromptTextByCategory[displayCategory] || ''}
@@ -2471,23 +2474,47 @@ const ResultsPage: React.FC = () => {
                           </div>
                         </div>
                       </details>
+                      )}
+                      {cptCategorizationPromptText && (
+                      <details className="bg-gray-50 rounded-lg border border-gray-200">
+                        <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-t-lg">
+                          <span className="flex items-center gap-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                            Step 2: Categorization Prompt (relevancy scores + categories)
+                          </span>
+                        </summary>
+                        <div className="p-4 border-t border-gray-200">
+                          <p className="text-xs text-gray-600 mb-2">Prompt sent to the LLM with codes and database descriptions to assign categories and relevancy scores:</p>
+                          <textarea
+                            className="w-full text-xs text-gray-800 bg-white p-3 rounded border border-gray-300 font-mono min-h-[200px] resize-y"
+                            value={cptCategorizationPromptText}
+                            readOnly
+                            placeholder="Categorization prompt..."
+                          />
+                        </div>
+                      </details>
+                      )}
                     </div>
                       )}
                       
-                      {/* Fallback prompt section for legacy format */}
-                      {!hasCptCodesByCategory && (cptPromptText || searchParams?.cpt_prompt_text) && (
-                    <div className="mb-4">
+                      {/* Fallback prompt section: show both LLM prompts (Generation + Categorization) */}
+                      {!hasCptCodesByCategory && (cptPromptText || searchParams?.cpt_prompt_text || cptCategorizationPromptText || searchParams?.cpt_categorization_prompt_text) && (
+                    <div className="mb-4 space-y-3">
+                      {/* Step 1: Generation prompt (code + description only) */}
+                      {(cptPromptText || searchParams?.cpt_prompt_text) && (
                       <details className="bg-gray-50 rounded-lg border border-gray-200">
                         <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-t-lg">
                           <span className="flex items-center gap-2">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            View GPT Prompt Instructions (for debugging)
+                            Step 1: Generation Prompt (CPT codes + descriptions)
                           </span>
                         </summary>
                         <div className="p-4 border-t border-gray-200">
-                          <p className="text-xs text-gray-600 mb-2">The following prompt was sent to GPT to generate the CPT codes:</p>
+                          <p className="text-xs text-gray-600 mb-2">Prompt sent to the LLM to generate CPT codes and descriptions (no category or relevancy):</p>
                           <textarea
                             className="w-full text-xs text-gray-800 bg-white p-3 rounded border border-gray-300 font-mono min-h-[200px] resize-y"
                             value={editablePromptText || cptPromptText || searchParams?.cpt_prompt_text || ''}
@@ -2519,6 +2546,29 @@ const ResultsPage: React.FC = () => {
                           </div>
                         </div>
                       </details>
+                      )}
+                      {/* Step 2: Categorization prompt (relevancy + category using DB descriptions) */}
+                      {(cptCategorizationPromptText || searchParams?.cpt_categorization_prompt_text) && (
+                      <details className="bg-gray-50 rounded-lg border border-gray-200">
+                        <summary className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-t-lg">
+                          <span className="flex items-center gap-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                            Step 2: Categorization Prompt (relevancy scores + categories)
+                          </span>
+                        </summary>
+                        <div className="p-4 border-t border-gray-200">
+                          <p className="text-xs text-gray-600 mb-2">Prompt sent to the LLM with codes and database descriptions to assign categories and relevancy scores:</p>
+                          <textarea
+                            className="w-full text-xs text-gray-800 bg-white p-3 rounded border border-gray-300 font-mono min-h-[200px] resize-y"
+                            value={cptCategorizationPromptText || searchParams?.cpt_categorization_prompt_text || ''}
+                            readOnly
+                            placeholder="Categorization prompt..."
+                          />
+                        </div>
+                      </details>
+                      )}
                     </div>
                       )}
                       

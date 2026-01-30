@@ -193,7 +193,7 @@ async def generate_cpt_codes(
         if icd10_code:
             icd10_codes_list = [code.strip() for code in icd10_code.split(',') if code.strip()]
         
-        gpt_cpt_codes, cpt_prompt_text, db_cpt_codes, cpt_db_descriptions = await medical_analysis_service.generate_cpt_codes_from_analysis(
+        gpt_cpt_codes, cpt_prompt_text, cpt_categorization_prompt_text, db_cpt_codes, cpt_db_descriptions = await medical_analysis_service.generate_cpt_codes_from_analysis(
             search_query=search_query,
             anatomical_location=anatomical_location or "",
             custom_prompt=custom_prompt,
@@ -201,8 +201,9 @@ async def generate_cpt_codes(
         )
         
         return {
-            "cpt_codes": gpt_cpt_codes,  # GPT-generated CPT codes
-            "cpt_prompt_text": cpt_prompt_text,
+            "cpt_codes": gpt_cpt_codes,  # GPT-generated CPT codes (merged from two-step flow)
+            "cpt_prompt_text": cpt_prompt_text,  # Step 1: generation prompt
+            "cpt_categorization_prompt_text": cpt_categorization_prompt_text,  # Step 2: categorization prompt
             "db_cpt_codes": db_cpt_codes,  # Database-mapped CPT codes from ICD-10
             "cpt_db_descriptions": cpt_db_descriptions,  # code -> long_desc from cpt_consolidated for GPT codes
         }
