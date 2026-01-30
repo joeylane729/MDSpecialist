@@ -1047,14 +1047,19 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 # Skip codes ending with "F" or "U"
                 if cpt_code.endswith('F') or cpt_code.endswith('U'):
                     continue
-                # Add to dict if not already present
+                # Add to dict if not already present; store mapping description as fallback
                 if cpt_code not in cpt_codes_dict:
-                    # Use description from mapping, or additional_field, or empty
-                    description = mapping.description or mapping.additional_field or ""
+                    mapping_desc = (mapping.description or mapping.additional_field or "").strip()
                     cpt_codes_dict[cpt_code] = {
                         "code": cpt_code,
-                        "description": description.strip() if description else f"CPT code for ICD-10 {mapping.icd10_code}"
+                        "description": mapping_desc  # fallback; overwritten by consolidated if present
                     }
+            
+            # Prefer long descriptions from cpt_consolidated; fallback to ICD-CPT mapping description only
+            code_list = list(cpt_codes_dict.keys())
+            consolidated = self.lookup_cpt_long_descriptions(code_list) if code_list else {}
+            for cpt_code, entry in cpt_codes_dict.items():
+                entry["description"] = consolidated.get(cpt_code) or entry["description"]
             
             cpt_codes = list(cpt_codes_dict.values())
             logger.info(f"Found {len(cpt_codes)} CPT codes for {len(cleaned_icds)} ICD-10 code(s): {cleaned_icds}")
