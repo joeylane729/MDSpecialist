@@ -2638,9 +2638,10 @@ const ResultsPage: React.FC = () => {
                       </div>
                       
                       <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {(hasCptCodesByCategory && displayCategory && cptCodesByCategory[displayCategory]
+                        {((hasCptCodesByCategory && displayCategory && cptCodesByCategory[displayCategory]
                           ? cptCodesByCategory[displayCategory]
                           : (cptCodes || searchParams?.cpt_codes || [])
+                        ).slice().sort((a: any, b: any) => (b.relevancy_score ?? 0) - (a.relevancy_score ?? 0))
                         ).map((cpt: any, index: number) => {
                           const llmDescription = cpt.description;
                           const dbDescription = cptDbDescriptions[cpt.code];
@@ -2793,9 +2794,10 @@ const ResultsPage: React.FC = () => {
                             </div>
                             
                             <div className="space-y-2 max-h-96 overflow-y-auto">
-                              {(hasDbCategories && dbDisplayCategory && dbCptCodesByCategory[dbDisplayCategory]
+                              {((hasDbCategories && dbDisplayCategory && dbCptCodesByCategory[dbDisplayCategory]
                                 ? dbCptCodesByCategory[dbDisplayCategory]
                                 : dbCptCodes
+                              ).slice().sort((a: any, b: any) => (b.relevancy_score ?? 0) - (a.relevancy_score ?? 0))
                               ).map((cpt: any, index: number) => {
                                 const isIrrelevant = cpt.relevant === false || (typeof cpt.relevancy_score === 'number' && cpt.relevancy_score < 40);
                                 return (

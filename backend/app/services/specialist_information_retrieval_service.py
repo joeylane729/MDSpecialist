@@ -334,7 +334,7 @@ class SpecialistInformationRetrievalService:
                 else:
                     quartile_stats['None'] += 1
             
-            logger.info(f"✅ Postgres query returned {len(hits)} PubMed articles for query: '{query[:80]}{'...' if len(query) > 80 else ''}'")
+            logger.info(f"✅ Postgres query returned {len(hits)} PubMed articles for query: '{query_sql[:80]}{'...' if len(query_sql) > 80 else ''}'")
             logger.info(f"📊 Quartile breakdown: Q1={quartile_stats['Q1']}, Q2={quartile_stats['Q2']}, Q3={quartile_stats['Q3']}, Q4={quartile_stats['Q4']}, None={quartile_stats['None']}")
             
             # Log sample quartile values for debugging
