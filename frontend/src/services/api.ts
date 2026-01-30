@@ -150,6 +150,8 @@ export interface PatientProfile {
     category?: string;
   }>;
   search_query?: string;  // Pre-generated search query
+  search_query_diagnostic_terms?: string[];  // Parsed diagnostic terms (first OR group)
+  search_query_anatomic_terms?: string[];  // Parsed anatomic terms (second OR group)
   search_query_prompt_text?: string;  // GPT prompt text used to generate search query
   predicted_icd10?: string;  // Predicted ICD-10 code (primary, for backward compatibility)
   predicted_icd10_codes?: string[];  // All predicted ICD-10 codes

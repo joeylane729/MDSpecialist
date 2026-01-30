@@ -38,6 +38,8 @@ interface SearchParams {
   diagnoses_prompt_text?: string;  // GPT prompt text used to generate diagnoses/treatment options
   icd10_prompt_text?: string;  // GPT prompt text used to generate ICD-10 code
   search_query?: string;  // Pre-generated search query
+  search_query_diagnostic_terms?: string[];  // Parsed diagnostic terms (first OR group)
+  search_query_anatomic_terms?: string[];  // Parsed anatomic terms (second OR group)
   llm_provider?: string;  // LLM provider used ("openai" or "gemini")
   search_query_prompt_text?: string;  // GPT prompt text used to generate search query
   patientAge?: { month: string; year: string };  // Patient age (month and year of birth)
@@ -110,6 +112,20 @@ const calculateAgeCategory = (month: string, year: string): 'adult' | 'child' | 
   
   return age >= 18 ? 'adult' : 'child';
 };
+
+// Parse search query into diagnostic and anatomic term lists (matches backend format)
+function parseSearchQuery(raw: string | undefined): { diagnostic: string[]; anatomic: string[] } {
+  if (!raw?.trim()) return { diagnostic: [], anatomic: [] };
+  const r = raw.trim();
+  const match = r.match(/\(\s*([^)]+)\s*\)\s+AND\s+\(\s*([^)]+)\s*\)/i);
+  if (match) {
+    const first = match[1].split(/\s+OR\s+/).map((t) => t.trim()).filter(Boolean);
+    const second = match[2].split(/\s+OR\s+/).map((t) => t.trim()).filter(Boolean);
+    return { diagnostic: first, anatomic: second };
+  }
+  const terms = r.split(/\s+OR\s+/).map((t) => t.trim()).filter(Boolean);
+  return { diagnostic: terms, anatomic: [] };
+}
 
 // Treatment options removed - categories now come from CPT codes
 
@@ -909,6 +925,8 @@ const ResultsPage: React.FC = () => {
           icd10_prompt_text: response.patient_profile.icd10_prompt_text,
           treatment_options: response.patient_profile.treatment_options,
           search_query: response.patient_profile.search_query,
+          search_query_diagnostic_terms: response.patient_profile.search_query_diagnostic_terms,
+          search_query_anatomic_terms: response.patient_profile.search_query_anatomic_terms,
           diagnoses_prompt_text: response.patient_profile.diagnoses_prompt_text,
           search_query_prompt_text: response.patient_profile.search_query_prompt_text,
           llm_provider: response.patient_profile.llm_provider
@@ -1063,10 +1081,13 @@ const ResultsPage: React.FC = () => {
         custom_prompt: customPrompt
       });
       
-      // Update searchParams with new search query
+      // Update searchParams with new search query and parsed terms (API doesn't return parsed terms)
+      const parsed = parseSearchQuery(response.search_query);
       const newSearchParams: SearchParams = {
         ...searchParams,
         search_query: response.search_query,
+        search_query_diagnostic_terms: parsed.diagnostic,
+        search_query_anatomic_terms: parsed.anatomic,
         search_query_prompt_text: response.search_query_prompt_text
       };
       setSearchParams(newSearchParams);
@@ -2154,18 +2175,52 @@ const ResultsPage: React.FC = () => {
 
 
 
-                  {/* Search Query */}
-                  {searchParams?.search_query && (
-                    <div className="border-l-4 border-indigo-500 pl-4">
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Search Query Variations</h3>
-                      <div className="bg-gray-50 p-3 rounded-lg">
-                        <p className="text-sm text-gray-600 mb-2">The following search terms will be used to find relevant specialists:</p>
-                        <div className="text-sm text-gray-800 font-mono break-words">
-                          {searchParams?.search_query}
+                  {/* Search Query — show parsed diagnostic and anatomic terms as two lists */}
+                  {searchParams?.search_query && (() => {
+                    const diagnosticTerms = searchParams.search_query_diagnostic_terms ?? parseSearchQuery(searchParams.search_query).diagnostic;
+                    const anatomicTerms = searchParams.search_query_anatomic_terms ?? parseSearchQuery(searchParams.search_query).anatomic;
+                    const hasDiagnostic = diagnosticTerms.length > 0;
+                    const hasAnatomic = anatomicTerms.length > 0;
+                    if (!hasDiagnostic && !hasAnatomic) return null;
+                    return (
+                      <div className="border-l-4 border-indigo-500 pl-4">
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">Search Query Variations</h3>
+                        <p className="text-sm text-gray-600 mb-3">Terms used to find relevant specialists (at least one diagnostic and one anatomic match required):</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="bg-indigo-50/60 p-3 rounded-lg border border-indigo-100">
+                            <h4 className="text-xs font-semibold text-indigo-700 uppercase tracking-wide mb-2">Diagnostic terms</h4>
+                            {hasDiagnostic ? (
+                              <ul className="text-sm text-gray-800 space-y-1">
+                                {diagnosticTerms.map((t, i) => (
+                                  <li key={i} className="flex items-center gap-2">
+                                    <span className="text-indigo-500">•</span>
+                                    <span>{t}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-sm text-gray-500 italic">None</p>
+                            )}
+                          </div>
+                          <div className="bg-amber-50/60 p-3 rounded-lg border border-amber-100">
+                            <h4 className="text-xs font-semibold text-amber-800 uppercase tracking-wide mb-2">Anatomic terms</h4>
+                            {hasAnatomic ? (
+                              <ul className="text-sm text-gray-800 space-y-1">
+                                {anatomicTerms.map((t, i) => (
+                                  <li key={i} className="flex items-center gap-2">
+                                    <span className="text-amber-600">•</span>
+                                    <span>{t}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-sm text-gray-500 italic">None</p>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* Search Query Generation Prompt (collapsed by default) */}
                   {(searchQueryPromptText || searchParams?.search_query_prompt_text) && (
