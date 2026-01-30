@@ -86,11 +86,15 @@ class SpecialistRecommendationService:
                 logger.error(f"❌ {error_msg}")
                 raise ValueError(error_msg)
             
-            # Build patient_profile dict for retrieval service and response (only include what's actually used/needed)
+            # Build patient_profile dict for retrieval service (include parsed terms for PubMed: at least one of each)
+            from .medical_analysis_service import parse_search_query
+            search_query_diagnostic_terms, search_query_anatomic_terms = parse_search_query(search_query)
             logger.info("♻️  Step 1: Using pre-generated medical analysis results (required - no fallback)")
             medical_analysis_results = {
                 # Fields used by retrieval service
                 "search_query": search_query,
+                "search_query_diagnostic_terms": search_query_diagnostic_terms,
+                "search_query_anatomic_terms": search_query_anatomic_terms,
                 "icd10_description": icd10_description or "",
                 
                 # Fields used by ranking service

@@ -1,6 +1,7 @@
 import json
 import logging
 import asyncio
+import re
 import httpx
 from typing import List, Optional, Tuple, Dict, Any
 from sqlalchemy.orm import Session
@@ -11,6 +12,29 @@ from ..models.icd_cpt_mapping import IcdCptMapping
 from ..models.cpt_consolidated import CptConsolidated
 
 logger = logging.getLogger(__name__)
+
+
+def parse_search_query(raw: str) -> Tuple[List[str], List[str]]:
+    """
+    Parse search query string into diagnostic terms and anatomic terms.
+    New format: (term1 OR term2 OR ...) AND (termA OR termB OR ...)
+    Fallback: if no (...) AND (...), treat whole string as OR-separated diagnostic terms.
+
+    Returns:
+        (diagnostic_terms, anatomic_terms), each a list of stripped non-empty strings.
+    """
+    if not raw or not raw.strip():
+        return [], []
+    raw = raw.strip()
+    # Match ( group1 ) AND ( group2 ) - content inside parens may not contain )
+    match = re.search(r"\(\s*([^)]+)\s*\)\s+AND\s+\(\s*([^)]+)\s*\)", raw, re.IGNORECASE)
+    if match:
+        first = [t.strip() for t in match.group(1).split(" OR ") if t.strip()]
+        second = [t.strip() for t in match.group(2).split(" OR ") if t.strip()]
+        return first, second
+    # Fallback: all terms as diagnostic, anatomic empty
+    terms = [t.strip() for t in raw.split(" OR ") if t.strip()]
+    return terms, []
 
 
 def extract_llm_response_content(response: Any) -> str:
@@ -133,6 +157,13 @@ class MedicalAnalysisService:
                 )
             else:
                 logger.warning("Cannot generate search query - missing user diagnosis")
+
+            # Parse search query into diagnostic and anatomic terms for downstream (PubMed: at least one of each)
+            search_query_diagnostic_terms: List[str] = []
+            search_query_anatomic_terms: List[str] = []
+            if search_query:
+                search_query_diagnostic_terms, search_query_anatomic_terms = parse_search_query(search_query)
+                logger.info(f"   - Parsed search query: {len(search_query_diagnostic_terms)} diagnostic, {len(search_query_anatomic_terms)} anatomic terms")
             
             # Determine specialty for provider filtering (used by NPI search step)
             # Note: determine_specialty currently returns a constant, but we keep the call for future use
@@ -163,9 +194,10 @@ class MedicalAnalysisService:
                 "icd10_descriptions": icd10_descriptions,  # All code -> database description mappings
                 "icd10_prompt_text": icd10_prompt_text,  # Actual GPT prompt used to generate ICD-10 code
                 "determined_specialty": determined_specialty,  # Specialty determined for provider search
-                "search_query": search_query,  # Pre-generated search query
+                "search_query": search_query,  # Pre-generated search query (display / legacy)
                 "search_query_prompt_text": search_query_prompt_text,  # Actual GPT prompt used to generate search query
-                
+                "search_query_diagnostic_terms": search_query_diagnostic_terms,  # Parsed for PubMed/CPT: at least one of each
+                "search_query_anatomic_terms": search_query_anatomic_terms,
                 # Keep original nested structure for backward compatibility
                 "diagnoses": medical_analysis["diagnoses"]
             }
@@ -1019,9 +1051,11 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             logger.warning("Cannot generate CPT codes - no search query provided")
             return [], "", "", [], {}
 
-        search_terms = [term.strip() for term in search_query.split(" OR ") if term.strip()]
+        diagnostic_terms, anatomic_terms = parse_search_query(search_query)
+        # CPT prompts use diagnosis terms (diagnostic); anatomical_location is passed separately
+        search_terms = diagnostic_terms if diagnostic_terms else [t.strip() for t in search_query.split(" OR ") if t.strip()]
         logger.info(f"📋 [CPT Code Generation] Two-step: generate codes -> DB lookup -> categorize")
-        logger.info(f"   - Search terms: {len(search_terms)} terms")
+        logger.info(f"   - Diagnostic terms: {len(diagnostic_terms)}, anatomic terms: {len(anatomic_terms)}")
         logger.info(f"   - ICD-10 codes for DB query: {len(icd10_code) if icd10_code else 0} codes")
         logger.info(f"   - Anatomical location: {anatomical_location or 'Not specified'}")
 

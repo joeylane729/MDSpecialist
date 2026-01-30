@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from ...database import get_db
-from ...services.medical_analysis_service import MedicalAnalysisService
+from ...services.medical_analysis_service import MedicalAnalysisService, parse_search_query
 from ..utils.patient_input_processor import extract_pdf_content
 import logging
 import json
@@ -283,10 +283,11 @@ async def categorize_cpt_codes(
                 detail=f"Invalid JSON: {str(e)}"
             )
         
-        # Parse search query to extract diagnosis terms (split by " OR " like in GPT CPT code generation)
+        # Parse search query into diagnostic/anatomic; use diagnostic terms for categorization
         diagnosis_terms = None
         if search_query:
-            diagnosis_terms = [term.strip() for term in search_query.split(" OR ") if term.strip()]
+            diagnostic_terms, _ = parse_search_query(search_query)
+            diagnosis_terms = diagnostic_terms if diagnostic_terms else None
         
         # Initialize service and categorize
         medical_analysis_service = MedicalAnalysisService(db)

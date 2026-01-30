@@ -9,6 +9,7 @@ import logging
 import time
 from typing import List, Dict, Any, Optional, Tuple, Set
 from ..models.specialist_recommendation import SpecialistRecommendation
+from .medical_analysis_service import parse_search_query
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
@@ -1116,20 +1117,21 @@ class RankingService:
             start_time = time.time()
             logger.info(f"📦 [Reviews] Batch fetching ALL reviews for {len(npis)} NPIs")
             
-            # Extract search_query from patient_profile (must be set from first medical analysis, same as PubMed)
+            # Extract diagnostic and anatomic terms (at least one of each = relevant)
             search_query = patient_profile.get('search_query', '') if isinstance(patient_profile, dict) else ''
-            
-            if not search_query:
-                logger.error(f"❌ [Reviews] CRITICAL: search_query is missing from patient_profile! This should be set from the first medical analysis (same as used for PubMed).")
-                logger.error(f"❌ [Reviews] patient_profile keys: {list(patient_profile.keys()) if isinstance(patient_profile, dict) else 'NOT A DICT'}")
-            
-            # Extract keywords for relevance checking
-            keyword_list = []
-            if search_query:
-                keyword_list = [k.strip().lower() for k in search_query.split(' OR ') if k.strip()]
-                logger.info(f"🔍 [Reviews] Using {len(keyword_list)} keywords for relevance checking: {', '.join(keyword_list[:3])}{'...' if len(keyword_list) > 3 else ''}")
+            diagnostic_terms = patient_profile.get('search_query_diagnostic_terms') if isinstance(patient_profile, dict) else None
+            anatomic_terms = patient_profile.get('search_query_anatomic_terms') if isinstance(patient_profile, dict) else None
+            if diagnostic_terms is None or anatomic_terms is None:
+                if search_query:
+                    diagnostic_terms, anatomic_terms = parse_search_query(search_query)
+                else:
+                    diagnostic_terms, anatomic_terms = [], []
+            diagnostic_list = [k.strip().lower() for k in diagnostic_terms if k and k.strip()]
+            anatomic_list = [k.strip().lower() for k in anatomic_terms if k and k.strip()]
+            if not diagnostic_list and not anatomic_list:
+                logger.warning(f"⚠️ [Reviews] No search terms available - all reviews will be marked as not relevant")
             else:
-                logger.warning(f"⚠️ [Reviews] No search_query available - all reviews will be marked as not relevant")
+                logger.info(f"🔍 [Reviews] Relevance: at least one diagnostic + one anatomic. Diagnostic: {len(diagnostic_list)}, anatomic: {len(anatomic_list)}")
             
             # Fetch ALL reviews (no SQL filtering)
             query_start = time.time()
@@ -1194,11 +1196,13 @@ class RankingService:
                         'total_count': 0
                     }
                 
-                # Check if review is relevant (contains any keyword)
+                # Relevant if review contains at least one diagnostic AND at least one anatomic term
                 is_relevant = False
-                if keyword_list and review.review_text:
+                if review.review_text:
                     review_text_lower = review.review_text.lower()
-                    is_relevant = any(keyword in review_text_lower for keyword in keyword_list)
+                    has_diag = any(k in review_text_lower for k in diagnostic_list) if diagnostic_list else True
+                    has_anat = any(k in review_text_lower for k in anatomic_list) if anatomic_list else True
+                    is_relevant = has_diag and has_anat
                 
                 # Access review_rating directly - it should be loaded by the query
                 try:
@@ -1240,7 +1244,9 @@ class RankingService:
                     theodore_total_count += 1
                     if is_relevant:
                         theodore_relevant_count += 1
-                        matched_keywords = [k for k in keyword_list if k in review.review_text.lower()]
+                        matched_diag = [k for k in diagnostic_list if k in review.review_text.lower()]
+                        matched_anat = [k for k in anatomic_list if k in review.review_text.lower()]
+                        matched_keywords = matched_diag + matched_anat
                         logger.info(f"🔍 [Theodore Debug] Review #{review.review_index} is RELEVANT. Matched keywords: {matched_keywords[:3]}")
                         logger.info(f"🔍 [Theodore Debug] Review text preview: {review.review_text[:150]}...")
             

@@ -10,6 +10,8 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 from ..models.specialist_recommendation import PatientProfile
+from .medical_analysis_service import parse_search_query
+
 logger = logging.getLogger(__name__)
 
 class SpecialistInformationRetrievalService:
@@ -32,40 +34,38 @@ class SpecialistInformationRetrievalService:
         # This service only uses pre-generated search queries
         logger.info("SpecialistInformationRetrievalService initialized successfully")
     
-    def _query_vumedi_from_postgres(self, query: str) -> List[Dict[str, Any]]:
+    def _query_vumedi_from_postgres(self, diagnostic_terms: List[str], anatomic_terms: List[str]) -> List[Dict[str, Any]]:
         """
-        Query Vumedi videos from Postgres database using text search.
-        Similar to _query_pubmed_from_postgres but for vumedi_content_consolidated table.
-        
-        Args:
-            query: Search query with OR-separated terms
-            
-        Returns:
-            List of video records
+        Query Vumedi videos: must match at least one diagnostic term AND at least one anatomic term.
+        If anatomic_terms is empty, only diagnostic match is required.
         """
         try:
-            # Parse query terms (same logic as PubMed)
-            query_terms = [term.strip().lower() for term in query.split(" OR ")]
-            logger.info(f"🔍 Querying Vumedi from Postgres with {len(query_terms)} terms")
-            
-            # Build WHERE clause with LIKE for each term
-            like_conditions = []
-            for i, term in enumerate(query_terms):
-                # Search in title, featuring, and specialty fields
-                like_conditions.append(f"""
-                    (LOWER(title) LIKE :term_{i} OR 
-                     LOWER(featuring) LIKE :term_{i} OR 
-                     LOWER(specialty) LIKE :term_{i})
-                """)
-            
-            where_clause = " OR ".join(like_conditions)
-            
-            # Build query parameters
-            query_params = {}
-            for i, term in enumerate(query_terms):
-                query_params[f"term_{i}"] = f"%{term}%"
-            
-            # Build SQL query
+            diagnostic_terms = [t.strip().lower() for t in diagnostic_terms if t and t.strip()]
+            anatomic_terms = [t.strip().lower() for t in anatomic_terms if t and t.strip()]
+            if not diagnostic_terms and not anatomic_terms:
+                return []
+            logger.info(f"🔍 Querying Vumedi: {len(diagnostic_terms)} diagnostic, {len(anatomic_terms)} anatomic terms")
+
+            def build_or_conditions(terms: List[str], prefix: str) -> tuple:
+                conditions = []
+                params = {}
+                for i, term in enumerate(terms):
+                    key = f"{prefix}_{i}"
+                    params[key] = f"%{term}%"
+                    conditions.append(f"(LOWER(title) LIKE :{key} OR LOWER(featuring) LIKE :{key} OR LOWER(specialty) LIKE :{key})")
+                return (" OR ".join(conditions), params) if conditions else ("1=0", {})
+
+            diag_clause, diag_params = build_or_conditions(diagnostic_terms, "term_d")
+            anat_clause, anat_params = build_or_conditions(anatomic_terms, "term_a")
+            query_params = {**diag_params, **anat_params}
+
+            if diagnostic_terms and anatomic_terms:
+                where_clause = f"({diag_clause}) AND ({anat_clause})"
+            elif diagnostic_terms:
+                where_clause = diag_clause
+            else:
+                where_clause = anat_clause
+
             sql_query = text(f"""
                 SELECT 
                     title,
@@ -80,12 +80,7 @@ class SpecialistInformationRetrievalService:
                     scraped_at
                 FROM vumedi_content_consolidated
                 WHERE {where_clause}
-                ORDER BY 
-                    CASE 
-                        WHEN LOWER(title) LIKE :term_0 THEN 1
-                        WHEN LOWER(featuring) LIKE :term_0 THEN 2
-                        ELSE 3
-                    END
+                ORDER BY title
             """)
             
             logger.info(f"🚀 Executing Postgres Vumedi query (no limit)")
@@ -132,7 +127,7 @@ class SpecialistInformationRetrievalService:
                 }
                 hits.append(hit_fields)
             
-            logger.info(f"✅ Postgres query returned {len(hits)} Vumedi videos for query: '{query[:80]}{'...' if len(query) > 80 else ''}'")
+            logger.info(f"✅ Postgres query returned {len(hits)} Vumedi videos")
             
             return hits
             
@@ -143,51 +138,38 @@ class SpecialistInformationRetrievalService:
             logger.error(f"❌ Full traceback:\n{traceback.format_exc()}")
             return []
     
-    def _query_pubmed_from_postgres(self, query: str) -> List[Dict[str, Any]]:
+    def _query_pubmed_from_postgres(self, diagnostic_terms: List[str], anatomic_terms: List[str]) -> List[Dict[str, Any]]:
         """
-        Query PubMed articles from Postgres using full-text search.
-        
-        Args:
-            query: Search query string (can contain " OR " separated variations)
-            
-        Returns:
-            List of dictionaries matching the expected format
+        Query PubMed articles: must match at least one diagnostic term AND at least one anatomic term.
+        If anatomic_terms is empty, only diagnostic match is required.
         """
         if not self.engine and not self.db:
             logger.error("❌ No database connection available for PubMed query")
             return []
-        
+
+        diagnostic_terms = [v.strip() for v in diagnostic_terms if v and v.strip()]
+        anatomic_terms = [v.strip() for v in anatomic_terms if v and v.strip()]
+        if not diagnostic_terms and not anatomic_terms:
+            return []
+
         try:
-            logger.info(f"🔍 Starting Postgres PubMed query for: '{query[:100]}{'...' if len(query) > 100 else ''}'")
-            
-            # Split query variations if " OR " is present
-            query_variations = [v.strip() for v in query.split(" OR ")]
-            logger.info(f"📋 Parsed {len(query_variations)} query variations")
-            
-            # Build simple WHERE clause that checks if search terms appear in title or abstract
-            valid_variations = [v.strip() for v in query_variations if v.strip()]
-            
-            if not valid_variations:
-                logger.warning("⚠️ No valid query variations after processing")
-                return []
-            
-            logger.info(f"✅ Using {len(valid_variations)} valid variations for search")
-            
-            # Escape single quotes and build simple ILIKE conditions
-            where_conditions = []
-            for v in valid_variations:
-                escaped = v.replace("'", "''")
-                # Check if term appears in title or abstract (case-insensitive)
-                # Qualify column names with table name to avoid ambiguity with JOIN
-                where_conditions.append(
-                    f"(pubmed_articles.title ILIKE '%{escaped}%' OR pubmed_articles.abstract ILIKE '%{escaped}%')"
-                )
-            
-            # Combine WHERE conditions with OR
-            where_clause = " OR ".join(where_conditions)
-            
-            # Build SQL query - simple text matching
-            logger.info(f"🔧 Building SQL query with {len(where_conditions)} WHERE conditions")
+            logger.info(f"🔍 PubMed query: {len(diagnostic_terms)} diagnostic, {len(anatomic_terms)} anatomic terms")
+
+            def build_or_conditions(terms: List[str]) -> str:
+                conds = []
+                for v in terms:
+                    escaped = v.replace("'", "''")
+                    conds.append(f"(pubmed_articles.title ILIKE '%{escaped}%' OR pubmed_articles.abstract ILIKE '%{escaped}%')")
+                return " OR ".join(conds) if conds else "1=0"
+
+            diag_clause = build_or_conditions(diagnostic_terms)
+            anat_clause = build_or_conditions(anatomic_terms)
+            if diagnostic_terms and anatomic_terms:
+                where_clause = f"({diag_clause}) AND ({anat_clause})"
+            elif diagnostic_terms:
+                where_clause = diag_clause
+            else:
+                where_clause = anat_clause
             
             sql_query = text(f"""
                 WITH filtered_articles AS (
@@ -372,44 +354,43 @@ class SpecialistInformationRetrievalService:
             logger.error(f"❌ Full traceback:\n{traceback.format_exc()}")
             return []
     
-    def _verify_result(self, result: dict, query_variations: list, source: str) -> bool:
+    def _verify_result(self, result: dict, diagnostic_terms: List[str], anatomic_terms: List[str], source: str) -> bool:
         """
-        Verify if a result contains any of the query variations.
-        
-        Args:
-            result: Result with fields
-            query_variations: List of query variations to match against
-            source: Explicit source type ("vumedi" or "pubmed")
-            
-        Returns:
-            True if result contains any variation, False otherwise
+        Verify if a result contains at least one diagnostic term AND at least one anatomic term.
+        If anatomic_terms is empty, only requires at least one diagnostic term.
         """
-        # Get content based on explicit source type
         content_parts = []
-        
-        # Always include title if available
         if result.get('title'):
             content_parts.append(result['title'])
-        
-        # Add source-specific content based on explicit source
-        if source == 'vumedi':
-            # For Vumedi: use title only (as requested)
-            pass
-        elif source == 'pubmed':
-            # For PubMed: use title + abstract (as requested)
-            if result.get('abstract'):
-                content_parts.append(result['abstract'])
-        
-        # Combine all content
+        if source == 'pubmed' and result.get('abstract'):
+            content_parts.append(result['abstract'])
+        if source == 'vumedi' and result.get('featuring'):
+            content_parts.append(result['featuring'])
+        if source == 'vumedi' and result.get('specialty'):
+            content_parts.append(result['specialty'])
         full_content = " ".join(content_parts).lower()
-        
-        # Check for exact matches (case-insensitive)
-        for variation in query_variations:
-            if variation.lower() in full_content:
-                logger.debug(f"✅ Match found: '{variation}' in {source} result")
-                return True
-        
-        logger.debug(f"❌ No match found in {source} result: {result.get('title', 'No title')[:50]}...")
+
+        has_diagnostic = False
+        if diagnostic_terms:
+            for t in diagnostic_terms:
+                if t.lower() in full_content:
+                    has_diagnostic = True
+                    break
+        else:
+            has_diagnostic = True
+        has_anatomic = False
+        if anatomic_terms:
+            for t in anatomic_terms:
+                if t.lower() in full_content:
+                    has_anatomic = True
+                    break
+        else:
+            has_anatomic = True
+
+        if has_diagnostic and has_anatomic:
+            logger.debug(f"✅ Verified {source} result: at least one diagnostic + one anatomic")
+            return True
+        logger.debug(f"❌ Unverified {source} result: diagnostic={has_diagnostic}, anatomic={has_anatomic}")
         return False
     
     def _parse_patient_input(self, patient_input: str) -> tuple:
@@ -459,21 +440,23 @@ class SpecialistInformationRetrievalService:
         Queries are executed against Postgres database with no limits on result count.
         """
         try:
-            # Use pre-generated search query from medical analysis
+            # Use pre-generated search query and parsed terms from medical analysis
             query = medical_analysis_results.get("search_query", "")
-            
-            if not query:
+            diagnostic_terms = medical_analysis_results.get("search_query_diagnostic_terms")
+            anatomic_terms = medical_analysis_results.get("search_query_anatomic_terms")
+            if diagnostic_terms is None or anatomic_terms is None:
+                if query:
+                    diagnostic_terms, anatomic_terms = parse_search_query(query)
+                else:
+                    diagnostic_terms, anatomic_terms = [], []
+
+            if not query and not diagnostic_terms and not anatomic_terms:
                 logger.error("❌ No pre-generated search query found in medical analysis results")
                 raise ValueError("No pre-generated search query available - search query must be generated during medical analysis")
-            
-            logger.info(f"🔍 Using pre-generated search query from medical analysis:")
-            logger.info(f"   Query: {query}")
-            
-            # Parse query variations for verification
-            query_variations = [variation.strip() for variation in query.split(" OR ")]
-            logger.info(f"🔍 Parsed {len(query_variations)} query variations for verification:")
-            for i, variation in enumerate(query_variations, 1):
-                logger.info(f"   {i}. {variation}")
+
+            logger.info(f"🔍 Using search terms: {len(diagnostic_terms)} diagnostic, {len(anatomic_terms)} anatomic")
+            if query:
+                logger.info(f"   Query string: {query[:80]}{'...' if len(query) > 80 else ''}")
             
             # Execute single search and group results
             treatment_results = {}
@@ -484,13 +467,10 @@ class SpecialistInformationRetrievalService:
             treatment_name = medical_analysis_results.get("icd10_description", "Primary Diagnosis")
             
             try:
-                logger.info(f"🔍 Executing search for '{treatment_name}': '{query[:80]}{'...' if len(query) > 80 else ''}'")
-                
-                # Query Vumedi from Postgres database (no limit)
-                vumedi_hits = self._query_vumedi_from_postgres(query)
-                
-                # Query PubMed from Postgres database (no limit)
-                pubmed_hits = self._query_pubmed_from_postgres(query)
+                logger.info(f"🔍 Executing search for '{treatment_name}' (at least one diagnostic + one anatomic)")
+                # Query Vumedi and PubMed with diagnostic + anatomic terms (articles must match at least one of each)
+                vumedi_hits = self._query_vumedi_from_postgres(diagnostic_terms, anatomic_terms)
+                pubmed_hits = self._query_pubmed_from_postgres(diagnostic_terms, anatomic_terms)
                 
                 # Initialize treatment results
                 treatment_results[treatment_id] = {
@@ -512,8 +492,8 @@ class SpecialistInformationRetrievalService:
                         hit_fields["_treatment_name"] = treatment_name
                         # _score already set by Postgres query
                         
-                        # Verify the result contains query variations
-                        is_verified = self._verify_result(hit_fields, query_variations, source="vumedi")
+                        # Verify the result contains at least one diagnostic and one anatomic term
+                        is_verified = self._verify_result(hit_fields, diagnostic_terms, anatomic_terms, source="vumedi")
                         hit_fields["_verified"] = is_verified
                         
                         # Store all results (both verified and unverified)
@@ -541,8 +521,8 @@ class SpecialistInformationRetrievalService:
                         hit_fields["_id"] = str(pmid) if pmid else None  # Store the PMID for later use
                         # _score already set by Postgres query
                         
-                        # Verify the result contains query variations
-                        is_verified = self._verify_result(hit_fields, query_variations, source="pubmed")
+                        # Verify the result contains at least one diagnostic and one anatomic term
+                        is_verified = self._verify_result(hit_fields, diagnostic_terms, anatomic_terms, source="pubmed")
                         hit_fields["_verified"] = is_verified
                         
                         # Store all results (both verified and unverified)
