@@ -1035,8 +1035,8 @@ const ResultsPage: React.FC = () => {
         return;
       }
       
-      if (!searchParams.icd10_description || !searchParams.diagnosis) {
-        alert('ICD-10 description and diagnosis are required to regenerate search query');
+      if (!searchParams.diagnosis) {
+        alert('Diagnosis is required to regenerate search query');
         return;
       }
       
@@ -1057,8 +1057,8 @@ const ResultsPage: React.FC = () => {
       
       // Call search query generation API
       const response = await generateSearchQuery({
-        icd10_description: searchParams.icd10_description,
         user_diagnosis: searchParams.diagnosis,
+        anatomical_location: searchParams.anatomical_location,
         llm_provider: searchParams.llm_provider,
         custom_prompt: customPrompt
       });

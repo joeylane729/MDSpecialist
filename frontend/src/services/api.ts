@@ -294,8 +294,8 @@ export interface MedicalAnalysisResponse {
 }
 
 export interface SearchQueryGenerationRequest {
-  icd10_description: string;
   user_diagnosis: string;
+  anatomical_location?: string;
   llm_provider?: string; // Optional: "openai" or "gemini"
   custom_prompt?: string; // Optional custom prompt to override default
 }
@@ -345,13 +345,15 @@ export const generateSearchQuery = async (
 ): Promise<SearchQueryGenerationResponse> => {
   try {
     console.log('🔍 [Frontend] Generating search query:', {
-      icd10_description: request.icd10_description?.substring(0, 100),
-      user_diagnosis: request.user_diagnosis?.substring(0, 100)
+      user_diagnosis: request.user_diagnosis?.substring(0, 100),
+      anatomical_location: request.anatomical_location
     });
 
     const formData = new FormData();
-    formData.append('icd10_description', request.icd10_description);
     formData.append('user_diagnosis', request.user_diagnosis);
+    if (request.anatomical_location) {
+      formData.append('anatomical_location', request.anatomical_location);
+    }
     if (request.llm_provider) {
       formData.append('llm_provider', request.llm_provider);
     }

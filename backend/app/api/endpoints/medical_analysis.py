@@ -75,7 +75,6 @@ async def get_medical_analysis(
 
 @router.post("/medical-analysis/search-query")
 async def generate_search_query(
-    icd10_description: str = Form(...),
     user_diagnosis: str = Form(...),
     anatomical_location: Optional[str] = Form(None),
     llm_provider: Optional[str] = Form(None),  # Optional: "openai" or "gemini"
@@ -83,16 +82,13 @@ async def generate_search_query(
     db: Session = Depends(get_db)
 ):
     """
-    Generate search query based on ICD-10 description and user diagnosis.
-    
+    Generate search query based on user diagnosis and anatomical location.
+
     This endpoint is called separately after the initial medical analysis to regenerate the search query.
-    It requires the icd10_description and user_diagnosis from the previous step.
     """
     try:
-        # Initialize service and generate search query
         medical_analysis_service = MedicalAnalysisService(db, llm_provider=llm_provider)
         search_query, search_query_prompt_text = await medical_analysis_service.generate_search_query(
-            icd10_description=icd10_description,
             user_diagnosis=user_diagnosis,
             anatomical_location=anatomical_location or "",
             custom_prompt=custom_prompt
