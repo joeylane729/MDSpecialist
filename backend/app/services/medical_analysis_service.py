@@ -110,11 +110,17 @@ class MedicalAnalysisService:
             logger.info(f"   - Anatomical location: {anatomical_location or 'Not specified'}")
             logger.info(f"   - Treatment options generation: REMOVED (no longer generated)")
             
+            import time
+            timing_breakdown: Dict[str, float] = {}
+            
             # Generate ICD-10 codes (two-step: codes + LLM desc, then DB lookup + relevancy scoring)
             logger.info(f"   🔄 Generating ICD-10 codes...")
-            predicted_icd10_codes, icd10_relevancy_scores, icd10_llm_descriptions, icd10_descriptions, icd10_prompt_text, icd10_scoring_prompt_text = await self.predict_icd10_code(
+            t_icd_start = time.time()
+            predicted_icd10_codes, icd10_relevancy_scores, icd10_llm_descriptions, icd10_descriptions, icd10_prompt_text, icd10_scoring_prompt_text, icd10_timing = await self.predict_icd10_code(
                 diagnosis, anatomical_location, pdf_content, custom_prompt=custom_icd10_prompt
             )
+            timing_breakdown["icd10_total_ms"] = (time.time() - t_icd_start) * 1000
+            timing_breakdown.update(icd10_timing)  # Add step1, db, step2 timings
             logger.info(f"   ✅ Generated {len(predicted_icd10_codes)} ICD-10 codes")
             
             # Use first code as primary for backward compatibility, but store all codes
@@ -143,11 +149,13 @@ class MedicalAnalysisService:
             search_query = ""
             search_query_prompt_text = ""
             if diagnosis:
+                t_sq_start = time.time()
                 search_query, search_query_prompt_text = await self.generate_search_query(
                     user_diagnosis=diagnosis,
                     anatomical_location=anatomical_location,
                     custom_prompt=custom_search_query_prompt
                 )
+                timing_breakdown["search_query_ms"] = (time.time() - t_sq_start) * 1000
             else:
                 logger.warning("Cannot generate search query - missing user diagnosis")
 
@@ -193,7 +201,9 @@ class MedicalAnalysisService:
                 "search_query_diagnostic_terms": search_query_diagnostic_terms,  # Parsed for PubMed/CPT: at least one of each
                 "search_query_anatomic_terms": search_query_anatomic_terms,
                 # Keep original nested structure for backward compatibility
-                "diagnoses": medical_analysis["diagnoses"]
+                "diagnoses": medical_analysis["diagnoses"],
+                # Timing breakdown for UI display
+                "timing_breakdown": timing_breakdown
             }
             
             logger.info(f"✅ [Medical Analysis] Comprehensive analysis completed successfully")
@@ -522,34 +532,42 @@ No markdown, no code blocks, no other text."""
         anatomical_location: str = "",
         pdf_content: str = "",
         custom_prompt: Optional[str] = None
-    ) -> Tuple[List[str], Dict[str, int], Dict[str, str], Dict[str, Optional[str]], str, str]:
+    ) -> Tuple[List[str], Dict[str, int], Dict[str, str], Dict[str, Optional[str]], str, str, Dict[str, float]]:
         """
         Two-step: (1) generate ICD-10 codes + LLM descriptions, (2) DB lookup then assign relevancy using DB descriptions.
         Returns:
-            (codes, relevancy_scores, llm_descriptions, db_descriptions, generation_prompt_text, scoring_prompt_text)
+            (codes, relevancy_scores, llm_descriptions, db_descriptions, generation_prompt_text, scoring_prompt_text, timing_ms)
         """
+        import time
+        timing_ms: Dict[str, float] = {}
         try:
             # Step 1: codes + descriptions only (no relevancy)
+            t0 = time.time()
             codes_with_llm_desc, generation_prompt_text = await self.predict_icd10_codes_only(
                 diagnosis, anatomical_location, pdf_content, custom_prompt=custom_prompt
             )
+            timing_ms["icd10_step1_generation_ms"] = (time.time() - t0) * 1000
             if not codes_with_llm_desc:
-                return [], {}, {}, {}, generation_prompt_text, ""
+                return [], {}, {}, {}, generation_prompt_text, "", timing_ms
 
             codes = [x["code"] for x in codes_with_llm_desc]
             llm_descriptions = {x["code"]: x["description"] for x in codes_with_llm_desc if x.get("description")}
 
             # DB lookup for descriptions (used in step 2 prompt)
+            t1 = time.time()
             db_descriptions = self.lookup_icd10_descriptions(codes) if self.db else {}
+            timing_ms["icd10_db_lookup_ms"] = (time.time() - t1) * 1000
             codes_with_db_desc = [
                 {"code": c, "description": (db_descriptions.get(c) or "") or "(no description)"}
                 for c in codes
             ]
 
             # Step 2: relevancy scores using DB descriptions
+            t2 = time.time()
             relevancy_scores, scoring_prompt_text = await self.score_icd10_codes(
                 diagnosis, anatomical_location, codes_with_db_desc, custom_prompt=None
             )
+            timing_ms["icd10_step2_scoring_ms"] = (time.time() - t2) * 1000
             # Fill missing scores with 0
             for c in codes:
                 if c not in relevancy_scores:
@@ -558,10 +576,11 @@ No markdown, no code blocks, no other text."""
             logger.info(f"GPT returned {len(codes)} ICD-10 codes: {codes}")
             logger.info(f"Relevancy scores: {relevancy_scores}")
             logger.info(f"LLM descriptions: {len(llm_descriptions)} codes with descriptions")
-            return codes, relevancy_scores, llm_descriptions, db_descriptions, generation_prompt_text, scoring_prompt_text
+            logger.info(f"⏱️  ICD-10 timing: step1={timing_ms.get('icd10_step1_generation_ms', 0):.0f}ms, db={timing_ms.get('icd10_db_lookup_ms', 0):.0f}ms, step2={timing_ms.get('icd10_step2_scoring_ms', 0):.0f}ms")
+            return codes, relevancy_scores, llm_descriptions, db_descriptions, generation_prompt_text, scoring_prompt_text, timing_ms
         except Exception as e:
             logger.error(f"Error in predict_icd10_code: {e}", exc_info=True)
-            return [], {}, {}, {}, "", ""
+            return [], {}, {}, {}, "", "", timing_ms
 
     async def generate_search_query(
         self,
@@ -1106,7 +1125,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         anatomical_location: str = "",
         custom_prompt: Optional[str] = None,
         icd10_code: Optional[List[str]] = None  # List of ICD-10 codes
-    ) -> Tuple[List[Dict[str, str]], str, str, List[Dict[str, str]], Dict[str, str]]:
+    ) -> Tuple[List[Dict[str, str]], str, str, List[Dict[str, str]], Dict[str, str], Dict[str, float]]:
         """
         Generate CPT codes in two LLM steps: (1) codes + descriptions only, (2) categorize + relevancy using DB descriptions.
         Also queries database for CPT codes mapped to ICD-10 code if provided.
@@ -1118,11 +1137,14 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             icd10_code: Optional ICD-10 code(s) to query database for mapped CPT codes
             
         Returns:
-            Tuple of (merged GPT CPT codes with category/relevancy from step 2, generation prompt text, categorization prompt text, database-mapped CPT codes, GPT CPT db descriptions map)
+            Tuple of (merged GPT CPT codes with category/relevancy from step 2, generation prompt text, categorization prompt text, database-mapped CPT codes, GPT CPT db descriptions map, timing_ms)
         """
+        import time
+        timing_ms: Dict[str, float] = {}
+        
         if not search_query:
             logger.warning("Cannot generate CPT codes - no search query provided")
-            return [], "", "", [], {}
+            return [], "", "", [], {}, timing_ms
 
         diagnostic_terms, anatomic_terms = parse_search_query(search_query)
         # CPT prompts use diagnosis terms (diagnostic); anatomical_location is passed separately
@@ -1133,38 +1155,46 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         logger.info(f"   - Anatomical location: {anatomical_location or 'Not specified'}")
 
         # Step 1: Generate codes and descriptions only (no category/relevancy)
+        step1_elapsed_ms = 0.0
         async def get_gpt_codes_only():
+            nonlocal step1_elapsed_ms
             logger.info(f"   🔄 [GPT Step 1] Generating CPT codes and descriptions only...")
-            start_time = asyncio.get_event_loop().time()
+            start_time = time.time()
             result = await self.generate_cpt_codes_only(search_terms, anatomical_location, custom_prompt=custom_prompt)
-            elapsed = asyncio.get_event_loop().time() - start_time
-            logger.info(f"   ✅ [GPT Step 1] Completed in {elapsed:.2f}s")
+            step1_elapsed_ms = (time.time() - start_time) * 1000
+            logger.info(f"   ✅ [GPT Step 1] Completed in {step1_elapsed_ms:.0f}ms")
             return result
 
+        db_elapsed_ms = 0.0
         async def get_db_codes():
+            nonlocal db_elapsed_ms
             if icd10_code:
                 logger.info(f"   🔄 [Database] Starting database CPT code query...")
-                start_time = asyncio.get_event_loop().time()
+                start_time = time.time()
                 codes_list = icd10_code if isinstance(icd10_code, list) else [icd10_code]
                 loop = asyncio.get_event_loop()
                 result = await loop.run_in_executor(None, self.get_cpt_codes_from_icd10, codes_list)
-                elapsed = asyncio.get_event_loop().time() - start_time
-                logger.info(f"   ✅ [Database] Found {len(result)} CPT codes in {elapsed:.2f}s")
+                db_elapsed_ms = (time.time() - start_time) * 1000
+                logger.info(f"   ✅ [Database] Found {len(result)} CPT codes in {db_elapsed_ms:.0f}ms")
                 return result
             return []
 
-        overall_start = asyncio.get_event_loop().time()
+        overall_start = time.time()
         gpt_result, db_codes = await asyncio.gather(get_gpt_codes_only(), get_db_codes())
-        overall_elapsed = asyncio.get_event_loop().time() - overall_start
+        overall_elapsed_ms = (time.time() - overall_start) * 1000
+        timing_ms["cpt_step1_generation_ms"] = step1_elapsed_ms
+        timing_ms["cpt_aapc_db_lookup_ms"] = db_elapsed_ms
 
         gpt_codes_raw, generation_prompt_text = gpt_result
         if not gpt_codes_raw:
             logger.warning("No GPT CPT codes from step 1; skipping categorization")
-            return [], generation_prompt_text, "", db_codes, {}
+            return [], generation_prompt_text, "", db_codes, {}, timing_ms
 
         # Step 1.5: Look up long descriptions from cpt_consolidated
+        t_cpt_db = time.time()
         gpt_code_list = [c.get("code") for c in gpt_codes_raw if c.get("code")]
         gpt_cpt_db_descriptions = self.lookup_cpt_long_descriptions(gpt_code_list) if self.db else {}
+        timing_ms["cpt_db_description_lookup_ms"] = (time.time() - t_cpt_db) * 1000
 
         # Step 2: Build list with DATABASE descriptions for categorization (fallback to LLM description if no DB hit)
         cpt_for_categorization = []
@@ -1175,12 +1205,14 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             cpt_for_categorization.append({"code": code, "description": desc})
 
         logger.info(f"   🔄 [GPT Step 2] Categorizing {len(cpt_for_categorization)} codes with DB descriptions...")
+        t_step2 = time.time()
         categorized_codes, categorization_prompt_text = await self.categorize_cpt_codes(
             cpt_codes=cpt_for_categorization,
             treatment_options=[],
             custom_prompt=None,
             diagnosis_terms=search_terms
         )
+        timing_ms["cpt_step2_categorization_ms"] = (time.time() - t_step2) * 1000
 
         # Merge: keep LLM description from step 1 for display; use category and relevancy from step 2
         llm_desc_by_code = {c["code"]: c.get("description", "") for c in gpt_codes_raw}
@@ -1198,12 +1230,14 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 "relevant": score >= 40,
             })
 
-        logger.info(f"✅ [CPT Code Generation] Two-step completed in {overall_elapsed:.2f}s")
+        timing_ms["cpt_total_ms"] = (time.time() - overall_start) * 1000
+        logger.info(f"✅ [CPT Code Generation] Two-step completed in {timing_ms['cpt_total_ms']:.0f}ms")
         logger.info(f"   - GPT codes: {len(merged_gpt_codes)} (merged)")
         logger.info(f"   - Database codes: {len(db_codes)}")
         logger.info(f"   - CPT consolidated: {len(gpt_cpt_db_descriptions)} long descriptions")
+        logger.info(f"   ⏱️  CPT timing: step1={timing_ms.get('cpt_step1_generation_ms', 0):.0f}ms, aapc_db={timing_ms.get('cpt_aapc_db_lookup_ms', 0):.0f}ms, cpt_desc={timing_ms.get('cpt_db_description_lookup_ms', 0):.0f}ms, step2={timing_ms.get('cpt_step2_categorization_ms', 0):.0f}ms")
 
-        return merged_gpt_codes, generation_prompt_text, categorization_prompt_text, db_codes, gpt_cpt_db_descriptions
+        return merged_gpt_codes, generation_prompt_text, categorization_prompt_text, db_codes, gpt_cpt_db_descriptions, timing_ms
 
     async def query_cms_api(
         self,

@@ -126,7 +126,7 @@ async def regenerate_icd10_code(
     try:
         # Initialize service and generate ICD-10 codes (two-step: codes + LLM desc, then DB + relevancy)
         medical_analysis_service = MedicalAnalysisService(db, llm_provider=llm_provider)
-        icd10_codes, icd10_relevancy_scores, icd10_llm_descriptions, icd10_descriptions, icd10_prompt_text, icd10_scoring_prompt_text = await medical_analysis_service.predict_icd10_code(
+        icd10_codes, icd10_relevancy_scores, icd10_llm_descriptions, icd10_descriptions, icd10_prompt_text, icd10_scoring_prompt_text, icd10_timing = await medical_analysis_service.predict_icd10_code(
             diagnosis=diagnosis,
             anatomical_location=anatomical_location or "",
             pdf_content=pdf_content or "",
@@ -146,6 +146,7 @@ async def regenerate_icd10_code(
             "icd10_descriptions": icd10_descriptions,  # All code -> database description mappings
             "icd10_prompt_text": icd10_prompt_text,
             "icd10_scoring_prompt_text": icd10_scoring_prompt_text,
+            "timing_breakdown": icd10_timing,  # ICD-10 timing breakdown
         }
         
     except HTTPException:
@@ -183,7 +184,7 @@ async def generate_cpt_codes(
         if icd10_code:
             icd10_codes_list = [code.strip() for code in icd10_code.split(',') if code.strip()]
         
-        gpt_cpt_codes, cpt_prompt_text, cpt_categorization_prompt_text, db_cpt_codes, cpt_db_descriptions = await medical_analysis_service.generate_cpt_codes_from_analysis(
+        gpt_cpt_codes, cpt_prompt_text, cpt_categorization_prompt_text, db_cpt_codes, cpt_db_descriptions, cpt_timing = await medical_analysis_service.generate_cpt_codes_from_analysis(
             search_query=search_query,
             anatomical_location=anatomical_location or "",
             custom_prompt=custom_prompt,
@@ -196,6 +197,7 @@ async def generate_cpt_codes(
             "cpt_categorization_prompt_text": cpt_categorization_prompt_text,  # Step 2: categorization prompt
             "db_cpt_codes": db_cpt_codes,  # Database-mapped CPT codes from ICD-10
             "cpt_db_descriptions": cpt_db_descriptions,  # code -> long_desc from cpt_consolidated for GPT codes
+            "timing_breakdown": cpt_timing,  # Timing breakdown for CPT generation
         }
         
     except HTTPException:

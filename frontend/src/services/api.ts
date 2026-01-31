@@ -165,6 +165,7 @@ export interface PatientProfile {
   determined_specialty?: string;  // Specialty determined for provider search
   user_diagnosis?: string;  // User-entered diagnosis text
   llm_provider?: string;  // LLM provider used ("openai" or "gemini")
+  timing_breakdown?: { [key: string]: number };  // Step timing in milliseconds
 }
 
 export interface SpecialistRecommendationResponse {
@@ -325,6 +326,7 @@ export interface ICD10CodeGenerationResponse {
   icd10_descriptions: { [code: string]: string | null };  // All code -> database description mappings
   icd10_prompt_text: string;
   icd10_scoring_prompt_text?: string;  // Step 2: relevancy scoring prompt (DB descriptions)
+  timing_breakdown?: { [key: string]: number };  // Step timing in milliseconds
 }
 
 export interface CPTCodeGenerationRequest {
@@ -342,6 +344,7 @@ export interface CPTCodeGenerationResponse {
   message: string;
   db_cpt_codes?: Array<{ code: string; description: string; relevancy_score?: number; relevant?: boolean }>; // Database-mapped CPT codes from ICD-10
   cpt_db_descriptions?: { [code: string]: string }; // code -> long_desc from cpt_consolidated for GPT codes
+  timing_breakdown?: { [key: string]: number };  // Step timing in milliseconds
 }
 
 export const generateSearchQuery = async (

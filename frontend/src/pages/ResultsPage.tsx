@@ -45,6 +45,7 @@ interface SearchParams {
   search_query_prompt_text?: string;  // GPT prompt text used to generate search query
   patientAge?: { month: string; year: string };  // Patient age (month and year of birth)
   patient_age_category?: 'adult' | 'child';  // Patient age category
+  timing_breakdown?: { [key: string]: number };  // Step timing in milliseconds (accumulated from all API calls)
 }
 
 // Treatment options removed - no longer generated
@@ -932,7 +933,8 @@ const ResultsPage: React.FC = () => {
           search_query_anatomic_terms: response.patient_profile.search_query_anatomic_terms,
           diagnoses_prompt_text: response.patient_profile.diagnoses_prompt_text,
           search_query_prompt_text: response.patient_profile.search_query_prompt_text,
-          llm_provider: response.patient_profile.llm_provider
+          llm_provider: response.patient_profile.llm_provider,
+          timing_breakdown: response.patient_profile.timing_breakdown
         };
         
         console.log('🔍 [Frontend] Setting searchParams with:', {
@@ -1015,6 +1017,12 @@ const ResultsPage: React.FC = () => {
         custom_prompt: customPrompt
       });
       
+      // Merge timing from ICD regeneration into existing timing
+      const mergedTiming = {
+        ...(searchParams.timing_breakdown || {}),
+        ...(response.timing_breakdown || {})
+      };
+      
       // Update searchParams with new ICD-10 code and both prompts
       const newSearchParams: SearchParams = {
         ...searchParams,
@@ -1025,7 +1033,8 @@ const ResultsPage: React.FC = () => {
         icd10_description: response.icd10_description || undefined,
         icd10_descriptions: response.icd10_descriptions || undefined,
         icd10_prompt_text: response.icd10_prompt_text,
-        icd10_scoring_prompt_text: response.icd10_scoring_prompt_text
+        icd10_scoring_prompt_text: response.icd10_scoring_prompt_text,
+        timing_breakdown: mergedTiming
       };
       setSearchParams(newSearchParams);
       
@@ -1306,13 +1315,18 @@ const ResultsPage: React.FC = () => {
           if (allCptCodes.length > 0) {
             setCptCodes(allCptCodes);
             
-            // Update searchParams to include combined CPT codes and both prompts
+            // Update searchParams to include combined CPT codes, prompts, and merged timing
             if (searchParams) {
+              const mergedTiming = {
+                ...(searchParams.timing_breakdown || {}),
+                ...(response.timing_breakdown || {})
+              };
               setSearchParams({
                 ...searchParams,
                 cpt_codes: allCptCodes,
                 cpt_prompt_text: response.cpt_prompt_text,
-                cpt_categorization_prompt_text: response.cpt_categorization_prompt_text
+                cpt_categorization_prompt_text: response.cpt_categorization_prompt_text,
+                timing_breakdown: mergedTiming
               });
             }
             
@@ -3029,6 +3043,67 @@ const ResultsPage: React.FC = () => {
                         );
                       })()}
                     </>
+                  )}
+                  
+                  {/* Timing Breakdown Section */}
+                  {searchParams?.timing_breakdown && Object.keys(searchParams.timing_breakdown).length > 0 && (
+                    <details className="mt-6 bg-gray-50 rounded-lg border border-gray-200">
+                      <summary className="px-4 py-2 text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-100 rounded-t-lg">
+                        Timing Breakdown
+                      </summary>
+                      <div className="px-4 py-3 border-t border-gray-200">
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                          {(() => {
+                            const timing = searchParams.timing_breakdown!;
+                            // Define display order and labels
+                            const timingConfig: { key: string; label: string }[] = [
+                              { key: 'icd10_step1_generation_ms', label: 'ICD-10 Generation' },
+                              { key: 'icd10_db_lookup_ms', label: 'ICD-10 DB Lookup' },
+                              { key: 'icd10_step2_scoring_ms', label: 'ICD-10 Scoring' },
+                              { key: 'icd10_total_ms', label: 'ICD-10 Total' },
+                              { key: 'search_query_ms', label: 'Search Query' },
+                              { key: 'cpt_step1_generation_ms', label: 'CPT Generation' },
+                              { key: 'cpt_aapc_db_lookup_ms', label: 'AAPC DB Lookup' },
+                              { key: 'cpt_db_description_lookup_ms', label: 'CPT Desc Lookup' },
+                              { key: 'cpt_step2_categorization_ms', label: 'CPT Categorization' },
+                              { key: 'cpt_total_ms', label: 'CPT Total' },
+                            ];
+                            
+                            // Calculate grand total from non-total entries
+                            const grandTotal = (timing.icd10_total_ms || 0) + (timing.search_query_ms || 0) + (timing.cpt_total_ms || 0);
+                            
+                            const formatTime = (ms: number) => {
+                              if (ms >= 1000) {
+                                return `${(ms / 1000).toFixed(1)}s`;
+                              }
+                              return `${Math.round(ms)}ms`;
+                            };
+                            
+                            return (
+                              <>
+                                {timingConfig.map(({ key, label }) => {
+                                  const value = timing[key];
+                                  if (value === undefined) return null;
+                                  const isTotal = key.includes('_total_');
+                                  return (
+                                    <div key={key} className={`flex justify-between items-center text-xs ${isTotal ? 'font-semibold text-gray-800' : 'text-gray-600'}`}>
+                                      <span>{label}:</span>
+                                      <span className={`font-mono ${isTotal ? 'text-blue-600' : ''}`}>{formatTime(value)}</span>
+                                    </div>
+                                  );
+                                })}
+                                {grandTotal > 0 && (
+                                  <div className="col-span-full border-t border-gray-300 pt-2 mt-2 flex justify-between items-center text-sm font-bold text-gray-900">
+                                    <span>Grand Total:</span>
+                                    <span className="font-mono text-indigo-600">{formatTime(grandTotal)}</span>
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    </details>
                   )}
                   
                   {/* Button to generate specialist recommendations */}

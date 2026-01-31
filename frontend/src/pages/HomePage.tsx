@@ -583,7 +583,8 @@ const HomePage: React.FC = () => {
           cpt_categorization_prompt_text: aiRecommendations?.patient_profile?.cpt_categorization_prompt_text,
           diagnoses_prompt_text: aiRecommendations?.patient_profile?.diagnoses_prompt_text,
           search_query: aiRecommendations?.patient_profile?.search_query,
-          llm_provider: aiRecommendations?.patient_profile?.llm_provider
+          llm_provider: aiRecommendations?.patient_profile?.llm_provider,
+          timing_breakdown: aiRecommendations?.patient_profile?.timing_breakdown
         },
         providers: [], // Providers will be fetched later on ResultsPage
         totalProviders: 0,
@@ -637,7 +638,8 @@ const HomePage: React.FC = () => {
             cpt_categorization_prompt_text: aiRecommendations?.patient_profile?.cpt_categorization_prompt_text,
             diagnoses_prompt_text: aiRecommendations?.patient_profile?.diagnoses_prompt_text,
             search_query: aiRecommendations?.patient_profile?.search_query,
-            llm_provider: aiRecommendations?.patient_profile?.llm_provider
+            llm_provider: aiRecommendations?.patient_profile?.llm_provider,
+            timing_breakdown: aiRecommendations?.patient_profile?.timing_breakdown
           },
           providers: [], // Providers will be fetched later on ResultsPage
           totalProviders: 0,
