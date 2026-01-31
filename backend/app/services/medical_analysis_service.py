@@ -335,7 +335,7 @@ Provide between 5 and 10 of the most likely ICD-10 codes for this diagnosis, inc
 - DO NOT include codes that contain descriptions of anatomy that is not immediately adjacent to the anatomical location
 - Preserve the pathologic category of the original diagnosis (e.g. neoplasm, vascular, medical, degenerative).
 
-For each code, provide a brief description of what the code represents. Do NOT assign relevancy scores.
+For each code, provide a brief description of what the code represents.
 
 Return ONLY a JSON array in this exact format:
 [
@@ -440,7 +440,6 @@ Return ONLY the JSON array with NO markdown, NO code blocks, NO additional text.
                 rendered_prompt = custom_prompt.replace("{diagnosis}", diagnosis).replace("{anatomical_location}", anatomical_location or "").replace("{icd10_list}", codes_block)
             else:
                 prompt_template = """Given the patient diagnosis and anatomical location, assign a relevancy score from 0 to 100 for each ICD-10 code below.
-Use the official code descriptions (from the database) to decide how relevant each code is to the diagnosis.
 
 Patient Diagnosis: {diagnosis}
 Anatomical Location: {anatomical_location}
