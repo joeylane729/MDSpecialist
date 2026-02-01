@@ -46,33 +46,36 @@ def get_llm(
     
     provider = provider.lower()
     
+    # gemini_no_thinking -> Gemini with thinking_budget=0; normalize for model lookup
+    gemini_thinking_budget = None
+    if provider == "gemini_no_thinking":
+        gemini_thinking_budget = 0
+        provider_for_model = "gemini"
+    elif provider == "gemini":
+        gemini_thinking_budget = -1  # default/automatic thinking
+        provider_for_model = "gemini"
+    else:
+        provider_for_model = provider
+    
     # If model_name is provided, use it directly (allows explicit override)
     # Otherwise, map use_case to provider-appropriate model, or use default
     if model_name is None:
         if use_case:
-            model_name = _get_model_for_use_case(use_case, provider)
+            model_name = _get_model_for_use_case(use_case, provider_for_model)
         else:
             # No model_name and no use_case - use default for provider
-            model_name = _get_model_for_use_case("default", provider)
+            model_name = _get_model_for_use_case("default", provider_for_model)
     
     logger.info(f"🔧 [LLM Config] Creating LLM instance - Provider: {provider.upper()}, Model: {model_name}, Temperature: {temperature}, UseCase: {use_case or 'default'}")
-    
-    # gemini_no_thinking -> Gemini with thinking_budget=0; gemini -> default thinking (thinking_budget=-1)
-    gemini_thinking_budget = None
-    if provider == "gemini_no_thinking":
-        provider = "gemini"
-        gemini_thinking_budget = 0
-    elif provider == "gemini":
-        gemini_thinking_budget = -1  # default/automatic thinking
 
-    if provider == "gemini":
+    if provider_for_model == "gemini":
         thinking_budget = gemini_thinking_budget if gemini_thinking_budget is not None else -1
         llm = _create_gemini_llm(model_name, temperature, thinking_budget=thinking_budget)
     else:  # default to openai
         llm = _create_openai_llm(model_name, temperature)
     
-    # Add provider attribute for easy identification
-    llm._provider = provider
+    # Add provider attribute for easy identification (normalize gemini variants for downstream)
+    llm._provider = provider_for_model
     return llm
 
 
