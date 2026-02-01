@@ -57,8 +57,17 @@ def get_llm(
     
     logger.info(f"🔧 [LLM Config] Creating LLM instance - Provider: {provider.upper()}, Model: {model_name}, Temperature: {temperature}, UseCase: {use_case or 'default'}")
     
+    # gemini_no_thinking -> Gemini with thinking_budget=0; gemini -> default thinking (thinking_budget=-1)
+    gemini_thinking_budget = None
+    if provider == "gemini_no_thinking":
+        provider = "gemini"
+        gemini_thinking_budget = 0
+    elif provider == "gemini":
+        gemini_thinking_budget = -1  # default/automatic thinking
+
     if provider == "gemini":
-        llm = _create_gemini_llm(model_name, temperature)
+        thinking_budget = gemini_thinking_budget if gemini_thinking_budget is not None else -1
+        llm = _create_gemini_llm(model_name, temperature, thinking_budget=thinking_budget)
     else:  # default to openai
         llm = _create_openai_llm(model_name, temperature)
     
@@ -135,8 +144,12 @@ def _create_openai_llm(model_name: Optional[str], temperature: float) -> Any:
     return llm_instance
 
 
-def _create_gemini_llm(model_name: Optional[str], temperature: float) -> Any:
-    """Create Google Gemini ChatGoogleGenerativeAI instance."""
+def _create_gemini_llm(model_name: Optional[str], temperature: float, thinking_budget: int = -1) -> Any:
+    """Create Google Gemini ChatGoogleGenerativeAI instance.
+    
+    Args:
+        thinking_budget: -1 = default/automatic thinking, 0 = no thinking
+    """
     try:
         from langchain_google_genai import ChatGoogleGenerativeAI
     except ImportError:
@@ -154,13 +167,13 @@ def _create_gemini_llm(model_name: Optional[str], temperature: float) -> Any:
     # Use provided model_name, or fall back to env var, or default
     model = model_name or os.getenv("LLM_MODEL", "gemini-3-flash-preview")
     
-    logger.info(f"🤖 [LLM] Provider: Gemini | Model: {model} | Temperature: {temperature} | ThinkingBudget: -1")
+    logger.info(f"🤖 [LLM] Provider: Gemini | Model: {model} | Temperature: {temperature} | ThinkingBudget: {thinking_budget}")
     
     llm_instance = ChatGoogleGenerativeAI(
         model=model,
         temperature=temperature,
         google_api_key=api_key,
-        thinking_budget=-1
+        thinking_budget=thinking_budget
     )
     
     logger.info(f"✅ [LLM] Gemini LLM instance created successfully")

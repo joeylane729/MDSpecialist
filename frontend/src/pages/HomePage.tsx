@@ -523,7 +523,7 @@ const HomePage: React.FC = () => {
 
 
 
-  const handleSearch = async (provider: 'openai' | 'gemini') => {
+  const handleSearch = async (provider: 'openai' | 'gemini' | 'gemini_no_thinking') => {
     if (!selectedState || !selectedCity || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity) {
       alert('Please fill in all required fields before searching');
       return;
@@ -967,7 +967,7 @@ const HomePage: React.FC = () => {
 
               {/* Search Buttons */}
               <div className="text-center">
-                <div className="flex flex-col sm:flex-row gap-4 justify-center items-center max-w-4xl mx-auto">
+                <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center items-center max-w-4xl mx-auto">
                   {/* OpenAI Search Button */}
                   <button
                     type="button"
@@ -989,7 +989,7 @@ const HomePage: React.FC = () => {
                     )}
                   </button>
 
-                  {/* Gemini Search Button */}
+                  {/* Gemini (default thinking) Search Button */}
                   <button
                     type="button"
                     onClick={() => handleSearch('gemini')}
@@ -1004,7 +1004,28 @@ const HomePage: React.FC = () => {
                     ) : (
                       <>
                         <Zap className="w-6 h-6 mr-3" />
-                        <span>Search with Gemini</span>
+                        <span>Search with Gemini (default thinking)</span>
+                        <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
+                      </>
+                    )}
+                  </button>
+
+                  {/* Gemini (no thinking) Search Button */}
+                  <button
+                    type="button"
+                    onClick={() => handleSearch('gemini_no_thinking')}
+                    disabled={isLoading || !selectedState || !selectedCity || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity}
+                    className="group relative inline-flex items-center justify-center w-full sm:w-auto bg-gradient-to-r from-violet-600 to-purple-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-violet-700 hover:to-purple-700 focus:ring-4 focus:ring-violet-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
+                        <span>Searching...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Zap className="w-6 h-6 mr-3" />
+                        <span>Search with Gemini (no thinking)</span>
                         <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
