@@ -727,7 +727,7 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
                 except KeyError:
                     rendered_prompt = custom_prompt
             else:
-                prompt_template = """Give an exhaustive list of primary CPT codes that could possibly be used to treat patients with any of these diagnoses or a similar diagnosis in an adjacent location in a simple or complex treatment:
+                prompt_template = """Give an exhaustive list of primary CPT codes that could possibly be used to treat patients with any of these diagnoses in these anatomic locations in a simple or complex treatment:
 
 Diagnosis Terms:
 {diagnosis_terms}
