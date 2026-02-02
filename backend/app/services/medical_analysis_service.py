@@ -689,7 +689,6 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
     async def generate_cpt_codes_only(
         self,
         search_query_terms: List[str],
-        anatomical_location: str = "",
         anatomic_terms: Optional[List[str]] = None,
         custom_prompt: Optional[str] = None
     ) -> Tuple[List[Dict[str, str]], str]:
@@ -699,9 +698,8 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
 
         Args:
             search_query_terms: List of diagnosis terms from the search query
-            anatomical_location: Anatomical location of the condition (single string)
             anatomic_terms: Optional list of anatomic terms from the search query (e.g. spine, spinal)
-            custom_prompt: Optional custom prompt (may use {diagnosis_terms}, {anatomical_location}, {anatomic_terms}; no {categories})
+            custom_prompt: Optional custom prompt (may use {diagnosis_terms}, {anatomic_terms}; no {categories})
 
         Returns:
             Tuple of (List of dicts with code and description, rendered prompt text)
@@ -713,18 +711,16 @@ IMPORTANT: Return ONLY the search query string itself with NO explanations, NO m
 
             if custom_prompt:
                 escaped_prompt = custom_prompt.replace("{diagnosis_terms}", "__DIAGNOSIS_TERMS__").replace(
-                    "{anatomical_location}", "__ANATOMICAL_LOCATION__"
-                ).replace("{anatomic_terms}", "__ANATOMIC_TERMS__")
+                    "{anatomic_terms}", "__ANATOMIC_TERMS__"
+                )
                 escaped_prompt = escaped_prompt.replace("{", "{{").replace("}", "}}")
                 escaped_prompt = escaped_prompt.replace("{{__DIAGNOSIS_TERMS__}}", "{diagnosis_terms}").replace(
-                    "{{__ANATOMICAL_LOCATION__}}", "{anatomical_location}"
-                ).replace("{{__ANATOMIC_TERMS__}}", "{anatomic_terms}")
+                    "{{__ANATOMIC_TERMS__}}", "{anatomic_terms}"
+                )
                 prompt_template = escaped_prompt
                 invoke_dict = {}
                 if "{diagnosis_terms}" in custom_prompt:
                     invoke_dict["diagnosis_terms"] = terms_text
-                if "{anatomical_location}" in custom_prompt:
-                    invoke_dict["anatomical_location"] = anatomical_location or ""
                 if "{anatomic_terms}" in custom_prompt:
                     invoke_dict["anatomic_terms"] = anatomic_terms_text
                 try:
@@ -740,7 +736,6 @@ Diagnosis Terms:
 Anatomic Terms:
 {anatomic_terms}
 
-Anatomical Location: {anatomical_location}
 Specialty: Neurosurgery
 
 IMPORTANT:
@@ -762,22 +757,19 @@ Return the response in this exact JSON format (code and description only):
 Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO additional text."""
                 rendered_prompt = prompt_template.format(
                     diagnosis_terms=terms_text,
-                    anatomic_terms=anatomic_terms_text,
-                    anatomical_location=anatomical_location or ""
+                    anatomic_terms=anatomic_terms_text
                 )
 
             input_vars = []
             if custom_prompt:
                 if "{diagnosis_terms}" in custom_prompt:
                     input_vars.append("diagnosis_terms")
-                if "{anatomical_location}" in custom_prompt:
-                    input_vars.append("anatomical_location")
                 if "{anatomic_terms}" in custom_prompt:
                     input_vars.append("anatomic_terms")
             else:
-                input_vars = ["diagnosis_terms", "anatomic_terms", "anatomical_location"]
+                input_vars = ["diagnosis_terms", "anatomic_terms"]
             prompt = PromptTemplate(
-                input_variables=input_vars if input_vars else ["diagnosis_terms", "anatomic_terms", "anatomical_location"],
+                input_variables=input_vars if input_vars else ["diagnosis_terms", "anatomic_terms"],
                 template=prompt_template
             )
             chain = prompt | self.llm
@@ -786,8 +778,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 invoke_dict["diagnosis_terms"] = terms_text
             if "{anatomic_terms}" in prompt_template:
                 invoke_dict["anatomic_terms"] = anatomic_terms_text
-            if "{anatomical_location}" in prompt_template:
-                invoke_dict["anatomical_location"] = anatomical_location or ""
             response = await chain.ainvoke(invoke_dict)
             response_text = extract_llm_response_content(response)
             if response_text.startswith("```json"):
@@ -1149,7 +1139,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
     async def generate_cpt_codes_from_analysis(
         self,
         search_query: str,
-        anatomical_location: str = "",
         custom_prompt: Optional[str] = None,
         icd10_code: Optional[List[str]] = None  # List of ICD-10 codes
     ) -> Tuple[List[Dict[str, str]], str, str, List[Dict[str, str]], Dict[str, str], Dict[str, float]]:
@@ -1158,8 +1147,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
         Also queries database for CPT codes mapped to ICD-10 code if provided.
         
         Args:
-            search_query: Search query string (typically from generate_search_query)
-            anatomical_location: Anatomical location of the condition
+            search_query: Search query string (typically from generate_search_query); parsed for diagnostic and anatomic terms
             custom_prompt: Optional custom prompt for the generation step (categorization uses its own default)
             icd10_code: Optional ICD-10 code(s) to query database for mapped CPT codes
             
@@ -1174,12 +1162,10 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             return [], "", "", [], {}, timing_ms
 
         diagnostic_terms, anatomic_terms = parse_search_query(search_query)
-        # CPT prompts use diagnosis terms (diagnostic); anatomical_location is passed separately
         search_terms = diagnostic_terms if diagnostic_terms else [t.strip() for t in search_query.split(" OR ") if t.strip()]
         logger.info(f"📋 [CPT Code Generation] Two-step: generate codes -> DB lookup -> categorize")
         logger.info(f"   - Diagnostic terms: {len(diagnostic_terms)}, anatomic terms: {len(anatomic_terms)}")
         logger.info(f"   - ICD-10 codes for DB query: {len(icd10_code) if icd10_code else 0} codes")
-        logger.info(f"   - Anatomical location: {anatomical_location or 'Not specified'}")
 
         # Step 1: Generate codes and descriptions only (no category/relevancy)
         step1_elapsed_ms = 0.0
@@ -1188,7 +1174,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             logger.info(f"   🔄 [GPT Step 1] Generating CPT codes and descriptions only...")
             start_time = time.time()
             result = await self.generate_cpt_codes_only(
-                search_terms, anatomical_location, anatomic_terms=anatomic_terms, custom_prompt=custom_prompt
+                search_terms, anatomic_terms=anatomic_terms, custom_prompt=custom_prompt
             )
             step1_elapsed_ms = (time.time() - start_time) * 1000
             logger.info(f"   ✅ [GPT Step 1] Completed in {step1_elapsed_ms:.0f}ms")

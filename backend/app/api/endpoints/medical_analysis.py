@@ -162,7 +162,6 @@ async def regenerate_icd10_code(
 @router.post("/medical-analysis/cpt-codes")
 async def generate_cpt_codes(
     search_query: str = Form(...),
-    anatomical_location: Optional[str] = Form(None),
     llm_provider: Optional[str] = Form(None),  # Optional: "openai" or "gemini"
     custom_prompt: Optional[str] = Form(None),  # Optional custom prompt to override default
     icd10_code: Optional[str] = Form(None),  # Optional ICD-10 code(s) - comma-separated for multiple codes
@@ -186,7 +185,6 @@ async def generate_cpt_codes(
         
         gpt_cpt_codes, cpt_prompt_text, cpt_categorization_prompt_text, db_cpt_codes, cpt_db_descriptions, cpt_timing = await medical_analysis_service.generate_cpt_codes_from_analysis(
             search_query=search_query,
-            anatomical_location=anatomical_location or "",
             custom_prompt=custom_prompt,
             icd10_code=icd10_codes_list  # Pass as list
         )
