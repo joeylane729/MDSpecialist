@@ -261,7 +261,7 @@ async def categorize_cpt_codes(
         cpt_codes_json: JSON array of CPT codes with code and description
         treatment_options_json: JSON array of treatment options with categories (for context)
         custom_prompt: Optional custom prompt to override default
-        search_query: Optional search query string (e.g., "diagnosis1 OR diagnosis2") to extract diagnosis terms
+        search_query: Optional search query string to extract diagnosis and anatomic terms for relevancy scoring
         
     Returns:
         Dictionary with categorized CPT codes and prompt text
@@ -279,11 +279,13 @@ async def categorize_cpt_codes(
                 detail=f"Invalid JSON: {str(e)}"
             )
         
-        # Parse search query into diagnostic/anatomic; use diagnostic terms for categorization
+        # Parse search query into diagnostic and anatomic terms for categorization
         diagnosis_terms = None
+        anatomic_terms = None
         if search_query:
-            diagnostic_terms, _ = parse_search_query(search_query)
+            diagnostic_terms, anatomic_terms = parse_search_query(search_query)
             diagnosis_terms = diagnostic_terms if diagnostic_terms else None
+            anatomic_terms = anatomic_terms if anatomic_terms else None
         
         # Initialize service and categorize
         medical_analysis_service = MedicalAnalysisService(db)
@@ -291,7 +293,8 @@ async def categorize_cpt_codes(
             cpt_codes=cpt_codes,
             treatment_options=treatment_options,
             custom_prompt=custom_prompt,
-            diagnosis_terms=diagnosis_terms
+            diagnosis_terms=diagnosis_terms,
+            anatomic_terms=anatomic_terms
         )
         
         return {
