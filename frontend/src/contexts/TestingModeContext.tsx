@@ -13,9 +13,10 @@ export function TestingModeProvider({ children }: { children: ReactNode }) {
   const [testingMode, setTestingModeState] = useState<boolean>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      return stored === 'true';
+      // Default to true (testing mode on) when nothing stored
+      return stored !== 'false';
     } catch {
-      return false;
+      return true;
     }
   });
 
