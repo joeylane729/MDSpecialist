@@ -57,6 +57,28 @@ const HomePage: React.FC = () => {
     }
   }, []);
 
+  // When testing mode is off: no defaults (empty form). When testing mode is on: set testing defaults.
+  useEffect(() => {
+    if (!testingMode) {
+      setSelectedState('');
+      setSelectedCity('');
+      setZipCode('');
+      setDiagnosis('');
+      setAnatomicalLocation('');
+      setPatientAge({ month: '', year: '' });
+      setProximity('');
+      setGender('');
+      setSpecialty('');
+      setSelectedTreatmentCategories(['surgery', 'radiation', 'endovascular', 'medical', 'diagnostic testing']);
+    } else {
+      setSelectedState('NY');
+      setSelectedCity('');
+      setProximity('statewide');
+      setSpecialty('Neurosurgery');
+      setPatientAge({ month: '1', year: '1980' });
+    }
+  }, [testingMode]);
+
   // Mock data for now - will be replaced with API calls
   useEffect(() => {
     // All 50 US states in alphabetical order
@@ -799,6 +821,7 @@ const HomePage: React.FC = () => {
                       onChange={(e) => setSpecialty(e.target.value)}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all duration-300 bg-white hover:border-blue-300"
                     >
+                      {!testingMode && <option value="">Select specialty</option>}
                       <option value="Neurosurgery">Neurosurgery</option>
                       <option value="Cardiology" disabled>Cardiology</option>
                       <option value="Dermatology" disabled>Dermatology</option>
@@ -819,35 +842,37 @@ const HomePage: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Treatment categories (UI only for now) */}
-                  <div className="group min-w-[280px]">
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">Treatment categories</label>
-                    <div className="flex flex-wrap gap-3">
-                      {[
-                        { value: 'surgery', label: 'Surgery' },
-                        { value: 'radiation', label: 'Radiation' },
-                        { value: 'endovascular', label: 'Endovascular' },
-                        { value: 'medical', label: 'Medical' },
-                        { value: 'diagnostic testing', label: 'Diagnostic testing' }
-                      ].map(({ value, label }) => (
-                        <label key={value} className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={selectedTreatmentCategories.includes(value)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedTreatmentCategories(prev => [...prev, value]);
-                              } else {
-                                setSelectedTreatmentCategories(prev => prev.filter(c => c !== value));
-                              }
-                            }}
-                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          />
-                          <span className="text-sm text-gray-700">{label}</span>
-                        </label>
-                      ))}
+                  {/* Treatment categories: when testing mode off, only show after specialty is selected */}
+                  {(testingMode || specialty) && (
+                    <div className="group min-w-[280px]">
+                      <label className="block text-sm font-semibold text-gray-700 mb-3">Treatment categories</label>
+                      <div className="flex flex-wrap gap-3">
+                        {[
+                          { value: 'surgery', label: 'Surgery' },
+                          { value: 'radiation', label: 'Radiation' },
+                          { value: 'endovascular', label: 'Endovascular' },
+                          { value: 'medical', label: 'Medical' },
+                          { value: 'diagnostic testing', label: 'Diagnostic testing' }
+                        ].map(({ value, label }) => (
+                          <label key={value} className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedTreatmentCategories.includes(value)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedTreatmentCategories(prev => [...prev, value]);
+                                } else {
+                                  setSelectedTreatmentCategories(prev => prev.filter(c => c !== value));
+                                }
+                              }}
+                              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-gray-700">{label}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* Location and Search Radius - Second Row */}
