@@ -2212,6 +2212,8 @@ const ResultsPage: React.FC = () => {
     { key: 'ranking', label: 'Ranking specialists' }
   ];
   const currentStageIndex = fullFlowStage ? FULL_FLOW_STAGES.findIndex(s => s.key === fullFlowStage) : -1;
+  const percentComplete = currentStageIndex >= 0 ? Math.round(((currentStageIndex + 1) / FULL_FLOW_STAGES.length) * 100) : 0;
+  const currentStepLabel = currentStageIndex >= 0 ? FULL_FLOW_STAGES[currentStageIndex].label : '';
 
   if (fullFlowStage !== null) {
     return (
@@ -2242,29 +2244,18 @@ const ResultsPage: React.FC = () => {
                 </p>
               </div>
             </div>
-            {/* Progress / stage list */}
+            {/* Progress bar */}
             <div className="border-t border-gray-200 pt-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Progress</p>
-              <ul className="space-y-2 text-left">
-                {FULL_FLOW_STAGES.map((stage, idx) => {
-                  const isDone = currentStageIndex > idx;
-                  const isCurrent = fullFlowStage === stage.key;
-                  return (
-                    <li key={stage.key} className={`flex items-center gap-3 text-sm ${isCurrent ? 'text-blue-700 font-medium' : isDone ? 'text-gray-500' : 'text-gray-400'}`}>
-                      {isDone ? (
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
-                          <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                        </span>
-                      ) : isCurrent ? (
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
-                      ) : (
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-200" />
-                      )}
-                      <span>{stage.label}</span>
-                    </li>
-                  );
-                })}
-              </ul>
+              <div className="flex justify-between items-center mb-2">
+                <p className="text-sm font-medium text-gray-700">{currentStepLabel}</p>
+                <p className="text-sm font-semibold text-blue-600">{percentComplete}%</p>
+              </div>
+              <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${percentComplete}%` }}
+                />
+              </div>
             </div>
           </div>
           <div className="flex items-center justify-center space-x-2 text-gray-600">
