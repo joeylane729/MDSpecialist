@@ -336,9 +336,6 @@ class MedicalAnalysisService:
 Diagnosis: {diagnosis}
 Anatomical Location: {anatomical_location}
 
-Additional Information from Medical Records/PDFs:
-{pdf_content}
-
 Provide between 5 and 10 of the most likely ICD-10 codes for this diagnosis, including:
 - Codes for similar pathology in a similar anatomic location
 - If codes use terms like "uncertain behavior" or "unspecified behavior" in their descriptions then the anatomic location and/or the pathologic diagnosis must be the same as the original diagnosis
@@ -356,15 +353,16 @@ Return ONLY a JSON array in this exact format:
 Return ONLY the JSON array with NO markdown, NO code blocks, NO additional text."""
                 rendered_prompt = prompt_template.format(
                     diagnosis=diagnosis,
-                    anatomical_location=anatomical_location or "",
-                    pdf_content=pdf_content
+                    anatomical_location=anatomical_location or ""
                 )
 
             input_vars = ["diagnosis", "anatomical_location", "pdf_content"]
             if custom_prompt:
                 input_vars = [v for v in input_vars if f"{{{v}}}" in prompt_template]
+            else:
+                input_vars = ["diagnosis", "anatomical_location"]
             prompt = PromptTemplate(
-                input_variables=input_vars if input_vars else ["diagnosis", "anatomical_location", "pdf_content"],
+                input_variables=input_vars if input_vars else ["diagnosis", "anatomical_location"],
                 template=prompt_template
             )
             chain = prompt | self.llm
@@ -381,8 +379,7 @@ Return ONLY the JSON array with NO markdown, NO code blocks, NO additional text.
 
             response = await chain.ainvoke(invoke_dict if invoke_dict else {
                 "diagnosis": diagnosis,
-                "anatomical_location": anatomical_location or "",
-                "pdf_content": pdf_content
+                "anatomical_location": anatomical_location or ""
             })
             response_text = extract_llm_response_content(response)
             if response_text.startswith("```json"):
@@ -1660,9 +1657,6 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 Anatomical Location: {anatomical_location}
                 Specialty: Neurosurgery
                 
-                Additional Information from Medical Records/PDFs:
-                {pdf_content}
-                
                 Analyze the information above and provide the most common treatment options based on the diagnosis, specialty, and anatomical location. 
                 For each treatment option, include the general category of the treatment option. You MUST use one of these categories:
                 - Surgery
@@ -1727,13 +1721,12 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             else:
                 prompt_template = default_template
                 prompt = PromptTemplate(
-                    input_variables=["diagnosis", "anatomical_location", "pdf_content"],
+                    input_variables=["diagnosis", "anatomical_location"],
                     template=prompt_template
                 )
                 rendered_prompt = prompt.format(
                     diagnosis=diagnosis,
-                    anatomical_location=anatomical_location or "",
-                    pdf_content=pdf_content
+                    anatomical_location=anatomical_location or ""
                 )
             
             # Create prompt template for LangChain (always use variables even if custom prompt doesn't have them)
@@ -1746,7 +1739,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 if "{pdf_content}" in prompt_template:
                     input_vars.append("pdf_content")
                 prompt = PromptTemplate(
-                    input_variables=input_vars if input_vars else ["diagnosis", "anatomical_location", "pdf_content"],
+                    input_variables=input_vars if input_vars else ["diagnosis", "anatomical_location"],
                     template=prompt_template
                 )
             else:
@@ -1765,11 +1758,11 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
             if "{pdf_content}" in prompt_template:
                 invoke_dict["pdf_content"] = pdf_content
             
-            response = await chain.ainvoke(invoke_dict if invoke_dict else {
+            default_invoke = {
                 "diagnosis": diagnosis,
-                "anatomical_location": anatomical_location or "",
-                "pdf_content": pdf_content
-            })
+                "anatomical_location": anatomical_location or ""
+            }
+            response = await chain.ainvoke(invoke_dict if invoke_dict else default_invoke)
             
             # Extract the JSON response - LCEL returns AIMessage object
             response_text = extract_llm_response_content(response)
