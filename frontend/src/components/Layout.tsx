@@ -107,7 +107,7 @@ export default function Layout({ children }: LayoutProps) {
                     >
                       <span
                         className={`pointer-events-none block h-5 w-5 shrink-0 transform rounded-full bg-white shadow ring-0 transition ${
-                          testingMode ? 'translate-x-5' : 'translate-x-1'
+                          testingMode ? 'translate-x-5' : 'translate-x-0'
                         }`}
                       />
                     </button>
