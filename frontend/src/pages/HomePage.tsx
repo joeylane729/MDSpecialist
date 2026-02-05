@@ -34,6 +34,7 @@ const HomePage: React.FC = () => {
   const [proximity, setProximity] = useState<string>('statewide');
   const [gender, setGender] = useState<string>('');
   const [specialty, setSpecialty] = useState<string>('Neurosurgery');
+  const [selectedTreatmentCategories, setSelectedTreatmentCategories] = useState<string[]>(['surgery', 'radiation', 'endovascular', 'medical', 'diagnostic testing']);
 
   // Debug logging
   useEffect(() => {
@@ -812,6 +813,37 @@ const HomePage: React.FC = () => {
                       <option value="Radiology" disabled>Radiology</option>
                       <option value="Pathology" disabled>Pathology</option>
                     </select>
+                  </div>
+
+                  {/* Treatment categories (UI only for now) */}
+                  <div className="group min-w-[280px]">
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Treatment categories</label>
+                    <div className="flex flex-wrap gap-3">
+                      {[
+                        { value: 'surgery', label: 'Surgery' },
+                        { value: 'radiation', label: 'Radiation' },
+                        { value: 'endovascular', label: 'Endovascular' },
+                        { value: 'medical', label: 'Medical' },
+                        { value: 'diagnostic testing', label: 'Diagnostic testing' }
+                      ].map(({ value, label }) => (
+                        <label key={value} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedTreatmentCategories.includes(value)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedTreatmentCategories(prev => [...prev, value]);
+                              } else {
+                                setSelectedTreatmentCategories(prev => prev.filter(c => c !== value));
+                              }
+                            }}
+                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-700">{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1.5">Choose 1–5 categories</p>
                   </div>
                 </div>
 
