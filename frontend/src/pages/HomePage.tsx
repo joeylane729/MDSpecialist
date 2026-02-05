@@ -1004,7 +1004,7 @@ const HomePage: React.FC = () => {
                       ) : (
                         <>
                           <Zap className="w-6 h-6 mr-3" />
-                          <span>Search</span>
+                          <span>Find Top Specialists</span>
                           <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
                         </>
                       )}
