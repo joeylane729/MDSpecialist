@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Form
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from typing import List, Optional, Any
+from typing import Optional, Any
 from dataclasses import asdict
 from ...database import get_db
 from ...services.specialist_recommendation_service import SpecialistRecommendationService
@@ -32,7 +32,6 @@ async def get_specialist_recommendations(
     search_query: str = Form(...),  # Required pre-generated search query from medical analysis
     icd10_description: Optional[str] = Form(None),  # Optional ICD-10 description from medical analysis
     determined_specialty: Optional[str] = Form(None),  # Optional pre-determined specialty from medical analysis
-    files: List[UploadFile] = File([]),
     db: Session = Depends(get_db)
 ):
     """
@@ -75,10 +74,10 @@ async def get_specialist_recommendations(
                 # If invalid JSON, default to empty list
                 treatment_options = []
         
-        # Build patient input (only diagnosis needed)
+        # Build patient input (diagnosis only; no uploaded documents)
         patient_input = await build_patient_input(
             diagnosis=diagnosis,
-            files=files
+            files=[]
         )
         
         # Get specialist recommendations

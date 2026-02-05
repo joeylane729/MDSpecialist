@@ -5,12 +5,11 @@ This endpoint provides medical analysis including diagnosis prediction, ICD-10 c
 and treatment options without specialist retrieval.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Form
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import Optional
 from ...database import get_db
 from ...services.medical_analysis_service import MedicalAnalysisService, parse_search_query
-from ..utils.patient_input_processor import extract_pdf_content
 import logging
 import json
 
@@ -23,7 +22,6 @@ async def get_medical_analysis(
     diagnosis: str = Form(...),
     anatomical_location: Optional[str] = Form(None),
     llm_provider: Optional[str] = Form(None),  # Optional: "openai" or "gemini"
-    files: List[UploadFile] = File([]),
     custom_diagnoses_prompt: Optional[str] = Form(None),  # Optional custom prompt for diagnosis/treatment generation
     custom_search_query_prompt: Optional[str] = Form(None),  # Optional custom prompt for search query generation
     custom_icd10_prompt: Optional[str] = Form(None),  # Optional custom prompt for ICD-10 code generation
@@ -35,10 +33,7 @@ async def get_medical_analysis(
     This endpoint provides comprehensive medical analysis without specialist retrieval.
     """
     try:
-        # Extract PDF content from uploaded files
-        pdf_content = await extract_pdf_content(files)
-        
-        # Initialize service and perform analysis
+        # Initialize service and perform analysis (no uploaded documents)
         medical_analysis_service = MedicalAnalysisService(db, llm_provider=llm_provider)
         analysis_results = await medical_analysis_service.comprehensive_analysis(
             diagnosis=diagnosis,
@@ -46,7 +41,7 @@ async def get_medical_analysis(
             medical_history="",
             medications="",
             surgical_history="",
-            pdf_content=pdf_content,
+            pdf_content="",
             custom_diagnoses_prompt=custom_diagnoses_prompt,
             custom_search_query_prompt=custom_search_query_prompt,
             custom_icd10_prompt=custom_icd10_prompt

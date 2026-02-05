@@ -65,7 +65,6 @@ export interface NPISearchRequest {
   zipCode?: string;
   proximity: string;
   diagnosis: string;
-  uploadedFiles?: File[];
   // Required pre-determined values from medical analysis (must be provided)
   determined_specialty: string;
   predicted_icd10?: string;
@@ -106,13 +105,6 @@ export const searchNPIProviders = async (request: NPISearchRequest): Promise<NPI
     }
     if (request.icd10_description) {
       formData.append('icd10_description', request.icd10_description);
-    }
-    
-    // Add uploaded files
-    if (request.uploadedFiles) {
-      request.uploadedFiles.forEach((file) => {
-        formData.append('files', file);
-      });
     }
     
     const response = await api.post(`/api/v1/npi/search-providers`, formData, {
@@ -191,7 +183,6 @@ export interface SpecialistRecommendationRequest {
   medications?: string;
   surgical_history?: string;
   state?: string;
-  files?: File[];
   cpt_codes?: Array<{ code: string; description: string; relevancy_score?: number }>;  // Optional CPT codes to reuse (avoids duplicate generation)
   // Medical analysis results to reuse (avoids duplicate GPT calls)
   treatment_options?: Array<{ name: string; category?: string }>;
@@ -240,14 +231,6 @@ export const getSpecialistRecommendations = async (
       formData.append('determined_specialty', request.determined_specialty);
       console.log('♻️ [Frontend] Passing pre-generated determined_specialty:', request.determined_specialty);
     }
-
-    
-    // Add files if provided
-    if (request.files) {
-      request.files.forEach((file) => {
-        formData.append('files', file);
-      });
-    }
     
     console.log('🔍 [Frontend] Calling /api/v1/specialist-recommendations endpoint');
     const response = await api.post('/api/v1/specialist-recommendations', formData, {
@@ -286,7 +269,6 @@ export interface MedicalAnalysisRequest {
   diagnosis: string;
   anatomical_location?: string;
   llm_provider?: string;  // Optional: "openai" or "gemini"
-  files?: File[];
   custom_diagnoses_prompt?: string;
   custom_search_query_prompt?: string;  // Optional custom prompt for search query generation
 }
@@ -558,13 +540,6 @@ export const getMedicalAnalysis = async (
     if (request.llm_provider) {
       formData.append('llm_provider', request.llm_provider);
       console.log('🤖 [Frontend] Using LLM provider:', request.llm_provider);
-    }
-    
-    // Add files if provided
-    if (request.files) {
-      request.files.forEach((file) => {
-        formData.append('files', file);
-      });
     }
     
     if (request.custom_diagnoses_prompt) {

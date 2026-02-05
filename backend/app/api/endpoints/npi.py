@@ -1,8 +1,8 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, Query, File, UploadFile, Form
+from fastapi import APIRouter, Depends, HTTPException, Query, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from typing import List, Optional
+from typing import Optional
 from datetime import datetime
 from ...database import get_db
 from ..utils.npi_utils import (
@@ -29,10 +29,9 @@ async def search_providers_by_criteria(
     determined_specialty: str = Form(...),  # Required: Pre-determined specialty from medical analysis
     predicted_icd10: Optional[str] = Form(None),  # Pre-determined ICD-10 code from medical analysis
     icd10_description: Optional[str] = Form(None),  # Pre-determined ICD-10 description from medical analysis
-    files: List[UploadFile] = File([]),
     db: Session = Depends(get_db)
 ):
-    """Search for providers by city, state, and diagnosis/specialty with file analysis.
+    """Search for providers by city, state, and diagnosis/specialty.
     
     Note: This endpoint requires values from the medical analysis step (determined_specialty, predicted_icd10, icd10_description).
     These values should always be provided to avoid duplicate GPT API calls.

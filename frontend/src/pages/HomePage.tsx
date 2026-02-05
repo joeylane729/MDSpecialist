@@ -5,10 +5,7 @@ import {
   Stethoscope, 
   Users, 
   Zap,
-  ArrowRight,
-  FileText,
-  Upload,
-  X
+  ArrowRight
 } from 'lucide-react';
 
 interface State {
@@ -28,7 +25,6 @@ const HomePage: React.FC = () => {
   const [zipCode, setZipCode] = useState<string>('');
   const [diagnosis, setDiagnosis] = useState<string>('');
   const [anatomicalLocation, setAnatomicalLocation] = useState<string>('');
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [states, setStates] = useState<State[]>([]);
   const [cities, setCities] = useState<City[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -512,17 +508,6 @@ const HomePage: React.FC = () => {
     }
   }, [selectedState]);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    setUploadedFiles(prev => [...prev, ...files]);
-  };
-
-  const removeFile = (index: number) => {
-    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-
-
   const handleSearch = async (provider: 'openai' | 'gemini' | 'gemini_no_thinking') => {
     if (!selectedState || !selectedCity || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity) {
       alert('Please fill in all required fields before searching');
@@ -539,8 +524,7 @@ const HomePage: React.FC = () => {
       const aiRecommendations = await getMedicalAnalysis({
         diagnosis: diagnosis,
         anatomical_location: anatomicalLocation,
-        llm_provider: provider,
-        files: uploadedFiles
+        llm_provider: provider
       });
       
       // Debug logging for treatment options and ICD codes
@@ -913,56 +897,6 @@ const HomePage: React.FC = () => {
                     />
                   </div>
                 </div>
-              </div>
-
-              {/* Section 3: Medical Documents */}
-              <div className="bg-gray-100/70 rounded-2xl p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                  <Upload className="w-5 h-5 mr-2 text-blue-600" />
-                  Medical Documents
-                </h3>
-                <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition-colors bg-white/50">
-                  <input
-                    type="file"
-                    multiple
-                    accept=".pdf"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    id="file-upload"
-                  />
-                  <label htmlFor="file-upload" className="cursor-pointer">
-                    <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-lg text-gray-700 mb-2 font-medium">Click to upload medical documents</p>
-                    <p className="text-gray-600 mb-1">Upload relevant medical files to help specialists better understand your case</p>
-                    <p className="text-sm text-gray-500">
-                      Add imaging reports, doctor's notes, biopsy results, blood tests, etc.
-                    </p>
-                  </label>
-                </div>
-                
-                {/* Uploaded Files List */}
-                {uploadedFiles.length > 0 && (
-                  <div className="mt-6">
-                    <p className="text-sm font-medium text-gray-700 mb-3">Uploaded Files:</p>
-                    <div className="space-y-2">
-                      {uploadedFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between bg-white rounded-lg px-4 py-3 border border-gray-200">
-                          <div className="flex items-center space-x-3">
-                            <FileText className="w-5 h-5 text-blue-500" />
-                            <span className="text-sm text-gray-700 font-medium">{file.name}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => removeFile(index)}
-                            className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Search Buttons */}

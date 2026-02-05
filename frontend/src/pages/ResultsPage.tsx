@@ -901,7 +901,6 @@ const ResultsPage: React.FC = () => {
       const response = await getMedicalAnalysis({
         diagnosis: searchParams.diagnosis || location.state?.diagnosis || '',
         anatomical_location: searchParams?.anatomical_location || location.state?.anatomical_location || '',
-        files: [], // Files are not persisted, so we can't include them in rerun
         custom_diagnoses_prompt: customPrompt
       });
       
@@ -1439,7 +1438,6 @@ const ResultsPage: React.FC = () => {
       const specialistRequest: SpecialistRecommendationRequest = {
         diagnosis: searchParams?.diagnosis || '',
         state: searchParams?.state || location.state?.state || '',
-        files: [],
         cpt_codes: existingCptCodes,  // Pass existing CPT codes to reuse them
         // Pass medical analysis results to reuse (avoids duplicate GPT calls)
         treatment_options: [],  // Treatment options no longer generated - pass empty array
@@ -1482,7 +1480,6 @@ const ResultsPage: React.FC = () => {
         zipCode: location.state?.zipCode || '',
         proximity: location.state?.proximity || 'statewide',
         diagnosis: searchParams?.diagnosis || '',
-        uploadedFiles: [],
         // Required: Pass pre-determined values from medical analysis
         determined_specialty: determinedSpecialty,
         predicted_icd10: searchParams?.predicted_icd10 || location.state?.aiRecommendations?.patient_profile?.predicted_icd10,
