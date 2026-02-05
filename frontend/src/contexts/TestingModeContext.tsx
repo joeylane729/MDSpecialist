@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 
-const STORAGE_KEY = 'mdspecialist_testing_mode';
+const STORAGE_KEY = 'mdspecialist_testing_mode_v2';
 
 interface TestingModeContextValue {
   testingMode: boolean;
@@ -13,8 +13,9 @@ export function TestingModeProvider({ children }: { children: ReactNode }) {
   const [testingMode, setTestingModeState] = useState<boolean>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      // Default to true (testing mode on) when nothing stored
-      return stored !== 'false';
+      // Default to true (testing mode on). Only treat as off if user explicitly saved 'false'.
+      if (stored === 'false') return false;
+      return true;
     } catch {
       return true;
     }
