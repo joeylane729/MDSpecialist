@@ -125,6 +125,7 @@ export default function Layout({ children }: LayoutProps) {
                 </svg>
               </button>
             </div>
+            </div>
           </div>
         </div>
       </header>
