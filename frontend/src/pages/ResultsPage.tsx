@@ -181,6 +181,8 @@ const ResultsPage: React.FC = () => {
   const [isGeneratingCPTCodesForCategory, setIsGeneratingCPTCodesForCategory] = useState<string | null>(null);
   // Treatment options/diagnoses regeneration removed
   const [isGeneratingSpecialists, setIsGeneratingSpecialists] = useState(false);
+  /** When non-null, we're in the auto full flow and show the staged loading screen. One of: cpt | specialists | npi | ranking. Init to 'cpt' when landing with autoRunFullFlow so we show the new screen immediately (no flash of generic loading). */
+  const [fullFlowStage, setFullFlowStage] = useState<'cpt' | 'specialists' | 'npi' | 'ranking' | null>(() => (location.state as { autoRunFullFlow?: boolean })?.autoRunFullFlow ? 'cpt' : null);
   // Treatment options removed - no longer needed
   const hasInitializedCategoryFilter = useRef(false);
   const autoRunFullFlowDone = useRef(false);
@@ -611,8 +613,8 @@ const ResultsPage: React.FC = () => {
 
   // When testing mode is off, switch away from debug view
   useEffect(() => {
-    if (!testingMode && activeView === 'debug') {
-      setActiveView('assessment');
+    if (!testingMode && (activeView === 'debug' || activeView === 'assessment')) {
+      setActiveView('specialists');
     }
   }, [testingMode, activeView]);
 
@@ -718,6 +720,7 @@ const ResultsPage: React.FC = () => {
       if (state?.autoRunFullFlow && !autoRunFullFlowDone.current) {
         autoRunFullFlowDone.current = true;
         setIsGeneratingSpecialists(true);
+        setFullFlowStage('cpt');
         (async () => {
           try {
             const searchQuery = state.searchParams?.search_query || state.aiRecommendations?.patient_profile?.search_query;
@@ -748,6 +751,7 @@ const ResultsPage: React.FC = () => {
             if (cptResponse.cpt_db_descriptions) setCptDbDescriptions(cptResponse.cpt_db_descriptions);
             setSearchParams(prev => prev ? { ...prev, cpt_codes: cptCodes, cpt_prompt_text: cptResponse.cpt_prompt_text || undefined, cpt_categorization_prompt_text: cptResponse.cpt_categorization_prompt_text || undefined } : prev);
 
+            setFullFlowStage('specialists');
             const patientProfile = state.aiRecommendations?.patient_profile;
             const specialistResponse = await getSpecialistRecommendations({
               diagnosis: state.searchParams?.diagnosis || '',
@@ -765,6 +769,7 @@ const ResultsPage: React.FC = () => {
               alert('Error: Missing specialty information. Please start a new search.');
               return;
             }
+            setFullFlowStage('npi');
             const npiData = await searchNPIProviders({
               state: state.searchParams?.state || '',
               city: state.searchParams?.city || '',
@@ -776,6 +781,7 @@ const ResultsPage: React.FC = () => {
               icd10_description: state.searchParams?.icd10_description || patientProfile?.icd10_description
             });
 
+            setFullFlowStage('ranking');
             const searchQueryForRank = specialistResponse?.patient_profile?.search_query || specialistResponse?.search_query || patientProfile?.search_query;
             const rankingResponse = await rankNPIProviders({
               npi_providers: npiData.providers,
@@ -806,12 +812,14 @@ const ResultsPage: React.FC = () => {
               setRankedProviders(npiData.providers);
             }
             setProviders(npiData.providers);
+            setFullFlowStage(null);
             setActiveView('specialists');
           } catch (err) {
             console.error('Full flow error:', err);
             alert(`Search failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
           } finally {
             setIsGeneratingSpecialists(false);
+            setFullFlowStage(null);
           }
         })();
       }
@@ -2051,6 +2059,80 @@ const ResultsPage: React.FC = () => {
     }
   };
 
+  // Full-flow staged loading (single screen with progress when test mode is off)
+  const FULL_FLOW_STAGES: { key: 'cpt' | 'specialists' | 'npi' | 'ranking'; label: string }[] = [
+    { key: 'cpt', label: 'Generating CPT codes' },
+    { key: 'specialists', label: 'Getting specialist recommendations' },
+    { key: 'npi', label: 'Finding providers in your area' },
+    { key: 'ranking', label: 'Ranking specialists' }
+  ];
+  const currentStageIndex = fullFlowStage ? FULL_FLOW_STAGES.findIndex(s => s.key === fullFlowStage) : -1;
+
+  if (fullFlowStage !== null) {
+    return (
+      <div className="fixed inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-indigo-400/20 to-blue-400/20 rounded-full blur-3xl"></div>
+        </div>
+        <div className="relative z-10 text-center max-w-lg mx-auto px-6">
+          <div className="mb-8">
+            <div className="animate-spin rounded-full h-20 w-20 border-4 border-blue-200 border-t-blue-600 mx-auto"></div>
+          </div>
+          <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent mb-6">
+            Generating specialist recommendations...
+          </h2>
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 p-6 mb-6">
+            <div className="flex items-start space-x-4 mb-6">
+              <div className="flex-shrink-0">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex-1">
+                <p className="text-gray-700 text-sm leading-relaxed">
+                  <span className="font-semibold text-gray-900">Please wait...</span> This process may take 2-3 minutes as we analyze thousands of specialists and match them to your specific needs.
+                </p>
+              </div>
+            </div>
+            {/* Progress / stage list */}
+            <div className="border-t border-gray-200 pt-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Progress</p>
+              <ul className="space-y-2 text-left">
+                {FULL_FLOW_STAGES.map((stage, idx) => {
+                  const isDone = currentStageIndex > idx;
+                  const isCurrent = fullFlowStage === stage.key;
+                  return (
+                    <li key={stage.key} className={`flex items-center gap-3 text-sm ${isCurrent ? 'text-blue-700 font-medium' : isDone ? 'text-gray-500' : 'text-gray-400'}`}>
+                      {isDone ? (
+                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        </span>
+                      ) : isCurrent ? (
+                        <span className="flex-shrink-0 w-6 h-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
+                      ) : (
+                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-gray-200" />
+                      )}
+                      <span>{stage.label}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
+          <div className="flex items-center justify-center space-x-2 text-gray-600">
+            <svg className="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <span className="text-sm font-medium">Please do not close this browser tab while we search</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading || isGeneratingSpecialists) {
     return (
       <div className="fixed inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center overflow-hidden">
@@ -2122,7 +2204,7 @@ const ResultsPage: React.FC = () => {
           
           {/* View Toggle */}
           <div className="flex space-x-8">
-            {(searchParams?.icd10_description || location.state?.aiRecommendations?.patient_profile?.icd10_description) && (
+            {testingMode && (searchParams?.icd10_description || location.state?.aiRecommendations?.patient_profile?.icd10_description) && (
               <button
                 onClick={() => setActiveView('assessment')}
                 className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
