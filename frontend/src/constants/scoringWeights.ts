@@ -11,6 +11,13 @@ export const SCORING_WEIGHTS = {
   VUMEDI: 5.0,             // Medical Lectures (Vumedi) weight
 } as const;
 
+/**
+ * CPT code relevancy threshold (0-100 scale).
+ * Codes with relevancy_score >= this value are considered "relevant".
+ * Must match backend constant CPT_RELEVANCY_THRESHOLD in medical_analysis_service.py.
+ */
+export const CPT_RELEVANCY_THRESHOLD = 10;
+
 // Validate weights sum to 100
 const WEIGHT_TOTAL = 
   SCORING_WEIGHTS.CLINICAL_VOLUME +

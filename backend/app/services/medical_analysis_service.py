@@ -13,6 +13,10 @@ from ..models.cpt_consolidated import CptConsolidated
 
 logger = logging.getLogger(__name__)
 
+# CPT code relevancy threshold (0-100 scale)
+# Codes with relevancy_score >= this value are considered "relevant"
+CPT_RELEVANCY_THRESHOLD = 10
+
 
 def parse_search_query(raw: str) -> Tuple[List[str], List[str]]:
     """
@@ -1112,7 +1116,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                     "description": description_map.get(cpt['code'], ''),  # Use description from original data
                     "category": category,
                     "relevancy_score": relevancy_score,
-                    "relevant": relevancy_score >= 40,
+                    "relevant": relevancy_score >= CPT_RELEVANCY_THRESHOLD,
                 })
                 category_counts[category] = category_counts.get(category, 0) + 1
             
@@ -1240,7 +1244,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
                 "description": llm_desc_by_code.get(code, cat.get("description", "")),
                 "category": cat.get("category", "Medical"),
                 "relevancy_score": score,
-                "relevant": score >= 40,
+                "relevant": score >= CPT_RELEVANCY_THRESHOLD,
             })
 
         timing_ms["cpt_total_ms"] = (time.time() - overall_start) * 1000

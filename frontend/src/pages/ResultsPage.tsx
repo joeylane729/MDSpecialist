@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { NPIProvider, getSpecialistRecommendations, SpecialistRecommendationRequest, searchNPIProviders, rankNPIProviders, NPISearchRequest, NPIRankingRequest, ProviderContent, generateCPTCodes, generateSearchQuery, getMedicalAnalysis, regenerateICD10Code, categorizeCPTCodes } from '../services/api';
 import api from '../services/api';
 import NPIProviderCard from '../components/NPIProviderCard';
-import { SCORING_WEIGHTS } from '../constants/scoringWeights';
+import { SCORING_WEIGHTS, CPT_RELEVANCY_THRESHOLD } from '../constants/scoringWeights';
 
 interface Provider extends NPIProvider {
   email?: string;
@@ -2677,7 +2677,7 @@ const ResultsPage: React.FC = () => {
                         ).map((cpt: any, index: number) => {
                           const llmDescription = cpt.description;
                           const dbDescription = cptDbDescriptions[cpt.code];
-                          const isIrrelevant = cpt.relevant === false || (typeof cpt.relevancy_score === 'number' && cpt.relevancy_score < 40);
+                          const isIrrelevant = cpt.relevant === false || (typeof cpt.relevancy_score === 'number' && cpt.relevancy_score < CPT_RELEVANCY_THRESHOLD);
                           return (
                             <div key={index} className="flex items-start gap-3 py-2 px-2 bg-amber-50 rounded border border-amber-200 min-h-0">
                               <code className="bg-amber-100 px-2 py-1 rounded text-sm font-semibold text-amber-900 whitespace-nowrap flex-shrink-0">
@@ -2691,7 +2691,7 @@ const ResultsPage: React.FC = () => {
                               {isIrrelevant && (
                                 <span
                                   className="inline-flex flex-shrink-0 text-red-600 cursor-help"
-                                  title="Excluded from clinical volume (relevancy < 40%)"
+                                  title={`Excluded from clinical volume (relevancy < ${CPT_RELEVANCY_THRESHOLD}%)`}
                                 >
                                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
@@ -2831,7 +2831,7 @@ const ResultsPage: React.FC = () => {
                                 : dbCptCodes
                               ).slice().sort((a: any, b: any) => (b.relevancy_score ?? 0) - (a.relevancy_score ?? 0))
                               ).map((cpt: any, index: number) => {
-                                const isIrrelevant = cpt.relevant === false || (typeof cpt.relevancy_score === 'number' && cpt.relevancy_score < 40);
+                                const isIrrelevant = cpt.relevant === false || (typeof cpt.relevancy_score === 'number' && cpt.relevancy_score < CPT_RELEVANCY_THRESHOLD);
                                 return (
                                 <div key={index} className="bg-green-50 rounded-lg p-3 border border-green-200">
                                   <div className="flex items-start gap-3">
@@ -2847,7 +2847,7 @@ const ResultsPage: React.FC = () => {
                                     {isIrrelevant && (
                                       <span
                                         className="inline-flex flex-shrink-0 text-red-600 cursor-help"
-                                        title="Excluded from clinical volume (relevancy < 40%)"
+                                        title={`Excluded from clinical volume (relevancy < ${CPT_RELEVANCY_THRESHOLD}%)`}
                                       >
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
