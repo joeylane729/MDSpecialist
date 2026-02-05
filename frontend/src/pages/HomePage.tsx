@@ -954,8 +954,7 @@ const HomePage: React.FC = () => {
                   <Stethoscope className="w-5 h-5 mr-2 text-blue-600" />
                   Current Condition
                 </h3>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
+                <div className="grid grid-cols-1 gap-6">
                   {/* Presumed Diagnosis */}
                   <div className="group">
                     <label htmlFor="diagnosis" className="block text-sm font-semibold text-gray-700 mb-3">Presumed Diagnosis *</label>
@@ -970,7 +969,7 @@ const HomePage: React.FC = () => {
                     />
                   </div>
 
-                  {/* Anatomical Location */}
+                  {/* Anatomical Location (below diagnosis) */}
                   <div className="group">
                     <label htmlFor="anatomicalLocation" className="block text-sm font-semibold text-gray-700 mb-3">Anatomical Location</label>
                     <input
