@@ -47,9 +47,20 @@ interface SearchParams {
   patientAge?: { month: string; year: string };  // Patient age (month and year of birth)
   patient_age_category?: 'adult' | 'child';  // Patient age category
   timing_breakdown?: { [key: string]: number };  // Step timing in milliseconds (accumulated from all API calls)
+  selectedTreatmentCategories?: string[];  // User-selected treatment categories (surgery, radiation, etc.)
 }
 
 // Treatment options removed - no longer generated
+
+// Filter CPT codes to only those in the user's selected treatment categories (comparison is case-insensitive)
+function filterCptCodesBySelectedCategories<T extends { code?: string; description?: string; category?: string }>(
+  codes: T[],
+  selectedCategories: string[] | undefined
+): T[] {
+  if (!selectedCategories || selectedCategories.length === 0) return codes;
+  const set = new Set(selectedCategories.map(s => s.toLowerCase()));
+  return codes.filter((c): c is T => set.has((c.category || 'medical').toLowerCase()));
+}
 
 // Helper function to map CPT codes to categories
 const getCptCodeToCategoryMap = (cptCodesByCategory: { [category: string]: Array<{ code: string; description: string }> }): { [cptCode: string]: string } => {
@@ -693,10 +704,12 @@ const ResultsPage: React.FC = () => {
             setSearchParams(prev => prev ? { ...prev, cpt_codes: cptCodes, cpt_prompt_text: cptResponse.cpt_prompt_text, cpt_categorization_prompt_text: cptResponse.cpt_categorization_prompt_text } : prev);
 
             setFullFlowStage('specialists');
+            const selectedCategories = (state as { selectedTreatmentCategories?: string[] }).selectedTreatmentCategories;
+            const cptCodesForSpecialist = filterCptCodesBySelectedCategories(cptCodes, selectedCategories);
             const specialistResponse = await getSpecialistRecommendations({
               diagnosis: state.diagnosis || '',
               state: state.state,
-              cpt_codes: cptCodes,
+              cpt_codes: cptCodesForSpecialist,
               predicted_icd10: profile?.predicted_icd10,
               icd10_description: profile?.icd10_description,
               search_query: profile?.search_query,
@@ -897,10 +910,12 @@ const ResultsPage: React.FC = () => {
 
             setFullFlowStage('specialists');
             const patientProfile = state.aiRecommendations?.patient_profile;
+            const selectedCategories = state.searchParams?.selectedTreatmentCategories || (state as { selectedTreatmentCategories?: string[] }).selectedTreatmentCategories;
+            const cptCodesForSpecialist = filterCptCodesBySelectedCategories(cptCodes, selectedCategories);
             const specialistResponse = await getSpecialistRecommendations({
               diagnosis: state.searchParams?.diagnosis || '',
               state: state.searchParams?.state,
-              cpt_codes: cptCodes,
+              cpt_codes: cptCodesForSpecialist,
               predicted_icd10: patientProfile?.predicted_icd10,
               icd10_description: patientProfile?.icd10_description,
               search_query: patientProfile?.search_query,
@@ -1700,10 +1715,12 @@ const ResultsPage: React.FC = () => {
       // Step 1: Get specialist recommendations
       // Reuse medical analysis results from first step to avoid duplicate GPT calls
       const patientProfile = location.state?.aiRecommendations?.patient_profile;
+      const selectedCategories = searchParams?.selectedTreatmentCategories || (location.state as { selectedTreatmentCategories?: string[] })?.selectedTreatmentCategories;
+      const cptCodesForSpecialist = filterCptCodesBySelectedCategories((existingCptCodes || []) as Array<{ code: string; description: string; category?: string }>, selectedCategories);
       const specialistRequest: SpecialistRecommendationRequest = {
         diagnosis: searchParams?.diagnosis || '',
         state: searchParams?.state || location.state?.state || '',
-        cpt_codes: existingCptCodes,  // Pass existing CPT codes to reuse them
+        cpt_codes: cptCodesForSpecialist,  // Only pass CPT codes in user-selected treatment categories
         // Pass medical analysis results to reuse (avoids duplicate GPT calls)
         treatment_options: [],  // Treatment options no longer generated - pass empty array
         predicted_icd10: patientProfile?.predicted_icd10,
@@ -1712,8 +1729,8 @@ const ResultsPage: React.FC = () => {
         determined_specialty: searchParams?.determined_specialty || patientProfile?.determined_specialty
       };
 
-      if (existingCptCodes && existingCptCodes.length > 0) {
-        console.log('♻️ [Frontend] Reusing', existingCptCodes.length, 'CPT codes for specialist recommendations');
+      if (cptCodesForSpecialist && cptCodesForSpecialist.length > 0) {
+        console.log('♻️ [Frontend] Reusing', cptCodesForSpecialist.length, 'CPT codes for specialist recommendations (filtered by selected categories)');
       }
       if (specialistRequest.treatment_options && specialistRequest.treatment_options.length > 0) {
         console.log('♻️ [Frontend] Reusing', specialistRequest.treatment_options.length, 'treatment options from medical analysis');

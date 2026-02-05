@@ -534,6 +534,7 @@ const HomePage: React.FC = () => {
           gender: gender,
           patientAge: patientAge,
           llm_provider: provider,
+          selectedTreatmentCategories,
           providers: [],
           totalProviders: 0,
           providerLinks: {},
@@ -593,7 +594,8 @@ const HomePage: React.FC = () => {
           diagnoses_prompt_text: aiRecommendations?.patient_profile?.diagnoses_prompt_text,
           search_query: aiRecommendations?.patient_profile?.search_query,
           llm_provider: aiRecommendations?.patient_profile?.llm_provider,
-          timing_breakdown: aiRecommendations?.patient_profile?.timing_breakdown
+          timing_breakdown: aiRecommendations?.patient_profile?.timing_breakdown,
+          selectedTreatmentCategories
         },
         providers: [], // Providers will be fetched later on ResultsPage
         totalProviders: 0,
@@ -650,8 +652,10 @@ const HomePage: React.FC = () => {
             diagnoses_prompt_text: aiRecommendations?.patient_profile?.diagnoses_prompt_text,
             search_query: aiRecommendations?.patient_profile?.search_query,
             llm_provider: aiRecommendations?.patient_profile?.llm_provider,
-            timing_breakdown: aiRecommendations?.patient_profile?.timing_breakdown
+            timing_breakdown: aiRecommendations?.patient_profile?.timing_breakdown,
+            selectedTreatmentCategories
           },
+          selectedTreatmentCategories,
           providers: [], // Providers will be fetched later on ResultsPage
           totalProviders: 0,
           aiRecommendations: aiRecommendations,
