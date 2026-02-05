@@ -14,7 +14,7 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <div className={`min-h-screen ${location.pathname === '/' ? '' : 'bg-gray-50'}`}>
+    <div className={`min-h-screen ${location.pathname === '/' || location.pathname === '/testing' ? '' : 'bg-gray-50'}`}>
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -40,6 +40,17 @@ export default function Layout({ children }: LayoutProps) {
               >
                 <Home className="h-4 w-4" />
                 <span>Home</span>
+              </Link>
+              <Link
+                to="/testing"
+                className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  isActive('/testing')
+                    ? 'text-primary-600 bg-primary-50'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <Home className="h-4 w-4" />
+                <span>Testing</span>
               </Link>
               <Link
                 to="/results"
@@ -78,7 +89,7 @@ export default function Layout({ children }: LayoutProps) {
       </header>
 
       {/* Main content */}
-      <main className={location.pathname === '/' ? '' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-8'}>
+      <main className={location.pathname === '/' || location.pathname === '/testing' ? '' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-8'}>
         {children}
       </main>
 
