@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Home, Search, User, Code } from 'lucide-react'
+import { Home, Search, Code, FlaskConical } from 'lucide-react'
 
 interface LayoutProps {
   children: ReactNode
@@ -49,7 +49,7 @@ export default function Layout({ children }: LayoutProps) {
                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                <Home className="h-4 w-4" />
+                <FlaskConical className="h-4 w-4" />
                 <span>Testing</span>
               </Link>
               <Link
