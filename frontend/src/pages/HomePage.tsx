@@ -963,68 +963,93 @@ const HomePage: React.FC = () => {
               {/* Search Buttons */}
               <div className="text-center">
                 <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center items-center max-w-4xl mx-auto">
-                  {/* OpenAI Search Button */}
-                  <button
-                    type="button"
-                    onClick={() => handleSearch('openai')}
-                    disabled={isLoading || !selectedState || !selectedCity || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity}
-                    className="group relative inline-flex items-center justify-center w-full sm:w-auto bg-gradient-to-r from-green-600 to-emerald-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-green-700 hover:to-emerald-700 focus:ring-4 focus:ring-green-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-                  >
-                    {isLoading ? (
-                      <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
-                        <span>Searching...</span>
-                      </div>
-                    ) : (
-                      <>
-                        <Zap className="w-6 h-6 mr-3" />
-                        <span>Search with OpenAI</span>
-                        <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
-                      </>
-                    )}
-                  </button>
+                  {!testingMode ? (
+                    /* Single Search button when testing mode is off (uses Gemini no thinking) */
+                    <button
+                      type="button"
+                      onClick={() => handleSearch('gemini_no_thinking')}
+                      disabled={isLoading || !selectedState || !selectedCity || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity}
+                      className="group relative inline-flex items-center justify-center w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                    >
+                      {isLoading ? (
+                        <div className="flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
+                          <span>Searching...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <Zap className="w-6 h-6 mr-3" />
+                          <span>Search</span>
+                          <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <>
+                      {/* OpenAI Search Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleSearch('openai')}
+                        disabled={isLoading || !selectedState || !selectedCity || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity}
+                        className="group relative inline-flex items-center justify-center w-full sm:w-auto bg-gradient-to-r from-green-600 to-emerald-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-green-700 hover:to-emerald-700 focus:ring-4 focus:ring-green-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                      >
+                        {isLoading ? (
+                          <div className="flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
+                            <span>Searching...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <Zap className="w-6 h-6 mr-3" />
+                            <span>Search with OpenAI</span>
+                            <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
+                          </>
+                        )}
+                      </button>
 
-                  {/* Gemini (default thinking) Search Button */}
-                  <button
-                    type="button"
-                    onClick={() => handleSearch('gemini')}
-                    disabled={isLoading || !selectedState || !selectedCity || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity}
-                    className="group relative inline-flex items-center justify-center w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-                  >
-                    {isLoading ? (
-                      <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
-                        <span>Searching...</span>
-                      </div>
-                    ) : (
-                      <>
-                        <Zap className="w-6 h-6 mr-3" />
-                        <span>Search with Gemini (default thinking)</span>
-                        <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
-                      </>
-                    )}
-                  </button>
+                      {/* Gemini (default thinking) Search Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleSearch('gemini')}
+                        disabled={isLoading || !selectedState || !selectedCity || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity}
+                        className="group relative inline-flex items-center justify-center w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                      >
+                        {isLoading ? (
+                          <div className="flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
+                            <span>Searching...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <Zap className="w-6 h-6 mr-3" />
+                            <span>Search with Gemini (default thinking)</span>
+                            <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
+                          </>
+                        )}
+                      </button>
 
-                  {/* Gemini (no thinking) Search Button */}
-                  <button
-                    type="button"
-                    onClick={() => handleSearch('gemini_no_thinking')}
-                    disabled={isLoading || !selectedState || !selectedCity || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity}
-                    className="group relative inline-flex items-center justify-center w-full sm:w-auto bg-gradient-to-r from-violet-600 to-purple-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-violet-700 hover:to-purple-700 focus:ring-4 focus:ring-violet-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-                  >
-                    {isLoading ? (
-                      <div className="flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
-                        <span>Searching...</span>
-                      </div>
-                    ) : (
-                      <>
-                        <Zap className="w-6 h-6 mr-3" />
-                        <span>Search with Gemini (no thinking)</span>
-                        <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
-                      </>
-                    )}
-                  </button>
+                      {/* Gemini (no thinking) Search Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleSearch('gemini_no_thinking')}
+                        disabled={isLoading || !selectedState || !selectedCity || !diagnosis.trim() || !patientAge.month || !patientAge.year || !proximity}
+                        className="group relative inline-flex items-center justify-center w-full sm:w-auto bg-gradient-to-r from-violet-600 to-purple-600 text-white py-5 px-8 rounded-2xl font-bold text-xl hover:from-violet-700 hover:to-purple-700 focus:ring-4 focus:ring-violet-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                      >
+                        {isLoading ? (
+                          <div className="flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
+                            <span>Searching...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <Zap className="w-6 h-6 mr-3" />
+                            <span>Search with Gemini (no thinking)</span>
+                            <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-1 transition-transform" />
+                          </>
+                        )}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </form>
