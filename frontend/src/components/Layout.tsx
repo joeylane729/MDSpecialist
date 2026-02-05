@@ -101,15 +101,14 @@ export default function Layout({ children }: LayoutProps) {
                       role="switch"
                       aria-checked={testingMode}
                       onClick={() => setTestingMode((v) => !v)}
-                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${
                         testingMode ? 'bg-primary-600' : 'bg-gray-200'
                       }`}
                     >
                       <span
-                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition ${
+                        className={`pointer-events-none block h-5 w-5 shrink-0 transform rounded-full bg-white shadow ring-0 transition ${
                           testingMode ? 'translate-x-5' : 'translate-x-1'
                         }`}
-                        style={{ marginTop: 2 }}
                       />
                     </button>
                   </div>
