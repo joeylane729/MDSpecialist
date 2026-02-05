@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMedicalAnalysis } from '../services/api';
+import { useTestingMode } from '../contexts/TestingModeContext';
 import { 
   Stethoscope, 
   Users, 
@@ -20,6 +21,7 @@ interface City {
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const { testingMode } = useTestingMode();
   const [selectedState, setSelectedState] = useState<string>('NY');
   const [selectedCity, setSelectedCity] = useState<string>('');
   const [zipCode, setZipCode] = useState<string>('');
@@ -586,12 +588,14 @@ const HomePage: React.FC = () => {
         full_patient_profile: aiRecommendations?.patient_profile
       });
 
-      // Navigate to results page
+      // Navigate to results page (when test mode off, pass autoRunFullFlow so Results runs CPT + specialists and shows loading)
       navigate('/results', {
         state: {
+          autoRunFullFlow: !testingMode,
           state: selectedState,
           city: selectedCity,
           zipCode: zipCode,
+          proximity: proximity,
           diagnosis: diagnosis,
           anatomical_location: anatomicalLocation,
           gender: gender,

@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
+import { TestingModeProvider } from './contexts/TestingModeContext'
 import Layout from './components/Layout'
 import HomePage from './pages/HomePage'
 import ResultsPage from './pages/ResultsPage'
@@ -7,6 +8,7 @@ import SpecialistResultsPage from './pages/SpecialistResultsPage'
 
 function App() {
   return (
+    <TestingModeProvider>
     <Layout>
       <Routes>
         <Route path="/" element={<HomePage />} />
@@ -16,6 +18,7 @@ function App() {
 
       </Routes>
     </Layout>
+    </TestingModeProvider>
   )
 }
 

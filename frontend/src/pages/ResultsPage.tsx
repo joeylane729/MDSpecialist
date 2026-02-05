@@ -5,6 +5,7 @@ import { NPIProvider, getSpecialistRecommendations, SpecialistRecommendationRequ
 import api from '../services/api';
 import NPIProviderCard from '../components/NPIProviderCard';
 import { SCORING_WEIGHTS, CPT_RELEVANCY_THRESHOLD } from '../constants/scoringWeights';
+import { useTestingMode } from '../contexts/TestingModeContext';
 
 interface Provider extends NPIProvider {
   email?: string;
@@ -134,6 +135,7 @@ function parseSearchQuery(raw: string | undefined): { diagnostic: string[]; anat
 const ResultsPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { testingMode } = useTestingMode();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchParams, setSearchParams] = useState<SearchParams | null>(null);
@@ -181,6 +183,7 @@ const ResultsPage: React.FC = () => {
   const [isGeneratingSpecialists, setIsGeneratingSpecialists] = useState(false);
   // Treatment options removed - no longer needed
   const hasInitializedCategoryFilter = useRef(false);
+  const autoRunFullFlowDone = useRef(false);
   
   // Helper function to get existing CPT codes from all possible sources (reusable logic)
   const getExistingCptCodes = useCallback((): Array<{code: string; description: string}> | null => {
@@ -606,6 +609,13 @@ const ResultsPage: React.FC = () => {
 
 
 
+  // When testing mode is off, switch away from debug view
+  useEffect(() => {
+    if (!testingMode && activeView === 'debug') {
+      setActiveView('assessment');
+    }
+  }, [testingMode, activeView]);
+
   useEffect(() => {
     // Scroll to top when component mounts or location.state changes
     window.scrollTo(0, 0);
@@ -702,6 +712,109 @@ const ResultsPage: React.FC = () => {
           providersPerPage
         }
       }));
+
+      // When test mode is off, run full flow (CPT + specialists) and show loading until done
+      const state = location.state as { autoRunFullFlow?: boolean; searchParams?: SearchParams; aiRecommendations?: any; providers?: Provider[]; zipCode?: string; proximity?: string };
+      if (state?.autoRunFullFlow && !autoRunFullFlowDone.current) {
+        autoRunFullFlowDone.current = true;
+        setIsGeneratingSpecialists(true);
+        (async () => {
+          try {
+            const searchQuery = state.searchParams?.search_query || state.aiRecommendations?.patient_profile?.search_query;
+            if (!searchQuery) {
+              alert('Missing search query. Please start a new search.');
+              return;
+            }
+            const cptResponse = await generateCPTCodes({
+              search_query: searchQuery,
+              anatomical_location: state.searchParams?.anatomical_location,
+              llm_provider: state.searchParams?.llm_provider
+            });
+            const cptCodes = cptResponse.cpt_codes || [];
+            if (cptCodes.length === 0) {
+              alert('Failed to generate CPT codes. Please try again.');
+              return;
+            }
+            // Apply CPT state (minimal for display)
+            const newCptCodesByCategory: { [category: string]: Array<{ code: string; description: string; category?: string; relevancy_score?: number }> } = {};
+            cptCodes.forEach((cpt: any) => {
+              const category = cpt.category || 'Medical';
+              if (!newCptCodesByCategory[category]) newCptCodesByCategory[category] = [];
+              newCptCodesByCategory[category].push(cpt);
+            });
+            setCptCodesByCategory(newCptCodesByCategory);
+            setCptPromptText(cptResponse.cpt_prompt_text || null);
+            setCptCategorizationPromptText(cptResponse.cpt_categorization_prompt_text || null);
+            if (cptResponse.cpt_db_descriptions) setCptDbDescriptions(cptResponse.cpt_db_descriptions);
+            setSearchParams(prev => prev ? { ...prev, cpt_codes: cptCodes, cpt_prompt_text: cptResponse.cpt_prompt_text || undefined, cpt_categorization_prompt_text: cptResponse.cpt_categorization_prompt_text || undefined } : prev);
+
+            const patientProfile = state.aiRecommendations?.patient_profile;
+            const specialistResponse = await getSpecialistRecommendations({
+              diagnosis: state.searchParams?.diagnosis || '',
+              state: state.searchParams?.state,
+              cpt_codes: cptCodes,
+              predicted_icd10: patientProfile?.predicted_icd10,
+              icd10_description: patientProfile?.icd10_description,
+              search_query: patientProfile?.search_query,
+              determined_specialty: state.searchParams?.determined_specialty || patientProfile?.determined_specialty
+            });
+            setSpecialistRecommendationData(specialistResponse);
+
+            const determinedSpecialty = state.searchParams?.determined_specialty || patientProfile?.determined_specialty;
+            if (!determinedSpecialty) {
+              alert('Error: Missing specialty information. Please start a new search.');
+              return;
+            }
+            const npiData = await searchNPIProviders({
+              state: state.searchParams?.state || '',
+              city: state.searchParams?.city || '',
+              zipCode: state.zipCode,
+              proximity: state.proximity || 'statewide',
+              diagnosis: state.searchParams?.diagnosis || '',
+              determined_specialty: determinedSpecialty,
+              predicted_icd10: state.searchParams?.predicted_icd10 || patientProfile?.predicted_icd10,
+              icd10_description: state.searchParams?.icd10_description || patientProfile?.icd10_description
+            });
+
+            const searchQueryForRank = specialistResponse?.patient_profile?.search_query || specialistResponse?.search_query || patientProfile?.search_query;
+            const rankingResponse = await rankNPIProviders({
+              npi_providers: npiData.providers,
+              patient_input: `Diagnosis: ${state.searchParams?.diagnosis}`,
+              shared_specialist_information: specialistResponse.shared_specialist_information || [],
+              cms_data: specialistResponse.cms_data,
+              search_query: searchQueryForRank
+            });
+
+            const treatmentRankingsData = rankingResponse.treatment_rankings;
+            let rankedNPIProviders: NPIProvider[] = [];
+            const providerLookup = new Map(npiData.providers.map((p: Provider) => [p.npi, p]));
+            if (treatmentRankingsData && Object.keys(treatmentRankingsData).length > 0) {
+              setTreatmentRankings(treatmentRankingsData);
+              const allRankedNPIs = new Set<string>();
+              const allProviderLinks: { [npi: string]: ProviderContent } = {};
+              const allProviderScores: { [npi: string]: any } = {};
+              Object.values(treatmentRankingsData).forEach((treatment: any) => {
+                if (treatment.ranked_providers) treatment.ranked_providers.forEach((npi: string) => allRankedNPIs.add(npi));
+                if (treatment.provider_links) Object.assign(allProviderLinks, treatment.provider_links);
+                if (treatment.provider_scores) Object.entries(treatment.provider_scores || {}).forEach(([npi, data]: [string, any]) => { if (!allProviderScores[npi]) allProviderScores[npi] = { ...data }; });
+              });
+              rankedNPIProviders = Array.from(allRankedNPIs).map((npi: string) => providerLookup.get(npi)).filter((p): p is NPIProvider => p !== undefined);
+              setRankedProviders(rankedNPIProviders);
+              setProviderLinks(allProviderLinks);
+              setProviderScores(allProviderScores);
+            } else {
+              setRankedProviders(npiData.providers);
+            }
+            setProviders(npiData.providers);
+            setActiveView('specialists');
+          } catch (err) {
+            console.error('Full flow error:', err);
+            alert(`Search failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+          } finally {
+            setIsGeneratingSpecialists(false);
+          }
+        })();
+      }
       return;
     }
     
@@ -2037,7 +2150,7 @@ const ResultsPage: React.FC = () => {
                 <span>Specialists</span>
               </button>
             )}
-            {filteredProviders.length > 0 && specialistRecommendationData && (
+            {testingMode && filteredProviders.length > 0 && specialistRecommendationData && (
               <button
                 onClick={() => setActiveView('debug')}
                 className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${

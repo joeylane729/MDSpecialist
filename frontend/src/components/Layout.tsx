@@ -1,6 +1,7 @@
 import { ReactNode, useState, useRef, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Home, Search, Code, Settings } from 'lucide-react'
+import { useTestingMode } from '../contexts/TestingModeContext'
 
 interface LayoutProps {
   children: ReactNode
@@ -9,7 +10,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation()
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [testingMode, setTestingMode] = useState(false)
+  const { testingMode, setTestingMode } = useTestingMode()
   const settingsRef = useRef<HTMLDivElement>(null)
 
   const isActive = (path: string) => {
@@ -66,17 +67,19 @@ export default function Layout({ children }: LayoutProps) {
                   <Search className="h-4 w-4" />
                   <span>Results</span>
                 </Link>
-                <Link
-                  to="/cpt-testing"
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive('/cpt-testing')
-                      ? 'text-primary-600 bg-primary-50'
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <Code className="h-4 w-4" />
-                  <span>CPT Testing</span>
-                </Link>
+                {testingMode && (
+                  <Link
+                    to="/cpt-testing"
+                    className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      isActive('/cpt-testing')
+                        ? 'text-primary-600 bg-primary-50'
+                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Code className="h-4 w-4" />
+                    <span>CPT Testing</span>
+                  </Link>
+                )}
             </nav>
 
             {/* Settings */}
