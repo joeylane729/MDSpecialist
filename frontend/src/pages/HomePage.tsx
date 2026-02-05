@@ -644,51 +644,10 @@ const HomePage: React.FC = () => {
   if (isLoading) {
     return (
       <div className="fixed inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center overflow-hidden">
-        {/* Network background (same as MDSpecialist.ai landing) */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <svg className="absolute inset-0 w-full h-full object-cover" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
-            <defs>
-              <radialGradient id="homeNodeGradient" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#00FFFF" stopOpacity={1} />
-                <stop offset="100%" stopColor="#8A2BE2" stopOpacity={0.5} />
-              </radialGradient>
-              <linearGradient id="homeLineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#00FFFF" stopOpacity={0.6} />
-                <stop offset="100%" stopColor="#8A2BE2" stopOpacity={0.4} />
-              </linearGradient>
-            </defs>
-            <circle cx="200" cy="150" r="3" fill="url(#homeNodeGradient)" />
-            <circle cx="400" cy="200" r="2" fill="url(#homeNodeGradient)" />
-            <circle cx="600" cy="100" r="4" fill="url(#homeNodeGradient)" />
-            <circle cx="800" cy="250" r="2" fill="url(#homeNodeGradient)" />
-            <circle cx="1000" cy="180" r="3" fill="url(#homeNodeGradient)" />
-            <circle cx="300" cy="350" r="2" fill="url(#homeNodeGradient)" />
-            <circle cx="500" cy="400" r="3" fill="url(#homeNodeGradient)" />
-            <circle cx="700" cy="300" r="2" fill="url(#homeNodeGradient)" />
-            <circle cx="900" cy="450" r="4" fill="url(#homeNodeGradient)" />
-            <circle cx="150" cy="500" r="2" fill="url(#homeNodeGradient)" />
-            <circle cx="350" cy="600" r="3" fill="url(#homeNodeGradient)" />
-            <circle cx="550" cy="550" r="2" fill="url(#homeNodeGradient)" />
-            <circle cx="750" cy="650" r="3" fill="url(#homeNodeGradient)" />
-            <circle cx="950" cy="600" r="2" fill="url(#homeNodeGradient)" />
-            <circle cx="1100" cy="500" r="4" fill="url(#homeNodeGradient)" />
-            <line x1="200" y1="150" x2="400" y2="200" stroke="url(#homeLineGradient)" strokeWidth={1} />
-            <line x1="400" y1="200" x2="600" y2="100" stroke="url(#homeLineGradient)" strokeWidth={1} />
-            <line x1="600" y1="100" x2="800" y2="250" stroke="url(#homeLineGradient)" strokeWidth={1} />
-            <line x1="800" y1="250" x2="1000" y2="180" stroke="url(#homeLineGradient)" strokeWidth={1} />
-            <line x1="200" y1="150" x2="300" y2="350" stroke="url(#homeLineGradient)" strokeWidth={1} />
-            <line x1="300" y1="350" x2="500" y2="400" stroke="url(#homeLineGradient)" strokeWidth={1} />
-            <line x1="500" y1="400" x2="700" y2="300" stroke="url(#homeLineGradient)" strokeWidth={1} />
-            <line x1="700" y1="300" x2="900" y2="450" stroke="url(#homeLineGradient)" strokeWidth={1} />
-            <line x1="150" y1="500" x2="350" y2="600" stroke="url(#homeLineGradient)" strokeWidth={1} />
-            <line x1="350" y1="600" x2="550" y2="550" stroke="url(#homeLineGradient)" strokeWidth={1} />
-            <line x1="550" y1="550" x2="750" y2="650" stroke="url(#homeLineGradient)" strokeWidth={1} />
-            <line x1="750" y1="650" x2="950" y2="600" stroke="url(#homeLineGradient)" strokeWidth={1} />
-            <line x1="950" y1="600" x2="1100" y2="500" stroke="url(#homeLineGradient)" strokeWidth={1} />
-            <line x1="400" y1="200" x2="500" y2="400" stroke="url(#homeLineGradient)" strokeWidth={1} />
-            <line x1="600" y1="100" x2="700" y2="300" stroke="url(#homeLineGradient)" strokeWidth={1} />
-            <line x1="800" y1="250" x2="900" y2="450" stroke="url(#homeLineGradient)" strokeWidth={1} />
-          </svg>
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-indigo-400/20 to-blue-400/20 rounded-full blur-3xl"></div>
         </div>
         
         <div className="relative z-10 text-center max-w-lg mx-auto px-6">
@@ -708,51 +667,11 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden w-full">
-      {/* Network background (same as MDSpecialist.ai landing) */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <svg className="absolute inset-0 w-full h-full object-cover" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
-          <defs>
-            <radialGradient id="homeNodeGradient" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#00FFFF" stopOpacity={1} />
-              <stop offset="100%" stopColor="#8A2BE2" stopOpacity={0.5} />
-            </radialGradient>
-            <linearGradient id="homeLineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#00FFFF" stopOpacity={0.6} />
-              <stop offset="100%" stopColor="#8A2BE2" stopOpacity={0.4} />
-            </linearGradient>
-          </defs>
-          <circle cx="200" cy="150" r="3" fill="url(#homeNodeGradient)" />
-          <circle cx="400" cy="200" r="2" fill="url(#homeNodeGradient)" />
-          <circle cx="600" cy="100" r="4" fill="url(#homeNodeGradient)" />
-          <circle cx="800" cy="250" r="2" fill="url(#homeNodeGradient)" />
-          <circle cx="1000" cy="180" r="3" fill="url(#homeNodeGradient)" />
-          <circle cx="300" cy="350" r="2" fill="url(#homeNodeGradient)" />
-          <circle cx="500" cy="400" r="3" fill="url(#homeNodeGradient)" />
-          <circle cx="700" cy="300" r="2" fill="url(#homeNodeGradient)" />
-          <circle cx="900" cy="450" r="4" fill="url(#homeNodeGradient)" />
-          <circle cx="150" cy="500" r="2" fill="url(#homeNodeGradient)" />
-          <circle cx="350" cy="600" r="3" fill="url(#homeNodeGradient)" />
-          <circle cx="550" cy="550" r="2" fill="url(#homeNodeGradient)" />
-          <circle cx="750" cy="650" r="3" fill="url(#homeNodeGradient)" />
-          <circle cx="950" cy="600" r="2" fill="url(#homeNodeGradient)" />
-          <circle cx="1100" cy="500" r="4" fill="url(#homeNodeGradient)" />
-          <line x1="200" y1="150" x2="400" y2="200" stroke="url(#homeLineGradient)" strokeWidth={1} />
-          <line x1="400" y1="200" x2="600" y2="100" stroke="url(#homeLineGradient)" strokeWidth={1} />
-          <line x1="600" y1="100" x2="800" y2="250" stroke="url(#homeLineGradient)" strokeWidth={1} />
-          <line x1="800" y1="250" x2="1000" y2="180" stroke="url(#homeLineGradient)" strokeWidth={1} />
-          <line x1="200" y1="150" x2="300" y2="350" stroke="url(#homeLineGradient)" strokeWidth={1} />
-          <line x1="300" y1="350" x2="500" y2="400" stroke="url(#homeLineGradient)" strokeWidth={1} />
-          <line x1="500" y1="400" x2="700" y2="300" stroke="url(#homeLineGradient)" strokeWidth={1} />
-          <line x1="700" y1="300" x2="900" y2="450" stroke="url(#homeLineGradient)" strokeWidth={1} />
-          <line x1="150" y1="500" x2="350" y2="600" stroke="url(#homeLineGradient)" strokeWidth={1} />
-          <line x1="350" y1="600" x2="550" y2="550" stroke="url(#homeLineGradient)" strokeWidth={1} />
-          <line x1="550" y1="550" x2="750" y2="650" stroke="url(#homeLineGradient)" strokeWidth={1} />
-          <line x1="750" y1="650" x2="950" y2="600" stroke="url(#homeLineGradient)" strokeWidth={1} />
-          <line x1="950" y1="600" x2="1100" y2="500" stroke="url(#homeLineGradient)" strokeWidth={1} />
-          <line x1="400" y1="200" x2="500" y2="400" stroke="url(#homeLineGradient)" strokeWidth={1} />
-          <line x1="600" y1="100" x2="700" y2="300" stroke="url(#homeLineGradient)" strokeWidth={1} />
-          <line x1="800" y1="250" x2="900" y2="450" stroke="url(#homeLineGradient)" strokeWidth={1} />
-        </svg>
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-indigo-400/20 to-blue-400/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-purple-400/10 to-pink-400/10 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative z-10 w-full px-4 pt-8">
