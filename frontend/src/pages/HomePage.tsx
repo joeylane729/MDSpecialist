@@ -516,11 +516,33 @@ const HomePage: React.FC = () => {
       return;
     }
 
-    setIsLoading(true);
-    
     // Clear any previous search results
     localStorage.removeItem('mdspecialist_search_results');
-    
+
+    // When testing mode is off: go straight to Results page; it will run medical analysis + full flow and show one loading screen
+    if (!testingMode) {
+      navigate('/results', {
+        state: {
+          autoRunFullFlow: true,
+          state: selectedState,
+          city: selectedCity,
+          zipCode: zipCode,
+          proximity: proximity,
+          diagnosis: diagnosis,
+          anatomical_location: anatomicalLocation,
+          gender: gender,
+          patientAge: patientAge,
+          llm_provider: provider,
+          providers: [],
+          totalProviders: 0,
+          providerLinks: {},
+          treatmentRankings: null
+        }
+      });
+      return;
+    }
+
+    setIsLoading(true);
     try {
       // Get medical analysis (diagnosis analysis only - providers are searched later on ResultsPage)
       const aiRecommendations = await getMedicalAnalysis({
@@ -588,10 +610,10 @@ const HomePage: React.FC = () => {
         full_patient_profile: aiRecommendations?.patient_profile
       });
 
-      // Navigate to results page (when test mode off, pass autoRunFullFlow so Results runs CPT + specialists and shows loading)
+      // Navigate to results page (test mode on: we have aiRecommendations; no autoRunFullFlow)
       navigate('/results', {
         state: {
-          autoRunFullFlow: !testingMode,
+          autoRunFullFlow: false,
           state: selectedState,
           city: selectedCity,
           zipCode: zipCode,

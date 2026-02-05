@@ -181,8 +181,8 @@ const ResultsPage: React.FC = () => {
   const [isGeneratingCPTCodesForCategory, setIsGeneratingCPTCodesForCategory] = useState<string | null>(null);
   // Treatment options/diagnoses regeneration removed
   const [isGeneratingSpecialists, setIsGeneratingSpecialists] = useState(false);
-  /** When non-null, we're in the auto full flow and show the staged loading screen. One of: cpt | specialists | npi | ranking. Init to 'cpt' when landing with autoRunFullFlow so we show the new screen immediately (no flash of generic loading). */
-  const [fullFlowStage, setFullFlowStage] = useState<'cpt' | 'specialists' | 'npi' | 'ranking' | null>(() => (location.state as { autoRunFullFlow?: boolean })?.autoRunFullFlow ? 'cpt' : null);
+  /** When non-null, we're in the auto full flow and show the staged loading screen. One of: analysis | cpt | specialists | npi | ranking. Init to 'analysis' when landing with autoRunFullFlow so we show the new screen immediately (no flash of generic loading). */
+  const [fullFlowStage, setFullFlowStage] = useState<'analysis' | 'cpt' | 'specialists' | 'npi' | 'ranking' | null>(() => (location.state as { autoRunFullFlow?: boolean })?.autoRunFullFlow ? 'analysis' : null);
   // Treatment options removed - no longer needed
   const hasInitializedCategoryFilter = useRef(false);
   const autoRunFullFlowDone = useRef(false);
@@ -621,7 +621,151 @@ const ResultsPage: React.FC = () => {
   useEffect(() => {
     // Scroll to top when component mounts or location.state changes
     window.scrollTo(0, 0);
-    
+
+    // When testing mode is off: we navigated with form data only (no medical analysis yet). Run full flow starting with getMedicalAnalysis.
+    if (location.state?.autoRunFullFlow && !autoRunFullFlowDone.current) {
+      const state = location.state as { autoRunFullFlow?: boolean; searchParams?: SearchParams; aiRecommendations?: any; diagnosis?: string; state?: string; city?: string; zipCode?: string; proximity?: string; anatomical_location?: string; gender?: string; patientAge?: { month: string; year: string }; llm_provider?: string };
+      const hasSearchQuery = state?.searchParams?.search_query || state?.aiRecommendations?.patient_profile?.search_query;
+      if (!hasSearchQuery && (state?.diagnosis || state?.state)) {
+        autoRunFullFlowDone.current = true;
+        setIsGeneratingSpecialists(true);
+        setFullFlowStage('analysis');
+        const patientAge = state.patientAge;
+        let ageCategory: 'adult' | 'child' | undefined = undefined;
+        if (patientAge?.month && patientAge?.year) ageCategory = calculateAgeCategory(patientAge.month, patientAge.year) || undefined;
+        const initialSearchParams: SearchParams = {
+          state: state.state || '',
+          city: state.city || '',
+          diagnosis: state.diagnosis || '',
+          anatomical_location: state.anatomical_location,
+          patientAge: state.patientAge,
+          patient_age_category: ageCategory,
+          llm_provider: state.llm_provider
+        };
+        setSearchParams(initialSearchParams);
+        setIsLoading(false);
+        setCurrentPage(1);
+        (async () => {
+          try {
+            const analysisResponse = await getMedicalAnalysis({
+              diagnosis: state.diagnosis || '',
+              anatomical_location: state.anatomical_location,
+              llm_provider: (state.llm_provider || 'openai') as 'openai' | 'gemini' | 'gemini_no_thinking'
+            });
+            const profile = analysisResponse.patient_profile;
+            setSearchParams(prev => prev ? {
+              ...prev,
+              search_query: profile?.search_query,
+              determined_specialty: profile?.determined_specialty || profile?.specialties_needed?.[0],
+              predicted_icd10: profile?.predicted_icd10,
+              predicted_icd10_codes: profile?.predicted_icd10_codes,
+              icd10_description: profile?.icd10_description,
+              icd10_descriptions: profile?.icd10_descriptions,
+              icd10_relevancy_scores: profile?.icd10_relevancy_scores,
+              icd10_llm_descriptions: profile?.icd10_llm_descriptions
+            } : prev);
+            setFullFlowStage('cpt');
+            const searchQuery = profile?.search_query;
+            if (!searchQuery) {
+              alert('Missing search query from analysis. Please try again.');
+              return;
+            }
+            const cptResponse = await generateCPTCodes({
+              search_query: searchQuery,
+              anatomical_location: state.anatomical_location,
+              llm_provider: state.searchParams?.llm_provider || state.llm_provider
+            });
+            const cptCodes = cptResponse.cpt_codes || [];
+            if (cptCodes.length === 0) {
+              alert('Failed to generate CPT codes. Please try again.');
+              return;
+            }
+            const newCptCodesByCategory: { [category: string]: Array<{ code: string; description: string; category?: string; relevancy_score?: number }> } = {};
+            cptCodes.forEach((cpt: any) => {
+              const category = cpt.category || 'Medical';
+              if (!newCptCodesByCategory[category]) newCptCodesByCategory[category] = [];
+              newCptCodesByCategory[category].push(cpt);
+            });
+            setCptCodesByCategory(newCptCodesByCategory);
+            setCptPromptText(cptResponse.cpt_prompt_text || null);
+            setCptCategorizationPromptText(cptResponse.cpt_categorization_prompt_text || null);
+            if (cptResponse.cpt_db_descriptions) setCptDbDescriptions(cptResponse.cpt_db_descriptions);
+            setSearchParams(prev => prev ? { ...prev, cpt_codes: cptCodes, cpt_prompt_text: cptResponse.cpt_prompt_text, cpt_categorization_prompt_text: cptResponse.cpt_categorization_prompt_text } : prev);
+
+            setFullFlowStage('specialists');
+            const specialistResponse = await getSpecialistRecommendations({
+              diagnosis: state.diagnosis || '',
+              state: state.state,
+              cpt_codes: cptCodes,
+              predicted_icd10: profile?.predicted_icd10,
+              icd10_description: profile?.icd10_description,
+              search_query: profile?.search_query,
+              determined_specialty: profile?.determined_specialty || profile?.specialties_needed?.[0]
+            });
+            setSpecialistRecommendationData(specialistResponse);
+
+            const determinedSpecialty = profile?.determined_specialty || profile?.specialties_needed?.[0];
+            if (!determinedSpecialty) {
+              alert('Error: Missing specialty information. Please start a new search.');
+              return;
+            }
+            setFullFlowStage('npi');
+            const npiData = await searchNPIProviders({
+              state: state.state || '',
+              city: state.city || '',
+              zipCode: state.zipCode,
+              proximity: state.proximity || 'statewide',
+              diagnosis: state.diagnosis || '',
+              determined_specialty: determinedSpecialty,
+              predicted_icd10: profile?.predicted_icd10,
+              icd10_description: profile?.icd10_description
+            });
+
+            setFullFlowStage('ranking');
+            const searchQueryForRank = specialistResponse?.patient_profile?.search_query || specialistResponse?.search_query || profile?.search_query;
+            const rankingResponse = await rankNPIProviders({
+              npi_providers: npiData.providers,
+              patient_input: `Diagnosis: ${state.diagnosis}`,
+              shared_specialist_information: specialistResponse.shared_specialist_information || [],
+              cms_data: specialistResponse.cms_data,
+              search_query: searchQueryForRank
+            });
+
+            const treatmentRankingsData = rankingResponse.treatment_rankings;
+            let rankedNPIProviders: NPIProvider[] = [];
+            const providerLookup = new Map(npiData.providers.map((p: Provider) => [p.npi, p]));
+            if (treatmentRankingsData && Object.keys(treatmentRankingsData).length > 0) {
+              setTreatmentRankings(treatmentRankingsData);
+              const allRankedNPIs = new Set<string>();
+              const allProviderLinks: { [npi: string]: ProviderContent } = {};
+              const allProviderScores: { [npi: string]: any } = {};
+              Object.values(treatmentRankingsData).forEach((treatment: any) => {
+                if (treatment.ranked_providers) treatment.ranked_providers.forEach((npi: string) => allRankedNPIs.add(npi));
+                if (treatment.provider_links) Object.assign(allProviderLinks, treatment.provider_links);
+                if (treatment.provider_scores) Object.entries(treatment.provider_scores || {}).forEach(([npi, data]: [string, any]) => { if (!allProviderScores[npi]) allProviderScores[npi] = { ...data }; });
+              });
+              rankedNPIProviders = Array.from(allRankedNPIs).map((npi: string) => providerLookup.get(npi)).filter((p): p is NPIProvider => p !== undefined);
+              setRankedProviders(rankedNPIProviders);
+              setProviderLinks(allProviderLinks);
+              setProviderScores(allProviderScores);
+            } else {
+              setRankedProviders(npiData.providers);
+            }
+            setProviders(npiData.providers);
+            setFullFlowStage(null);
+            setActiveView('specialists');
+          } catch (err) {
+            console.error('Full flow error:', err);
+            alert(`Search failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+          } finally {
+            setIsGeneratingSpecialists(false);
+            setFullFlowStage(null);
+          }
+        })();
+        return;
+      }
+    }
+
     // Try to get data from location.state first (direct navigation)
     // Note: providers can be an empty array initially (providers are fetched later on ResultsPage)
     if (location.state?.searchParams && location.state.providers !== undefined) {
@@ -2060,7 +2204,8 @@ const ResultsPage: React.FC = () => {
   };
 
   // Full-flow staged loading (single screen with progress when test mode is off)
-  const FULL_FLOW_STAGES: { key: 'cpt' | 'specialists' | 'npi' | 'ranking'; label: string }[] = [
+  const FULL_FLOW_STAGES: { key: 'analysis' | 'cpt' | 'specialists' | 'npi' | 'ranking'; label: string }[] = [
+    { key: 'analysis', label: 'Analyzing your medical information' },
     { key: 'cpt', label: 'Generating CPT codes' },
     { key: 'specialists', label: 'Getting specialist recommendations' },
     { key: 'npi', label: 'Finding providers in your area' },
