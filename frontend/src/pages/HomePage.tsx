@@ -844,8 +844,8 @@ const HomePage: React.FC = () => {
 
                   {/* Treatment categories: when testing mode off, only show after specialty is selected */}
                   {(testingMode || specialty) && (
-                    <div className="group min-w-[280px]">
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">Treatment categories</label>
+                    <div className="group min-w-[280px] w-full">
+                      <label className="block text-sm font-semibold text-gray-700 mb-3">Select preferred treatment categories</label>
                       <div className="flex flex-wrap gap-3">
                         {[
                           { value: 'surgery', label: 'Surgery' },
@@ -853,23 +853,36 @@ const HomePage: React.FC = () => {
                           { value: 'endovascular', label: 'Endovascular' },
                           { value: 'medical', label: 'Medical' },
                           { value: 'diagnostic testing', label: 'Diagnostic testing' }
-                        ].map(({ value, label }) => (
-                          <label key={value} className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={selectedTreatmentCategories.includes(value)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedTreatmentCategories(prev => [...prev, value]);
-                                } else {
-                                  setSelectedTreatmentCategories(prev => prev.filter(c => c !== value));
+                        ].map(({ value, label }) => {
+                          const isSelected = selectedTreatmentCategories.includes(value);
+                          return (
+                            <label
+                              key={value}
+                              className={`
+                                flex items-center justify-center gap-2 cursor-pointer px-5 py-3 rounded-xl font-medium text-base
+                                transition-all duration-200 select-none
+                                ${isSelected
+                                  ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700'
+                                  : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'
                                 }
-                              }}
-                              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="text-sm text-gray-700">{label}</span>
-                          </label>
-                        ))}
+                              `}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedTreatmentCategories(prev => [...prev, value]);
+                                  } else {
+                                    setSelectedTreatmentCategories(prev => prev.filter(c => c !== value));
+                                  }
+                                }}
+                                className="sr-only"
+                              />
+                              <span>{label}</span>
+                            </label>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

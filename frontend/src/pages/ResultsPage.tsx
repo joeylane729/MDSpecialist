@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { NPIProvider, getSpecialistRecommendations, SpecialistRecommendationRequest, searchNPIProviders, rankNPIProviders, NPISearchRequest, NPIRankingRequest, ProviderContent, generateCPTCodes, generateSearchQuery, getMedicalAnalysis, regenerateICD10Code, categorizeCPTCodes } from '../services/api';
 import api from '../services/api';
 import NPIProviderCard from '../components/NPIProviderCard';
-import { SCORING_WEIGHTS, CPT_RELEVANCY_THRESHOLD } from '../constants/scoringWeights';
+import { SCORING_WEIGHTS, CPT_RELEVANCY_THRESHOLD, ICD10_RELEVANCY_THRESHOLD } from '../constants/scoringWeights';
 import { useTestingMode } from '../contexts/TestingModeContext';
 
 interface Provider extends NPIProvider {
@@ -51,6 +51,20 @@ interface SearchParams {
 }
 
 // Treatment options removed - no longer generated
+
+// Filter ICD-10 codes to only those at or above the relevancy threshold (only these are passed to CPT step)
+function filterIcd10CodesByRelevancy(
+  codes: string[],
+  relevancyScores: { [code: string]: number } | undefined,
+  threshold: number = ICD10_RELEVANCY_THRESHOLD
+): string[] {
+  if (!codes || codes.length === 0) return [];
+  if (!relevancyScores || Object.keys(relevancyScores).length === 0) return codes; // No scores = keep all (backward compat)
+  return codes.filter(code => {
+    const score = relevancyScores[code];
+    return score === undefined || score >= threshold;
+  });
+}
 
 // Filter CPT codes to only those in the user's selected treatment categories (comparison is case-insensitive)
 function filterCptCodesBySelectedCategories<T extends { code?: string; description?: string; category?: string }>(
@@ -1423,11 +1437,18 @@ const ResultsPage: React.FC = () => {
       // Get ICD-10 code(s) if available - handle both single code (string) and multiple codes (array)
       const icd10CodeOrCodes = searchParams?.predicted_icd10 || location.state?.aiRecommendations?.patient_profile?.predicted_icd10;
       const icd10CodesList = searchParams?.predicted_icd10_codes || location.state?.aiRecommendations?.patient_profile?.predicted_icd10_codes;
+      const icd10RelevancyScores = searchParams?.icd10_relevancy_scores || location.state?.aiRecommendations?.patient_profile?.icd10_relevancy_scores;
       
       // Use list if available, otherwise use single code (for backward compatibility)
-      const icd10Codes = icd10CodesList && Array.isArray(icd10CodesList) && icd10CodesList.length > 0
+      const allIcd10Codes = icd10CodesList && Array.isArray(icd10CodesList) && icd10CodesList.length > 0
         ? icd10CodesList
         : (icd10CodeOrCodes ? [icd10CodeOrCodes] : []);
+      
+      // Only pass ICD codes at or above threshold to CPT step (DB lookup and any downstream use)
+      const icd10Codes = filterIcd10CodesByRelevancy(allIcd10Codes, icd10RelevancyScores);
+      if (allIcd10Codes.length > 0 && icd10Codes.length < allIcd10Codes.length) {
+        console.log(`🔍 Filtered ICD-10 codes for CPT step: ${allIcd10Codes.length} total → ${icd10Codes.length} relevant (>= ${ICD10_RELEVANCY_THRESHOLD}%)`);
+      }
       
       // Query database CPT codes once (same for all categories since they're based on ICD-10)
       let dbCptCodesResult: Array<{ code: string; description: string }> = [];
@@ -2439,6 +2460,7 @@ const ResultsPage: React.FC = () => {
                               const llmDescription = searchParams.icd10_llm_descriptions?.[code];
                               const dbDescription = searchParams.icd10_descriptions?.[code];
                               const relevancyScore = searchParams.icd10_relevancy_scores?.[code];
+                              const isIrrelevant = relevancyScore !== undefined && relevancyScore < ICD10_RELEVANCY_THRESHOLD;
                               return (
                                 <div key={idx} className="flex items-start gap-3 py-2 px-2 bg-gray-50 rounded border border-gray-200 min-h-0">
                                   <code className="bg-white px-2 py-1 rounded text-sm font-mono font-semibold text-gray-800 border border-gray-300 flex-shrink-0">
@@ -2447,6 +2469,16 @@ const ResultsPage: React.FC = () => {
                                   {relevancyScore !== undefined && (
                                     <span className="text-xs font-medium text-gray-600 bg-gray-200 px-1.5 py-0.5 rounded flex-shrink-0">
                                       {relevancyScore}%
+                                    </span>
+                                  )}
+                                  {isIrrelevant && (
+                                    <span
+                                      className="inline-flex flex-shrink-0 text-red-600 cursor-help"
+                                      title={`Excluded from CPT step (relevancy < ${ICD10_RELEVANCY_THRESHOLD}%)`}
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                      </svg>
                                     </span>
                                   )}
                                   <div className="flex-1 min-w-0 text-sm">

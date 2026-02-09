@@ -17,6 +17,11 @@ logger = logging.getLogger(__name__)
 # Codes with relevancy_score >= this value are considered "relevant"
 CPT_RELEVANCY_THRESHOLD = 10
 
+# ICD-10 code relevancy threshold (0-100 scale)
+# Codes with relevancy_score >= this value are considered "relevant"
+# Only relevant ICD codes are passed to the CPT step
+ICD10_RELEVANCY_THRESHOLD = 50
+
 
 def parse_search_query(raw: str) -> Tuple[List[str], List[str]]:
     """
@@ -344,7 +349,7 @@ Provide between 5 and 10 of the most likely ICD-10 codes for this diagnosis, inc
 - Codes for similar pathology in a similar anatomic location
 - If codes use terms like "uncertain behavior" or "unspecified behavior" in their descriptions then the anatomic location and/or the pathologic diagnosis must be the same as the original diagnosis
 - DO NOT include codes that contain descriptions of anatomy that is not immediately adjacent to the anatomical location
-- Preserve the pathologic category of the original diagnosis (e.g. neoplasm, vascular, medical, degenerative).
+- Preserve the pathologic category of the original diagnosis (e.g. neoplastic, vascular, infectious, degenerative, metabolic).
 
 For each code, provide a brief description of what the code represents.
 

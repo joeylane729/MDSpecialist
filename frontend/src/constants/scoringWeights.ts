@@ -18,6 +18,14 @@ export const SCORING_WEIGHTS = {
  */
 export const CPT_RELEVANCY_THRESHOLD = 10;
 
+/**
+ * ICD-10 code relevancy threshold (0-100 scale).
+ * Codes with relevancy_score >= this value are considered "relevant".
+ * Only relevant ICD codes are passed to the CPT step.
+ * Must match backend constant ICD10_RELEVANCY_THRESHOLD in medical_analysis_service.py.
+ */
+export const ICD10_RELEVANCY_THRESHOLD = 50;
+
 // Validate weights sum to 100
 const WEIGHT_TOTAL = 
   SCORING_WEIGHTS.CLINICAL_VOLUME +
