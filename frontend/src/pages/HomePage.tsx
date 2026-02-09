@@ -34,7 +34,7 @@ const HomePage: React.FC = () => {
   const [proximity, setProximity] = useState<string>('statewide');
   const [gender, setGender] = useState<string>('');
   const [specialty, setSpecialty] = useState<string>('Neurosurgery');
-  const [selectedTreatmentCategories, setSelectedTreatmentCategories] = useState<string[]>(['surgery', 'radiation', 'endovascular', 'medical', 'diagnostic testing']);
+  const [selectedTreatmentCategories, setSelectedTreatmentCategories] = useState<string[]>([]);
 
   // Debug logging
   useEffect(() => {
@@ -69,7 +69,7 @@ const HomePage: React.FC = () => {
       setProximity('');
       setGender('');
       setSpecialty('');
-      setSelectedTreatmentCategories(['surgery', 'radiation', 'endovascular', 'medical', 'diagnostic testing']);
+      setSelectedTreatmentCategories([]);
     } else {
       setSelectedState('NY');
       setSelectedCity('');
@@ -538,6 +538,10 @@ const HomePage: React.FC = () => {
       alert('Please fill in all required fields before searching');
       return;
     }
+    if (selectedTreatmentCategories.length === 0) {
+      alert('Please select at least one treatment category');
+      return;
+    }
 
     // Clear any previous search results
     localStorage.removeItem('mdspecialist_search_results');
@@ -845,44 +849,48 @@ const HomePage: React.FC = () => {
                   {/* Treatment categories: when testing mode off, only show after specialty is selected */}
                   {(testingMode || specialty) && (
                     <div className="group min-w-[280px] w-full">
-                      <label className="block text-sm font-semibold text-gray-700 mb-3">Select preferred treatment categories</label>
-                      <div className="flex flex-wrap gap-3">
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="block text-sm font-semibold text-gray-700">Select preferred treatment categories</label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const all = ['surgery', 'radiation', 'endovascular', 'medical', 'diagnostic testing'];
+                            setSelectedTreatmentCategories(
+                              selectedTreatmentCategories.length === all.length ? [] : all
+                            );
+                          }}
+                          className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                        >
+                          {selectedTreatmentCategories.length === 5 ? 'Deselect all' : 'Select all'}
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-x-6 gap-y-2">
                         {[
                           { value: 'surgery', label: 'Surgery' },
                           { value: 'radiation', label: 'Radiation' },
                           { value: 'endovascular', label: 'Endovascular' },
                           { value: 'medical', label: 'Medical' },
                           { value: 'diagnostic testing', label: 'Diagnostic testing' }
-                        ].map(({ value, label }) => {
-                          const isSelected = selectedTreatmentCategories.includes(value);
-                          return (
-                            <label
-                              key={value}
-                              className={`
-                                flex items-center justify-center gap-2 cursor-pointer px-5 py-3 rounded-xl font-medium text-base
-                                transition-all duration-200 select-none
-                                ${isSelected
-                                  ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700'
-                                  : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'
+                        ].map(({ value, label }) => (
+                          <label
+                            key={value}
+                            className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 hover:text-gray-900"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedTreatmentCategories.includes(value)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedTreatmentCategories(prev => [...prev, value]);
+                                } else {
+                                  setSelectedTreatmentCategories(prev => prev.filter(c => c !== value));
                                 }
-                              `}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedTreatmentCategories(prev => [...prev, value]);
-                                  } else {
-                                    setSelectedTreatmentCategories(prev => prev.filter(c => c !== value));
-                                  }
-                                }}
-                                className="sr-only"
-                              />
-                              <span>{label}</span>
-                            </label>
-                          );
-                        })}
+                              }}
+                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span>{label}</span>
+                          </label>
+                        ))}
                       </div>
                     </div>
                   )}
