@@ -850,7 +850,7 @@ const HomePage: React.FC = () => {
                   {(testingMode || specialty) && (
                     <div className="group min-w-[280px] w-full">
                       <div className="flex items-center justify-between mb-3">
-                        <label className="block text-sm font-semibold text-gray-700">Select preferred treatment categories</label>
+                        <label className="block text-sm font-semibold text-gray-700">Select preferred treatment categories (select at least 1) *</label>
                         <button
                           type="button"
                           onClick={() => {
@@ -864,33 +864,43 @@ const HomePage: React.FC = () => {
                           {selectedTreatmentCategories.length === 5 ? 'Deselect all' : 'Select all'}
                         </button>
                       </div>
-                      <div className="flex flex-wrap gap-x-6 gap-y-2">
+                      <div className="flex flex-wrap gap-3">
                         {[
                           { value: 'surgery', label: 'Surgery' },
                           { value: 'radiation', label: 'Radiation' },
                           { value: 'endovascular', label: 'Endovascular' },
                           { value: 'medical', label: 'Medical' },
                           { value: 'diagnostic testing', label: 'Diagnostic testing' }
-                        ].map(({ value, label }) => (
-                          <label
-                            key={value}
-                            className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 hover:text-gray-900"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selectedTreatmentCategories.includes(value)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedTreatmentCategories(prev => [...prev, value]);
-                                } else {
-                                  setSelectedTreatmentCategories(prev => prev.filter(c => c !== value));
+                        ].map(({ value, label }) => {
+                          const isSelected = selectedTreatmentCategories.includes(value);
+                          return (
+                            <label
+                              key={value}
+                              className={`
+                                flex items-center justify-center gap-2 cursor-pointer px-5 py-3 rounded-xl font-medium text-base
+                                transition-all duration-200 select-none
+                                ${isSelected
+                                  ? 'bg-blue-600 text-white shadow-md hover:bg-blue-700'
+                                  : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'
                                 }
-                              }}
-                              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            />
-                            <span>{label}</span>
-                          </label>
-                        ))}
+                              `}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedTreatmentCategories(prev => [...prev, value]);
+                                  } else {
+                                    setSelectedTreatmentCategories(prev => prev.filter(c => c !== value));
+                                  }
+                                }}
+                                className="sr-only"
+                              />
+                              <span>{label}</span>
+                            </label>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
