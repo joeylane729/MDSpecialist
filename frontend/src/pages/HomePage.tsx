@@ -849,7 +849,7 @@ const HomePage: React.FC = () => {
                   {/* Treatment categories: when testing mode off, only show after specialty is selected */}
                   {(testingMode || specialty) && (
                     <div className="group min-w-[280px] w-full">
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2 mb-3">
                         <label className="block text-sm font-semibold text-gray-700">Select preferred treatment categories (select at least 1) *</label>
                         <button
                           type="button"
@@ -859,7 +859,7 @@ const HomePage: React.FC = () => {
                               selectedTreatmentCategories.length === all.length ? [] : all
                             );
                           }}
-                          className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline"
+                          className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline flex-shrink-0"
                         >
                           {selectedTreatmentCategories.length === 5 ? 'Deselect all' : 'Select all'}
                         </button>
