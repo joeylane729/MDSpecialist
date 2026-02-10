@@ -39,7 +39,7 @@ const GoogleScholarPage: React.FC = () => {
 
     try {
       const response = await api.get('/api/v1/google-scholar/search', {
-        params: { q: keyword.trim(), limit: 10 },
+        params: { q: keyword.trim() },
       });
       setResults(response.data.results || []);
       if (response.data.results && response.data.results.length === 0) {

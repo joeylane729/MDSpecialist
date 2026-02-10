@@ -15,12 +15,12 @@ router = APIRouter()
 
 @router.get("/google-scholar/search")
 async def search_google_scholar(
-    q: str = Query(..., min_length=1, description="Search keyword"),
-    limit: int = Query(default=10, ge=1, le=20, description="Max results to return")
+    q: str = Query(..., min_length=1, description="Search keyword")
 ):
     """
     Search Google Scholar by keyword. Returns publication titles, authors, and links.
-    Uses the scholarly Python package. Testing mode only.
+    Uses the scholarly Python package. No result limit; returns until the generator stops or errors.
+    Testing mode only.
     """
     try:
         from scholarly import scholarly
@@ -33,9 +33,7 @@ async def search_google_scholar(
     def _search():
         results = []
         search_query = scholarly.search_pubs(q)
-        for i, pub in enumerate(search_query):
-            if i >= limit:
-                break
+        for pub in search_query:
             bib = pub.get("bib", {})
             author = bib.get("author", "")
             if isinstance(author, list):
