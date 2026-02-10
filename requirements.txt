@@ -14,3 +14,4 @@ langchain-google-genai
 langchain-pinecone
 langchain-community
 PyPDF2
+scholarly

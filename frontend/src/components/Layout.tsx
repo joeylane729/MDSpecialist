@@ -1,6 +1,6 @@
 import { ReactNode, useState, useRef, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Home, Search, Code, Settings } from 'lucide-react'
+import { Home, Search, Code, BookOpen, Settings } from 'lucide-react'
 import { useTestingMode } from '../contexts/TestingModeContext'
 
 interface LayoutProps {
@@ -68,17 +68,30 @@ export default function Layout({ children }: LayoutProps) {
                   <span>Results</span>
                 </Link>
                 {testingMode && (
-                  <Link
-                    to="/cpt-testing"
-                    className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive('/cpt-testing')
-                        ? 'text-primary-600 bg-primary-50'
-                        : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Code className="h-4 w-4" />
-                    <span>CPT Testing</span>
-                  </Link>
+                  <>
+                    <Link
+                      to="/cpt-testing"
+                      className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        isActive('/cpt-testing')
+                          ? 'text-primary-600 bg-primary-50'
+                          : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Code className="h-4 w-4" />
+                      <span>CPT Testing</span>
+                    </Link>
+                    <Link
+                      to="/google-scholar"
+                      className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        isActive('/google-scholar')
+                          ? 'text-primary-600 bg-primary-50'
+                          : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <BookOpen className="h-4 w-4" />
+                      <span>Google Scholar</span>
+                    </Link>
+                  </>
                 )}
             </nav>
 

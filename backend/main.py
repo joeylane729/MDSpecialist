@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from typing import List
 from dotenv import load_dotenv
-from app.api.endpoints import npi, specialist_recommendation, npi_ranking, medical_analysis, preauth_letter, reviews
+from app.api.endpoints import npi, specialist_recommendation, npi_ranking, medical_analysis, preauth_letter, reviews, google_scholar
 import os
 import logging
 
@@ -72,6 +72,7 @@ app.include_router(npi_ranking.router, prefix="/api/v1", tags=["npi-ranking"])
 app.include_router(medical_analysis.router, prefix="/api/v1", tags=["medical-analysis"])
 app.include_router(preauth_letter.router, prefix="/api/v1", tags=["preauth-letter"])
 app.include_router(reviews.router, prefix="/api/v1", tags=["reviews"])
+app.include_router(google_scholar.router, prefix="/api/v1", tags=["google-scholar"])
 
 @app.get("/")
 async def root():
