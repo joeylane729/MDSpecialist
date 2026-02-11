@@ -284,7 +284,7 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
 
 ---
 
-### Step 7: Patient Reviews (Optional Enhancement)
+### Step 7: Patient Reviews
 
 **Purpose:** Retrieve and filter patient reviews for context.
 
@@ -298,35 +298,3 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
 - Calculates average rating for relevant reviews
 
 **Output:** Reviews with relevancy flags and rating statistics
-
----
-
-## Thresholds and Filters
-
-- **ICD-10 Relevancy Threshold:** 50% — Only codes ≥50% are used for CPT generation
-- **CPT Relevancy Threshold:** 10% — Only codes ≥10% are included in clinical volume calculations
-- **Specialty Filter:** Currently hardcoded to "Neurological Surgery" (proof of concept)
-
----
-
-## Data Sources
-
-1. **ICD-10 Codes:** Local database (CMS 2026 code set)
-2. **ICD-10 to CPT Mapping:** Local database (CMS crosswalk data)
-3. **CPT Consolidated:** Local database (AMA CPT code descriptions)
-4. **CMS Provider Data:** Public CMS Medicare Provider Utilization API
-5. **PubMed:** Local PostgreSQL database with indexed articles
-6. **VuMedi:** Local database of medical lectures
-7. **Medical School Rankings:** Local database (US News rankings)
-8. **Healthgrades Reviews:** Local database of provider reviews
-9. **NPI Registry:** Used for provider search by specialty and location
-
----
-
-## Key Features
-
-- **Multi-step LLM approach:** Each step has a focused task (generation → scoring → categorization)
-- **Database grounding:** LLM outputs are validated against official medical code databases
-- **Relevancy filtering:** Low-relevance codes are excluded from downstream calculations
-- **Objective scoring:** Provider ranking uses quantifiable metrics (publications, clinical volume, training)
-- **Category-based filtering:** Users can filter results by treatment type (surgery, radiation, etc.)
