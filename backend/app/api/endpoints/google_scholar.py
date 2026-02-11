@@ -33,19 +33,35 @@ async def search_google_scholar(
     def _search():
         results = []
         search_query = scholarly.search_pubs(q)
+        count = 0
         for pub in search_query:
+            count += 1
+            logger.info(f"Processing result {count}: {pub.keys() if hasattr(pub, 'keys') else type(pub)}")
+            
             bib = pub.get("bib", {})
+            if not bib:
+                logger.warning(f"Result {count} has no 'bib' field: {pub}")
+                continue
+                
+            title = bib.get("title", "")
+            if not title:
+                logger.warning(f"Result {count} has no title in bib: {bib.keys()}")
+                continue
+            
             author = bib.get("author", "")
             if isinstance(author, list):
                 author = ", ".join(str(a) for a in author) if author else ""
+            
             results.append({
-                "title": bib.get("title", ""),
+                "title": title,
                 "author": author,
                 "year": bib.get("pub_year") or bib.get("year", ""),
                 "venue": bib.get("venue", ""),
                 "url": pub.get("pub_url", ""),
                 "num_citations": pub.get("num_citations", 0),
             })
+        
+        logger.info(f"Scholarly returned {count} publications, {len(results)} valid results")
         return results
 
     try:
