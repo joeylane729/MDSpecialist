@@ -233,7 +233,24 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
 
 ---
 
-### Step 6: Provider Ranking
+### Step 6: Patient Reviews
+
+**Purpose:** Retrieve and filter patient reviews for context.
+
+**Input:**
+- Provider NPIs
+- Search query terms (diagnostic + anatomic)
+
+**Process:**
+- Fetches reviews from Healthgrades database
+- Marks reviews as "relevant" if they contain at least one diagnostic term AND one anatomic term
+- Calculates average rating for relevant reviews
+
+**Output:** Reviews with relevancy flags and rating statistics
+
+---
+
+### Step 7: Provider Ranking
 
 **Purpose:** Score and rank providers based on multiple objective criteria.
 
@@ -276,20 +293,3 @@ Return ONLY the JSON array with NO markdown formatting, NO code blocks, NO addit
 - Providers are ranked by final score (highest first)
 
 **Output:** Ranked list of providers with detailed score breakdowns
-
----
-
-### Step 7: Patient Reviews
-
-**Purpose:** Retrieve and filter patient reviews for context.
-
-**Input:**
-- Provider NPIs
-- Search query terms (diagnostic + anatomic)
-
-**Process:**
-- Fetches reviews from Healthgrades database
-- Marks reviews as "relevant" if they contain at least one diagnostic term AND one anatomic term
-- Calculates average rating for relevant reviews
-
-**Output:** Reviews with relevancy flags and rating statistics
