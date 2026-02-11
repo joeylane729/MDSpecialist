@@ -1,10 +1,5 @@
 # MDSpecialist Algorithm Overview
 
-## Purpose
-This document outlines the step-by-step process of the MDSpecialist algorithm, including all LLM prompts used to match patients with medical specialists.
-
----
-
 ## Algorithm Flow
 
 ### Step 1: Search Query Generation
