@@ -13,11 +13,11 @@ export function TestingModeProvider({ children }: { children: ReactNode }) {
   const [testingMode, setTestingModeState] = useState<boolean>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      // Default to true (testing mode on). Only treat as off if user explicitly saved 'false'.
-      if (stored === 'false') return false;
-      return true;
+      // Default to false (testing mode off). Only treat as on if user explicitly saved 'true'.
+      if (stored === 'true') return true;
+      return false;
     } catch {
-      return true;
+      return false;
     }
   });
 
