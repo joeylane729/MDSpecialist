@@ -2,7 +2,8 @@
 
 A web application that matches patients with the best medical subspecialists for their specific diagnosis based on objective criteria (training, experience, publications, talks, website mentions) and location.
 
-https://md-specialist.vercel.app/ (NOTE: this is a work-in-progress, some functionality may contain bugs)
+https://md-specialist.vercel.app
+(NOTE: this is a work-in-progress, some functionality may contain bugs)
 
 ## Features
 
